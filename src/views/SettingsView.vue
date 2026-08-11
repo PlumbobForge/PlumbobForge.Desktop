@@ -2,71 +2,12 @@
   <div id="view-settings" class="view settings-view-container">
 
     <!-- Version & Updates Hero Card -->
-    <div class="card settings-update-hero">
-      <div class="update-hero-left">
-        <div class="update-hero-icon-bg">
-          <span class="material-symbols-outlined update-hero-icon">rocket_launch</span>
-        </div>
-        <div class="update-hero-info">
-          <div class="update-hero-version-row">
-            <span class="update-hero-title">{{ t('settings.version') }}</span>
-            <span class="badge update-version-badge">v{{ store.appVersion }}</span>
-          </div>
-          
-          <!-- Status Indicators -->
-          <div class="update-hero-status-text">
-            <span v-if="store.updateStatus === 'checking'" class="status-checking">
-              <span class="material-symbols-outlined spin icon-14">sync</span> {{ t('settings.checking_updates') }}
-            </span>
-            <span v-else-if="store.updateStatus === 'not-available'" class="status-up-to-date">
-              <span class="material-symbols-outlined icon-14">check_circle</span> {{ t('settings.up_to_date') }}
-            </span>
-            <span v-else-if="store.updateStatus === 'available'" class="status-available">
-              <span class="material-symbols-outlined icon-14">new_releases</span> {{ t('settings.update_available') }}
-            </span>
-            <span v-else-if="store.updateStatus === 'downloading'" class="status-downloading">
-              <span class="material-symbols-outlined spin icon-14">downloading</span> {{ t('settings.downloading_update', { percent: Math.round(store.downloadPercent) }) }}
-            </span>
-            <span v-else-if="store.updateStatus === 'downloaded'" class="status-downloaded">
-              <span class="material-symbols-outlined icon-14">verified</span> {{ t('settings.update_ready') }}
-            </span>
-            <span v-else-if="store.updateStatus === 'error'" class="status-error">
-              <span class="material-symbols-outlined icon-14">error</span> {{ t('settings.update_error') }}
-            </span>
-            <span v-else class="status-idle">
-              {{ t('settings.latest_installed') }}
-            </span>
-          </div>
-
-          <!-- Download Progress Bar -->
-          <div v-if="store.updateStatus === 'downloading'" class="update-progress-bar-bg">
-            <div class="update-progress-bar-fill" :style="{ width: store.downloadPercent + '%' }"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="update-hero-actions">
-        <button v-if="store.updateStatus !== 'downloading' && store.updateStatus !== 'downloaded'" class="btn btn-primary" @click="checkUpdates" :disabled="store.updateStatus === 'checking'">
-          <span class="material-symbols-outlined icon-16-mr" :class="{ spin: store.updateStatus === 'checking' }">sync</span>
-          {{ store.updateStatus === 'checking' ? t('settings.checking_updates') : t('settings.check_updates') }}
-        </button>
-
-        <button v-if="store.updateStatus === 'available'" class="btn btn-success" @click="downloadUpdate">
-          <span class="material-symbols-outlined icon-16-mr">download</span>
-          {{ t('settings.download_update') }}
-        </button>
-
-        <button v-if="store.updateStatus === 'downloaded'" class="btn btn-success" @click="installUpdate">
-          <span class="material-symbols-outlined icon-16-mr">restart_alt</span>
-          {{ t('settings.install_restart') }}
-        </button>
-
-        <button class="btn btn-secondary" @click="openChangelog">
-          <span class="material-symbols-outlined icon-16-mr">rocket_launch</span>
-          {{ t('settings.view_changelog') }}
-        </button>
-      </div>
-    </div>
+    <SettingsUpdateHero
+      @check-updates="checkUpdates"
+      @download-update="downloadUpdate"
+      @install-update="installUpdate"
+      @open-changelog="openChangelog"
+    />
 
     <!-- 2-Column Responsive Layout -->
     <div class="settings-2col-layout">
@@ -75,160 +16,25 @@
       <div class="settings-col">
         
         <!-- Appearance & Preferences -->
-        <div class="card">
-          <h3 class="settings-card-title">
-            <span class="material-symbols-outlined title-icon">tune</span>
-            {{ t('settings.preferences_appearance') }}
-          </h3>
-
-          <div class="settings-form-row">
-            <!-- Language -->
-            <div class="form-group flex-1">
-              <label>{{ t('settings.language') }}</label>
-              <div class="sort-trigger-wrapper" @click.stop="languageDropdownOpen = !languageDropdownOpen">
-                <button class="btn sort-trigger" style="width: 100%; justify-content: space-between;">
-                  <span>{{ getLanguageLabel(settings.language) }}</span>
-                  <span class="material-symbols-outlined" style="font-size:20px;">expand_more</span>
-                </button>
-                <div v-if="languageDropdownOpen" class="context-menu" style="position: absolute; width: 100%; top: 100%; margin-top: 4px; z-index: 100;">
-                  <div class="context-menu-item" :style="{ color: settings.language === 'auto' ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="selectLanguage('auto')">{{ t('settings.language_auto') }}</div>
-                  <div class="context-menu-item" :style="{ color: settings.language === 'en' ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="selectLanguage('en')">English</div>
-                  <div class="context-menu-item" :style="{ color: settings.language === 'pl' ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="selectLanguage('pl')">Polski</div>
-                  <div class="context-menu-item" :style="{ color: settings.language === 'uk' ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="selectLanguage('uk')">Українська</div>
-                  <div class="context-menu-item" :style="{ color: settings.language === 'el' ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="selectLanguage('el')">Ελληνικά</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Theme -->
-            <div class="form-group flex-1">
-              <label>{{ t('settings.theme') }}</label>
-              <div class="sort-trigger-wrapper" @click.stop="themeDropdownOpen = !themeDropdownOpen">
-                <button class="btn sort-trigger" style="width: 100%; justify-content: space-between;">
-                  <span>{{ getThemeLabel(settings.theme) }}</span>
-                  <span class="material-symbols-outlined" style="font-size:20px;">expand_more</span>
-                </button>
-                <div v-if="themeDropdownOpen" class="context-menu" style="position: absolute; width: 100%; top: 100%; margin-top: 4px; z-index: 100;">
-                  <div class="context-menu-item" :style="{ color: settings.theme === 'auto' ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="selectTheme('auto')">{{ t('settings.theme_auto') }}</div>
-                  <div class="context-menu-item" :style="{ color: settings.theme === 'dark' ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="selectTheme('dark')">{{ t('settings.theme_dark') }}</div>
-                  <div class="context-menu-item" :style="{ color: settings.theme === 'light' ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="selectTheme('light')">{{ t('settings.theme_light') }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- App Statistics Badges -->
-          <div class="settings-stats-row">
-            <div class="stat-badge">
-              <span class="material-symbols-outlined stat-icon">folder_zip</span>
-              <div class="stat-info">
-                <span class="stat-num">{{ setsCount }}</span>
-                <span class="stat-lbl">{{ t('settings.sets_stat') }}</span>
-              </div>
-            </div>
-            <div class="stat-badge">
-              <span class="material-symbols-outlined stat-icon">inventory_2</span>
-              <div class="stat-info">
-                <span class="stat-num">{{ itemsCount }}</span>
-                <span class="stat-lbl">{{ t('settings.items_stat') }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SettingsPreferencesCard
+          :language="settings.language"
+          :theme="settings.theme"
+          :setsCount="setsCount"
+          :itemsCount="itemsCount"
+          @select-language="selectLanguage"
+          @select-theme="selectTheme"
+        />
 
         <!-- Cache & Game Optimization -->
-        <div class="card">
-          <h3 class="settings-card-title">
-            <span class="material-symbols-outlined title-icon">speed</span>
-            {{ t('settings.game_optimization') }}
-          </h3>
-
-          <div class="settings-form-flex" style="flex-direction: column; gap: 1.25rem;">
-            <!-- Cache Method -->
-            <div class="form-group">
-              <label>{{ t('settings.cache_method') }}</label>
-              <div class="sort-trigger-wrapper" @click.stop="cacheMethodDropdownOpen = !cacheMethodDropdownOpen">
-                <button class="btn sort-trigger" style="width: 100%; justify-content: space-between;">
-                  <span>{{ getCacheMethodLabel(settings.cacheMethod) }}</span>
-                  <span class="material-symbols-outlined" style="font-size:20px;">expand_more</span>
-                </button>
-                <div v-if="cacheMethodDropdownOpen" class="context-menu" style="position: absolute; width: 100%; top: 100%; margin-top: 4px; z-index: 100;">
-                  <div class="context-menu-item" :style="{ color: settings.cacheMethod === 'Dynamic' ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="setCacheMethod('Dynamic')">
-                    {{ t('settings.cache_method_dynamic') }}
-                  </div>
-                  <div class="context-menu-item" :style="{ color: settings.cacheMethod === 'Static' ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="setCacheMethod('Static')">
-                    {{ t('settings.cache_method_static') }}
-                  </div>
-                </div>
-              </div>
-              <div class="form-text" style="margin-top: 0.4rem;">
-                {{ settings.cacheMethod === 'Static' ? t('settings.cache_method_static_desc') : t('settings.cache_method_dynamic_desc') }}
-              </div>
-            </div>
-
-            <!-- Compression Level -->
-            <div class="form-group">
-              <label>{{ t('settings.cache_compression') }}</label>
-              <div class="sort-trigger-wrapper" @click.stop="compressionDropdownOpen = !compressionDropdownOpen">
-                <button class="btn sort-trigger" style="width: 100%; justify-content: space-between;">
-                  <span>{{ getCompressionLabel(settings.compressionLevel) }}</span>
-                  <span class="material-symbols-outlined" style="font-size:20px;">expand_more</span>
-                </button>
-                <div v-if="compressionDropdownOpen" class="context-menu" style="position: absolute; width: 100%; top: 100%; margin-top: 4px; z-index: 100;">
-                  <div class="context-menu-item" :style="{ color: settings.compressionLevel === 0 ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="setCompressionLevel(0)">{{ t('settings.no_compression') }}</div>
-                  <div class="context-menu-item" :style="{ color: settings.compressionLevel === 1 ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="setCompressionLevel(1)">{{ t('settings.low_compression') }}</div>
-                  <div class="context-menu-item" :style="{ color: settings.compressionLevel === 2 ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="setCompressionLevel(2)">{{ t('settings.medium_compression') }}</div>
-                  <div class="context-menu-item" :style="{ color: settings.compressionLevel === 3 ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="setCompressionLevel(3)">{{ t('settings.high_compression') }}</div>
-                  <div class="context-menu-item" :style="{ color: settings.compressionLevel === 4 ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="setCompressionLevel(4)">{{ t('settings.very_high_compression') }}</div>
-                </div>
-              </div>
-              <div class="form-text" style="margin-top: 0.4rem;">
-                {{ t('settings.compression_desc') }}
-              </div>
-            </div>
-          </div>
-        </div>
+        <SettingsOptimizationCard
+          :cacheMethod="settings.cacheMethod"
+          :compressionLevel="settings.compressionLevel"
+          @select-cache-method="setCacheMethod"
+          @select-compression-level="setCompressionLevel"
+        />
 
         <!-- Special Thanks Card -->
-        <div class="card">
-          <h3 class="settings-card-title">
-            <span class="material-symbols-outlined title-icon">favorite</span>
-            {{ t('settings.special_thanks') }}
-          </h3>
-
-          <div class="thanks-simple-container">
-            <div class="thanks-simple-section">
-              <div class="thanks-section-title">
-                <span class="material-symbols-outlined">code</span>
-                <span>{{ t('settings.code_libraries') }}</span>
-              </div>
-              <div class="thanks-section-body">
-                <span>granthes for <a href="https://modthesims.info/d/461888/" target="_blank" rel="noopener noreferrer">CC Magic</a> &amp; S3ToolKit</span>,
-                <span>Peter for <a href="https://s3pi.sourceforge.net/" target="_blank" rel="noopener noreferrer">s3pi library</a></span>
-              </div>
-            </div>
-
-            <div class="thanks-simple-section">
-              <div class="thanks-section-title">
-                <span class="material-symbols-outlined">translate</span>
-                <span>{{ t('settings.translations') }}</span>
-              </div>
-              <div class="thanks-section-body">
-                <span><a href="https://friendofbellas.tumblr.com/" target="_blank" rel="noopener noreferrer">friendofbellas</a> (Greek Translation)</span>
-              </div>
-            </div>
-
-            <div class="thanks-simple-section">
-              <div class="thanks-section-title">
-                <span class="material-symbols-outlined">code_blocks</span>
-                <span>{{ t('settings.source_code') }}</span>
-              </div>
-              <div class="thanks-section-body">
-                <a href="https://github.com/PlumbobForge" target="_blank" rel="noopener noreferrer">PlumbobForge on GitHub</a>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SettingsSpecialThanksCard />
 
       </div>
 
@@ -236,110 +42,27 @@
       <div class="settings-col">
 
         <!-- Folder Configurations & Downloads -->
-        <div class="card">
-          <div class="settings-folder-header">
-            <h3 class="settings-card-title m-0">
-              <span class="material-symbols-outlined title-icon">folder_open</span>
-              {{ t('settings.configure_folders') }}
-            </h3>
-            <span v-if="saving" class="settings-saving-text">
-               <span class="material-symbols-outlined spin icon-14">progress_activity</span>
-               {{ t('settings.saving') }}
-            </span>
-            <span v-else-if="saved" class="settings-saved-text">
-               <span class="material-symbols-outlined icon-14">check</span>
-               {{ t('settings.saved') }}
-            </span>
-          </div>
-
-          <div class="settings-form-flex" style="flex-direction: column; gap: 1rem;">
-            <!-- Document Base Dir -->
-            <div class="form-group">
-              <label>{{ t('settings.doc_dir') }}</label>
-              <div style="display: flex; gap: 0.5rem;">
-                <input type="text" v-model="settings.documentBaseDir" class="form-control" style="flex: 1;" @blur="onBaseDirBlur" />
-                <button class="btn btn-secondary" style="padding: 0 1rem;" @click="browseDocumentBaseDir">{{ t('settings.browse') }}</button>
-              </div>
-              <div class="form-text">{{ t('settings.doc_dir_desc') }}</div>
-            </div>
-
-            <!-- Game Files Dir -->
-            <div class="form-group">
-              <label>{{ t('settings.game_dir') }}</label>
-              <div style="display: flex; gap: 0.5rem;">
-                <input type="text" v-model="settings.gameFilesDir" class="form-control" style="flex: 1;" @blur="onGameFilesDirBlur" placeholder="e.g. C:\Program Files\EA Games\The Sims 3" />
-                <button class="btn btn-secondary" style="padding: 0 1rem;" @click="browseGameFilesDir">{{ t('settings.browse') }}</button>
-              </div>
-              <div class="form-text">{{ t('settings.game_dir_desc') }}</div>
-            </div>
-
-            <!-- Auto Import Box -->
-            <div class="auto-import-box">
-              <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">{{ t('settings.auto_import_title') }}</div>
-              <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem; line-height: 1.4;">
-                {{ t('settings.auto_import_desc') }}
-              </div>
-              <button class="btn btn-info-outline" id="btn-import-downloads" style="width: 100%; justify-content: center;" @click="runImportDownloads">
-                <span class="material-symbols-outlined icon-16-mr">download</span>
-                {{ t('settings.import_downloads_btn') }}
-              </button>
-            </div>
-
-            <!-- Observed Folders Section -->
-            <div class="observed-folders-section" style="border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.08)); padding-top: 1rem; margin-top: 0.5rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                <label style="font-weight: 600; font-size: 0.95rem; margin: 0;">{{ t('settings.observed_folders_title') }}</label>
-                <button class="btn btn-secondary btn-sm" style="font-size: 0.8rem; padding: 2px 10px; display: flex; align-items: center;" @click="browseObservedFolder">
-                  <span class="material-symbols-outlined icon-14" style="margin-right: 4px;">add</span>
-                  {{ t('settings.add_observed_folder') }}
-                </button>
-              </div>
-              <div class="form-text" style="margin-bottom: 0.75rem;">{{ t('settings.observed_folders_desc') }}</div>
-
-              <div v-if="settings.observedFolders && settings.observedFolders.length > 0" class="observed-folders-list" style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <div v-for="(folderPath, idx) in settings.observedFolders" :key="idx" class="observed-folder-item" style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary, rgba(255,255,255,0.03)); border: 1px solid var(--border-subtle, rgba(255,255,255,0.08)); padding: 0.4rem 0.75rem; border-radius: 6px;">
-                  <div style="display: flex; align-items: center; gap: 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
-                    <span class="material-symbols-outlined" style="font-size: 18px; color: var(--primary, #6366f1);">folder</span>
-                    <span style="font-size: 0.85rem; color: var(--text-main, #f8fafc); overflow: hidden; text-overflow: ellipsis;">{{ folderPath }}</span>
-                  </div>
-                  <button class="btn-icon" style="background: none; border: none; color: var(--text-muted, #94a3b8); cursor: pointer; padding: 2px; border-radius: 4px; display: flex; align-items: center;" title="Remove folder" @click="removeObservedFolder(idx)">
-                    <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
-                  </button>
-                </div>
-              </div>
-              <div v-else class="observed-folder-default-badge" style="font-size: 0.82rem; font-style: italic; color: var(--text-muted, #94a3b8); background: var(--bg-secondary, rgba(255,255,255,0.02)); border: 1px dashed var(--border-subtle, rgba(255,255,255,0.1)); padding: 0.5rem 0.75rem; border-radius: 6px;">
-                <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: text-bottom; margin-right: 4px; color: var(--primary, #6366f1);">info</span>
-                {{ t('settings.default_observed_folder_hint') }}
-              </div>
-            </div>
-          </div>
-        </div>
+        <SettingsFolderConfigCard
+          v-model:documentBaseDir="settings.documentBaseDir"
+          v-model:gameFilesDir="settings.gameFilesDir"
+          :observedFolders="settings.observedFolders"
+          :saving="saving"
+          :saved="saved"
+          @blur-base-dir="onBaseDirBlur"
+          @blur-game-dir="onGameFilesDirBlur"
+          @browse-base-dir="browseDocumentBaseDir"
+          @browse-game-dir="browseGameFilesDir"
+          @run-import-downloads="runImportDownloads"
+          @browse-observed-folder="browseObservedFolder"
+          @remove-observed-folder="removeObservedFolder"
+        />
 
         <!-- Maintenance & Tools -->
-        <div class="card">
-          <h3 class="settings-card-title">
-            <span class="material-symbols-outlined title-icon">build</span>
-            {{ t('settings.maintenance_utilities') }}
-          </h3>
-          <p class="settings-migrate-text" style="margin-bottom: 0.75rem;">
-            {{ t('settings.troubleshooting_desc') }}
-          </p>
-
-          <div class="maintenance-buttons-grid">
-            <button class="btn btn-purple-outline" id="btn-recheck-types" @click="confirmRecheckTypes">
-              <span class="material-symbols-outlined icon-16-mr">analytics</span>
-              {{ t('settings.recheck_types') }}
-            </button>
-            <button class="btn btn-success-outline" id="btn-autofix" @click="confirmAutoFix">
-              <span class="material-symbols-outlined icon-16-mr">build</span>
-              {{ t('settings.autofix') }}
-            </button>
-            <button class="btn btn-migrate" id="btn-migrate" @click="onMigrate">
-              <span class="material-symbols-outlined icon-16-mr">upgrade</span>
-              {{ t('settings.migrate_btn') }}
-            </button>
-          </div>
-        </div>
+        <SettingsMaintenanceCard
+          @recheck-types="confirmRecheckTypes"
+          @autofix="confirmAutoFix"
+          @migrate="onMigrate"
+        />
 
       </div>
 
@@ -356,6 +79,12 @@ import { useToast } from '@/composables/useToast'
 import { useAppStore } from '@/stores/app'
 import { useI18n } from '@/composables/useI18n'
 import { useTheme } from '@/composables/useTheme'
+import SettingsUpdateHero from '@/components/settings/SettingsUpdateHero.vue'
+import SettingsPreferencesCard from '@/components/settings/SettingsPreferencesCard.vue'
+import SettingsOptimizationCard from '@/components/settings/SettingsOptimizationCard.vue'
+import SettingsFolderConfigCard from '@/components/settings/SettingsFolderConfigCard.vue'
+import SettingsMaintenanceCard from '@/components/settings/SettingsMaintenanceCard.vue'
+import SettingsSpecialThanksCard from '@/components/settings/SettingsSpecialThanksCard.vue'
 
 const { showConfirm, showProgress, showRecheckConfirm, showDuplicateImportModal } = useModal()
 const { showToast } = useToast()
