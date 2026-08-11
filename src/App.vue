@@ -112,7 +112,11 @@ const initNotificationStream = () => {
         if (payload.eventName === 'items_imported') {
           const count = payload.data?.count || 1
           store.lastImportedAt = Date.now()
+          store.isDirty = true
           showToast(`Imported ${count} item(s) from Downloads!`, 'success')
+          window.dispatchEvent(new CustomEvent('items-updated'))
+        } else if (payload.eventName === 'library_changed') {
+          store.isDirty = true
           window.dispatchEvent(new CustomEvent('items-updated'))
         } else if (payload.eventName === 'auto_import_duplicates') {
           const duplicates = payload.data || []
