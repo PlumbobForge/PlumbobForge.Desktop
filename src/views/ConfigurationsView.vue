@@ -1,208 +1,42 @@
 <template>
   <div id="view-configurations" class="view">
-
     <div class="content-manager-layout">
 
       <!-- Sidebar: Configurations Tree -->
-      <div class="cm-sidebar">
-        <div class="cm-sidebar-header">
-          <span>{{ t('config.title') }}</span>
-          <div style="display: flex; align-items: center; gap: 0.35rem;">
-            <!-- Custom Config Sort Dropdown -->
-            <div class="sort-trigger-wrapper" @click.stop="configSortDropdownOpen = !configSortDropdownOpen">
-              <button class="btn sort-trigger" style="padding: 4px 8px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">
-                <span class="material-symbols-outlined" style="font-size: 16px;">sort</span>
-              </button>
-              <div v-if="configSortDropdownOpen" class="context-menu dropdown-menu-left" style="top: 15%;left: 54px;">
-                <div
-                  class="context-menu-item"
-                  :style="{ color: configSortMode === 'date' ? 'var(--primary)' : 'var(--text-main)' }"
-                  @click.stop="configSortMode = 'date'; configSortDropdownOpen = false"
-                >
-                  {{ t('config.sort_date') }}
-                </div>
-                <div class="context-menu-divider"></div>
-                <div
-                  class="context-menu-item"
-                  :style="{ color: configSortMode === 'alpha_asc' ? 'var(--primary)' : 'var(--text-main)' }"
-                  @click.stop="configSortMode = 'alpha_asc'; configSortDropdownOpen = false"
-                >
-                  {{ t('config.sort_alpha_asc') }}
-                </div>
-                <div
-                  class="context-menu-item"
-                  :style="{ color: configSortMode === 'alpha_desc' ? 'var(--primary)' : 'var(--text-main)' }"
-                  @click.stop="configSortMode = 'alpha_desc'; configSortDropdownOpen = false"
-                >
-                  {{ t('config.sort_alpha_desc') }}
-                </div>
-              </div>
-            </div>
-            <button id="btn-create-config" class="btn btn-create-config" @click="createConfig">+</button>
-          </div>
-        </div>
-        <div class="cm-tree-view" id="config-tree-view">
-          <div v-if="loading && sortedConfigs.length === 0" class="config-loading">Loading...</div>
-          <div
-            v-for="config in sortedConfigs"
-            :key="config.id"
-            class="tree-item config-tree-item-flex"
-            :class="{ active: currentConfig && currentConfig.id === config.id }"
-            :title="config.description || config.name"
-            @click="selectConfig(config)"
-            @contextmenu.prevent="onConfigContextMenu($event, config)"
-          >
-            <span class="tree-label">
-              <span class="tree-icon material-symbols-outlined">tune</span>
-              {{ config.name }}
-            </span>
-            <span v-if="config.active" class="badge-active">{{ t('config.active_badge') }}</span>
-            <span v-else-if="config.default" class="badge-default">{{ t('config.default_badge') }}</span>
-          </div>
-        </div>
-      </div>
+      <ConfigSidebar
+        :configs="sortedConfigs"
+        :currentConfigId="currentConfig?.id"
+        :loading="loading"
+        v-model:configSortMode="configSortMode"
+        @create-config="createConfig"
+        @select-config="selectConfig"
+        @config-context-menu="onConfigContextMenu"
+      />
 
-      <!-- Main: Sets Checkboxes -->
+      <!-- Main Area: Sets Checkboxes -->
       <div class="cm-main">
-        <div class="cm-main-header">
-          <div>
-            <h3 id="config-title" :class="{ 'config-title-clickable': currentConfig && !currentConfig.default }" :title="currentConfig && !currentConfig.default ? 'Click to rename' : ''" @click="currentConfig && handleRenameConfig(currentConfig)">
-              {{ currentConfig ? currentConfig.name : t('config.title') }}
-            </h3>
-            <div v-if="currentConfig" class="config-description-row" @click="handleEditDescription(currentConfig)" title="Click to edit description">
-              <span v-if="currentConfig.description && currentConfig.description.trim()" class="config-description-text">
-                {{ currentConfig.description }}
-              </span>
-              <span v-else class="config-description-placeholder">
-                {{ t('config.add_description') }}
-              </span>
-              <span class="material-symbols-outlined edit-desc-icon">edit</span>
-            </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 1rem;">
-            <!-- Custom Sets Sort Dropdown -->
-            <div class="sort-trigger-wrapper" @click.stop="setSortDropdownOpen = !setSortDropdownOpen">
-              <button class="btn sort-trigger" style="padding: 4px 10px; font-size: 0.82rem; display: flex; align-items: center; gap: 4px;">
-                <span class="material-symbols-outlined" style="font-size: 18px;">sort</span>
-                {{ getSetSortLabel() }}
-              </button>
-              <div v-if="setSortDropdownOpen" class="context-menu dropdown-menu-right" style="top: 100%; right: 0;">
-                <div
-                  class="context-menu-item"
-                  :style="{ color: setSortMode === 'date' ? 'var(--primary)' : 'var(--text-main)' }"
-                  @click.stop="setSortMode = 'date'; setSortDropdownOpen = false"
-                >
-                  {{ t('config.sort_date') }}
-                </div>
-                <div class="context-menu-divider"></div>
-                <div
-                  class="context-menu-item"
-                  :style="{ color: setSortMode === 'alpha_asc' ? 'var(--primary)' : 'var(--text-main)' }"
-                  @click.stop="setSortMode = 'alpha_asc'; setSortDropdownOpen = false"
-                >
-                  {{ t('config.sort_alpha_asc') }}
-                </div>
-                <div
-                  class="context-menu-item"
-                  :style="{ color: setSortMode === 'alpha_desc' ? 'var(--primary)' : 'var(--text-main)' }"
-                  @click.stop="setSortMode = 'alpha_desc'; setSortDropdownOpen = false"
-                >
-                  {{ t('config.sort_alpha_desc') }}
-                </div>
-                <div class="context-menu-divider"></div>
-                <div
-                  class="context-menu-item"
-                  :style="{ color: setSortMode === 'subsets_desc' ? 'var(--primary)' : 'var(--text-main)' }"
-                  @click.stop="setSortMode = 'subsets_desc'; setSortDropdownOpen = false"
-                >
-                  {{ t('config.sort_subsets') }}
-                </div>
-              </div>
-            </div>
-            <div class="cm-items-stats config-stats" id="config-stats">
-              <span v-if="currentConfig">{{ t('config.sets_enabled', { enabled: currentConfig.setIds.length, total: allSets.length }) }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="config-main-flex">
+        <ConfigHeader
+          :currentConfig="currentConfig"
+          :totalSetsCount="allSets.length"
+          v-model:setSortMode="setSortMode"
+          @rename-config="handleRenameConfig"
+          @edit-description="handleEditDescription"
+        />
 
-           <!-- Enabled Sets Column -->
-           <div class="config-panel">
-             <div class="config-panel-header-primary">
-               {{ t('config.enabled_sets_title') }} ({{ enabledSets.length }})
-             </div>
-             <div class="drop-zone config-drop-zone" id="config-enabled-sets" @dragover.prevent="onDragOver" @dragleave="onDragLeave" @drop="onDrop($event, true)">
-                <div
-                  v-for="set in enabledSets"
-                  :key="set.id"
-                  :data-id="set.id"
-                  draggable="true"
-                  class="config-set-card selectable-card"
-                  :class="{ selected: selectedSetIds.has(set.id) }"
-                  @click="onClickSet($event, set)"
-                  @dragstart="onDragStart($event, set)"
-                  @dragend="onDragEnd($event)"
-                  @dblclick="onDblClickSet(set)"
-                  title="Double-click to disable set"
-                >
-                  <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                    <div style="display: flex; align-items: center; gap: 0.35rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
-                      <span class="material-symbols-outlined config-set-icon">sell</span>
-                      <template v-if="getSetAncestors(set).length > 0">
-                        <span v-for="ancestor in getSetAncestors(set)" :key="ancestor.id" class="set-breadcrumb-inline">
-                          <span>{{ ancestor.name }}</span>
-                          <span class="material-symbols-outlined set-breadcrumb-icon">chevron_right</span>
-                        </span>
-                      </template>
-                      <span style="font-weight: 600;">{{ set.name }}</span>
-                    </div>
-                    <span v-if="getDescendantCount(set) > 0" class="set-subset-count-badge">
-                      {{ t('config.subset_count', { count: getDescendantCount(set) }) }}
-                    </span>
-                  </div>
-                </div>
-             </div>
-           </div>
-
-           <!-- Disabled Sets Column -->
-           <div class="config-panel">
-             <div class="config-panel-header-muted">
-               {{ t('config.disabled_sets_title') }} ({{ disabledSets.length }})
-             </div>
-             <div class="drop-zone config-drop-zone" id="config-disabled-sets" @dragover.prevent="onDragOver" @dragleave="onDragLeave" @drop="onDrop($event, false)">
-                <div
-                  v-for="set in disabledSets"
-                  :key="set.id"
-                  :data-id="set.id"
-                  draggable="true"
-                  class="config-set-card selectable-card"
-                  :class="{ selected: selectedSetIds.has(set.id) }"
-                  @click="onClickSet($event, set)"
-                  @dragstart="onDragStart($event, set)"
-                  @dragend="onDragEnd($event)"
-                  @dblclick="onDblClickSet(set)"
-                  title="Double-click to enable set"
-                >
-                  <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                    <div style="display: flex; align-items: center; gap: 0.35rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
-                      <span class="material-symbols-outlined config-set-icon">sell</span>
-                      <template v-if="getSetAncestors(set).length > 0">
-                        <span v-for="ancestor in getSetAncestors(set)" :key="ancestor.id" class="set-breadcrumb-inline">
-                          <span>{{ ancestor.name }}</span>
-                          <span class="material-symbols-outlined set-breadcrumb-icon">chevron_right</span>
-                        </span>
-                      </template>
-                      <span style="font-weight: 600;">{{ set.name }}</span>
-                    </div>
-                    <span v-if="getDescendantCount(set) > 0" class="set-subset-count-badge">
-                      {{ t('config.subset_count', { count: getDescendantCount(set) }) }}
-                    </span>
-                  </div>
-                </div>
-             </div>
-           </div>
-
-        </div>
+        <ConfigSetsPanel
+          :enabledSets="enabledSets"
+          :disabledSets="disabledSets"
+          :selectedSetIds="selectedSetIds"
+          :getAncestors="getSetAncestors"
+          :getDescendantCount="getDescendantCount"
+          @drag-over="onDragOver"
+          @drag-leave="onDragLeave"
+          @drop-sets="onDrop"
+          @click-set="onClickSet"
+          @drag-start="onDragStart"
+          @drag-end="onDragEnd"
+          @dblclick-set="onDblClickSet"
+        />
       </div>
 
     </div>
@@ -218,7 +52,9 @@ import { useContextMenu } from '@/composables/useContextMenu'
 import { useI18n } from '@/composables/useI18n'
 import { useSelection } from '@/composables/useSelection'
 import { useAppStore } from '@/stores/app'
-import type { Configuration, SetEntity } from '@/types'
+import ConfigSidebar from '@/components/config/ConfigSidebar.vue'
+import ConfigHeader from '@/components/config/ConfigHeader.vue'
+import ConfigSetsPanel from '@/components/config/ConfigSetsPanel.vue'
 
 const { showPrompt, showConfirm } = useModal()
 const { showToast } = useToast()
@@ -542,7 +378,7 @@ const activateConfig = async () => {
     allSets.value = setsRes
     store.configs = configsRes
     store.currentConfig = configsRes.find(c => c.id === targetId) || null
-    store.isDirty = setsRes.some(s => s.dirty)
+    store.isDirty = true
   } catch (err) {
     showToast('Failed to activate configuration', 'error')
     await loadData()
@@ -663,13 +499,23 @@ const moveMultipleSetsWithSubsets = async (targetSetIds: number[], enable: boole
     newSetIds = newSetIds.filter(id => !idsToModify.has(id))
   }
 
-  if (newSetIds.length !== currentConfig.value.setIds.length) {
+  const currentSetIds = currentConfig.value.setIds
+  const hasChanged = newSetIds.length !== currentSetIds.length ||
+    !newSetIds.every(id => currentSetIds.includes(id))
+
+  if (hasChanged) {
     currentConfig.value.setIds = newSetIds
     await updateConfigurationSets(currentConfig.value.id, newSetIds)
 
+    if (currentConfig.value.active) {
+      store.isDirty = true
+    }
+
     const setsRes = await fetchSets()
     allSets.value = setsRes
-    store.isDirty = setsRes.some(s => s.dirty)
+    if (currentConfig.value.active || setsRes.some(s => s.dirty)) {
+      store.isDirty = true
+    }
   }
 }
 
