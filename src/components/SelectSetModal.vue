@@ -39,15 +39,19 @@ watch(() => selectSetState.visible, (newVal) => {
 const flattenedSets = computed(() => {
   const allSets = selectSetState.sets;
   const result: { id: number; label: string }[] = [];
+  const visited = new Set<number>();
   
   const buildAndFlatten = (parentId: number | null, depth = 0) => {
     const children = allSets.filter(s => s.parentSetsEntityId === parentId);
     children.forEach(c => {
-      result.push({
-        id: c.id,
-        label: '&nbsp;'.repeat(depth * 4) + c.name
-      });
-      buildAndFlatten(c.id, depth + 1);
+      if (!visited.has(c.id)) {
+        visited.add(c.id);
+        result.push({
+          id: c.id,
+          label: '&nbsp;'.repeat(depth * 4) + c.name
+        });
+        buildAndFlatten(c.id, depth + 1);
+      }
     });
   };
   

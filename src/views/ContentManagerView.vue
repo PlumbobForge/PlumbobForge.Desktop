@@ -498,7 +498,9 @@ const restoreLastSelectedSet = () => {
     if (!isNaN(id) && allSets.value.some(s => s.id === id)) {
       store.selectedSetId = id
       let cur = allSets.value.find(s => s.id === id)
-      while (cur && cur.parentSetsEntityId) {
+      const visited = new Set<number>()
+      while (cur && cur.parentSetsEntityId && !visited.has(cur.id)) {
+        visited.add(cur.id)
         store.expandedSets.add(cur.parentSetsEntityId)
         cur = allSets.value.find(s => s.id === cur!.parentSetsEntityId)
       }
@@ -1254,6 +1256,17 @@ const onDropSidebar = async (e: DragEvent) => {
 
 const onDropAll = onDropSidebar
 
+const isDescendantOf = (targetId: number, ancestorId: number): boolean => {
+  let cur = allSets.value.find(s => s.id === targetId)
+  const visited = new Set<number>()
+  while (cur && cur.parentSetsEntityId && !visited.has(cur.id)) {
+    if (cur.parentSetsEntityId === ancestorId) return true
+    visited.add(cur.id)
+    cur = allSets.value.find(s => s.id === cur!.parentSetsEntityId)
+  }
+  return false
+}
+
 const onDropSet = async (data: any, targetSetId: number) => {
   if (!data || !data.type) return
 
@@ -1274,10 +1287,12 @@ const onDropSet = async (data: any, targetSetId: number) => {
     if (setIds.length === 0) return
     try {
       for (const id of setIds) {
-        if (id !== targetSetId) {
-          await moveSet(id, targetSetId)
-          store.expandedSets.add(targetSetId)
+        if (id === targetSetId || isDescendantOf(targetSetId, id)) {
+          showToast('Cannot move a set inside one of its own subsets.', 'warning')
+          continue
         }
+        await moveSet(id, targetSetId)
+        store.expandedSets.add(targetSetId)
       }
       showToast(setIds.length > 1 ? `Moved ${setIds.length} sets.` : 'Moved set.', 'success')
       store.selectedSetIds.clear()
