@@ -3,53 +3,18 @@
     <div class="content-manager-layout">
 
       <!-- Sidebar: Sets Tree -->
-      <div class="cm-sidebar" id="cm-sidebar" @contextmenu.prevent="onSidebarContextMenu" @dragover.prevent @drop.prevent="onDropSidebar">
-        <div class="cm-sidebar-header" style="position: relative; display: flex; align-items: center; justify-content: space-between;">
-          <span>{{ t('cm.sets') }}</span>
-          <div style="display: flex; align-items: center; gap: 0.25rem;">
-            <button class="btn sort-trigger" style="padding: 4px 8px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;" :data-tooltip="t('cm.sort_sets')" @click.stop="toggleSetSortDropdown">
-              <span class="material-symbols-outlined" style="font-size: 16px;">sort</span>
-            </button>
-            <button id="btn-create-set" class="btn btn-sm" @click.stop="createSet">+</button>
-          </div>
-          <div v-if="setSortDropdownOpen" class="context-menu dropdown-menu-left" style="top: 15%; left: 0; min-width: 150px; z-index: 100;">
-            <div class="context-menu-item" :class="{ active: setSortBy === 'date' }" @click="setSortBy = 'date'; setSortDropdownOpen = false">
-              {{ t('cm.sort_date') }}
-            </div>
-            <div class="context-menu-divider"></div>
-            <div class="context-menu-item" :class="{ active: setSortBy === 'name_asc' }" @click="setSortBy = 'name_asc'; setSortDropdownOpen = false">
-              {{ t('cm.sort_name_asc') }}
-            </div>
-            <div class="context-menu-item" :class="{ active: setSortBy === 'name_desc' }" @click="setSortBy = 'name_desc'; setSortDropdownOpen = false">
-              {{ t('cm.sort_name_desc') }}
-            </div>
-          </div>
-        </div>
-        <div class="cm-tree-view" v-if="loadingSets">
-          <div class="text-muted-padded">Loading Sets...</div>
-        </div>
-        <div class="cm-tree-view" id="cm-tree-view" v-else @wheel="onTreeWheel" @dragover.prevent @drop.prevent="onDropSidebar">
-          <!-- All Items Node -->
-          <div class="tree-item" :class="{ active: store.selectedSetId === null, 'drag-over-invalid': isDragOverAll }" @click="selectSet(null)" @contextmenu.prevent.stop @dragover.prevent="onDragOverAll($event)" @dragleave="onDragLeaveAll" @drop.prevent.stop="onDropAll">
-            <span class="tree-label">
-              <span class="tree-icon material-symbols-outlined">layers</span>
-              {{ t('cm.all_items') }}
-            </span>
-          </div>
-
-          <!-- Recursive Tree -->
-          <SetTreeNode
-            v-for="set in sortedRootSets"
-            :key="set.id"
-            :set="set"
-            :allSets="sortedAllSets"
-            :depth="0"
-            @select="selectSet"
-            @context-menu="onSetContextMenu"
-            @drop="onDropSet"
-          />
-        </div>
-      </div>
+      <SetTreeSidebar
+        :allSets="allSets"
+        :selectedSetId="store.selectedSetId"
+        :loadingSets="loadingSets"
+        v-model:setSortBy="setSortBy"
+        @select-set="selectSet"
+        @create-set="createSet"
+        @set-context-menu="onSetContextMenu"
+        @sidebar-context-menu="onSidebarContextMenu"
+        @drop-set="onDropSet"
+        @drop-all="onDropAll"
+      />
 
       <!-- Main Area: Items Grid -->
       <div class="cm-main"
@@ -65,88 +30,24 @@
             <h2>{{ t('cm.drop_overlay_title') }}</h2>
           </div>
         </div>
-        <div class="cm-main-header">
-          <div class="cm-header-flex gap-4">
-            <h3 id="cm-items-title">{{ currentSetName === 'All Items' ? t('cm.all_items') : (currentSetName === 'Legacy' ? t('cm.legacy') : currentSetName) }}</h3>
-            <div class="cm-items-stats" id="cm-items-stats" style="color: var(--text-muted); font-size: 0.9rem;">
-              {{ t('cm.items_count', { count: filteredItems.length, size: formatSize(totalSize) }) }}
-            </div>
-          </div>
-          <div class="cm-header-flex gap-2">
-            <!-- Sort Dropdown -->
-            <div class="sort-trigger-wrapper" @click.stop="sortDropdownOpen = !sortDropdownOpen">
-              <button class="btn sort-trigger">
-                <span class="material-symbols-outlined" style="font-size:20px;">sort</span>
-                {{ t('cm.sort') }}
-              </button>
-              <div v-if="sortDropdownOpen" class="context-menu dropdown-menu-right">
-                <div class="context-menu-item" :style="{ color: sortMode === 'date_desc' ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="sortMode = 'date_desc'; sortDropdownOpen = false">
-                  {{ t('cm.sort_latest') }}
-                </div>
-                <div class="context-menu-item" :style="{ color: sortMode === 'date_asc' ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="sortMode = 'date_asc'; sortDropdownOpen = false">
-                  {{ t('cm.sort_oldest') }}
-                </div>
-                <div class="context-menu-divider"></div>
-                <div class="context-menu-item" :style="{ color: sortMode === 'alpha_asc' ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="sortMode = 'alpha_asc'; sortDropdownOpen = false">
-                  {{ t('cm.sort_alpha_asc') }}
-                </div>
-                <div class="context-menu-item" :style="{ color: sortMode === 'alpha_desc' ? 'var(--primary)' : 'var(--text-main)' }" @click.stop="sortMode = 'alpha_desc'; sortDropdownOpen = false">
-                  {{ t('cm.sort_alpha_desc') }}
-                </div>
-              </div>
-            </div>
 
-            <!-- View Mode Toggles -->
-            <div class="view-toggle-container">
-              <div class="custom-tooltip-container" :data-tooltip="t('cm.comfy_view')">
-                <button class="btn btn-view-toggle" :class="{ active: viewMode === 'comfy' }" @click="viewMode = 'comfy'">
-                  <span class="material-symbols-outlined" style="font-size:20px;">grid_view</span>
-                </button>
-              </div>
-              <div class="custom-tooltip-container" :data-tooltip="t('cm.compact_view')">
-                <button class="btn btn-view-toggle" :class="{ active: viewMode === 'compact' }" @click="viewMode = 'compact'">
-                  <span class="material-symbols-outlined" style="font-size:20px;">view_list</span>
-                </button>
-              </div>
-            </div>
-
-            <div id="cm-action-bar" v-if="store.selectionMode && store.selectedItemIds.size > 0" class="cm-action-bar">
-              <span class="cm-action-bar-text">{{ t('cm.selected', { count: store.selectedItemIds.size }) }}</span>
-              <button id="btn-enable-selected" class="btn btn-action custom-tooltip-container" :data-tooltip="t('context.enable')" @click="enableSelected(true)">
-                <span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>
-              </button>
-              <button id="btn-disable-selected" class="btn btn-action custom-tooltip-container" :data-tooltip="t('context.disable')" @click="enableSelected(false)">
-                <span class="material-symbols-outlined" style="font-size:18px;">block</span>
-              </button>
-              <button id="btn-retag-selected" class="btn btn-action custom-tooltip-container" :data-tooltip="t('context.retag')" @click="onRetagItem()">
-                <span class="material-symbols-outlined" style="font-size:18px;">sell</span>
-              </button>
-              <button id="btn-tags-selected" class="btn btn-action custom-tooltip-container" :data-tooltip="t('context.user_tags')" @click="onEditTags()">
-                <span class="material-symbols-outlined" style="font-size:18px;">label</span>
-              </button>
-              <button id="btn-move-selected" class="btn btn-action custom-tooltip-container" :data-tooltip="t('modal.move')" @click="moveSelected">
-                <span class="material-symbols-outlined" style="font-size:18px;">drive_file_move</span>
-              </button>
-              <button id="btn-delete-selected" class="btn btn-action btn-danger-outline custom-tooltip-container" :data-tooltip="t('modal.delete')" @click="deleteSelected">
-                <span class="material-symbols-outlined" style="font-size:18px;">delete</span>
-              </button>
-            </div>
-            <button
-              v-if="store.selectionMode"
-              id="btn-select-all"
-              class="btn btn-action custom-tooltip-container mr-2"
-              :data-tooltip="store.selectedItemIds.size === filteredItems.length && filteredItems.length > 0 ? t('cm.deselect_all') : t('cm.select_all')"
-              @click="toggleSelectAll"
-            >
-              <span class="material-symbols-outlined" style="font-size:18px;">
-                {{ store.selectedItemIds.size === filteredItems.length && filteredItems.length > 0 ? 'deselect' : 'select_all' }}
-              </span>
-            </button>
-            <button id="btn-toggle-select" class="btn btn-select-toggle" :class="{ active: store.selectionMode }" @click="toggleSelectionMode">
-              {{ store.selectionMode ? t('cm.done') : t('cm.manual_select') }}
-            </button>
-          </div>
-        </div>
+        <!-- Toolbar -->
+        <ContentManagerToolbar
+          :currentSetName="currentSetName"
+          :filteredCount="filteredItems.length"
+          :formattedTotalSize="formatSize(totalSize)"
+          v-model:sortMode="sortMode"
+          v-model:viewMode="viewMode"
+          :selectionMode="store.selectionMode"
+          :selectedCount="store.selectedItemIds.size"
+          @enable-selected="enableSelected"
+          @retag-selected="onRetagItem"
+          @edit-tags-selected="onEditTags"
+          @move-selected="moveSelected"
+          @delete-selected="deleteSelected"
+          @toggle-select-all="toggleSelectAll"
+          @toggle-selection-mode="toggleSelectionMode"
+        />
 
         <div :class="viewMode === 'comfy' ? 'cm-items-grid' : 'cm-items-list'" id="cm-items-grid" ref="gridRef" @click.self="clearSelection">
           <div v-if="loadingItems" class="text-muted-padded col-span-full">{{ t('cm.loading_items') }}</div>
@@ -171,231 +72,25 @@
       </div>
 
       <!-- Filter Sidebar -->
-      <div class="cm-filter-sidebar">
-        <div class="cm-sidebar-header">{{ t('cm.filters') }}</div>
-
-        <div class="filter-group">
-          <div class="search-container" style="position: relative;">
-            <span class="material-symbols-outlined search-icon">search</span>
-            <input
-              type="text"
-              v-model="searchQuery"
-              class="search-input"
-              :placeholder="t('cm.search_placeholder')"
-              @focus="isSearchFocused = true"
-              @blur="onSearchBlur"
-              @keydown.enter="addSearchHistory(searchQuery)"
-            />
-            <span v-if="searchQuery" class="material-symbols-outlined search-clear-icon" @click="searchQuery = ''">close</span>
-
-            <!-- Autocomplete & Search History Dropdown -->
-            <div v-if="isSearchFocused && (filteredTagSuggestions.length > 0 || searchHistory.length > 0)" class="search-autocomplete-dropdown">
-              <template v-if="filteredTagSuggestions.length > 0">
-                <div class="search-autocomplete-section">{{ t('cm.user_tags') }}</div>
-                <div v-for="tag in filteredTagSuggestions" :key="'tag-' + tag" class="search-autocomplete-item" @mousedown.prevent="selectSearchSuggestion(tag)">
-                  <span class="material-symbols-outlined" style="font-size: 16px; color: var(--primary);">label</span>
-                  <span>{{ tag }}</span>
-                </div>
-              </template>
-
-              <template v-if="searchHistory.length > 0 && !searchQuery">
-                <div class="search-autocomplete-section" style="margin-top: 0.25rem;">{{ t('cm.recent_searches') }}</div>
-                <div v-for="item in searchHistory" :key="'hist-' + item" class="search-autocomplete-item" @mousedown.prevent="selectSearchSuggestion(item)">
-                  <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-muted);">history</span>
-                  <span style="flex: 1;">{{ item }}</span>
-                  <span class="material-symbols-outlined" style="font-size: 14px; color: var(--text-muted);" @click.stop="removeSearchHistory(item)">close</span>
-                </div>
-              </template>
-            </div>
-          </div>
-        </div>
-
-        <div class="filter-group">
-          <!-- Type Filter Header -->
-          <div class="filter-header-row" @click="isTypeFilterCollapsed = !isTypeFilterCollapsed">
-            <label class="filter-label" style="cursor: pointer; margin: 0;">{{ t('cm.type') }}</label>
-            <span class="material-symbols-outlined expand-icon" style="font-size: 18px; color: var(--text-muted);">
-              {{ isTypeFilterCollapsed ? 'expand_more' : 'expand_less' }}
-            </span>
-          </div>
-
-          <div v-show="!isTypeFilterCollapsed" class="flex-col gap-2" style="margin-top: 0.25rem;">
-            <!-- CAS Main Category Button -->
-            <button class="btn filter-btn" :class="{ active: filterTypeCAS }" @click="filterTypeCAS = !filterTypeCAS">
-              <div style="display: flex; align-items: center;">
-                <span class="material-symbols-outlined mr-2">checkroom</span>
-                <span>{{ t('cm.cas_items') }}</span>
-              </div>
-              <span
-                class="material-symbols-outlined filter-btn-chevron"
-                :style="{ visibility: filterTypeCAS ? 'visible' : 'hidden' }"
-                :title="isCasSectionCollapsed ? 'Expand CAS Subcategories' : 'Collapse CAS Subcategories'"
-                @click.stop="isCasSectionCollapsed = !isCasSectionCollapsed"
-              >
-                {{ isCasSectionCollapsed ? 'expand_more' : 'expand_less' }}
-              </span>
-            </button>
-
-            <!-- CAS Sub-groups -->
-            <div v-if="filterTypeCAS && !isCasSectionCollapsed" class="cas-categories-container" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.25rem;">
-              <!-- Category -->
-              <div>
-                <div class="filter-sublabel-row" @click="isCasCategoryCollapsed = !isCasCategoryCollapsed">
-                  <span class="filter-sublabel" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">{{ t('cm.category') }}</span>
-                  <span class="material-symbols-outlined expand-icon-sm" style="font-size: 16px; color: var(--text-muted);">
-                    {{ isCasCategoryCollapsed ? 'expand_more' : 'expand_less' }}
-                  </span>
-                </div>
-                <div v-show="!isCasCategoryCollapsed" style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
-                  <button
-                    v-for="cat in casCategoriesList"
-                    :key="cat"
-                    class="cas-category-pill"
-                    :class="{ active: activeCasCategories.has(cat) }"
-                    @click="toggleCasCategory(cat)"
-                  >
-                    <span v-if="casCategoryIcons[cat]" class="material-symbols-outlined mr-1" style="font-size: 14px;">
-                      {{ casCategoryIcons[cat] }}
-                    </span>
-                    {{ t('cas_categories.' + cat) }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Age -->
-              <div>
-                <div class="filter-sublabel-row" @click="isCasAgeCollapsed = !isCasAgeCollapsed">
-                  <span class="filter-sublabel" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">{{ t('cm.age') }}</span>
-                  <span class="material-symbols-outlined expand-icon-sm" style="font-size: 16px; color: var(--text-muted);">
-                    {{ isCasAgeCollapsed ? 'expand_more' : 'expand_less' }}
-                  </span>
-                </div>
-                <div v-show="!isCasAgeCollapsed" style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
-                  <button
-                    v-for="age in casAgesList"
-                    :key="age"
-                    class="cas-category-pill"
-                    :class="{ active: activeCasAges.has(age) }"
-                    @click="toggleCasAge(age)"
-                  >
-                    {{ t('cas_ages.' + age) }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Gender -->
-              <div>
-                <div class="filter-sublabel-row" @click="isCasGenderCollapsed = !isCasGenderCollapsed">
-                  <span class="filter-sublabel" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">{{ t('cm.gender') }}</span>
-                  <span class="material-symbols-outlined expand-icon-sm" style="font-size: 16px; color: var(--text-muted);">
-                    {{ isCasGenderCollapsed ? 'expand_more' : 'expand_less' }}
-                  </span>
-                </div>
-                <div v-show="!isCasGenderCollapsed" style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
-                  <button
-                    v-for="gen in casGendersList"
-                    :key="gen"
-                    class="cas-category-pill"
-                    :class="{ active: activeCasGenders.has(gen) }"
-                    @click="toggleCasGender(gen)"
-                  >
-                    {{ t('cas_genders.' + gen) }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Outfit Category -->
-              <div>
-                <div class="filter-sublabel-row" @click="isCasOutfitCollapsed = !isCasOutfitCollapsed">
-                  <span class="filter-sublabel" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">{{ t('cm.outfit_category') }}</span>
-                  <span class="material-symbols-outlined expand-icon-sm" style="font-size: 16px; color: var(--text-muted);">
-                    {{ isCasOutfitCollapsed ? 'expand_more' : 'expand_less' }}
-                  </span>
-                </div>
-                <div v-show="!isCasOutfitCollapsed" style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
-                  <button
-                    v-for="outfit in casOutfitsList"
-                    :key="outfit"
-                    class="cas-category-pill"
-                    :class="{ active: activeCasOutfits.has(outfit) }"
-                    @click="toggleCasOutfit(outfit)"
-                  >
-                    {{ t('cas_outfits.' + outfit) }}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Build/Buy Main Category Button -->
-            <button class="btn filter-btn" :class="{ active: filterTypeBuildBuy }" @click="filterTypeBuildBuy = !filterTypeBuildBuy">
-              <div style="display: flex; align-items: center;">
-                <span class="material-symbols-outlined mr-2">chair</span>
-                <span>{{ t('cm.buildbuy_items') }}</span>
-              </div>
-              <span class="material-symbols-outlined filter-btn-chevron" style="visibility: hidden;">
-                expand_less
-              </span>
-            </button>
-
-            <!-- Other Main Category Button -->
-            <button class="btn filter-btn" :class="{ active: filterTypeOther }" @click="filterTypeOther = !filterTypeOther">
-              <div style="display: flex; align-items: center;">
-                <span class="material-symbols-outlined mr-2">inventory_2</span>
-                <span>{{ t('cm.other_items') }}</span>
-              </div>
-              <span
-                class="material-symbols-outlined filter-btn-chevron"
-                :style="{ visibility: filterTypeOther ? 'visible' : 'hidden' }"
-                :title="isOtherSectionCollapsed ? 'Expand Other Subcategories' : 'Collapse Other Subcategories'"
-                @click.stop="isOtherSectionCollapsed = !isOtherSectionCollapsed"
-              >
-                {{ isOtherSectionCollapsed ? 'expand_more' : 'expand_less' }}
-              </span>
-            </button>
-
-            <!-- Other Sub-categories -->
-            <div v-if="filterTypeOther && !isOtherSectionCollapsed" class="cas-categories-container" style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.25rem;">
-              <button
-                v-for="sub in otherSubCategoriesList"
-                :key="sub"
-                class="cas-category-pill"
-                :class="{ active: activeOtherSubCategories.has(sub) }"
-                @click="toggleOtherSubCategory(sub)"
-              >
-                <span v-if="otherSubCategoryIcons[sub]" class="material-symbols-outlined mr-1" style="font-size: 14px;">
-                  {{ otherSubCategoryIcons[sub] }}
-                </span>
-                {{ t('other_subcategories.' + sub) }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Mode Filter Header (Enabled / Disabled) -->
-        <div class="filter-group">
-          <div class="filter-header-row" @click="isModeFilterCollapsed = !isModeFilterCollapsed">
-            <label class="filter-label" style="cursor: pointer; margin: 0;">{{ t('cm.mode') }}</label>
-            <span class="material-symbols-outlined expand-icon" style="font-size: 18px; color: var(--text-muted);">
-              {{ isModeFilterCollapsed ? 'expand_more' : 'expand_less' }}
-            </span>
-          </div>
-
-          <div v-show="!isModeFilterCollapsed" class="flex-col gap-2" style="margin-top: 0.25rem;">
-            <button class="btn filter-btn" :class="{ active: filterModeEnabled }" @click="filterModeEnabled = !filterModeEnabled">
-              <div style="display: flex; align-items: center;">
-                <span class="material-symbols-outlined mr-2">check_box</span>
-                <span>{{ t('cm.enabled') }}</span>
-              </div>
-            </button>
-            <button class="btn filter-btn" :class="{ active: filterModeDisabled }" @click="filterModeDisabled = !filterModeDisabled">
-              <div style="display: flex; align-items: center;">
-                <span class="material-symbols-outlined mr-2">disabled_by_default</span>
-                <span>{{ t('cm.disabled') }}</span>
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
+      <ContentManagerFilterSidebar
+        v-model:searchQuery="searchQuery"
+        :userTagsList="allUserTags"
+        v-model:filterTypeCAS="filterTypeCAS"
+        v-model:filterTypeBuildBuy="filterTypeBuildBuy"
+        v-model:filterTypeOther="filterTypeOther"
+        :activeCasCategories="activeCasCategories"
+        :activeCasAges="activeCasAges"
+        :activeCasGenders="activeCasGenders"
+        :activeCasOutfits="activeCasOutfits"
+        :activeOtherSubCategories="activeOtherSubCategories"
+        v-model:filterModeEnabled="filterModeEnabled"
+        v-model:filterModeDisabled="filterModeDisabled"
+        @toggle-cas-category="toggleCasCategory"
+        @toggle-cas-age="toggleCasAge"
+        @toggle-cas-gender="toggleCasGender"
+        @toggle-cas-outfit="toggleCasOutfit"
+        @toggle-other-subcategory="toggleOtherSubCategory"
+      />
 
       <!-- Floating Drag Warning Cursor Tooltip -->
       <div
@@ -420,6 +115,9 @@ import { useSelection } from '@/composables/useSelection'
 import { useContextMenu } from '@/composables/useContextMenu'
 import { useAppStore } from '@/stores/app'
 import type { SetEntity, ItemEntity } from '@/types'
+import SetTreeSidebar from '@/components/SetTreeSidebar.vue'
+import ContentManagerToolbar from '@/components/ContentManagerToolbar.vue'
+import ContentManagerFilterSidebar from '@/components/ContentManagerFilterSidebar.vue'
 import SetTreeNode from '@/components/SetTreeNode.vue'
 import ItemCard from '@/components/ItemCard.vue'
 import { useI18n } from '@/composables/useI18n'
@@ -484,6 +182,8 @@ const sortedRootSets = computed(() => sortSetsList(rootSets.value))
 
 // ===== User Location Persistence =====
 watch(() => store.selectedSetId, (newId) => {
+  store.selectedItemIds.clear()
+  lastClickedItemId.value = null
   if (newId === null) {
     localStorage.setItem('plumbobforge_last_selected_set_id', 'null')
   } else {
@@ -783,7 +483,9 @@ const loadData = async () => {
   try {
     const setsPromise = fetchSets().then(setsRes => {
       allSets.value = setsRes
-      store.isDirty = allSets.value.some(s => s.dirty)
+      if (allSets.value.some(s => s.dirty)) {
+        store.isDirty = true
+      }
       loadingSets.value = false
     })
 
@@ -869,7 +571,11 @@ const clearSelection = () => {
 }
 
 const selectSet = (id: number | null) => {
-  store.selectedSetId = id
+  if (store.selectedSetId !== id) {
+    store.selectedSetId = id
+    store.selectedItemIds.clear()
+    lastClickedItemId.value = null
+  }
 }
 
 const createSet = async () => {
@@ -1100,7 +806,9 @@ const onItemContextMenu = (e: MouseEvent, item: ItemEntity) => {
           await deleteItems(targetIds, result.permanent)
           allItems.value = allItems.value.filter(i => !targetIds.includes(i.id))
           if (isSelected) store.selectedItemIds.clear()
+          store.isDirty = true
           showToast(`Deleted ${targetIds.length} item(s).`, 'success')
+          await loadData()
         } catch (e) {
           showToast('Failed to delete item(s).', 'error')
         }
