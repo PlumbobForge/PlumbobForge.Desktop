@@ -276,26 +276,31 @@ const isCasOutfitCollapsed = ref(false);
 const isOtherSectionCollapsed = ref(false);
 const isModeFilterCollapsed = ref(false);
 
-const casCategoriesList = ['Hair', 'Full body', 'Tops', 'Bottoms', 'Shoes', 'Accessories', 'Details'];
+const casCategoriesList = ['Hair', 'Full body', 'Tops', 'Bottoms', 'Shoes', 'Details', 'Skins', 'Accessories', 'Sliders', 'Presets', 'Other'];
 const casAgesList = ['Baby', 'Toddler', 'Child', 'Teen', 'YoungAdult', 'Adult', 'Elder'];
 const casGendersList = ['Male', 'Female'];
 const casOutfitsList = ['Everyday', 'Formal', 'Sleepwear', 'Swimwear', 'Athletic', 'Career', 'Outerwear'];
-const otherSubCategoriesList = ['Worlds', 'Sims', 'Lots'];
+const otherSubCategoriesList = ['Worlds', 'Sims', 'Lots', 'Misc'];
 
 const casCategoryIcons: Record<string, string> = {
   'Hair': 'face',
   'Full body': 'accessibility_new',
   'Tops': 'apparel',
-  'Bottoms': 'checkroom',
+  'Bottoms': 'airline_seat_legroom_extra',
   'Shoes': 'steps',
-  'Accessories': 'watch',
-  'Details': 'brush'
+  'Details': 'health_and_beauty',
+  'Skins': 'palette',
+  'Accessories': 'diamond',
+  'Sliders': 'tune',
+  'Presets': 'auto_awesome',
+  'Other': 'more_horiz'
 };
 
 const otherSubCategoryIcons: Record<string, string> = {
   'Worlds': 'public',
   'Sims': 'person',
-  'Lots': 'home'
+  'Lots': 'home',
+  'Misc': 'category'
 };
 
 const filteredTagSuggestions = computed(() => {
