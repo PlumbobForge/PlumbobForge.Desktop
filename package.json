@@ -50,7 +50,7 @@
   "devDependencies": {
     "concurrently": "^10.0.3",
     "electron": "^43.2.0",
-    "electron-builder": "^26.15.3",
+    "electron-builder": "^26.15.7",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",
     "vite-plugin-electron": "^1.1.0",
@@ -62,5 +62,12 @@
     "material-symbols": "^0.45.9",
     "vue": "^3.5.40",
     "vue-router": "^5.2.0"
+  },
+  "overrides": {
+    "nanoid": "^3.3.17",
+    "undici": "^7.29.0",
+    "fast-uri": "^3.1.5",
+    "js-yaml": "^4.3.1",
+    "postcss": "^8.5.23"
   }
 }
