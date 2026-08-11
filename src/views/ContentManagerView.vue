@@ -1052,13 +1052,14 @@ const onItemContextMenu = (e: MouseEvent, item: ItemEntity) => {
       icon: item.enabled ? 'block' : 'check_circle',
       action: async () => {
         try {
-          await setItemEnabled(targetIds, !item.enabled)
+          const nextState = !item.enabled
+          await setItemEnabled(targetIds, nextState)
           targetIds.forEach(id => {
             const target = allItems.value.find(i => i.id === id)
-            if (target) target.enabled = !item.enabled
+            if (target) target.enabled = nextState
           })
           store.isDirty = true
-          showToast(targetIds.length > 1 ? `Toggled ${targetIds.length} items.` : (item.enabled ? 'Item disabled.' : 'Item enabled.'), 'success')
+          showToast(targetIds.length > 1 ? `Toggled ${targetIds.length} items.` : (nextState ? 'Item enabled.' : 'Item disabled.'), 'success')
         } catch (e) {
           showToast('Failed to toggle item(s).', 'error')
         }
