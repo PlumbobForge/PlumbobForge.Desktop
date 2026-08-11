@@ -31,8 +31,35 @@ export async function fetchSets(): Promise<SetEntity[]> {
   return res.json();
 }
 
-export async function fetchItems(): Promise<ItemEntity[]> {
-  const res = await fetch(`${API_BASE}/items`, { cache: 'no-store' });
+export interface ItemFilterQuery {
+  setId?: number | null;
+  search?: string;
+  packageType?: string;
+  enabled?: boolean;
+  sortBy?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export async function fetchItems(query?: ItemFilterQuery): Promise<ItemEntity[]> {
+  let url = `${API_BASE}/items`;
+  if (query) {
+    const params = new URLSearchParams();
+    if (query.setId !== undefined && query.setId !== null) params.append('setId', query.setId.toString());
+    if (query.search) params.append('search', query.search);
+    if (query.packageType) params.append('packageType', query.packageType);
+    if (query.enabled !== undefined) params.append('enabled', query.enabled.toString());
+    if (query.sortBy) params.append('sortBy', query.sortBy);
+    if (query.page) params.append('page', query.page.toString());
+    if (query.pageSize) params.append('pageSize', query.pageSize.toString());
+
+    const queryString = params.toString();
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+  }
+
+  const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch items');
   return res.json();
 }
