@@ -40,6 +40,7 @@
           v-model:viewMode="viewMode"
           :selectionMode="store.selectionMode"
           :selectedCount="store.selectedItemIds.size"
+          :filterSidebarCollapsed="isFilterSidebarCollapsed"
           @enable-selected="enableSelected"
           @retag-selected="onRetagItem"
           @edit-tags-selected="onEditTags"
@@ -47,32 +48,36 @@
           @delete-selected="deleteSelected"
           @toggle-select-all="toggleSelectAll"
           @toggle-selection-mode="toggleSelectionMode"
+          @toggle-filter-sidebar="isFilterSidebarCollapsed = !isFilterSidebarCollapsed"
         />
 
         <div :class="viewMode === 'comfy' ? 'cm-items-grid' : 'cm-items-list'" id="cm-items-grid" ref="gridRef" @click.self="clearSelection">
           <div v-if="loadingItems" class="text-muted-padded col-span-full">{{ t('cm.loading_items') }}</div>
           <div v-else-if="filteredItems.length === 0" class="text-muted-padded col-span-full">{{ t('cm.no_items') }}</div>
-          <ItemCard
-            v-else
-            v-for="item in filteredItems"
-            :key="item.id"
-            :item="item"
-            :selected="store.selectedItemIds.has(item.id)"
-            :selectionMode="store.selectionMode"
-            :viewMode="viewMode"
-            @select="onItemClick"
-            @dragstart="onItemDragStart($event, item.id)"
-            @dragend="onItemDragEnd"
-            @contextmenu.prevent="onItemContextMenu($event, item)"
-            @rename="onRenameItem"
-            @retag="onRetagItem"
-            @edit-tags="onEditTags"
-          />
+          <template v-else>
+            <ItemCard
+              v-for="item in displayedItems"
+              :key="item.id"
+              :item="item"
+              :selected="store.selectedItemIds.has(item.id)"
+              :selectionMode="store.selectionMode"
+              :viewMode="viewMode"
+              @select="onItemClick"
+              @dragstart="onItemDragStart($event, item.id)"
+              @dragend="onItemDragEnd"
+              @contextmenu.prevent="onItemContextMenu($event, item)"
+              @rename="onRenameItem"
+              @retag="onRetagItem"
+              @edit-tags="onEditTags"
+            />
+            <div ref="sentinelRef" style="height: 1px; width: 100%; grid-column: 1 / -1; pointer-events: none;"></div>
+          </template>
         </div>
       </div>
 
       <!-- Filter Sidebar -->
       <ContentManagerFilterSidebar
+        v-if="!isFilterSidebarCollapsed"
         v-model:searchQuery="searchQuery"
         :userTagsList="allUserTags"
         v-model:filterTypeCAS="filterTypeCAS"
@@ -89,7 +94,12 @@
         @toggle-cas-age="toggleCasAge"
         @toggle-cas-gender="toggleCasGender"
         @toggle-cas-outfit="toggleCasOutfit"
+        @toggle-all-cas-categories="toggleAllCasCategories"
+        @toggle-all-cas-ages="toggleAllCasAges"
+        @toggle-all-cas-genders="toggleAllCasGenders"
+        @toggle-all-cas-outfits="toggleAllCasOutfits"
         @toggle-other-subcategory="toggleOtherSubCategory"
+        @toggle-collapse="isFilterSidebarCollapsed = true"
       />
 
       <!-- Floating Drag Warning Cursor Tooltip -->
@@ -107,8 +117,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { fetchSets, fetchItems, createSet as createSetApi, renameSet, deleteSet, moveItems, moveSet, deleteItems, setItemEnabled, renameItemApi, retagItems, updateUserTags, importFiles, uploadFiles, checkImportDuplicates } from '@/api/client'
+import { ref, shallowRef, triggerRef, computed, onMounted, onUnmounted, watch } from 'vue'
+import { fetchSets, fetchItems, createSet as createSetApi, renameSet, deleteSet, moveItems, moveSet, deleteItems, setItemEnabled, renameItemApi, retagItems, updateUserTags, importFiles, uploadFiles, checkImportDuplicates, openItemFolderApi } from '@/api/client'
 import { useModal } from '@/composables/useModal'
 import { useToast } from '@/composables/useToast'
 import { useSelection } from '@/composables/useSelection'
@@ -131,7 +141,7 @@ const store = useAppStore()
 
 // ===== Primary Data State =====
 const allSets = ref<SetEntity[]>([])
-const allItems = ref<ItemEntity[]>([])
+const allItems = shallowRef<ItemEntity[]>([])
 const loadingSets = ref(true)
 const loadingItems = ref(true)
 const searchQuery = ref('')
@@ -273,9 +283,40 @@ let dragLastY = 0
 const gridRef = ref<HTMLElement | null>(null)
 const { initSelection, destroySelection, isDraggingSelection } = useSelection()
 const { initSelection: initSetSelection, destroySelection: destroySetSelection } = useSelection(store.selectedSetIds, '.tree-item')
-const filterTypeCAS = ref(true)
-const filterTypeBuildBuy = ref(true)
-const filterTypeOther = ref(true)
+function loadSavedFilterSet(key: string, defaultList: string[]): Set<string> {
+  try {
+    const saved = localStorage.getItem(key)
+    if (saved) {
+      const arr = JSON.parse(saved)
+      if (Array.isArray(arr)) return new Set(arr)
+    }
+  } catch (e) {}
+  return new Set(defaultList)
+}
+
+function loadSavedBoolean(key: string, defaultValue: boolean): boolean {
+  const saved = localStorage.getItem(key)
+  if (saved === null) return defaultValue
+  return saved === 'true'
+}
+
+const isFilterSidebarCollapsed = ref(loadSavedBoolean('pf_filter_sidebar_collapsed', false))
+watch(isFilterSidebarCollapsed, (v) => localStorage.setItem('pf_filter_sidebar_collapsed', String(v)))
+
+const filterTypeCAS = ref(loadSavedBoolean('pf_filter_type_cas', true))
+watch(filterTypeCAS, v => localStorage.setItem('pf_filter_type_cas', String(v)))
+
+const filterTypeBuildBuy = ref(loadSavedBoolean('pf_filter_type_bb', true))
+watch(filterTypeBuildBuy, v => localStorage.setItem('pf_filter_type_bb', String(v)))
+
+const filterTypeOther = ref(loadSavedBoolean('pf_filter_type_other', true))
+watch(filterTypeOther, v => localStorage.setItem('pf_filter_type_other', String(v)))
+
+const filterModeEnabled = ref(loadSavedBoolean('pf_filter_mode_enabled', true))
+watch(filterModeEnabled, v => localStorage.setItem('pf_filter_mode_enabled', String(v)))
+
+const filterModeDisabled = ref(loadSavedBoolean('pf_filter_mode_disabled', true))
+watch(filterModeDisabled, v => localStorage.setItem('pf_filter_mode_disabled', String(v)))
 
 // ===== Collapsible Filter Section States =====
 const isTypeFilterCollapsed = ref(localStorage.getItem('pf_filter_type_collapsed') === 'true')
@@ -321,10 +362,17 @@ const casCategoryIcons: Record<string, string> = {
   'Other': 'more_horiz'
 }
 
-const activeCasCategories = ref(new Set(casCategoriesList))
-const activeCasAges = ref(new Set(casAgesList))
-const activeCasGenders = ref(new Set(casGendersList))
-const activeCasOutfits = ref(new Set(casOutfitsList))
+const activeCasCategories = ref(loadSavedFilterSet('pf_filter_cas_cats', casCategoriesList))
+watch(activeCasCategories, v => localStorage.setItem('pf_filter_cas_cats', JSON.stringify(Array.from(v))), { deep: true })
+
+const activeCasAges = ref(loadSavedFilterSet('pf_filter_cas_ages', casAgesList))
+watch(activeCasAges, v => localStorage.setItem('pf_filter_cas_ages', JSON.stringify(Array.from(v))), { deep: true })
+
+const activeCasGenders = ref(loadSavedFilterSet('pf_filter_cas_genders', casGendersList))
+watch(activeCasGenders, v => localStorage.setItem('pf_filter_cas_genders', JSON.stringify(Array.from(v))), { deep: true })
+
+const activeCasOutfits = ref(loadSavedFilterSet('pf_filter_cas_outfits', casOutfitsList))
+watch(activeCasOutfits, v => localStorage.setItem('pf_filter_cas_outfits', JSON.stringify(Array.from(v))), { deep: true })
 
 const toggleCasCategory = (cat: string) => {
   if (activeCasCategories.value.has(cat)) {
@@ -358,6 +406,38 @@ const toggleCasOutfit = (outfit: string) => {
   }
 }
 
+const toggleAllCasCategories = () => {
+  if (activeCasCategories.value.size === casCategoriesList.length) {
+    activeCasCategories.value.clear()
+  } else {
+    activeCasCategories.value = new Set(casCategoriesList)
+  }
+}
+
+const toggleAllCasAges = () => {
+  if (activeCasAges.value.size === casAgesList.length) {
+    activeCasAges.value.clear()
+  } else {
+    activeCasAges.value = new Set(casAgesList)
+  }
+}
+
+const toggleAllCasGenders = () => {
+  if (activeCasGenders.value.size === casGendersList.length) {
+    activeCasGenders.value.clear()
+  } else {
+    activeCasGenders.value = new Set(casGendersList)
+  }
+}
+
+const toggleAllCasOutfits = () => {
+  if (activeCasOutfits.value.size === casOutfitsList.length) {
+    activeCasOutfits.value.clear()
+  } else {
+    activeCasOutfits.value = new Set(casOutfitsList)
+  }
+}
+
 const otherSubCategoriesList = ['Worlds', 'Sims', 'Lots', 'Misc']
 
 const otherSubCategoryIcons: Record<string, string> = {
@@ -367,7 +447,8 @@ const otherSubCategoryIcons: Record<string, string> = {
   'Misc': 'category'
 }
 
-const activeOtherSubCategories = ref(new Set(otherSubCategoriesList))
+const activeOtherSubCategories = ref(loadSavedFilterSet('pf_filter_other_subs', otherSubCategoriesList))
+watch(activeOtherSubCategories, v => localStorage.setItem('pf_filter_other_subs', JSON.stringify(Array.from(v))), { deep: true })
 
 const toggleOtherSubCategory = (sub: string) => {
   if (activeOtherSubCategories.value.has(sub)) {
@@ -386,8 +467,6 @@ const getOtherSubCategory = (item: ItemEntity): string => {
   return 'Misc'
 }
 
-const filterModeEnabled = ref(true)
-const filterModeDisabled = ref(true)
 
 const filteredItems = computed(() => {
   let items = [...allItems.value]
@@ -461,6 +540,36 @@ const filteredItems = computed(() => {
   })
 
   return items
+})
+
+const renderLimit = ref(60)
+
+const displayedItems = computed(() => {
+  return filteredItems.value.slice(0, renderLimit.value)
+})
+
+watch(filteredItems, () => {
+  renderLimit.value = 60
+  if (gridRef.value) gridRef.value.scrollTop = 0
+})
+
+const sentinelRef = ref<HTMLElement | null>(null)
+let sentinelObserver: IntersectionObserver | null = null
+
+onMounted(() => {
+  sentinelObserver = new IntersectionObserver((entries) => {
+    if (entries[0] && entries[0].isIntersecting) {
+      if (renderLimit.value < filteredItems.value.length) {
+        renderLimit.value = Math.min(renderLimit.value + 60, filteredItems.value.length)
+      }
+    }
+  }, { root: gridRef.value, rootMargin: '400px' })
+
+  if (sentinelRef.value) sentinelObserver.observe(sentinelRef.value)
+})
+
+onUnmounted(() => {
+  if (sentinelObserver) sentinelObserver.disconnect()
 })
 
 const totalSize = computed(() => filteredItems.value.reduce((acc, curr) => acc + curr.fileSize, 0))
@@ -719,7 +828,7 @@ const onSetContextMenu = (e: MouseEvent, set: SetEntity) => {
     menuItems.push(
       {
         label: t('context.rename'), icon: 'edit', action: async () => {
-          const newName = await showPrompt(t('cm.rename_set_prompt', { name: set.name }))
+          const newName = await showPrompt(t('cm.rename_set_title') || t('context.rename'), t('cm.rename_set_prompt', { name: set.name }), set.name)
           if (!newName || newName.trim() === '') return
           try {
             await renameSet(set.id, newName.trim())
@@ -766,6 +875,7 @@ const onItemContextMenu = (e: MouseEvent, item: ItemEntity) => {
             const target = allItems.value.find(i => i.id === id)
             if (target) target.enabled = nextState
           })
+          triggerRef(allItems)
           store.isDirty = true
           showToast(targetIds.length > 1 ? `Toggled ${targetIds.length} items.` : (nextState ? 'Item enabled.' : 'Item disabled.'), 'success')
         } catch (e) {
@@ -780,6 +890,21 @@ const onItemContextMenu = (e: MouseEvent, item: ItemEntity) => {
       label: t('context.rename'),
       icon: 'edit',
       action: () => onRenameItem(targetIds[0])
+    })
+    menuItems.push({
+      label: t('context.show_in_folder') || 'Show in Folder',
+      icon: 'folder_open',
+      action: async () => {
+        try {
+          if ((window as any).electronAPI && (window as any).electronAPI.showItemInFolder) {
+            await (window as any).electronAPI.showItemInFolder(item.completeFileName)
+          } else {
+            await openItemFolderApi(item.id)
+          }
+        } catch (e) {
+          showToast('Failed to open file folder.', 'error')
+        }
+      }
     })
   }
 
@@ -897,6 +1022,7 @@ const enableSelected = async (enabled: boolean) => {
       const item = allItems.value.find(i => i.id === id)
       if (item) item.enabled = enabled
     })
+    triggerRef(allItems)
     store.isDirty = true
     showToast(`Successfully ${enabled ? 'enabled' : 'disabled'} ${ids.length} items.`, 'success')
     toggleSelectionMode()
