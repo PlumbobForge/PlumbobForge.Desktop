@@ -149,6 +149,13 @@ export async function renameItemApi(id: number, newName: string): Promise<any> {
   return res.json();
 }
 
+export async function openItemFolderApi(id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/items/${id}/open-folder`, {
+    method: 'POST'
+  });
+  if (!res.ok) throw new Error('Failed to open item folder');
+}
+
 export async function deleteItems(itemIds: number[], permanent: boolean): Promise<any> {
   const res = await fetch(`${API_BASE}/items`, {
     method: 'DELETE',
