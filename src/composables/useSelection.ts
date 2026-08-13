@@ -164,6 +164,42 @@ export function useSelection(targetSelectionSet?: Set<number>, itemSelector: str
     }
   };
 
+  interface CachedCardRect {
+    id: number;
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+  }
+
+  let cachedCardRects: CachedCardRect[] = [];
+
+  function cacheCardRects() {
+    if (!containerElement) return;
+    const scrollEl = scrollContainerElement || findScrollContainer(containerElement);
+    const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+    const scrollLeft = scrollEl ? scrollEl.scrollLeft : 0;
+
+    const cards = containerElement.querySelectorAll(itemSelector);
+    cachedCardRects = [];
+    cards.forEach((card) => {
+      const el = card as HTMLElement;
+      if (el.dataset.builtin === 'true') return;
+
+      const id = Number(el.dataset.id);
+      if (isNaN(id)) return;
+
+      const rect = card.getBoundingClientRect();
+      cachedCardRects.push({
+        id,
+        left: rect.left + scrollLeft,
+        top: rect.top + scrollTop,
+        right: rect.right + scrollLeft,
+        bottom: rect.bottom + scrollTop
+      });
+    });
+  }
+
   const onPointerMove = (e: MouseEvent) => {
     if (!isPointerDown) return;
 
@@ -175,6 +211,7 @@ export function useSelection(targetSelectionSet?: Set<number>, itemSelector: str
 
     if (!isDraggingSelection.value && Math.sqrt(dx * dx + dy * dy) > 4) {
       isDraggingSelection.value = true;
+      cacheCardRects();
 
       if (dragMode === 'replace') {
         getSelectionSet().clear();
@@ -203,6 +240,7 @@ export function useSelection(targetSelectionSet?: Set<number>, itemSelector: str
   const onPointerUp = (_e: MouseEvent) => {
     isPointerDown = false;
     activeAutoScrollSpeedY = 0;
+    cachedCardRects = [];
 
     if (scrollContainerElement) {
       scrollContainerElement.removeEventListener('scroll', onScroll);
@@ -236,49 +274,47 @@ export function useSelection(targetSelectionSet?: Set<number>, itemSelector: str
   const checkIntersections = (box: { left: number; top: number; right: number; bottom: number }) => {
     if (!containerElement) return;
 
-    const cards = containerElement.querySelectorAll(itemSelector);
+    const scrollEl = scrollContainerElement || findScrollContainer(containerElement);
+    const scrollLeft = scrollEl ? scrollEl.scrollLeft : 0;
+    const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+
+    const boxLeftDoc = box.left + scrollLeft;
+    const boxTopDoc = box.top + scrollTop;
+    const boxRightDoc = box.right + scrollLeft;
+    const boxBottomDoc = box.bottom + scrollTop;
+
     const newSelection = new Set(dragBaseSelection);
 
-    cards.forEach((card) => {
-      const rect = card.getBoundingClientRect();
+    for (let i = 0; i < cachedCardRects.length; i++) {
+      const c = cachedCardRects[i];
       const intersects = !(
-        rect.right < box.left ||
-        rect.left > box.right ||
-        rect.bottom < box.top ||
-        rect.top > box.bottom
+        c.right < boxLeftDoc ||
+        c.left > boxRightDoc ||
+        c.bottom < boxTopDoc ||
+        c.top > boxBottomDoc
       );
-
-      const el = card as HTMLElement;
-      if (el.dataset.builtin === 'true') return;
-
-      const id = Number(el.dataset.id);
-      if (isNaN(id)) return;
 
       if (intersects) {
         if (dragMode === 'toggle') {
-          if (dragBaseSelection.has(id)) newSelection.delete(id);
-          else newSelection.add(id);
+          if (dragBaseSelection.has(c.id)) newSelection.delete(c.id);
+          else newSelection.add(c.id);
         } else {
-          newSelection.add(id);
+          newSelection.add(c.id);
         }
       }
-    });
+    }
 
     const currentSelection = getSelectionSet();
 
     for (const id of currentSelection) {
       if (!newSelection.has(id)) {
         currentSelection.delete(id);
-        const el = containerElement.querySelector(`${itemSelector}[data-id="${id}"]`);
-        if (el) el.classList.remove('selected');
       }
     }
 
     for (const id of newSelection) {
       if (!currentSelection.has(id)) {
         currentSelection.add(id);
-        const el = containerElement.querySelector(`${itemSelector}[data-id="${id}"]`);
-        if (el) el.classList.add('selected');
       }
     }
   };
