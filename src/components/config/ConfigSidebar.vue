@@ -5,9 +5,11 @@
       <div style="display: flex; align-items: center; gap: 0.35rem;">
         <!-- Custom Config Sort Dropdown -->
         <div class="sort-trigger-wrapper" @click.stop="configSortDropdownOpen = !configSortDropdownOpen">
-          <button class="btn sort-trigger" style="padding: 4px 8px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">
-            <span class="material-symbols-outlined" style="font-size: 16px;">sort</span>
-          </button>
+          <div class="custom-tooltip-container" :data-tooltip="t('config.sort_configs') || 'Sort Configurations'">
+            <button class="btn sort-trigger" style="padding: 4px 8px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">
+              <span class="material-symbols-outlined" style="font-size: 16px;">sort</span>
+            </button>
+          </div>
           <div v-if="configSortDropdownOpen" class="context-menu dropdown-menu-left" style="top: 15%;left: 54px;">
             <div
               class="context-menu-item"
@@ -33,7 +35,9 @@
             </div>
           </div>
         </div>
-        <button id="btn-create-config" class="btn btn-create-config" @click="$emit('create-config')">+</button>
+        <div class="custom-tooltip-container" :data-tooltip="t('config.new_config_title') || 'New Configuration'">
+          <button id="btn-create-config" class="btn btn-create-config" @click="$emit('create-config')">+</button>
+        </div>
       </div>
     </div>
     <div class="cm-tree-view" id="config-tree-view">

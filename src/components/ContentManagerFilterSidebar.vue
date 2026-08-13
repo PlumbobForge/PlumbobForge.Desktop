@@ -1,6 +1,8 @@
 <template>
   <div class="cm-filter-sidebar">
-    <div class="cm-sidebar-header">{{ t('cm.filters') }}</div>
+    <div class="cm-sidebar-header" style="display: flex; align-items: center; justify-content: space-between;">
+      <span>{{ t('cm.filters') }}</span>
+    </div>
 
     <div class="filter-group">
       <div class="search-container" style="position: relative;">
@@ -69,9 +71,12 @@
         <div v-if="filterTypeCAS && !isCasSectionCollapsed" class="cas-categories-container" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.25rem;">
           <!-- Category -->
           <div>
-            <div class="filter-sublabel-row" @click="isCasCategoryCollapsed = !isCasCategoryCollapsed">
-              <span class="filter-sublabel" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">{{ t('cm.category') }}</span>
-              <span class="material-symbols-outlined expand-icon-sm" style="font-size: 16px; color: var(--text-muted);">
+            <div class="filter-sublabel-row" style="display: flex; align-items: center; justify-content: space-between;">
+              <span class="filter-sublabel" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; flex: 1;" @click="isCasCategoryCollapsed = !isCasCategoryCollapsed">{{ t('cm.category') }}</span>
+              <button class="btn-text-action" style="font-size: 0.7rem; color: var(--primary); background: none; border: none; cursor: pointer; margin-right: 6px; padding: 0;" @click.stop="$emit('toggle-all-cas-categories')">
+                {{ activeCasCategories.size === casCategoriesList.length ? t('cm.clear_all') : t('cm.select_all') }}
+              </button>
+              <span class="material-symbols-outlined expand-icon-sm" style="font-size: 16px; color: var(--text-muted); cursor: pointer;" @click="isCasCategoryCollapsed = !isCasCategoryCollapsed">
                 {{ isCasCategoryCollapsed ? 'expand_more' : 'expand_less' }}
               </span>
             </div>
@@ -93,9 +98,12 @@
 
           <!-- Age -->
           <div>
-            <div class="filter-sublabel-row" @click="isCasAgeCollapsed = !isCasAgeCollapsed">
-              <span class="filter-sublabel" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">{{ t('cm.age') }}</span>
-              <span class="material-symbols-outlined expand-icon-sm" style="font-size: 16px; color: var(--text-muted);">
+            <div class="filter-sublabel-row" style="display: flex; align-items: center; justify-content: space-between;">
+              <span class="filter-sublabel" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; flex: 1;" @click="isCasAgeCollapsed = !isCasAgeCollapsed">{{ t('cm.age') }}</span>
+              <button class="btn-text-action" style="font-size: 0.7rem; color: var(--primary); background: none; border: none; cursor: pointer; margin-right: 6px; padding: 0;" @click.stop="$emit('toggle-all-cas-ages')">
+                {{ activeCasAges.size === casAgesList.length ? t('cm.clear_all') : t('cm.select_all') }}
+              </button>
+              <span class="material-symbols-outlined expand-icon-sm" style="font-size: 16px; color: var(--text-muted); cursor: pointer;" @click="isCasAgeCollapsed = !isCasAgeCollapsed">
                 {{ isCasAgeCollapsed ? 'expand_more' : 'expand_less' }}
               </span>
             </div>
@@ -114,9 +122,12 @@
 
           <!-- Gender -->
           <div>
-            <div class="filter-sublabel-row" @click="isCasGenderCollapsed = !isCasGenderCollapsed">
-              <span class="filter-sublabel" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">{{ t('cm.gender') }}</span>
-              <span class="material-symbols-outlined expand-icon-sm" style="font-size: 16px; color: var(--text-muted);">
+            <div class="filter-sublabel-row" style="display: flex; align-items: center; justify-content: space-between;">
+              <span class="filter-sublabel" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; flex: 1;" @click="isCasGenderCollapsed = !isCasGenderCollapsed">{{ t('cm.gender') }}</span>
+              <button class="btn-text-action" style="font-size: 0.7rem; color: var(--primary); background: none; border: none; cursor: pointer; margin-right: 6px; padding: 0;" @click.stop="$emit('toggle-all-cas-genders')">
+                {{ activeCasGenders.size === casGendersList.length ? t('cm.clear_all') : t('cm.select_all') }}
+              </button>
+              <span class="material-symbols-outlined expand-icon-sm" style="font-size: 16px; color: var(--text-muted); cursor: pointer;" @click="isCasGenderCollapsed = !isCasGenderCollapsed">
                 {{ isCasGenderCollapsed ? 'expand_more' : 'expand_less' }}
               </span>
             </div>
@@ -135,9 +146,12 @@
 
           <!-- Outfit Category -->
           <div>
-            <div class="filter-sublabel-row" @click="isCasOutfitCollapsed = !isCasOutfitCollapsed">
-              <span class="filter-sublabel" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">{{ t('cm.outfit_category') }}</span>
-              <span class="material-symbols-outlined expand-icon-sm" style="font-size: 16px; color: var(--text-muted);">
+            <div class="filter-sublabel-row" style="display: flex; align-items: center; justify-content: space-between;">
+              <span class="filter-sublabel" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; flex: 1;" @click="isCasOutfitCollapsed = !isCasOutfitCollapsed">{{ t('cm.outfit_category') }}</span>
+              <button class="btn-text-action" style="font-size: 0.7rem; color: var(--primary); background: none; border: none; cursor: pointer; margin-right: 6px; padding: 0;" @click.stop="$emit('toggle-all-cas-outfits')">
+                {{ activeCasOutfits.size === casOutfitsList.length ? t('cm.clear_all') : t('cm.select_all') }}
+              </button>
+              <span class="material-symbols-outlined expand-icon-sm" style="font-size: 16px; color: var(--text-muted); cursor: pointer;" @click="isCasOutfitCollapsed = !isCasOutfitCollapsed">
                 {{ isCasOutfitCollapsed ? 'expand_more' : 'expand_less' }}
               </span>
             </div>
@@ -259,7 +273,12 @@ const emit = defineEmits<{
   (e: 'toggle-cas-age', age: string): void;
   (e: 'toggle-cas-gender', gen: string): void;
   (e: 'toggle-cas-outfit', outfit: string): void;
+  (e: 'toggle-all-cas-categories'): void;
+  (e: 'toggle-all-cas-ages'): void;
+  (e: 'toggle-all-cas-genders'): void;
+  (e: 'toggle-all-cas-outfits'): void;
   (e: 'toggle-other-subcategory', sub: string): void;
+  (e: 'toggle-collapse'): void;
   (e: 'update:filterModeEnabled', val: boolean): void;
   (e: 'update:filterModeDisabled', val: boolean): void;
 }>();

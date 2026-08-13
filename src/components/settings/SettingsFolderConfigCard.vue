@@ -53,7 +53,20 @@
 
       <!-- Auto Import Box -->
       <div class="auto-import-box">
-        <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">{{ t('settings.auto_import_title') }}</div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+          <div style="font-weight: 600; font-size: 0.95rem;">{{ t('settings.auto_import_title') }}</div>
+          <label style="display: inline-flex; align-items: center; cursor: pointer; gap: 0.5rem;">
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">
+              {{ enableAutoScan ? t('settings.auto_scan_on') : t('settings.auto_scan_off') }}
+            </span>
+            <input
+              type="checkbox"
+              :checked="enableAutoScan"
+              @change="$emit('update:enableAutoScan', ($event.target as HTMLInputElement).checked)"
+              style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary);"
+            />
+          </label>
+        </div>
         <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem; line-height: 1.4;">
           {{ t('settings.auto_import_desc') }}
         </div>
@@ -102,6 +115,7 @@ const { t } = useI18n();
 const props = defineProps<{
   documentBaseDir: string;
   gameFilesDir: string;
+  enableAutoScan: boolean;
   observedFolders: string[];
   saving: boolean;
   saved: boolean;
@@ -110,6 +124,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:documentBaseDir', val: string): void;
   (e: 'update:gameFilesDir', val: string): void;
+  (e: 'update:enableAutoScan', val: boolean): void;
   (e: 'blur-base-dir'): void;
   (e: 'blur-game-dir'): void;
   (e: 'browse-base-dir'): void;

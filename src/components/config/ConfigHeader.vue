@@ -22,10 +22,12 @@
     <div style="display: flex; align-items: center; gap: 1rem;">
       <!-- Custom Sets Sort Dropdown -->
       <div class="sort-trigger-wrapper" @click.stop="setSortDropdownOpen = !setSortDropdownOpen">
-        <button class="btn sort-trigger" style="padding: 4px 10px; font-size: 0.82rem; display: flex; align-items: center; gap: 4px;">
-          <span class="material-symbols-outlined" style="font-size: 18px;">sort</span>
-          {{ getSetSortLabel() }}
-        </button>
+        <div class="custom-tooltip-container" :data-tooltip="t('cm.sort_sets')">
+          <button class="btn sort-trigger" style="padding: 4px 10px; font-size: 0.82rem; display: flex; align-items: center; gap: 4px;">
+            <span class="material-symbols-outlined" style="font-size: 18px;">sort</span>
+            {{ getSetSortLabel() }}
+          </button>
+        </div>
         <div v-if="setSortDropdownOpen" class="context-menu dropdown-menu-right" style="top: 100%; right: 0;">
           <div
             class="context-menu-item"

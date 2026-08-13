@@ -3,10 +3,14 @@
     <div class="cm-sidebar-header" style="position: relative; display: flex; align-items: center; justify-content: space-between;">
       <span>{{ t('cm.sets') }}</span>
       <div style="display: flex; align-items: center; gap: 0.25rem;">
-        <button class="btn sort-trigger" style="padding: 4px 8px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;" :data-tooltip="t('cm.sort_sets')" @click.stop="setSortDropdownOpen = !setSortDropdownOpen">
-          <span class="material-symbols-outlined" style="font-size: 16px;">sort</span>
-        </button>
-        <button id="btn-create-set" class="btn btn-sm" @click.stop="$emit('create-set')">+</button>
+        <div class="custom-tooltip-container" :data-tooltip="t('cm.sort_sets')">
+          <button class="btn sort-trigger" style="padding: 4px 8px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;" @click.stop="setSortDropdownOpen = !setSortDropdownOpen">
+            <span class="material-symbols-outlined" style="font-size: 16px;">sort</span>
+          </button>
+        </div>
+        <div class="custom-tooltip-container" :data-tooltip="t('cm.add_set')">
+          <button id="btn-create-set" class="btn btn-sm" @click.stop="$emit('create-set')">+</button>
+        </div>
       </div>
       <div v-if="setSortDropdownOpen" class="context-menu dropdown-menu-left" style="top: 15%; left: 0; min-width: 150px; z-index: 100;">
         <div class="context-menu-item" :class="{ active: setSortBy === 'date' }" @click="updateSort('date')">

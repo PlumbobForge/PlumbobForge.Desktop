@@ -1,6 +1,7 @@
 <template>
   <div class="item-card selectable-card" :class="{ selected: selected, disabled: !item.enabled, compact: viewMode === 'compact' }"
        :data-id="item.id"
+       :title="item.fileName"
        draggable="true"
        @click="onClick"
        @dragstart.stop="onDragStart"
@@ -10,7 +11,7 @@
       <!-- Compact View Mode -->
       <div class="compact-layout">
         <div class="compact-thumb-container">
-          <img v-if="!imageError" :src="`${API_BASE}/items/${item.id}/thumbnail`" @error="imageError = true" class="compact-thumb" loading="lazy" />
+          <img v-if="!imageError" :src="`${API_BASE}/items/${item.id}/thumbnail`" @error="imageError = true" class="compact-thumb" loading="lazy" decoding="async" />
           <div v-else class="compact-fallback">
             <span class="material-symbols-outlined compact-fallback-icon">image</span>
           </div>
@@ -41,7 +42,7 @@
 
     <template v-else>
       <!-- Comfy (Grid) View Mode -->
-      <img v-if="!imageError" :src="`${API_BASE}/items/${item.id}/thumbnail`" @error="imageError = true" class="item-thumbnail" loading="lazy" />
+      <img v-if="!imageError" :src="`${API_BASE}/items/${item.id}/thumbnail`" @error="imageError = true" class="item-thumbnail" loading="lazy" decoding="async" />
       <div v-else class="thumbnail-fallback">
         <span class="material-symbols-outlined comfy-fallback-icon">image</span>
       </div>

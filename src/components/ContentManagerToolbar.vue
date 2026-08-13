@@ -1,5 +1,5 @@
 <template>
-  <div class="cm-main-header">
+  <div class="cm-main-header" :style="{ height: toolbarHeight + 'px', minHeight: '48px', padding: toolbarPadding }">
     <div class="cm-header-flex gap-4">
       <h3 id="cm-items-title">
         {{ currentSetName === 'All Items' ? t('cm.all_items') : (currentSetName === 'Legacy' ? t('cm.legacy') : currentSetName) }}
@@ -11,7 +11,7 @@
     <div class="cm-header-flex gap-2">
       <!-- Sort Dropdown -->
       <div class="sort-trigger-wrapper" @click.stop="sortDropdownOpen = !sortDropdownOpen">
-        <button class="btn sort-trigger">
+        <button class="btn sort-trigger custom-tooltip-container" :data-tooltip="t('cm.sort')">
           <span class="material-symbols-outlined" style="font-size:20px;">sort</span>
           {{ t('cm.sort') }}
         </button>
@@ -44,6 +44,13 @@
             <span class="material-symbols-outlined" style="font-size:20px;">view_list</span>
           </button>
         </div>
+      </div>
+
+      <!-- Filter Sidebar Toggle -->
+      <div class="custom-tooltip-container" :data-tooltip="filterSidebarCollapsed ? t('cm.expand_filters') : t('cm.collapse_filters')">
+        <button class="btn btn-action" :class="{ active: !filterSidebarCollapsed }" @click="$emit('toggle-filter-sidebar')">
+          <span class="material-symbols-outlined" style="font-size:20px;">filter_alt</span>
+        </button>
       </div>
 
       <!-- Batch Action Bar -->
@@ -87,11 +94,19 @@
         {{ selectionMode ? t('cm.done') : t('cm.manual_select') }}
       </button>
     </div>
+
+    <!-- Toolbar Height Resizer Handle -->
+    <div
+      class="cm-toolbar-resizer"
+      :class="{ 'is-resizing': isResizing }"
+      @mousedown="startResize"
+      :title="t('cm.resize_toolbar') || 'Drag to resize toolbar height'"
+    ></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useI18n } from '@/composables/useI18n';
 
 const { t } = useI18n();
@@ -104,6 +119,7 @@ const props = defineProps<{
   viewMode: string;
   selectionMode: boolean;
   selectedCount: number;
+  filterSidebarCollapsed: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -116,9 +132,44 @@ const emit = defineEmits<{
   (e: 'delete-selected'): void;
   (e: 'toggle-select-all'): void;
   (e: 'toggle-selection-mode'): void;
+  (e: 'toggle-filter-sidebar'): void;
 }>();
 
 const sortDropdownOpen = ref(false);
+
+const toolbarHeight = ref<number>(parseInt(localStorage.getItem('plumbobforge_toolbar_height') || '63', 10));
+const isResizing = ref(false);
+const startY = ref(0);
+const startHeight = ref(63);
+
+const toolbarPadding = computed(() => {
+  const h = toolbarHeight.value;
+  if (h <= 56) return '0.25rem 1rem';
+  if (h <= 80) return '0.75rem 1rem';
+  return '1.25rem 1rem';
+});
+
+function startResize(e: MouseEvent) {
+  isResizing.value = true;
+  startY.value = e.clientY;
+  startHeight.value = toolbarHeight.value;
+  document.addEventListener('mousemove', onResizing);
+  document.addEventListener('mouseup', stopResize);
+}
+
+function onResizing(e: MouseEvent) {
+  if (!isResizing.value) return;
+  const dy = e.clientY - startY.value;
+  const newH = Math.max(48, Math.min(220, startHeight.value + dy));
+  toolbarHeight.value = newH;
+  localStorage.setItem('plumbobforge_toolbar_height', newH.toString());
+}
+
+function stopResize() {
+  isResizing.value = false;
+  document.removeEventListener('mousemove', onResizing);
+  document.removeEventListener('mouseup', stopResize);
+}
 
 function setSort(mode: string) {
   emit('update:sortMode', mode);
