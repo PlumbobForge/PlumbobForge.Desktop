@@ -45,6 +45,7 @@
         <SettingsFolderConfigCard
           v-model:documentBaseDir="settings.documentBaseDir"
           v-model:gameFilesDir="settings.gameFilesDir"
+          v-model:enableAutoScan="settings.enableAutoScan"
           :observedFolders="settings.observedFolders"
           :saving="saving"
           :saved="saved"
@@ -101,6 +102,7 @@ const settings = ref({
   gameFilesDir: '',
   language: 'auto',
   theme: 'auto',
+  enableAutoScan: true,
   observedFolders: [] as string[]
 })
 
@@ -226,6 +228,7 @@ const onBaseDirBlur = async () => {
       LegacyPackageFolderName: '',
       TS3PackStoreFolderName: '',
       CompressionLevel: settings.value.compressionLevel,
+      EnableAutoScan: settings.value.enableAutoScan,
       ObservedFolders: settings.value.observedFolders
     }, moveFolder)
 
@@ -280,6 +283,7 @@ const onGameFilesDirBlur = async () => {
       LegacyPackageFolderName: '',
       TS3PackStoreFolderName: '',
       CompressionLevel: settings.value.compressionLevel,
+      EnableAutoScan: settings.value.enableAutoScan,
       ObservedFolders: settings.value.observedFolders
     }, false)
 
@@ -314,6 +318,7 @@ const onSettingsChange = async () => {
       CacheMethod: settings.value.cacheMethod,
       Language: settings.value.language,
       Theme: settings.value.theme,
+      EnableAutoScan: settings.value.enableAutoScan,
       ObservedFolders: settings.value.observedFolders
     }, false)
 
@@ -325,6 +330,10 @@ const onSettingsChange = async () => {
     showToast(e.message || t('cm.failed_toast'), 'error');
   }
 }
+
+watch(() => settings.value.enableAutoScan, () => {
+  onSettingsChange()
+})
 
 const browseObservedFolder = async () => {
   if ((window as any).electronAPI) {
@@ -358,6 +367,7 @@ onMounted(async () => {
     settings.value.gameFilesDir = data.gameFilesDir || data.GameFilesDir || ''
     settings.value.language = data.language || data.Language || 'auto'
     settings.value.theme = data.theme || data.Theme || 'auto'
+    settings.value.enableAutoScan = data.enableAutoScan ?? data.EnableAutoScan ?? true
     settings.value.observedFolders = data.observedFolders || data.ObservedFolders || []
     setLanguage(settings.value.language)
     setTheme(settings.value.theme)
