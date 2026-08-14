@@ -51,7 +51,7 @@
           @toggle-filter-sidebar="isFilterSidebarCollapsed = !isFilterSidebarCollapsed"
         />
 
-        <div :class="viewMode === 'comfy' ? 'cm-items-grid' : 'cm-items-list'" id="cm-items-grid" ref="gridRef" @click.self="clearSelection">
+        <div :class="viewMode === 'comfy' ? 'cm-items-grid' : 'cm-items-list'" id="cm-items-grid" ref="gridRef" @scroll.passive="onGridScroll" @click.self="clearSelection">
           <div v-if="loadingItems" class="text-muted-padded col-span-full">{{ t('cm.loading_items') }}</div>
           <div v-else-if="filteredItems.length === 0" class="text-muted-padded col-span-full">{{ t('cm.no_items') }}</div>
           <template v-else>
@@ -117,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, shallowRef, triggerRef, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, shallowRef, triggerRef, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { fetchSets, fetchItems, createSet as createSetApi, renameSet, deleteSet, moveItems, moveSet, deleteItems, setItemEnabled, renameItemApi, retagItems, updateUserTags, importFiles, uploadFiles, checkImportDuplicates, openItemFolderApi } from '@/api/client'
 import { useModal } from '@/composables/useModal'
 import { useToast } from '@/composables/useToast'
@@ -544,6 +544,20 @@ const filteredItems = computed(() => {
 
 const renderLimit = ref(60)
 
+const loadMoreItems = () => {
+  if (renderLimit.value < filteredItems.value.length) {
+    renderLimit.value = Math.min(renderLimit.value + 60, filteredItems.value.length)
+  }
+}
+
+const onGridScroll = () => {
+  if (!gridRef.value) return
+  const { scrollTop, scrollHeight, clientHeight } = gridRef.value
+  if (scrollTop + clientHeight >= scrollHeight - 600) {
+    loadMoreItems()
+  }
+}
+
 const displayedItems = computed(() => {
   return filteredItems.value.slice(0, renderLimit.value)
 })
@@ -556,16 +570,25 @@ watch(filteredItems, () => {
 const sentinelRef = ref<HTMLElement | null>(null)
 let sentinelObserver: IntersectionObserver | null = null
 
+watch(sentinelRef, (newEl, oldEl) => {
+  if (oldEl && sentinelObserver) {
+    sentinelObserver.unobserve(oldEl)
+  }
+  if (newEl && sentinelObserver) {
+    sentinelObserver.observe(newEl)
+  }
+})
+
 onMounted(() => {
   sentinelObserver = new IntersectionObserver((entries) => {
     if (entries[0] && entries[0].isIntersecting) {
-      if (renderLimit.value < filteredItems.value.length) {
-        renderLimit.value = Math.min(renderLimit.value + 60, filteredItems.value.length)
-      }
+      loadMoreItems()
     }
   }, { root: gridRef.value, rootMargin: '400px' })
 
-  if (sentinelRef.value) sentinelObserver.observe(sentinelRef.value)
+  if (sentinelRef.value) {
+    sentinelObserver.observe(sentinelRef.value)
+  }
 })
 
 onUnmounted(() => {
