@@ -201,7 +201,7 @@ onMounted(async () => {
       store.isDirty = sets.some(s => s.dirty)
     }
 
-    const currentVersion = store.appVersion || '0.2.7'
+    const currentVersion = store.appVersion || '0.2.8'
     const lastSeenVer = localStorage.getItem('plumbobforge_last_seen_version')
 
     if (!hasSeenWalkthrough) {
