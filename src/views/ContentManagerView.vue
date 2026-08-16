@@ -562,10 +562,33 @@ const displayedItems = computed(() => {
   return filteredItems.value.slice(0, renderLimit.value)
 })
 
-watch(filteredItems, () => {
+const resetGridScrollAndLimit = () => {
   renderLimit.value = 60
   if (gridRef.value) gridRef.value.scrollTop = 0
+}
+
+watch([
+  () => store.selectedSetId,
+  searchQuery,
+  filterModeEnabled,
+  filterModeDisabled,
+  filterTypeCAS,
+  filterTypeBuildBuy,
+  filterTypeOther,
+  sortMode
+], () => {
+  resetGridScrollAndLimit()
 })
+
+watch([
+  activeCasCategories,
+  activeCasAges,
+  activeCasGenders,
+  activeCasOutfits,
+  activeOtherSubCategories
+], () => {
+  resetGridScrollAndLimit()
+}, { deep: true })
 
 const sentinelRef = ref<HTMLElement | null>(null)
 let sentinelObserver: IntersectionObserver | null = null
@@ -611,6 +634,7 @@ const currentSetName = computed(() => {
   return s ? s.name : 'Items'
 })
 
+let hasRestoredInitialSet = false
 const loadData = async () => {
   try {
     const setsPromise = fetchSets().then(setsRes => {
@@ -627,7 +651,10 @@ const loadData = async () => {
     })
 
     await Promise.all([setsPromise, itemsPromise])
-    restoreLastSelectedSet()
+    if (!hasRestoredInitialSet) {
+      hasRestoredInitialSet = true
+      restoreLastSelectedSet()
+    }
   } catch (err) {
     showToast('Failed to load Content Manager data.', 'error')
     loadingSets.value = false
