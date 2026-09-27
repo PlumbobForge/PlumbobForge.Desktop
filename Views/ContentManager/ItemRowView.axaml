@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:cm="using:PlumbobForge.Desktop.Views.ContentManager"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="320"
+             x:Class="PlumbobForge.Desktop.Views.ContentManager.ItemRowView"
+             x:DataType="vm:ItemRowViewModel"
+             x:CompileBindings="True">
+
+    <UniformGrid Rows="1" Columns="{Binding ColumnCount}">
+        <cm:ItemCardView DataContext="{Binding Item1}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+        <cm:ItemCardView DataContext="{Binding Item2}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+        <cm:ItemCardView DataContext="{Binding Item3}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+        <cm:ItemCardView DataContext="{Binding Item4}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+        <cm:ItemCardView DataContext="{Binding Item5}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+        <cm:ItemCardView DataContext="{Binding Item6}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+        <cm:ItemCardView DataContext="{Binding Item7}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+        <cm:ItemCardView DataContext="{Binding Item8}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+        <cm:ItemCardView DataContext="{Binding Item9}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+        <cm:ItemCardView DataContext="{Binding Item10}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+        <cm:ItemCardView DataContext="{Binding Item11}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+        <cm:ItemCardView DataContext="{Binding Item12}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+    </UniformGrid>
+</UserControl>

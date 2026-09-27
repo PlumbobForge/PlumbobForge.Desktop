@@ -1,0 +1,267 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+        xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+        x:Class="PlumbobForge.Desktop.Views.Dialogs.RetagDialogWindow"
+        Title="{loc:Loc 'dialogs.retag.title'}"
+        Width="540" Height="480"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        SystemDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        Background="{DynamicResource BgDark}">
+
+    <Window.Styles>
+        <!-- Filter Sub-Category Pill Toggle Button Style -->
+        <Style Selector="ToggleButton.filter-pill">
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,6,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-pill:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-pill:checked TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-pill:checked icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-pill:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-pill:pointerover TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-pill:pointerover icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Window.Styles>
+
+    <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" ClipToBounds="True" Background="{DynamicResource BgDark}">
+        <Grid RowDefinitions="Auto, *, Auto">
+            <!-- Modal Title Bar Header -->
+            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="40" Padding="16,0,0,0" PointerPressed="OnHeaderPointerPressed">
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularTag" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}"/>
+                        <TextBlock Text="{loc:Loc 'dialogs.retag.title'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Width="40" Height="40" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCancelClick" ToolTip.Tip="{loc:Loc 'common.close'}">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#ef4444"/>
+                            </Style>
+                            <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                <Setter Property="Foreground" Value="White"/>
+                            </Style>
+                        </Button.Styles>
+                        <icon:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Form Body -->
+            <ScrollViewer Grid.Row="1" Padding="20,16">
+                <StackPanel Spacing="16">
+                    <!-- 1. User Tags Section (FIRST) -->
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="{loc:Loc 'dialogs.retag.user_tags'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                        <Border Background="{DynamicResource BgInput}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="8,6" MinHeight="44">
+                            <WrapPanel VerticalAlignment="Center">
+                                <!-- Tag Pills -->
+                                <ItemsControl x:Name="UserTagsItemsControl" VerticalAlignment="Center">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel VerticalAlignment="Center"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="8,4" Margin="0,2,6,2" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                                    <Button Click="OnRemoveTagClick" Background="Transparent" Padding="0" BorderThickness="0" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'common.delete'}">
+                                                        <icon:PackIconBoxIcons Kind="RegularX" Width="12" Height="12" Foreground="{DynamicResource TextMuted}"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Borderless Input Box -->
+                                <TextBox x:Name="TagInputTextBox" Width="140" MinHeight="28" Background="Transparent" BorderThickness="0" Padding="4,4" Foreground="{DynamicResource TextMain}" FontSize="12" Watermark="{loc:Loc 'dialogs.retag.add_tag'}" VerticalAlignment="Center" TextInput="OnTagInputTextInput">
+                                    <TextBox.Styles>
+                                        <Style Selector="TextBox">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="SelectionBrush" Value="{DynamicResource AccentBrush}"/>
+                                        </Style>
+                                        <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                        </Style>
+                                        <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                        </Style>
+                                    </TextBox.Styles>
+                                </TextBox>
+                            </WrapPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- 2. Type Section -->
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="{loc:Loc 'library.type'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                        <WrapPanel>
+                            <ToggleButton x:Name="TypeCasButton" Classes="filter-pill" Content="{loc:Loc 'filters.type_cas'}" Click="OnTypeCasClick"/>
+                            <ToggleButton x:Name="TypeBuildBuyButton" Classes="filter-pill" Content="{loc:Loc 'filters.type_build_buy'}" Click="OnTypeBuildBuyClick"/>
+                            <ToggleButton x:Name="TypeOtherButton" Classes="filter-pill" Content="{loc:Loc 'filters.type_other'}" Click="OnTypeOtherClick"/>
+                        </WrapPanel>
+                    </StackPanel>
+
+                    <!-- 3. Category Section (Dynamic based on Type) -->
+                    <StackPanel x:Name="CategoriesSection" Spacing="6">
+                        <TextBlock Text="{loc:Loc 'library.category'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+
+                        <!-- CAS Categories Panel -->
+                        <WrapPanel x:Name="CasCategoriesPanel" Margin="0,4,0,0">
+                            <!-- Hair -->
+                            <ToggleButton Classes="filter-pill" Tag="Hair" Click="OnCategoryClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularFace" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.cas.hair'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <!-- Full Body -->
+                            <ToggleButton Classes="filter-pill" Tag="Full body" Click="OnCategoryClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularBody" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.cas.full_body'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <!-- Tops -->
+                            <ToggleButton Classes="filter-pill" Tag="Tops" Click="OnCategoryClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularTShirt" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.cas.tops'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <!-- Bottoms -->
+                            <ToggleButton Classes="filter-pill" Tag="Bottoms" Click="OnCategoryClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularPant" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.cas.bottoms'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <!-- Shoes -->
+                            <ToggleButton Classes="filter-pill" Tag="Shoes" Click="OnCategoryClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularSneaker" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.cas.shoes'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <!-- Details -->
+                            <ToggleButton Classes="filter-pill" Tag="Details" Click="OnCategoryClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularFaceAlt" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.cas.details'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <!-- Skins -->
+                            <ToggleButton Classes="filter-pill" Tag="Skins" Click="OnCategoryClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularPalette" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.cas.skins'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <!-- Accessories -->
+                            <ToggleButton Classes="filter-pill" Tag="Accessories" Click="OnCategoryClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularDiamond" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.cas.accessories'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <!-- Sliders -->
+                            <ToggleButton Classes="filter-pill" Tag="Sliders" Click="OnCategoryClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularSlider" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.cas.sliders'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <!-- Presets -->
+                            <ToggleButton Classes="filter-pill" Tag="Presets" Click="OnCategoryClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularSparkles" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.cas.presets'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <!-- Other -->
+                            <ToggleButton Classes="filter-pill" Tag="Other" Click="OnCategoryClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularDotsHorizontal" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.other.misc'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                        </WrapPanel>
+
+                        <!-- Other Categories Panel -->
+                        <WrapPanel x:Name="OtherCategoriesPanel" Margin="0,4,0,0" IsVisible="False">
+                            <!-- Worlds -->
+                            <ToggleButton Classes="filter-pill" Tag="Worlds" Click="OnCategoryClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularGlobe" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.other.worlds'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <!-- Sims -->
+                            <ToggleButton Classes="filter-pill" Tag="Sims" Click="OnCategoryClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularUser" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.other.sims'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <!-- Lots -->
+                            <ToggleButton Classes="filter-pill" Tag="Lots" Click="OnCategoryClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularHomeAlt" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.other.lots'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <!-- Misc -->
+                            <ToggleButton Classes="filter-pill" Tag="Misc" Click="OnCategoryClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularCube" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.other.misc'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                        </WrapPanel>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Footer Action Buttons -->
+            <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" Padding="16,10">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                    <Button Content="{loc:Loc 'common.cancel'}" Click="OnCancelClick" Background="{DynamicResource BgSurface}" Foreground="{DynamicResource TextMain}" Padding="16,6" CornerRadius="6" Cursor="Hand"/>
+                    <Button Content="{loc:Loc 'dialogs.retag.apply'}" Click="OnApplyClick" Background="{DynamicResource AccentBrush}" Foreground="White" FontWeight="SemiBold" Padding="20,6" CornerRadius="6" Cursor="Hand"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

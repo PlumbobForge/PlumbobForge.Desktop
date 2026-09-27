@@ -1,0 +1,315 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             x:Class="PlumbobForge.Desktop.Views.ContentManager.SetsSidebarView"
+             x:DataType="vm:ContentManagerViewModel">
+
+    <UserControl.Styles>
+        <!-- Outer Floating Container Width & Animation -->
+        <Style Selector="Border.sets-floating-panel">
+            <Setter Property="Width" Value="260"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Width" Duration="0:0:0.25" Easing="CubicEaseOut"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.sets-floating-panel.collapsed">
+            <Setter Property="Width" Value="48"/>
+        </Style>
+
+        <!-- Inner Content Slide Animation -->
+        <Style Selector="Border.sets-inner-content">
+            <Setter Property="RenderTransform" Value="translateX(0px)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25" Easing="CubicEaseOut"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.sets-inner-content.collapsed">
+            <Setter Property="RenderTransform" Value="translateX(-212px)"/>
+        </Style>
+
+        <!-- Dimmable Body & Header Content Transition -->
+        <Style Selector="Grid.dimmable-content">
+            <Setter Property="Opacity" Value="1"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.2"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Grid.dimmable-content.collapsed">
+            <Setter Property="Opacity" Value="0.2"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+        </Style>
+
+        <!-- Custom TreeViewItem Style & Template -->
+        <Style Selector="TreeViewItem" x:DataType="vm:SetNodeViewModel">
+            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,1"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <StackPanel>
+                        <Border x:Name="LayoutRoot"
+                                Background="Transparent"
+                                CornerRadius="8"
+                                Padding="0"
+                                Margin="0"
+                                Cursor="Hand">
+                            <ContentPresenter x:Name="HeaderPresenter"
+                                              Background="Transparent"
+                                              Content="{TemplateBinding Header}"
+                                              ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                              HorizontalAlignment="Stretch"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ItemsPresenter x:Name="PART_ItemsPresenter"
+                                        IsVisible="{TemplateBinding IsExpanded}"
+                                        ItemsPanel="{TemplateBinding ItemsPanel}"
+                                        Margin="16,0,0,0"/>
+                    </StackPanel>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <!-- Set Node Row Styles (Clean, Instant Hover in both Dark & Light Themes) -->
+        <Style Selector="Border.set-node-row">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Border.set-node-row:pointerover">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+        <Style Selector="Border.set-node-row.set-node-selected">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <!-- Dynamic Icon & Title Colors: Slate when inactive, Dynamic Accent when selected -->
+        <Style Selector="icon|PackIconBoxIcons.set-icon">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        </Style>
+        <Style Selector="Border.set-node-row.set-node-selected icon|PackIconBoxIcons.set-icon">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+
+        <Style Selector="TextBlock.set-title">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <Style Selector="Border.set-node-row.set-node-selected TextBlock.set-title">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <!-- Multi-Selection (2+ sets selected): Accent Border on the Outside of the row -->
+        <Style Selector="TreeView.multiple-sets-selected Border.set-node-row.set-node-selected">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <!-- Accordion Button Style -->
+        <Style Selector="Button.accordion-header">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.accordion-header:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Outer Floating Shell with Drop Shadow -->
+    <Border Classes="sets-floating-panel" Classes.collapsed="{Binding IsSetsSidebarCollapsed}"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Stretch"
+            Margin="12, 12, 0, 12"
+            CornerRadius="12"
+            BoxShadow="0 8 32 0 #50000000"
+            Background="{DynamicResource BgSidebar}"
+            BorderBrush="{DynamicResource BorderSubtle}"
+            BorderThickness="0"
+            Padding="0"
+            ClipToBounds="True">
+
+        <Panel HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <!-- Inner Content Border (Slides horizontally during collapse) -->
+            <Border Classes="sets-inner-content" Classes.collapsed="{Binding IsSetsSidebarCollapsed}"
+                    Width="260"
+                    Padding="14"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Stretch">
+
+                <Grid RowDefinitions="Auto, *">
+                    <!-- Header Section: Title, Search, Sort, Add, and Collapse Toggle -->
+                    <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
+                        <Grid Grid.Column="0" ColumnDefinitions="*, Auto, Auto" Classes="dimmable-content" Classes.collapsed="{Binding IsSetsSidebarCollapsed}" VerticalAlignment="Center">
+                            <!-- Sets Title -->
+                            <TextBlock Grid.Column="0" Text="{loc:Loc 'library.sets'}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+
+                            <!-- Sort Sets Flyout Button -->
+                            <Button Grid.Column="1" Background="{DynamicResource BgSurface}" Foreground="{DynamicResource TextMuted}" CornerRadius="6" Padding="8,6" Margin="0,0,6,0" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'library.sort_sets'}">
+                                <icon:PackIconBoxIcons Kind="RegularFilter" Width="14" Height="14" VerticalAlignment="Center"/>
+                                <Button.Flyout>
+                                    <Flyout Placement="Bottom">
+                                        <Border Padding="6" Width="180">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{loc:Loc 'library.sort_sets'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="6,4"/>
+                                                <Button Command="{Binding SetSortModeCommand}" CommandParameter="DateCreated" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4">
+                                                    <Button.Styles>
+                                                        <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                        </Style>
+                                                    </Button.Styles>
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <icon:PackIconBoxIcons Kind="RegularClock12" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Loc 'library.sort_date'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Command="{Binding SetSortModeCommand}" CommandParameter="NameAsc" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4">
+                                                    <Button.Styles>
+                                                        <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                        </Style>
+                                                    </Button.Styles>
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <icon:PackIconBoxIcons Kind="RegularAArrowDown" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Loc 'library.sort_name_asc'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Command="{Binding SetSortModeCommand}" CommandParameter="NameDesc" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4">
+                                                    <Button.Styles>
+                                                        <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                        </Style>
+                                                    </Button.Styles>
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <icon:PackIconBoxIcons Kind="RegularAArrowUp" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Loc 'library.sort_name_desc'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Border>
+                                    </Flyout>
+                                </Button.Flyout>
+                            </Button>
+
+                            <!-- Create Set (+) Button -->
+                            <Button Grid.Column="2" Command="{Binding CreateTopLevelSetCommand}" Background="{DynamicResource AccentBrush}" Foreground="White" CornerRadius="6" Padding="8,6" Margin="0,0,6,0" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'library.add_set'}">
+                                <icon:PackIconBoxIcons Kind="RegularPlus" Width="14" Height="14" VerticalAlignment="Center"/>
+                            </Button>
+                        </Grid>
+
+                        <!-- Rightmost Collapse/Expand Toggle Button -->
+                        <Button Grid.Column="1" Command="{Binding ToggleSetsSidebarCommand}" ZIndex="20" Background="Transparent" Foreground="{DynamicResource TextMain}" CornerRadius="6" Padding="6" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'library.toggle_sets_sidebar'}">
+                            <Panel>
+                                <icon:PackIconBoxIcons Kind="RegularArrowToLeftStroke" Width="16" Height="16" VerticalAlignment="Center" IsVisible="{Binding !IsSetsSidebarCollapsed}"/>
+                                <icon:PackIconBoxIcons Kind="RegularArrowToRightStroke" Width="16" Height="16" VerticalAlignment="Center" IsVisible="{Binding IsSetsSidebarCollapsed}"/>
+                            </Panel>
+                        </Button>
+                    </Grid>
+
+                    <!-- Sets Tree View Body (Dims when collapsed; acts as root drop target & drag selection host) -->
+                    <Grid Grid.Row="1" x:Name="SetsTreeContainer"
+                          Classes="dimmable-content" Classes.collapsed="{Binding IsSetsSidebarCollapsed}"
+                          DragDrop.AllowDrop="True"
+                          DragDrop.DragOver="OnRootDragOver"
+                          DragDrop.Drop="OnRootDrop"
+                          Background="Transparent"
+                          PointerPressed="OnTreeContainerPointerPressed"
+                          PointerMoved="OnTreeContainerPointerMoved"
+                          PointerReleased="OnTreeContainerPointerReleased">
+                        <TreeView x:Name="SetsTreeView"
+                                  Classes.multiple-sets-selected="{Binding HasMultipleSetsSelected}"
+                                  ItemsSource="{Binding RootSets}"
+                                  SelectedItem="{Binding SelectedSetNode}"
+                                  Background="Transparent">
+                            <TreeView.ItemTemplate>
+                                <TreeDataTemplate DataType="{x:Type vm:SetNodeViewModel}" ItemsSource="{Binding Children}">
+                                    <Border Classes="set-node-row"
+                                            Classes.set-node-selected="{Binding IsSelected}"
+                                            CornerRadius="8"
+                                            Padding="10,6,8,6"
+                                            Margin="0,1"
+                                            DragDrop.AllowDrop="True"
+                                            DragDrop.DragOver="OnSetNodeDragOver"
+                                            DragDrop.Drop="OnSetNodeDrop"
+                                            PointerPressed="OnSetRowPointerPressed"
+                                            PointerMoved="OnSetRowPointerMoved"
+                                            PointerEntered="OnSetRowPointerEntered"
+                                            PointerReleased="OnSetRowPointerReleased"
+                                            PointerCaptureLost="OnSetRowPointerCaptureLost">
+                                        <Border.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="{loc:Loc 'library.add_subset'}" Command="{Binding $parent[UserControl].((vm:ContentManagerViewModel)DataContext).AddSubSetCommand}" CommandParameter="{Binding}" IsVisible="{Binding !IsAllItems}">
+                                                    <MenuItem.Icon>
+                                                        <icon:PackIconBoxIcons Kind="RegularFolderPlus" Width="16" Height="16"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="{loc:Loc 'library.customize_set'}" Command="{Binding $parent[UserControl].((vm:ContentManagerViewModel)DataContext).CustomizeSetCommand}" CommandParameter="{Binding}" IsVisible="{Binding CanCustomize}">
+                                                    <MenuItem.Icon>
+                                                        <icon:PackIconBoxIcons Kind="RegularPalette" Width="16" Height="16"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <Separator IsVisible="{Binding CanDelete}"/>
+                                                <MenuItem Header="{loc:Loc 'common.delete'}" Command="{Binding $parent[UserControl].((vm:ContentManagerViewModel)DataContext).DeleteSetCommand}" CommandParameter="{Binding}" IsVisible="{Binding CanDelete}">
+                                                    <MenuItem.Icon>
+                                                        <icon:PackIconBoxIcons Kind="RegularTrash" Width="16" Height="16" Foreground="#ef4444"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                            </ContextMenu>
+                                        </Border.ContextMenu>
+
+                                        <Grid ColumnDefinitions="Auto, *, Auto, Auto" VerticalAlignment="Center">
+                                            <!-- Node Icon -->
+                                            <Panel Grid.Column="0" Margin="0,0,8,0" VerticalAlignment="Center">
+                                                <icon:PackIconBoxIcons Classes="set-icon" Kind="RegularLayers" Width="16" Height="16" IsVisible="{Binding IsAllItems}"/>
+                                                <icon:PackIconBoxIcons Kind="{Binding IconKind}" Foreground="{Binding IconBrush}" Width="16" Height="16" IsVisible="{Binding !IsAllItems}"/>
+                                            </Panel>
+
+                                            <!-- Set Name -->
+                                            <TextBlock Grid.Column="1" Classes="set-title" Text="{Binding Name}" VerticalAlignment="Center" FontSize="12" TextTrimming="CharacterEllipsis"/>
+
+                                            <!-- Item Count Badge -->
+                                            <Border Grid.Column="2" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" Padding="7,2" Margin="6,0,4,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding ItemCount}" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
+                                            </Border>
+
+                                            <!-- Chevron Expand/Collapse Toggle on Far Right -->
+                                            <Button Grid.Column="3" Command="{Binding ToggleExpandCommand}" Classes="accordion-header" Width="20" Height="20" Padding="0" Margin="4,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" IsVisible="{Binding HasChildren}" ToolTip.Tip="Toggle Sub-Sets">
+                                                <Panel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding IsExpanded}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding !IsExpanded}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Panel>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </TreeDataTemplate>
+                            </TreeView.ItemTemplate>
+                        </TreeView>
+
+                        <!-- Rubberband Selection Canvas -->
+                        <Canvas x:Name="SetsRubberbandCanvas" IsHitTestVisible="False" Background="Transparent">
+                            <Border x:Name="SetsRubberbandBox"
+                                    Background="{DynamicResource AccentRubberbandBgBrush}"
+                                    BorderBrush="{DynamicResource AccentBrush}"
+                                    BorderThickness="1.5"
+                                    CornerRadius="3"
+                                    IsVisible="False"/>
+                        </Canvas>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Panel>
+    </Border>
+</UserControl>

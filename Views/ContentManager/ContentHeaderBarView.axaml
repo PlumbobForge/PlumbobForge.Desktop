@@ -1,0 +1,483 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:db="using:PlumbobForge.Backend.Database"
+             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             x:Class="PlumbobForge.Desktop.Views.ContentManager.ContentHeaderBarView"
+             x:DataType="vm:ContentManagerViewModel"
+             x:CompileBindings="True"
+             Height="36">
+
+    <UserControl.Styles>
+        <!-- Icon Buttons: Sleek Transparent Background with Subtle Hover Effect -->
+        <Style Selector="Button.header-btn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.header-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+
+        <Style Selector="Button.action-btn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.action-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+
+        <!-- Delete Action Button: Red Icon, Red Hover Pill -->
+        <Style Selector="Button.delete-btn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.delete-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#991b1b"/>
+        </Style>
+
+        <!-- Smooth Slide, Fade and Expand Transitions for Selection Actions -->
+        <Style Selector="StackPanel#ExpandedActionsCluster">
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="MaxWidth" Value="0"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+            <Setter Property="RenderTransform" Value="translateX(-10px)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.22" Easing="CubicEaseOut"/>
+                    <DoubleTransition Property="MaxWidth" Duration="0:0:0.28" Easing="CubicEaseOut"/>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25" Easing="CubicEaseOut"/>
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="StackPanel#ExpandedActionsCluster.expanded">
+            <Setter Property="Opacity" Value="1"/>
+            <Setter Property="MaxWidth" Value="600"/>
+            <Setter Property="IsHitTestVisible" Value="True"/>
+            <Setter Property="RenderTransform" Value="translateX(0px)"/>
+        </Style>
+
+        <!-- Smooth Slide, Fade and Expand Transitions for Zoom Slider Cluster -->
+        <Style Selector="StackPanel#ExpandedZoomCluster">
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="MaxWidth" Value="0"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+            <Setter Property="RenderTransform" Value="translateX(-6px)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.22" Easing="CubicEaseOut"/>
+                    <DoubleTransition Property="MaxWidth" Duration="0:0:0.28" Easing="CubicEaseOut"/>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25" Easing="CubicEaseOut"/>
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="StackPanel#ExpandedZoomCluster.expanded">
+            <Setter Property="Opacity" Value="1"/>
+            <Setter Property="MaxWidth" Value="200"/>
+            <Setter Property="IsHitTestVisible" Value="True"/>
+            <Setter Property="RenderTransform" Value="translateX(0px)"/>
+        </Style>
+        <!-- Custom Emerald Zoom Slider Style & Control Template -->
+        <Style Selector="Slider.zoom-slider">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Grid x:Name="SliderContainer" Background="Transparent" Height="24" VerticalAlignment="Center">
+                        <!-- Inactive background rail running full track width -->
+                        <Border Height="4" Background="{DynamicResource BorderSubtle}" CornerRadius="2" VerticalAlignment="Center" IsHitTestVisible="False"/>
+
+                        <Track x:Name="PART_Track"
+                               Minimum="{TemplateBinding Minimum}"
+                               Maximum="{TemplateBinding Maximum}"
+                               Value="{TemplateBinding Value, Mode=TwoWay}"
+                               Orientation="Horizontal"
+                               VerticalAlignment="Center">
+                            <Track.DecreaseButton>
+                                <RepeatButton Background="{DynamicResource AccentBrush}" BorderThickness="0" Height="4" CornerRadius="2" Padding="0" Focusable="False" IsTabStop="False">
+                                    <RepeatButton.Template>
+                                        <ControlTemplate>
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"/>
+                                        </ControlTemplate>
+                                    </RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.DecreaseButton>
+                            <Track.IncreaseButton>
+                                <RepeatButton Background="Transparent" BorderThickness="0" Height="4" Padding="0" Focusable="False" IsTabStop="False">
+                                    <RepeatButton.Template>
+                                        <ControlTemplate>
+                                            <Border Background="Transparent"/>
+                                        </ControlTemplate>
+                                    </RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.IncreaseButton>
+                            <Track.Thumb>
+                                <Thumb Width="16" Height="16"
+                                       Background="Transparent"
+                                       BorderBrush="Transparent"
+                                       BorderThickness="0"
+                                       Padding="0"
+                                       CornerRadius="8"
+                                       ClipToBounds="False"
+                                       Cursor="Hand">
+                                    <Thumb.Template>
+                                        <ControlTemplate>
+                                            <Panel Background="Transparent" Width="16" Height="16">
+                                                <Ellipse x:Name="ThumbGlow"
+                                                         Width="16" Height="16"
+                                                         Fill="{DynamicResource AccentBrush}"
+                                                         Opacity="0"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center">
+                                                    <Ellipse.Transitions>
+                                                        <Transitions>
+                                                            <DoubleTransition Property="Opacity" Duration="0:0:0.12"/>
+                                                            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12"/>
+                                                        </Transitions>
+                                                    </Ellipse.Transitions>
+                                                </Ellipse>
+                                                <Ellipse x:Name="ThumbCircle"
+                                                         Width="14" Height="14"
+                                                         Fill="#ffffff"
+                                                         Stroke="{DynamicResource AccentBrush}"
+                                                         StrokeThickness="2.5"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center">
+                                                    <Ellipse.Transitions>
+                                                        <Transitions>
+                                                            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12"/>
+                                                            <BrushTransition Property="Fill" Duration="0:0:0.12"/>
+                                                            <BrushTransition Property="Stroke" Duration="0:0:0.12"/>
+                                                        </Transitions>
+                                                    </Ellipse.Transitions>
+                                                </Ellipse>
+                                            </Panel>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <!-- Override any FluentTheme Thumb styles on this Slider -->
+        <Style Selector="Slider.zoom-slider /template/ Thumb">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+        <Style Selector="Slider.zoom-slider /template/ Thumb:pointerover">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+        <Style Selector="Slider.zoom-slider /template/ Thumb:pressed">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+        <Style Selector="Slider.zoom-slider:pointerover /template/ Thumb">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+        <Style Selector="Slider.zoom-slider:pressed /template/ Thumb">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+        <Style Selector="Slider.zoom-slider:pointerover /template/ Thumb Ellipse#ThumbCircle">
+            <Setter Property="Fill" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Stroke" Value="#ffffff"/>
+            <Setter Property="RenderTransform" Value="scale(1.2)"/>
+        </Style>
+        <Style Selector="Slider.zoom-slider:pointerover /template/ Thumb Ellipse#ThumbGlow">
+            <Setter Property="Opacity" Value="0.25"/>
+            <Setter Property="RenderTransform" Value="scale(1.6)"/>
+        </Style>
+        <Style Selector="Slider.zoom-slider /template/ Thumb:pointerover Ellipse#ThumbCircle">
+            <Setter Property="Fill" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Stroke" Value="#ffffff"/>
+            <Setter Property="RenderTransform" Value="scale(1.2)"/>
+        </Style>
+        <Style Selector="Slider.zoom-slider /template/ Thumb:pointerover Ellipse#ThumbGlow">
+            <Setter Property="Opacity" Value="0.25"/>
+            <Setter Property="RenderTransform" Value="scale(1.6)"/>
+        </Style>
+        <Style Selector="Slider.zoom-slider /template/ Thumb:pressed Ellipse#ThumbCircle">
+            <Setter Property="Fill" Value="{DynamicResource AccentHoverBrush}"/>
+            <Setter Property="Stroke" Value="#ffffff"/>
+            <Setter Property="RenderTransform" Value="scale(1.1)"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid ColumnDefinitions="*, Auto" Height="36" VerticalAlignment="Center">
+        <!-- Unified Expandable Selection Toolbar Capsule on Left (Frosted Glass Capsule) -->
+        <Border Grid.Column="0"
+                HorizontalAlignment="Left"
+                Height="36"
+                Background="{DynamicResource CapsuleBgBrush}"
+                BorderBrush="{DynamicResource CapsuleBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="4,0"
+                BoxShadow="0 4 16 #20000000, 0 1 4 #10000000"
+                ClipToBounds="True"
+                VerticalAlignment="Center">
+
+            <StackPanel Orientation="Horizontal" Spacing="0" VerticalAlignment="Center">
+                <!-- Select All Button -->
+                <Button Classes="header-btn"
+                        Command="{Binding SelectAllCommand}"
+                        ToolTip.Tip="{loc:Loc 'library.select_all'}">
+                    <icon:PackIconBoxIcons Kind="RegularSelectAll" Width="16" Height="16" Foreground="{DynamicResource TextMuted}"/>
+                </Button>
+
+                <!-- Expanded Selection Cluster: Animated Slide, Fade & Expand -->
+                <StackPanel x:Name="ExpandedActionsCluster"
+                            Classes.expanded="{Binding HasSelectedItems}"
+                            Orientation="Horizontal"
+                            ClipToBounds="True"
+                            VerticalAlignment="Center">
+
+                    <!-- Single Divider between Select-All and Selection Actions -->
+                    <Separator Width="1" Height="14" Background="{DynamicResource BorderSubtle}" Margin="4,0,8,0"/>
+
+                    <!-- Selection Counter Text (No Divider after it) -->
+                    <TextBlock Text="{Binding SelectedCount, StringFormat='Selected {0} item(s)'}"
+                                FontSize="12"
+                                FontWeight="SemiBold"
+                                Foreground="{DynamicResource AccentBrush}"
+                                Margin="0,0,10,0"
+                                VerticalAlignment="Center"/>
+
+                    <!-- Batch Action Buttons Cluster with comfortable spacing and hover highlights -->
+                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,2,0" VerticalAlignment="Center">
+                        <!-- Deselect All Button -->
+                        <Button Classes="action-btn"
+                                Command="{Binding DeselectAllCommand}"
+                                ToolTip.Tip="{loc:Loc 'library.deselect_all'}">
+                            <icon:PackIconBoxIcons Kind="RegularSelectNone" Width="16" Height="16" Foreground="{DynamicResource TextMuted}"/>
+                        </Button>
+
+                        <!-- 1. Toggle Enable / Disable -->
+                        <Button Classes="action-btn"
+                                Command="{Binding ToggleEnableSelectedCommand}"
+                                ToolTip.Tip="{loc:Loc 'library.toggle_enable_selected'}">
+                            <icon:PackIconBoxIcons Kind="RegularToggleLeft" Width="16" Height="16" Foreground="{DynamicResource TextMuted}"/>
+                        </Button>
+
+                        <!-- 2. Move to Set Dropdown -->
+                        <Button Classes="action-btn"
+                                ToolTip.Tip="{loc:Loc 'library.move_selected'}">
+                            <icon:PackIconBoxIcons Kind="RegularFolderPlus" Width="16" Height="16" Foreground="{DynamicResource TextMuted}"/>
+                            <Button.Flyout>
+                                <Flyout Placement="BottomEdgeAlignedLeft">
+                                    <StackPanel Width="240" Margin="12" Spacing="8">
+                                        <TextBlock Text="{loc:Loc 'library.move_selected'}" FontWeight="Bold" Foreground="{DynamicResource TextMain}" FontSize="12"/>
+                                        <ListBox x:Name="SetListBox" ItemsSource="{Binding FlatSets}" Height="180" Background="{DynamicResource BgInput}" CornerRadius="6">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type db:SetsEntity}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="4,2">
+                                                        <icon:PackIconBoxIcons Kind="RegularFolder" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}"/>
+                                                        <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextMain}" FontSize="12"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                        <Button Command="{Binding MoveSelectedToSetCommand}"
+                                                CommandParameter="{Binding #SetListBox.SelectedItem}"
+                                                Background="{DynamicResource AccentBrush}"
+                                                Foreground="White"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center"
+                                                CornerRadius="6"
+                                                Padding="8,5">
+                                            <TextBlock Text="{loc:Loc 'library.move_selected'}" FontSize="12" FontWeight="SemiBold"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+
+                        <!-- 3. Edit Tags & Category -->
+                        <Button Classes="action-btn"
+                                Command="{Binding EditTagsSelectedCommand}"
+                                ToolTip.Tip="{loc:Loc 'library.retag_item'}">
+                            <icon:PackIconBoxIcons Kind="RegularTag" Width="16" Height="16" Foreground="{DynamicResource TextMuted}"/>
+                        </Button>
+
+                        <!-- 4. Delete Selected -->
+                        <Button Classes="delete-btn"
+                                Command="{Binding DeleteSelectedCommand}"
+                                ToolTip.Tip="{loc:Loc 'library.delete_selected'}">
+                            <icon:PackIconBoxIcons Kind="RegularTrash" Width="16" Height="16" Foreground="#ef4444"/>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Right Cluster: Unified Animated View Mode + Zoom Capsule + Rebuild Cache -->
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <!-- Unified View Mode & Zoom Toolbar Capsule (Frosted Glass Capsule) -->
+            <Border Height="36"
+                    Background="{DynamicResource CapsuleBgBrush}"
+                    BorderBrush="{DynamicResource CapsuleBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="4,0"
+                    BoxShadow="0 4 16 #20000000, 0 1 4 #10000000"
+                    ClipToBounds="True"
+                    VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="0" VerticalAlignment="Center">
+                    <!-- Animated Expanding Zoom Slider Cluster (On the left of View Mode buttons) -->
+                    <StackPanel x:Name="ExpandedZoomCluster"
+                                Classes.expanded="{Binding !IsCompactListView}"
+                                Orientation="Horizontal"
+                                ClipToBounds="True"
+                                VerticalAlignment="Center">
+                        <!-- Zoom Icon -->
+                        <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="6,0,6,0" VerticalAlignment="Center"/>
+
+                        <!-- Stepped Zoom Slider -->
+                        <Slider Classes="zoom-slider"
+                                Width="85"
+                                Minimum="1"
+                                Maximum="5"
+                                Value="{Binding GridZoomLevel, Mode=TwoWay}"
+                                TickFrequency="1"
+                                IsSnapToTickEnabled="True"
+                                SmallChange="1"
+                                LargeChange="1"
+                                Margin="0,0,6,0"
+                                VerticalAlignment="Center"
+                                ToolTip.Tip="{loc:Loc 'library.comfy_view'}"/>
+                    </StackPanel>
+
+                    <!-- View Mode Switcher Buttons (Grid / List) -->
+                    <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                        <!-- Grid View Toggle Button -->
+                        <Button Classes="header-btn"
+                                Command="{Binding SetGridViewCommand}"
+                                ToolTip.Tip="{loc:Loc 'library.comfy_view'}">
+                            <Panel>
+                                <Border Width="28" Height="28" Background="{DynamicResource AccentBadgeBgBrush}" CornerRadius="6" IsVisible="{Binding !IsCompactListView}">
+                                    <icon:PackIconBoxIcons Kind="RegularGrid" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <icon:PackIconBoxIcons Kind="RegularGrid" Width="16" Height="16" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsCompactListView}"/>
+                            </Panel>
+                        </Button>
+
+                        <Separator Width="1" Height="14" Background="{DynamicResource BorderSubtle}" Margin="1,0"/>
+
+                        <!-- Compact List View Toggle Button -->
+                        <Button Classes="header-btn"
+                                Command="{Binding SetCompactListViewCommand}"
+                                ToolTip.Tip="{loc:Loc 'library.compact_view'}">
+                            <Panel>
+                                <Border Width="28" Height="28" Background="{DynamicResource AccentBadgeBgBrush}" CornerRadius="6" IsVisible="{Binding IsCompactListView}">
+                                    <icon:PackIconBoxIcons Kind="RegularListUl" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <icon:PackIconBoxIcons Kind="RegularListUl" Width="16" Height="16" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !IsCompactListView}"/>
+                            </Panel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Sort Items Button Capsule (Placed after View Mode Toolbar Capsule) -->
+            <Border Height="36" Width="36"
+                    Background="{DynamicResource CapsuleBgBrush}"
+                    BorderBrush="{DynamicResource CapsuleBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    BoxShadow="0 4 16 #20000000, 0 1 4 #10000000"
+                    ClipToBounds="True"
+                    VerticalAlignment="Center">
+                <Button Classes="header-btn"
+                        Width="34" Height="34"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="{loc:Loc 'library.sort'}">
+                    <icon:PackIconBoxIcons Kind="RegularFilter" Width="15" Height="15" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                    <Button.Flyout>
+                        <Flyout Placement="BottomEdgeAlignedRight">
+                            <Border Padding="6" Width="180">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{loc:Loc 'library.sort'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="6,4"/>
+                                    <Button Command="{Binding SetItemSortModeCommand}" CommandParameter="DateAdded" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4">
+                                        <Button.Styles>
+                                            <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                            </Style>
+                                        </Button.Styles>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <icon:PackIconBoxIcons Kind="RegularClock12" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'library.sort_latest'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Command="{Binding SetItemSortModeCommand}" CommandParameter="NameAsc" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4">
+                                        <Button.Styles>
+                                            <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                            </Style>
+                                        </Button.Styles>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <icon:PackIconBoxIcons Kind="RegularAArrowDown" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'library.sort_alpha_asc'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Command="{Binding SetItemSortModeCommand}" CommandParameter="NameDesc" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4">
+                                        <Button.Styles>
+                                            <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                            </Style>
+                                        </Button.Styles>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <icon:PackIconBoxIcons Kind="RegularAArrowUp" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'library.sort_alpha_desc'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+            </Border>
+        </StackPanel>
+    </Grid>
+</UserControl>

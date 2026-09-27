@@ -1,0 +1,84 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\appicon.ico</ApplicationIcon>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+
+    <!-- Low RAM Footprint & Workstation Garbage Collector Optimizations -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <RetainVM>false</RetainVM>
+  </PropertyGroup>
+
+  <!-- Release Publish Optimizations for Minimal Binary Size & Single-File Extraction -->
+  <PropertyGroup Condition="'$(SelfContained)' == 'true'">
+    <PublishTrimmed>false</PublishTrimmed>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <PublishSingleFile>true</PublishSingleFile>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.2.5" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.2.5" />
+    <PackageReference Include="Avalonia.Svg.Skia" Version="11.2.0.2" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.5" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.5" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="IconPacks.Avalonia.BoxIcons" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.10" />
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+    <Content Include="Assets\Locales\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PlumbobForge.Backend\PlumbobForge.Backend.csproj" />
+    <ProjectReference Include="..\S3ForgeTools.GameFiles\S3ForgeTools.GameFiles.csproj" />
+    <ProjectReference Include="..\S3ForgeTools.Utils\S3ForgeTools.Utils.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="s3pi.Interfaces">
+      <HintPath>..\libs\s3pi.Interfaces.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="s3pi.Settings">
+      <HintPath>..\libs\s3pi.Settings.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="s3pi.CatalogResource">
+      <HintPath>..\libs\s3pi.CatalogResource.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="s3pi.CASPartResource">
+      <HintPath>..\libs\s3pi.CASPartResource.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <None Include="..\libs\*.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

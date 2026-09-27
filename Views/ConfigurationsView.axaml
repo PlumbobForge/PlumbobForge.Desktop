@@ -1,0 +1,644 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             x:Class="PlumbobForge.Desktop.Views.ConfigurationsView"
+             x:DataType="vm:ConfigurationsViewModel">
+
+    <UserControl.Styles>
+        <!-- Config Sidebar Item Row Styles -->
+        <Style Selector="Border.config-node-row">
+            <Setter Property="Background" Value="#00182234"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.12"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.12"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.config-node-row:pointerover">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+        <Style Selector="Border.config-node-row.active-selected">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+
+        <!-- Set Card Item Styles (Two-Column Panel) -->
+        <Style Selector="Border.config-set-card">
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.12"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.12"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.config-set-card:pointerover">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderActive}"/>
+        </Style>
+        <Style Selector="Border.config-set-card.selected">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+
+        <!-- Center Control Icon Buttons -->
+        <Style Selector="Button.config-ctrl-btn">
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderMain}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.12"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.12"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.config-ctrl-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+
+        <!-- Action Button Secondary -->
+        <Style Selector="Button.btn-action-sec">
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.btn-action-sec:hover">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+
+        <!-- Action Button Primary -->
+        <Style Selector="Button.btn-action-primary">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.btn-action-primary:hover">
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid ColumnDefinitions="Auto, *">
+
+        <!-- ========================================== -->
+        <!-- 1. LEFT SIDEBAR: CONFIGURATIONS TREE       -->
+        <!-- ========================================== -->
+        <Border Grid.Column="0"
+                Width="260"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Stretch"
+                Margin="12, 12, 0, 12"
+                CornerRadius="12"
+                Background="{DynamicResource BgSidebar}"
+                BorderThickness="0"
+                Padding="14"
+                ClipToBounds="True">
+
+            <Grid RowDefinitions="Auto, *">
+                <!-- Sidebar Header -->
+                <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto" Margin="0,0,0,12" VerticalAlignment="Center">
+                    <TextBlock Grid.Column="0" Text="{loc:Loc 'configurations.title'}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+
+                    <!-- Sort Configurations Flyout Button -->
+                    <Button Grid.Column="1" Background="{DynamicResource BgSurface}" Foreground="{DynamicResource TextMuted}" CornerRadius="6" Padding="8,6" Margin="0,0,6,0" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'configurations.sort_configurations'}">
+                        <icon:PackIconBoxIcons Kind="RegularFilter" Width="14" Height="14" VerticalAlignment="Center"/>
+                        <Button.Flyout>
+                            <Flyout Placement="Bottom">
+                                <Border Padding="6" Width="180">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{loc:Loc 'configurations.sort_configurations'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="6,4"/>
+                                        <Button Command="{Binding SetConfigSortModeCommand}" CommandParameter="Date" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4">
+                                            <Button.Styles>
+                                                <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                </Style>
+                                            </Button.Styles>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <icon:PackIconBoxIcons Kind="RegularClock12" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Loc 'library.sort_date'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Command="{Binding SetConfigSortModeCommand}" CommandParameter="NameAsc" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4">
+                                            <Button.Styles>
+                                                <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                </Style>
+                                            </Button.Styles>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <icon:PackIconBoxIcons Kind="RegularAArrowDown" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Loc 'library.sort_name_asc'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Command="{Binding SetConfigSortModeCommand}" CommandParameter="NameDesc" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4">
+                                            <Button.Styles>
+                                                <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                </Style>
+                                            </Button.Styles>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <icon:PackIconBoxIcons Kind="RegularAArrowUp" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Loc 'library.sort_name_desc'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+
+                    <!-- Add New Config Button -->
+                    <Button Grid.Column="2" Command="{Binding CreateConfigurationCommand}" Background="{DynamicResource AccentBrush}" Foreground="White" CornerRadius="6" Padding="8,6" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'configurations.create_configuration_tooltip'}">
+                        <icon:PackIconBoxIcons Kind="RegularPlus" Width="14" Height="14" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+
+                <!-- Configurations List -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding Configurations}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:ConfigItemViewModel}">
+                                <Border Classes="config-node-row"
+                                        Classes.active-selected="{Binding $parent[UserControl].((vm:ConfigurationsViewModel)DataContext).SelectedConfiguration.Id, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={Binding Id}}"
+                                        PointerPressed="OnConfigItemPointerPressed"
+                                        Margin="0,0,0,4">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="{loc:Loc 'configurations.set_active'}"
+                                                      Command="{Binding $parent[UserControl].((vm:ConfigurationsViewModel)DataContext).ActivateConfigurationCommand}"
+                                                      CommandParameter="{Binding}"
+                                                      IsVisible="{Binding !Active}">
+                                                <MenuItem.Icon>
+                                                    <icon:PackIconBoxIcons Kind="RegularPlay" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="{loc:Loc 'configurations.edit_configuration'}"
+                                                      Command="{Binding $parent[UserControl].((vm:ConfigurationsViewModel)DataContext).CustomizeConfigurationCommand}"
+                                                      CommandParameter="{Binding}">
+                                                <MenuItem.Icon>
+                                                    <icon:PackIconBoxIcons Kind="RegularPalette" Width="14" Height="14"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="{loc:Loc 'common.duplicate'}"
+                                                      Command="{Binding $parent[UserControl].((vm:ConfigurationsViewModel)DataContext).DuplicateConfigurationCommand}"
+                                                      CommandParameter="{Binding}">
+                                                <MenuItem.Icon>
+                                                    <icon:PackIconBoxIcons Kind="RegularCopy" Width="14" Height="14"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <Separator/>
+                                            <MenuItem Header="{loc:Loc 'common.delete'}"
+                                                      Command="{Binding $parent[UserControl].((vm:ConfigurationsViewModel)DataContext).DeleteConfigurationCommand}"
+                                                      CommandParameter="{Binding}"
+                                                      IsEnabled="{Binding !Default}">
+                                                <MenuItem.Icon>
+                                                    <icon:PackIconBoxIcons Kind="RegularTrash" Width="14" Height="14" Foreground="#ef4444"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
+
+                                    <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                                        <!-- Icon -->
+                                        <icon:PackIconBoxIcons Grid.Column="0" Kind="{Binding IconKind}" Width="15" Height="15"
+                                                               Foreground="{Binding IconBrush}"
+                                                               Margin="0,0,8,0" VerticalAlignment="Center"/>
+
+                                        <!-- Name -->
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}"
+                                                   FontSize="12.5" FontWeight="Medium"
+                                                   Foreground="{DynamicResource TextMain}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   VerticalAlignment="Center"/>
+
+                                        <!-- Badge (Active or Default) -->
+                                        <Border Grid.Column="2"
+                                                IsVisible="{Binding HasBadge}"
+                                                Background="{Binding BadgeBackgroundBrush}"
+                                                BorderBrush="{Binding BadgeBorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Height="18"
+                                                Padding="6,0"
+                                                Margin="6,0,0,0"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding BadgeText}"
+                                                       FontSize="9.5"
+                                                       FontWeight="Bold"
+                                                       Foreground="{Binding BadgeForegroundBrush}"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Center"
+                                                       LineHeight="12"/>
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <!-- ========================================== -->
+        <!-- 2. MAIN AREA: CONFIG HEADER & SETS COLUMNS -->
+        <!-- ========================================== -->
+        <Grid Grid.Column="1" RowDefinitions="Auto, *" Margin="16, 12, 16, 12">
+
+            <!-- Toast Alert Notification -->
+            <Border Grid.Row="0"
+                    IsVisible="{Binding IsStatusToastVisible}"
+                    Background="{DynamicResource BgSidebar}"
+                    CornerRadius="10"
+                    Padding="14,10"
+                    Margin="0,0,0,12"
+                    BorderThickness="0">
+                <Grid ColumnDefinitions="Auto, *">
+                    <icon:PackIconBoxIcons Kind="RegularCheckCircle" Width="18" Height="18" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Grid.Column="1" Text="{Binding StatusToastMessage}" Foreground="{DynamicResource TextMain}" FontSize="13" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- Configuration Header Card -->
+            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" CornerRadius="12" Padding="20,16" Margin="0,0,0,16">
+                <Grid ColumnDefinitions="*, Auto" VerticalAlignment="Center">
+                    <!-- Left: Title & Description -->
+                    <StackPanel Grid.Column="0" Spacing="4" VerticalAlignment="Center">
+                        <!-- Clickable Title to Customize -->
+                        <Button Background="Transparent" Padding="0" Cursor="Hand"
+                                Command="{Binding CustomizeConfigurationCommand}"
+                                CommandParameter="{Binding SelectedConfiguration}"
+                                ToolTip.Tip="Click to customize configuration">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <icon:PackIconBoxIcons Kind="{Binding SelectedConfiguration.IconKind, FallbackValue='RegularSlider'}"
+                                                       Foreground="{Binding SelectedConfiguration.IconBrush}"
+                                                       Width="18" Height="18" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding SelectedConfiguration.Name, FallbackValue='Configurations'}"
+                                           FontSize="20" FontWeight="Bold"
+                                           Foreground="{DynamicResource TextMain}"
+                                           VerticalAlignment="Center"/>
+                                <icon:PackIconBoxIcons Kind="RegularPalette" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Clickable Description Row with placeholder -->
+                        <Button Background="Transparent" Padding="0" Cursor="Hand"
+                                Command="{Binding CustomizeConfigurationCommand}"
+                                CommandParameter="{Binding SelectedConfiguration}"
+                                ToolTip.Tip="Click to customize configuration">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Panel VerticalAlignment="Center">
+                                    <!-- When Description exists -->
+                                    <TextBlock Text="{Binding SelectedConfiguration.Description}"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource TextMuted}"
+                                               FontStyle="Italic"
+                                               TextTrimming="CharacterEllipsis"
+                                               IsVisible="{Binding SelectedConfiguration.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                    <!-- When Description is empty: placeholder -->
+                                    <TextBlock Text="No description (click to add one)..."
+                                               FontSize="12"
+                                               Foreground="{DynamicResource TextMuted}"
+                                               FontStyle="Italic"
+                                               IsVisible="{Binding SelectedConfiguration.Description, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
+                                </Panel>
+                                <icon:PackIconBoxIcons Kind="RegularEdit" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Right: Sets Sort Flyout Button -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <Button Background="{DynamicResource BgSurface}" Foreground="{DynamicResource TextMuted}" CornerRadius="7" Padding="10,6" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'library.sort_sets'}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <icon:PackIconBoxIcons Kind="RegularFilter" Width="14" Height="14" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding SetSortModeLabel}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Button.Flyout>
+                                <Flyout Placement="BottomEdgeAlignedRight">
+                                    <Border Padding="6" Width="190">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="{loc:Loc 'library.sort_sets'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="6,4"/>
+                                            <Button Command="{Binding SetSetSortModeCommand}" CommandParameter="Date" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4">
+                                                <Button.Styles>
+                                                    <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                    </Style>
+                                                </Button.Styles>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <icon:PackIconBoxIcons Kind="RegularClock12" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{loc:Loc 'library.sort_date'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Command="{Binding SetSetSortModeCommand}" CommandParameter="NameAsc" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4">
+                                                <Button.Styles>
+                                                    <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                    </Style>
+                                                </Button.Styles>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <icon:PackIconBoxIcons Kind="RegularAArrowDown" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{loc:Loc 'library.sort_name_asc'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Command="{Binding SetSetSortModeCommand}" CommandParameter="NameDesc" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4">
+                                                <Button.Styles>
+                                                    <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                    </Style>
+                                                </Button.Styles>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <icon:PackIconBoxIcons Kind="RegularAArrowUp" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{loc:Loc 'library.sort_name_desc'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Command="{Binding SetSetSortModeCommand}" CommandParameter="SubsetsDesc" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4">
+                                                <Button.Styles>
+                                                    <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                    </Style>
+                                                </Button.Styles>
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <icon:PackIconBoxIcons Kind="RegularFolder" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{loc:Loc 'library.sort_subsets_count'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </Border>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- 3-Column Layout: Enabled Sets | Center Actions | Disabled Sets -->
+            <Grid Grid.Row="1" ColumnDefinitions="*, 48, *">
+
+                <!-- ========================================== -->
+                <!-- COLUMN A: ENABLED SETS                     -->
+                <!-- ========================================== -->
+                <Border x:Name="EnabledColumnBorder"
+                        Grid.Column="0"
+                        Background="{DynamicResource BgSidebar}"
+                        CornerRadius="12"
+                        Padding="16"
+                        ClipToBounds="True"
+                        DragDrop.AllowDrop="True">
+                    <Grid RowDefinitions="Auto, *">
+                        <!-- Clean Header (No icon, background, color, badge) -->
+                        <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
+                            <TextBlock Grid.Column="0" Text="{loc:Loc 'configurations.enabled_sets'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{loc:Loc 'configurations.drag_to_disable'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Enabled Sets List with Rubberband Container -->
+                        <Panel Grid.Row="1" x:Name="EnabledListHost" Background="Transparent">
+                            <ScrollViewer x:Name="EnabledScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl x:Name="EnabledItemsControl" ItemsSource="{Binding EnabledSets}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:ConfigSetItemViewModel}">
+                                            <Border Classes="config-set-card"
+                                                    Classes.selected="{Binding IsSelected}"
+                                                    DoubleTapped="OnSetCardDoubleTapped"
+                                                    PointerPressed="OnSetCardPointerPressed"
+                                                    PointerMoved="OnSetCardPointerMoved"
+                                                    PointerReleased="OnSetCardPointerReleased"
+                                                    PointerCaptureLost="OnSetCardPointerCaptureLost">
+                                                <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                                                    <!-- Icon -->
+                                                    <icon:PackIconBoxIcons Grid.Column="0" Kind="{Binding IconKind}" Foreground="{Binding IconBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                                                    <!-- Text: Breadcrumb + Set Name -->
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="{Binding BreadcrumbPath}"
+                                                                   FontSize="10.5"
+                                                                   Foreground="{DynamicResource TextMuted}"
+                                                                   IsVisible="{Binding HasBreadcrumb}"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   FontSize="12.5"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource TextMain}"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                    </StackPanel>
+
+                                                    <!-- Right: Sub-set count badge -->
+                                                    <Border Grid.Column="2" IsVisible="{Binding HasDescendants}"
+                                                            Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                                                            CornerRadius="6" Padding="7,2.5" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding DescendantCount, StringFormat='{}{0} sub-sets'}"
+                                                                   FontSize="10.5" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <!-- Rubberband Canvas for Enabled Column -->
+                            <Canvas x:Name="EnabledRubberbandCanvas" IsHitTestVisible="False">
+                                <Border x:Name="EnabledRubberbandBorder"
+                                        Background="{DynamicResource AccentRubberbandBgBrush}"
+                                        BorderBrush="{DynamicResource AccentBrush}"
+                                        BorderThickness="1.5"
+                                        CornerRadius="4"
+                                        IsVisible="False"/>
+                            </Canvas>
+                        </Panel>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================== -->
+                <!-- CENTER CONTROLS: DISABLE ALL, SWAP, ENABLE -->
+                <!-- ========================================== -->
+                <StackPanel Grid.Column="1"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Spacing="10">
+                    <!-- Disable All (Left to Right) -->
+                    <Button Classes="config-ctrl-btn"
+                            Command="{Binding DisableAllSetsCommand}"
+                            ToolTip.Tip="{loc:Loc 'common.disable'}">
+                        <icon:PackIconBoxIcons Kind="RegularCaretRight" Width="16" Height="16" Foreground="{DynamicResource TextMain}"/>
+                    </Button>
+
+                    <!-- Swap Sets -->
+                    <Button Classes="config-ctrl-btn"
+                            Command="{Binding SwapSetsCommand}"
+                            ToolTip.Tip="{loc:Loc 'configurations.swap_sets'}">
+                        <icon:PackIconBoxIcons Kind="RegularSwapHorizontal" Width="16" Height="16" Foreground="{DynamicResource TextMain}"/>
+                    </Button>
+
+                    <!-- Enable All (Right to Left) -->
+                    <Button Classes="config-ctrl-btn"
+                            Command="{Binding EnableAllSetsCommand}"
+                            ToolTip.Tip="{loc:Loc 'common.enable'}">
+                        <icon:PackIconBoxIcons Kind="RegularCaretLeft" Width="16" Height="16" Foreground="{DynamicResource TextMain}"/>
+                    </Button>
+                </StackPanel>
+
+                <!-- ========================================== -->
+                <!-- COLUMN B: DISABLED SETS                    -->
+                <!-- ========================================== -->
+                <Border x:Name="DisabledColumnBorder"
+                        Grid.Column="2"
+                        Background="{DynamicResource BgSidebar}"
+                        CornerRadius="12"
+                        Padding="16"
+                        ClipToBounds="True"
+                        DragDrop.AllowDrop="True">
+                    <Grid RowDefinitions="Auto, *">
+                        <!-- Clean Header (No icon, background, color, badge) -->
+                        <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
+                            <TextBlock Grid.Column="0" Text="{loc:Loc 'configurations.disabled_sets'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{loc:Loc 'configurations.drag_to_enable'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Disabled Sets List with Rubberband Container -->
+                        <Panel Grid.Row="1" x:Name="DisabledListHost" Background="Transparent">
+                            <ScrollViewer x:Name="DisabledScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl x:Name="DisabledItemsControl" ItemsSource="{Binding DisabledSets}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:ConfigSetItemViewModel}">
+                                            <Border Classes="config-set-card"
+                                                    Classes.selected="{Binding IsSelected}"
+                                                    DoubleTapped="OnSetCardDoubleTapped"
+                                                    PointerPressed="OnSetCardPointerPressed"
+                                                    PointerMoved="OnSetCardPointerMoved"
+                                                    PointerReleased="OnSetCardPointerReleased"
+                                                    PointerCaptureLost="OnSetCardPointerCaptureLost">
+                                                <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                                                    <!-- Icon -->
+                                                    <icon:PackIconBoxIcons Grid.Column="0" Kind="{Binding IconKind}" Foreground="{Binding IconBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                                                    <!-- Text: Breadcrumb + Set Name -->
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="{Binding BreadcrumbPath}"
+                                                                   FontSize="10.5"
+                                                                   Foreground="{DynamicResource TextMuted}"
+                                                                   IsVisible="{Binding HasBreadcrumb}"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   FontSize="12.5"
+                                                                   FontWeight="Medium"
+                                                                   Foreground="{DynamicResource TextMuted}"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                    </StackPanel>
+
+                                                    <!-- Right: Sub-set count badge -->
+                                                    <Border Grid.Column="2" IsVisible="{Binding HasDescendants}"
+                                                            Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                                                            CornerRadius="6" Padding="7,2.5" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding DescendantCount, StringFormat='{}{0} sub-sets'}"
+                                                                   FontSize="10.5" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <!-- Rubberband Canvas for Disabled Column -->
+                            <Canvas x:Name="DisabledRubberbandCanvas" IsHitTestVisible="False">
+                                <Border x:Name="DisabledRubberbandBorder"
+                                        Background="{DynamicResource AccentRubberbandBgBrush}"
+                                        BorderBrush="{DynamicResource AccentBrush}"
+                                        BorderThickness="1.5"
+                                        CornerRadius="4"
+                                        IsVisible="False"/>
+                            </Canvas>
+                        </Panel>
+                    </Grid>
+                </Border>
+
+            </Grid>
+
+        </Grid>
+
+        <!-- ========================================== -->
+        <!-- 3. MODAL OVERLAY: SUB-SET CASCADE PROMPT   -->
+        <!-- ========================================== -->
+        <Grid Grid.ColumnSpan="2"
+              ZIndex="1000"
+              Background="#aa080e1a"
+              IsVisible="{Binding IsCascadeModalVisible}"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch">
+            <Border Background="{DynamicResource BgSidebar}"
+                    CornerRadius="14"
+                    Width="480"
+                    Padding="24"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel Spacing="16">
+                    <!-- Modal Header -->
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Width="36" Height="36">
+                            <icon:PackIconBoxIcons Kind="RegularFolder" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding CascadeModalTitle}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                            <TextBlock Text="Nested Sub-Sets Detected" FontSize="11.5" Foreground="{DynamicResource TextMuted}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Message Body -->
+                    <TextBlock Text="{Binding CascadeModalMessage}"
+                               FontSize="12.5"
+                               Foreground="{DynamicResource TextMain}"
+                               TextWrapping="Wrap"
+                               LineHeight="18"/>
+
+                    <!-- Action Buttons Grid -->
+                    <Grid ColumnDefinitions="*, 8, *, 8, Auto" Margin="0,6,0,0">
+                        <Button Grid.Column="0" Classes="btn-action-primary" Command="{Binding CascadeIncludeSubSetsCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                            <TextBlock Text="Move All (With Sub-Sets)" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </Button>
+
+                        <Button Grid.Column="2" Classes="btn-action-sec" Command="{Binding CascadeSingleSetOnlyCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                            <TextBlock Text="This Set Only" FontSize="11.5" VerticalAlignment="Center"/>
+                        </Button>
+
+                        <Button Grid.Column="4" Classes="btn-action-sec" Command="{Binding CascadeCancelCommand}">
+                            <TextBlock Text="{loc:Loc 'common.cancel'}" FontSize="11.5" VerticalAlignment="Center"/>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+    </Grid>
+</UserControl>

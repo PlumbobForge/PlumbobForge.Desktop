@@ -1,0 +1,179 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             x:Class="PlumbobForge.Desktop.Views.QuickSwitcherOverlayView"
+             x:DataType="vm:QuickSwitcherViewModel"
+             IsVisible="{Binding IsOpen}">
+
+    <UserControl.Styles>
+        <!-- Category Pill Style -->
+        <Style Selector="Button.category-pill">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.category-pill:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+            <Setter Property="TextBlock.Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <Style Selector="Button.category-pill.selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="TextBlock.Foreground" Value="White"/>
+        </Style>
+
+        <!-- Quick Search TextBox Styles (Completely borderless and transparent across all states) -->
+        <Style Selector="TextBox.quick-search-box">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Padding" Value="0,8"/>
+            <Setter Property="MinHeight" Value="36"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="SelectionBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="TextBox.quick-search-box /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="TextBox.quick-search-box:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="TextBox.quick-search-box:focus /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="TextBox.quick-search-box:focus-within /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <!-- Result Item Card Style -->
+        <Style Selector="Border.result-card">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Border.result-card:pointerover">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+        <Style Selector="Border.result-card.selected">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Semi-transparent backdrop -->
+    <Grid Background="#90000000" PointerPressed="OnBackdropPointerPressed">
+        <!-- Floating Command Palette Box -->
+        <Border Width="650" MaxHeight="520" Margin="0,70,0,0"
+                VerticalAlignment="Top" HorizontalAlignment="Center"
+                Background="{DynamicResource BgSidebar}"
+                BorderBrush="{DynamicResource BorderSubtle}"
+                BorderThickness="1"
+                CornerRadius="12"
+                ClipToBounds="True"
+                BoxShadow="0 20 40 0 #80000000"
+                PointerPressed="OnCardPointerPressed">
+
+            <Grid RowDefinitions="Auto, Auto, *">
+
+                <!-- 1. Search Bar Input -->
+                <Border Grid.Row="0" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderMain}" BorderThickness="0,0,0,1" Padding="16,0" Height="52">
+                    <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularSearch" Width="18" Height="18" Foreground="{DynamicResource TextSubtle}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                        <TextBox x:Name="SearchBox" Grid.Column="1"
+                                 Classes="quick-search-box"
+                                 Text="{Binding SearchQuery, Mode=TwoWay}"
+                                 Watermark="{loc:Loc 'filters.search_placeholder'}"
+                                 FontSize="14"
+                                 Foreground="{DynamicResource TextMain}"
+                                 VerticalAlignment="Center"
+                                 VerticalContentAlignment="Center"
+                                 KeyDown="OnSearchBoxKeyDown"/>
+
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <Border Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                <TextBlock Text="ESC" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 2. Category Filter Pills -->
+                <Border Grid.Row="1" Background="{DynamicResource BgSidebar}" BorderBrush="{DynamicResource BorderMain}" BorderThickness="0,0,0,1" Padding="12,6">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Button Content="{loc:Loc 'common.all'}" Classes="category-pill" Classes.selected="{Binding IsAllSelected}"
+                                Command="{Binding SetCategoryCommand}" CommandParameter="All"/>
+                        <Button Content="{loc:Loc 'library.sets'}" Classes="category-pill" Classes.selected="{Binding IsSetsSelected}"
+                                Command="{Binding SetCategoryCommand}" CommandParameter="Sets"/>
+                        <Button Content="{loc:Loc 'nav.configurations'}" Classes="category-pill" Classes.selected="{Binding IsConfigsSelected}"
+                                Command="{Binding SetCategoryCommand}" CommandParameter="Configurations"/>
+                        <Button Content="{loc:Loc 'common.items'}" Classes="category-pill" Classes.selected="{Binding IsItemsSelected}"
+                                Command="{Binding SetCategoryCommand}" CommandParameter="Items"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 3. Search Results List -->
+                <Grid Grid.Row="2" MinHeight="120" MaxHeight="380">
+                    <!-- Empty State -->
+                    <StackPanel IsVisible="{Binding !Results.Count}" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8" Margin="0,30">
+                        <icon:PackIconBoxIcons Kind="RegularSearch" Width="28" Height="28" Foreground="{DynamicResource TextSubtle}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding EmptyStateMessage}" FontSize="13" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Results Scrollable List -->
+                    <ScrollViewer x:Name="ResultsScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl x:Name="ResultsItemsControl" ItemsSource="{Binding Results}" Margin="8">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:QuickSwitcherItemViewModel}">
+                                    <Border Classes="result-card" Classes.selected="{Binding IsSelected}"
+                                            PointerPressed="OnItemPointerPressed">
+                                        <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                                            <!-- Icon -->
+                                            <Border Grid.Column="0" Width="32" Height="32" CornerRadius="6" Background="{DynamicResource BgSurface}" Margin="0,0,10,0" VerticalAlignment="Center">
+                                                <icon:PackIconBoxIcons Kind="{Binding IconKind}" Foreground="{Binding IconBrush}" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+
+                                            <!-- Title & Subtitle -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                <Grid ColumnDefinitions="Auto, Auto">
+                                                    <TextBlock Text="{Binding Title}" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"/>
+                                                    <Border Grid.Column="1" Background="{DynamicResource AccentBrush}" CornerRadius="3" Padding="4,1" Margin="8,0,0,0" VerticalAlignment="Center"
+                                                            IsVisible="{Binding DetailBadge, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                                        <TextBlock Text="{Binding DetailBadge}" FontSize="8.5" FontWeight="Bold" Foreground="White"/>
+                                                    </Border>
+                                                </Grid>
+                                                <TextBlock Text="{Binding Subtitle}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+
+                                            <!-- Category Badge -->
+                                            <Border Grid.Column="2" Background="{Binding BadgeBackground}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding BadgeText}" FontSize="9.5" FontWeight="Bold" Foreground="{Binding BadgeForeground}"/>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

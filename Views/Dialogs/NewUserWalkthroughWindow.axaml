@@ -1,0 +1,516 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+        xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+        x:Class="PlumbobForge.Desktop.Views.Dialogs.NewUserWalkthroughWindow"
+        x:DataType="vm:NewUserWalkthroughViewModel"
+        Title="Getting Started with PlumbobForge"
+        Width="740" Height="560"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        SystemDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        Background="{DynamicResource BgSidebar}">
+
+    <Window.Styles>
+        <!-- Step Indicator Pills -->
+        <Style Selector="Border.step-pill">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="10,4"/>
+        </Style>
+        <Style Selector="Border.step-pill.active">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="Border.step-pill.active TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <!-- Form Labels & Helpers matching SettingsView -->
+        <Style Selector="TextBlock.form-label">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+        <Style Selector="TextBlock.form-helper">
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="LineHeight" Value="16"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
+        </Style>
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+
+        <!-- Swatch Button Styles -->
+        <Style Selector="Button.swatch-btn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,0,10,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.swatch-btn /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="Button.swatch-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="Button.swatch-btn:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <!-- Slider Theme Overrides matching SettingsView -->
+        <Style Selector="Slider.compression-slider /template/ Track#PART_Track">
+            <Setter Property="MinHeight" Value="6"/>
+        </Style>
+        <Style Selector="Slider.compression-slider:pointerover /template/ RepeatButton#PART_DecreaseButton">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+    </Window.Styles>
+
+    <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" ClipToBounds="True" Background="{DynamicResource BgSidebar}">
+        <Grid RowDefinitions="Auto, *, Auto">
+            <!-- Top Step Progress Indicator (Draggable header, no top bar) -->
+            <Border Grid.Row="0" Background="Transparent" Padding="0,18,0,10" PointerPressed="OnHeaderPointerPressed">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                    <Border Classes="step-pill" Classes.active="{Binding IsStep1}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="1" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="Welcome" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="step-pill" Classes.active="{Binding IsStep2}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="2" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="Content" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="step-pill" Classes.active="{Binding IsStep3}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="3" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="Configurations" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="step-pill" Classes.active="{Binding IsStep4}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="4" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="Tools" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="step-pill" Classes.active="{Binding IsStep5}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="5" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="Quick Settings" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="step-pill" Classes.active="{Binding IsStep6}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="6" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="Ready" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- Step Content Deck -->
+            <Panel Grid.Row="1" Margin="36,16">
+                <!-- STEP 1: WELCOME -->
+                <StackPanel Spacing="20" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="620" IsVisible="{Binding IsStep1}">
+                    <Border Width="64" Height="64" CornerRadius="32" Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1.5" HorizontalAlignment="Center">
+                        <Image Source="{SvgImage /Assets/appicon.svg}" Width="36" Height="36" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Spacing="6" HorizontalAlignment="Center">
+                        <TextBlock Text="Welcome to PlumbobForge" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource TextMain}" HorizontalAlignment="Center" TextAlignment="Center"/>
+                        <TextBlock Text="The high-performance custom content manager, cache builder, and mod organizer for The Sims 3." FontSize="13" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" LineHeight="20"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="14" Margin="0,8,0,0">
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularBolt" Width="20" Height="20" Foreground="{DynamicResource AccentBrush}" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Text="High-Speed Compilation" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Combines packages into high-performance cache packages designed to drastically reduce game load times." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularFolder" Width="20" Height="20" Foreground="#38bdf8" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Text="Modular Sets &amp; Sub-Sets" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Organize thousands of packages into structured folders with intuitive drag-and-drop, custom icons, and colors." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularSliderAlt" Width="20" Height="20" Foreground="#a855f7" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Text="Custom Mod Profiles" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Create tailored configurations for different save files or gameplay themes, and switch between them with a single click." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- STEP 2: LIBRARY TAB -->
+                <Grid RowDefinitions="Auto, *" IsVisible="{Binding IsStep2}">
+                    <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,18">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <icon:PackIconBoxIcons Kind="RegularFolder" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Library" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="Your central workspace for organizing, inspecting, and managing custom content." FontSize="12.5" Foreground="{DynamicResource TextMuted}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Spacing="16">
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularFolder" Width="20" Height="20" Foreground="{DynamicResource AccentBrush}" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="3">
+                                <TextBlock Text="Sets &amp; Sub-Sets Hierarchy" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Group your CC into custom folders (e.g. Hair, Clothing, Build, Mods). Drag and drop packages between sets and customize set icons and colors." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularFilter" Width="20" Height="20" Foreground="#38bdf8" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="3">
+                                <TextBlock Text="Smart Filtering &amp; Instant Search" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Instantly filter packages by item type (CAS Parts, Objects, Sliders, Patterns, Mods), CAS categories, age/gender tags, or user tags." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularPhotoAlbum" Width="20" Height="20" Foreground="#a855f7" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="3">
+                                <TextBlock Text="Thumbnail Previews &amp; Metadata Inspector" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Click any item to view high-resolution extracted 3D/catalog previews, detailed CAS flags, file sizes, and individually toggle items enabled or disabled." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+
+                <!-- STEP 3: CONFIGURATIONS TAB -->
+                <Grid RowDefinitions="Auto, *" IsVisible="{Binding IsStep3}">
+                    <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,18">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <icon:PackIconBoxIcons Kind="RegularSliderAlt" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Configurations" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="Create modular loadout profiles so you only deploy the CC needed for each game session." FontSize="12.5" Foreground="{DynamicResource TextMuted}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Spacing="16">
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularUserCircle" Width="20" Height="20" Foreground="{DynamicResource AccentBrush}" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="3">
+                                <TextBlock Text="Theme &amp; Save Loadouts" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Set up custom configurations for different saves or themes (e.g. 'Victorian Decade', 'Sci-Fi World', 'Default Modern', 'Lightweight Testing')." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularCheckSquare" Width="20" Height="20" Foreground="#38bdf8" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="3">
+                                <TextBlock Text="One-Click Set Activation" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Simply check or uncheck which Sets are active in each configuration. PlumbobForge will only build game caches for active sets." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularPlay" Width="20" Height="20" Foreground="#a855f7" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="3">
+                                <TextBlock Text="Fast Game Launching" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Switch your active configuration before starting The Sims 3 to load only relevant mods without ever having to manually move files around." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+
+                <!-- STEP 4: BUILT-IN TOOLS -->
+                <Grid RowDefinitions="Auto, *" IsVisible="{Binding IsStep4}">
+                    <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,18">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <icon:PackIconBoxIcons Kind="RegularSpanner" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Built-in Power Tools" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="Dedicated utilities to keep your game fast, healthy, and organized." FontSize="12.5" Foreground="{DynamicResource TextMuted}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Spacing="16">
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularBookmark" Width="20" Height="20" Foreground="{DynamicResource AccentBrush}" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="3">
+                                <TextBlock Text="Collection Creator &amp; Catalog Hider" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Build in-game Buy/Build collection packages with custom icons, and optionally hide collection objects from the general catalog to prevent clutter." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularTrash" Width="20" Height="20" Foreground="#38bdf8" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="3">
+                                <TextBlock Text="Cache Cleaner" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Safely purge temporary script caches, world caches, and thumbnails cache to fix texture corruption and solve game crashes." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularShield" Width="20" Height="20" Foreground="#a855f7" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="3">
+                                <TextBlock Text="Health Checks &amp; Diagnostics" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Scan your Sims 3 directory for configuration issues, detect duplicate files, repair corrupted packages, and verify Sims3Pack integrity." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+
+                <!-- STEP 5: QUICK SETTINGS (MATCHING SETTINGSVIEW EXACTLY, UNBOXED) -->
+                <Grid RowDefinitions="Auto, *" IsVisible="{Binding IsStep5}">
+                    <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <icon:PackIconBoxIcons Kind="RegularPalette" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Quick Settings" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="Personalize your workspace and choose your caching preferences right now." FontSize="12.5" Foreground="{DynamicResource TextMuted}"/>
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
+                        <StackPanel Spacing="16">
+                            <!-- Theme Mode Switcher -->
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Theme Mode" Classes="form-label"/>
+                                <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="3">
+                                    <Grid ColumnDefinitions="*, *, *">
+                                        <Button Grid.Column="0"
+                                                Classes="segment-btn"
+                                                Classes.active="{Binding IsDarkTheme}"
+                                                Command="{Binding SetThemeCommand}"
+                                                CommandParameter="Dark"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <icon:PackIconBoxIcons Kind="RegularMoon" Width="13" Height="13" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Dark" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+
+                                        <Button Grid.Column="1"
+                                                Classes="segment-btn"
+                                                Classes.active="{Binding IsLightTheme}"
+                                                Command="{Binding SetThemeCommand}"
+                                                CommandParameter="Light"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <icon:PackIconBoxIcons Kind="RegularSun" Width="13" Height="13" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Light" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+
+                                        <Button Grid.Column="2"
+                                                Classes="segment-btn"
+                                                Classes.active="{Binding IsSystemTheme}"
+                                                Command="{Binding SetThemeCommand}"
+                                                CommandParameter="System"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <icon:PackIconBoxIcons Kind="RegularDesktop" Width="13" Height="13" VerticalAlignment="Center"/>
+                                                <TextBlock Text="System" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                                <TextBlock Text="Choose between dark, clean light mode, or follow your operating system appearance." Classes="form-helper"/>
+                            </StackPanel>
+
+                            <!-- Accent Color Picker -->
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Accent Color" Classes="form-label"/>
+                                <ItemsControl ItemsSource="{Binding AccentOptions}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="vm:AccentColorItemViewModel">
+                                            <Button Classes="swatch-btn"
+                                                    Command="{Binding $parent[Window].((vm:NewUserWalkthroughViewModel)DataContext).SetAccentCommand}"
+                                                    CommandParameter="{Binding Name}"
+                                                    ToolTip.Tip="{Binding DisplayName}">
+                                                <Grid Width="34" Height="34">
+                                                    <!-- Outer ring for selected swatch -->
+                                                    <Border CornerRadius="17"
+                                                            BorderBrush="{Binding SwatchBrush}"
+                                                            BorderThickness="2"
+                                                            IsVisible="{Binding IsSelected}"/>
+                                                    <!-- Inner Color Circle -->
+                                                    <Border Background="{Binding SwatchBrush}"
+                                                            CornerRadius="13"
+                                                            Width="26" Height="26"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center">
+                                                        <icon:PackIconBoxIcons Kind="RegularCheck"
+                                                                               Width="14" Height="14"
+                                                                               Foreground="White"
+                                                                               HorizontalAlignment="Center"
+                                                                               VerticalAlignment="Center"
+                                                                               IsVisible="{Binding IsSelected}"/>
+                                                    </Border>
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="Customizes buttons, toggles, active tabs, and highlights across the entire app." Classes="form-helper"/>
+                            </StackPanel>
+
+                            <Separator Background="{DynamicResource BorderMain}" Margin="0,2"/>
+
+                            <!-- Cache Building Strategy Toggle -->
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Cache Generation Mode" Classes="form-label"/>
+                                <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="3">
+                                    <Grid ColumnDefinitions="*, *">
+                                        <Button Grid.Column="0"
+                                                Classes="segment-btn"
+                                                Classes.active="{Binding IsDynamicCache}"
+                                                Command="{Binding SetDynamicCacheCommand}"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <icon:PackIconBoxIcons Kind="RegularGrid" Width="14" Height="14" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Dynamic Cache" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+
+                                        <Button Grid.Column="1"
+                                                Classes="segment-btn"
+                                                Classes.active="{Binding IsStaticCache}"
+                                                Command="{Binding SetStaticCacheCommand}"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <icon:PackIconBoxIcons Kind="RegularPackage" Width="14" Height="14" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Static Bundle" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                                <TextBlock Text="{Binding CacheMethodDescription}" Classes="form-helper"/>
+                            </StackPanel>
+
+                            <!-- Compression Level Slider -->
+                            <StackPanel Spacing="4">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBlock Text="Cache Compression Level" Classes="form-label"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding CompressionLevelText}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
+                                </Grid>
+
+                                <Slider Classes="compression-slider"
+                                        Minimum="0" Maximum="2" Value="{Binding CompressionSliderValue}"
+                                        TickFrequency="1" IsSnapToTickEnabled="True"
+                                        Margin="0,4,0,6"/>
+
+                                <Grid ColumnDefinitions="Auto, *, Auto" Margin="2,0,2,0">
+                                    <TextBlock Grid.Column="0" Text="None" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                    <TextBlock Grid.Column="1" Text="Balanced" FontSize="10.5" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="High" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                </Grid>
+
+                                <TextBlock Text="{Binding CompressionDescription}" Classes="form-helper" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+
+                <!-- STEP 6: ONE LAST THING: MIGRATION & READY -->
+                <StackPanel Spacing="20" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="600" IsVisible="{Binding IsStep6}">
+                    <Border Width="64" Height="64" CornerRadius="32" Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1.5" HorizontalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularRocket" Width="32" Height="32" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <StackPanel Spacing="4" HorizontalAlignment="Center">
+                        <TextBlock Text="One Last Thing..." FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextMain}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="You're all set to begin using PlumbobForge." FontSize="13" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Optional Migration Section (Unboxed) -->
+                    <Grid ColumnDefinitions="*, Auto" Margin="0,10,0,0">
+                        <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,20,0">
+                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                <icon:PackIconBoxIcons Kind="RegularArchive" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Text="Migrating from CC Magic or s3mo?" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                            </StackPanel>
+                            <TextBlock Text="If you have existing content in CC Magic or s3mo, import your sets, configurations, and packages automatically. You can also skip this and import anytime later in Settings."
+                                       FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                        </StackPanel>
+
+                        <Panel Grid.Column="1" VerticalAlignment="Center">
+                            <Button Command="{Binding OpenMigrationToolCommand}"
+                                    IsVisible="{Binding !HasRunMigration}"
+                                    Classes="btn-action-sec"
+                                    Padding="14,8">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <icon:PackIconBoxIcons Kind="RegularArchive" Width="14" Height="14" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Migrate CC" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Border Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="6" Padding="10,6" IsVisible="{Binding HasRunMigration}">
+                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <icon:PackIconBoxIcons Kind="RegularCheck" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Import Complete" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </Panel>
+                    </Grid>
+
+                    <TextBlock Text="Click 'Get Started' below to enter PlumbobForge and start organizing." FontSize="12" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                </StackPanel>
+            </Panel>
+
+            <!-- Bottom Navigation Bar -->
+            <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" Height="56" Padding="20,0" BorderThickness="0">
+                <Grid ColumnDefinitions="Auto, *, Auto">
+                    <!-- Back Button -->
+                    <Button Grid.Column="0" Command="{Binding PreviousStepCommand}" IsVisible="{Binding CanGoBack}" Classes="btn-action-sec" Padding="14,7" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <icon:PackIconBoxIcons Kind="RegularChevronLeft" Width="14" Height="14" VerticalAlignment="Center"/>
+                            <TextBlock Text="Back" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Next Button (Steps 1 to 5) -->
+                    <Button Grid.Column="2" Command="{Binding NextStepCommand}" IsVisible="{Binding CanGoNext}" Classes="btn-action-primary" Padding="18,7" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="Next" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="14" Height="14" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Finish / Get Started Button (Step 6) -->
+                    <Button Grid.Column="2" Command="{Binding FinishCommand}" IsVisible="{Binding IsLastStep}" Classes="btn-action-primary" Padding="20,8" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <icon:PackIconBoxIcons Kind="RegularRocket" Width="15" Height="15" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="Get Started" FontSize="12.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

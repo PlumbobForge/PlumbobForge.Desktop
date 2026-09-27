@@ -1,0 +1,601 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:services="using:PlumbobForge.Backend.Services"
+             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="800"
+             x:Class="PlumbobForge.Desktop.Views.Health.CollectionCreatorView"
+             x:DataType="vm:HealthViewModel">
+
+    <UserControl.Styles>
+        <!-- Filter Pill Style for Category Buttons -->
+        <Style Selector="Button.filter-pill">
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,6,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.filter-pill:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+        </Style>
+        <Style Selector="Button.filter-pill.active /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="Button.filter-pill.active TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.filter-pill.active:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto, *">
+        <!-- 1. Collections View (When editor is closed) -->
+        <Grid Grid.Row="1" RowDefinitions="Auto, *" IsVisible="{Binding !IsCollectionEditorOpen}">
+            <!-- Top Controls Bar: Search & Refresh -->
+            <Grid Grid.Row="0" ColumnDefinitions="*, Auto" VerticalAlignment="Center" Margin="0,0,0,16">
+                <!-- Capsule Search Input -->
+                <TextBox Grid.Column="0"
+                         Classes="capsule-search"
+                         Text="{Binding CollectionSearchQuery, Mode=TwoWay}"
+                         Watermark="{loc:Loc 'tools.collections.search_watermark'}"
+                         MaxWidth="420"
+                         HorizontalAlignment="Left">
+                    <TextBox.InnerLeftContent>
+                        <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="10,0,4,0" VerticalAlignment="Center"/>
+                    </TextBox.InnerLeftContent>
+                    <TextBox.InnerRightContent>
+                        <Button Command="{Binding ClearCollectionSearchCommand}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0"
+                                Margin="0,0,6,0"
+                                Width="24" Height="24"
+                                CornerRadius="12"
+                                Cursor="Hand"
+                                IsVisible="{Binding HasCollectionSearchQuery}"
+                                ToolTip.Tip="{loc:Loc 'common.clear_search'}">
+                            <Button.Styles>
+                                <Style Selector="Button:pointerover">
+                                    <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+                                </Style>
+                                <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                    <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+                                </Style>
+                            </Button.Styles>
+                            <icon:PackIconBoxIcons Kind="RegularX" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                    </TextBox.InnerRightContent>
+                </TextBox>
+
+                <!-- Actions: Refresh Button -->
+                <Button Grid.Column="1"
+                        Classes="btn-action-sec"
+                        Command="{Binding LoadCollectionsCommand}"
+                        Padding="10,7"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="{loc:Loc 'tools.collections.refresh_tip'}">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularRefreshCw" Width="14" Height="14" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{loc:Loc 'tools.collections.refresh'}" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <!-- Collections List View -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="10">
+                    <!-- Loading State -->
+                    <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                            CornerRadius="8" Padding="20" IsVisible="{Binding IsLoadingCollections}">
+                        <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <ProgressBar IsIndeterminate="True" Width="20" Height="20" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'tools.collections.reading'}" FontSize="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Empty State -->
+                    <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                            CornerRadius="12" Padding="40" IsVisible="{Binding IsNoCollectionsFound}">
+                        <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <icon:PackIconBoxIcons Kind="RegularFolder" Width="36" Height="36" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'tools.collections.empty_title'}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'tools.collections.empty_desc'}"
+                                       FontSize="12" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Collections Grid / List -->
+                    <ItemsControl ItemsSource="{Binding FilteredCollections}" IsVisible="{Binding HasCollections}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:CollectionItemViewModel">
+                                <Border Classes="settings-card" Margin="0,0,0,8" Padding="14">
+                                    <Grid ColumnDefinitions="Auto, *, Auto">
+                                        <!-- Collection Icon Thumbnail -->
+                                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="10" Background="{DynamicResource BgMain}"
+                                                BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" Margin="0,0,14,0" VerticalAlignment="Center">
+                                            <Panel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Image Source="{Binding IconBitmap}" Width="38" Height="38" IsVisible="{Binding HasBitmap}" Stretch="Uniform"/>
+                                                <icon:PackIconBoxIcons Kind="RegularFolder" Width="22" Height="22" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding !HasBitmap}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Panel>
+                                        </Border>
+
+                                        <!-- Details -->
+                                        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+
+                                                <!-- PlumbobForge Tag Badge -->
+                                                <Border Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" IsVisible="{Binding IsPlumbobForge}">
+                                                    <TextBlock Text="PlumbobForge" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                                                </Border>
+
+                                                <!-- Catalog Hidden Badge -->
+                                                <Border Background="#241b35" BorderBrush="#8b5cf6" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" IsVisible="{Binding HideFromCatalog}" ToolTip.Tip="{loc:Loc 'tools.collections.catalog_hidden_tip'}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                        <icon:PackIconBoxIcons Kind="RegularGhost" Width="10" Height="10" Foreground="#a78bfa" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Loc 'tools.collections.catalog_hidden'}" FontSize="10" FontWeight="Bold" Foreground="#a78bfa"/>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <Border Background="{DynamicResource BgMain}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" IsVisible="{Binding !IsPlumbobForge}">
+                                                    <TextBlock Text="Sims 3" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                                                </Border>
+
+                                                <Border Background="{DynamicResource BgMain}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" IsVisible="{Binding IsPlumbobForge}">
+                                                    <TextBlock Text="{Binding ItemCount, StringFormat='{}{0} items'}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
+                                                </Border>
+                                            </StackPanel>
+
+                                            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding FileName}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" FontFamily="Consolas, monospace"/>
+                                                <TextBlock Text="•" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                                <TextBlock Text="{Binding FormattedLastModified, StringFormat='Modified: {0}'}" FontSize="11.5" Foreground="{DynamicResource TextMuted}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <!-- Actions -->
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                            <Button Classes="btn-action-sec"
+                                                    Command="{Binding $parent[UserControl].((vm:HealthViewModel)DataContext).EditCollectionCommand}"
+                                                    CommandParameter="{Binding}">
+                                                <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                                    <icon:PackIconBoxIcons Kind="RegularEdit" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{loc:Loc 'common.edit'}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+
+                                            <Button Classes="btn-action-sec"
+                                                    Command="{Binding $parent[UserControl].((vm:HealthViewModel)DataContext).DeleteCollectionCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Padding="9,7"
+                                                    ToolTip.Tip="{loc:Loc 'tools.collections.delete_tip'}">
+                                                <Button.Styles>
+                                                    <Style Selector="Button:pointerover">
+                                                        <Setter Property="Background" Value="#331518"/>
+                                                    </Style>
+                                                </Button.Styles>
+                                                <icon:PackIconBoxIcons Kind="RegularTrash" Width="14" Height="14" Foreground="#ef4444" VerticalAlignment="Center"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- 2. Collection Editor (Create / Edit View) -->
+        <Border Grid.Row="1" Classes="settings-card" Padding="24" IsVisible="{Binding IsCollectionEditorOpen}">
+            <Grid RowDefinitions="Auto, *">
+                <!-- Editor Header: Title on Left, Cancel & Save Buttons on Right -->
+                <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,24">
+                    <StackPanel Grid.Column="0" Spacing="4" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding CollectionEditorTitle}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                        <TextBlock Text="{loc:Loc 'tools.collections.editor_desc'}" FontSize="12.5" Foreground="{DynamicResource TextMuted}"/>
+                    </StackPanel>
+
+                    <!-- Top Action Buttons -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <Button Classes="btn-action-sec" Command="{Binding CancelEditCollectionCommand}" Padding="14,8">
+                            <TextBlock Text="{loc:Loc 'common.cancel'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </Button>
+
+                        <Button Classes="btn-action-primary" Command="{Binding SaveCollectionCommand}" IsEnabled="{Binding !IsSavingCollection}" Padding="16,8">
+                            <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+                                <icon:PackIconBoxIcons Kind="RegularSave" Width="15" Height="15" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'common.save'}" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Editor Body: Split 2-Column Panel (Unboxed / Clean Layout) -->
+                <Grid Grid.Row="1" ColumnDefinitions="1.15*, 28, 1.2*">
+                    <!-- LEFT COLUMN: Identity & Icon Selection -->
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
+                        <StackPanel Spacing="22">
+                            <!-- Warning banner for non-PlumbobForge collection -->
+                            <Border Background="#241b0b" BorderBrush="#d97706" BorderThickness="1" CornerRadius="8" Padding="14,12" IsVisible="{Binding IsEditingNonPlumbobForgeCollection}">
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularInfoCircle" Width="20" Height="20" Foreground="#fbbf24" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                    <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                                        <TextBlock Text="{loc:Loc 'tools.collections.external_title'}" FontSize="12.5" FontWeight="Bold" Foreground="#fbbf24"/>
+                                        <TextBlock Text="{loc:Loc 'tools.collections.external_desc'}"
+                                                   FontSize="11.5" Foreground="#fef3c7" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Collection Name Input Section -->
+                            <Grid ColumnDefinitions="Auto, *">
+                                <!-- Selected Icon Big Preview -->
+                                <Border Grid.Column="0" Width="60" Height="60" CornerRadius="12" Background="{DynamicResource BgSurface}"
+                                        BorderBrush="{DynamicResource AccentBrush}" BorderThickness="2" Margin="0,0,14,0" VerticalAlignment="Center">
+                                    <Panel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image Source="{Binding SelectedIcon.IconBitmap}" Width="44" Height="44" IsVisible="{Binding SelectedIcon.HasBitmap, FallbackValue=False}" Stretch="Uniform"/>
+                                        <icon:PackIconBoxIcons Kind="RegularFolder" Width="26" Height="26" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding !SelectedIcon.HasBitmap, FallbackValue=True}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Panel>
+                                </Border>
+
+                                <!-- Name Input -->
+                                <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+                                    <TextBlock Text="{loc:Loc 'tools.collections.name_label'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                                    <TextBox Classes="settings-input"
+                                             Text="{Binding EditingCollectionName}"
+                                             Watermark="{loc:Loc 'tools.collections.name_watermark'}"
+                                             FontSize="12.5"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- In-Game Icon Picker Section -->
+                            <StackPanel Spacing="12">
+                                <Grid ColumnDefinitions="*, Auto" VerticalAlignment="Center">
+                                    <StackPanel Grid.Column="0" Spacing="2">
+                                        <TextBlock Text="{loc:Loc 'tools.collections.ingame_icon'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="0.6"/>
+                                        <TextBlock Text="{Binding SelectedIcon.DisplayName, FallbackValue='None selected', StringFormat='Selected: {0}'}"
+                                                   FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
+                                    </StackPanel>
+
+                                    <!-- Icon Search (Capsule Search) -->
+                                    <TextBox Grid.Column="1"
+                                             Classes="capsule-search"
+                                             Height="30"
+                                             Width="160"
+                                             FontSize="11.5"
+                                             Padding="4,0,4,0"
+                                             Text="{Binding IconSearchQuery, Mode=TwoWay}"
+                                             Watermark="{loc:Loc 'tools.collections.filter_icons'}">
+                                        <TextBox.InnerLeftContent>
+                                            <icon:PackIconBoxIcons Kind="RegularSearch" Width="11" Height="11" Foreground="{DynamicResource TextMuted}" Margin="8,0,2,0" VerticalAlignment="Center"/>
+                                        </TextBox.InnerLeftContent>
+                                        <TextBox.InnerRightContent>
+                                            <Button Command="{Binding ClearIconSearchCommand}"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Padding="0"
+                                                    Margin="0,0,4,0"
+                                                    Width="20" Height="20"
+                                                    CornerRadius="10"
+                                                    Cursor="Hand"
+                                                    IsVisible="{Binding HasIconSearchQuery}"
+                                                    ToolTip.Tip="{loc:Loc 'common.clear_search'}">
+                                                <icon:PackIconBoxIcons Kind="RegularX" Width="10" Height="10" Foreground="{DynamicResource TextMuted}"/>
+                                            </Button>
+                                        </TextBox.InnerRightContent>
+                                    </TextBox>
+                                </Grid>
+
+                                <!-- Category Pills -->
+                                <WrapPanel Orientation="Horizontal">
+                                    <Button Classes="filter-pill" Classes.active="{Binding IsIconCategoryAll}"
+                                            Command="{Binding SetIconCategoryFilterCommand}" CommandParameter="All" Content="{loc:Loc 'common.all'}"/>
+                                    <Button Classes="filter-pill" Classes.active="{Binding IsIconCategoryFurniture}"
+                                            Command="{Binding SetIconCategoryFilterCommand}" CommandParameter="Furniture" Content="{loc:Loc 'tools.collections.cat_furniture'}"/>
+                                    <Button Classes="filter-pill" Classes.active="{Binding IsIconCategorySkills}"
+                                            Command="{Binding SetIconCategoryFilterCommand}" CommandParameter="Skills" Content="{loc:Loc 'tools.collections.cat_skills'}"/>
+                                    <Button Classes="filter-pill" Classes.active="{Binding IsIconCategoryCareers}"
+                                            Command="{Binding SetIconCategoryFilterCommand}" CommandParameter="Careers" Content="{loc:Loc 'tools.collections.cat_careers'}"/>
+                                    <Button Classes="filter-pill" Classes.active="{Binding IsIconCategoryPets}"
+                                            Command="{Binding SetIconCategoryFilterCommand}" CommandParameter="Pets" Content="{loc:Loc 'tools.collections.cat_pets'}"/>
+                                    <Button Classes="filter-pill" Classes.active="{Binding IsIconCategoryAdventures}"
+                                            Command="{Binding SetIconCategoryFilterCommand}" CommandParameter="Adventures" Content="{loc:Loc 'tools.collections.cat_adventures'}"/>
+                                    <Button Classes="filter-pill" Classes.active="{Binding IsIconCategorySymbols}"
+                                            Command="{Binding SetIconCategoryFilterCommand}" CommandParameter="Symbols" Content="{loc:Loc 'tools.collections.cat_symbols'}"/>
+                                </WrapPanel>
+
+                                <!-- Icon Grid Container -->
+                                <Border Background="Transparent" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                                        CornerRadius="8" Padding="6" MaxHeight="230" Margin="0,0,2,0">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+                                        <ItemsControl ItemsSource="{Binding FilteredIcons}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <UniformGrid Columns="6"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:CollectionIconItemViewModel">
+                                                    <Button Command="{Binding $parent[UserControl].((vm:HealthViewModel)DataContext).SelectIconCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Padding="0"
+                                                            Margin="2.5"
+                                                            HorizontalAlignment="Stretch"
+                                                            Height="66"
+                                                            Cursor="Hand"
+                                                            ToolTip.Tip="{Binding DisplayName}">
+                                                        <Button.Styles>
+                                                            <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                                                <Setter Property="Background" Value="Transparent"/>
+                                                            </Style>
+                                                            <Style Selector="Button:pointerover Border.icon-tile:not(.selected-icon)">
+                                                                <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+                                                            </Style>
+                                                        </Button.Styles>
+                                                        <Border Classes="icon-tile"
+                                                                CornerRadius="8" Padding="4"
+                                                                HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                                                Background="Transparent"
+                                                                BorderThickness="1.5"
+                                                                BorderBrush="Transparent">
+                                                            <Border.Styles>
+                                                                <Style Selector="Border.selected-icon">
+                                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                                                    <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+                                                                </Style>
+                                                            </Border.Styles>
+                                                            <Classes.selected-icon>
+                                                                <Binding Path="IsActiveSelection"/>
+                                                            </Classes.selected-icon>
+                                                            <StackPanel Spacing="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                <Panel Width="30" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                    <Image Source="{Binding IconBitmap}" Width="30" Height="30" IsVisible="{Binding HasBitmap}" Stretch="Uniform"/>
+                                                                    <icon:PackIconBoxIcons Kind="RegularFolder" Width="20" Height="20" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding !HasBitmap}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Panel>
+                                                                <TextBlock Text="{Binding DisplayName}" FontSize="9" FontWeight="SemiBold"
+                                                                           Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"
+                                                                           TextAlignment="Center" HorizontalAlignment="Center" Margin="2,0"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Catalog Visibility (Clean Catalog Hider) -->
+                            <StackPanel Spacing="6">
+                                <Grid ColumnDefinitions="*, Auto" VerticalAlignment="Center">
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+                                        <icon:PackIconBoxIcons Kind="RegularGhost" Width="15" Height="15" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{loc:Loc 'tools.collections.hide_in_catalog'}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                        <Button Classes="btn-action-sec"
+                                                Command="{Binding ExportCurrentEditingHiderXmlCommand}"
+                                                Padding="8,5"
+                                                IsVisible="{Binding EditingHideFromCatalog}"
+                                                ToolTip.Tip="Export Batch Resource Editor compatible XML">
+                                            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                <icon:PackIconBoxIcons Kind="RegularCodeAlt" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Loc 'tools.collections.export_xml'}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <ToggleSwitch IsChecked="{Binding EditingHideFromCatalog}"
+                                                      OnContent=""
+                                                      OffContent=""
+                                                      VerticalAlignment="Center"
+                                                      Margin="0"/>
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock Text="{loc:Loc 'tools.collections.hide_desc'}"
+                                           FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Divider -->
+                    <Rectangle Grid.Column="1" Fill="{DynamicResource BorderSubtle}" Width="1" HorizontalAlignment="Center" VerticalAlignment="Stretch"/>
+
+                    <!-- RIGHT COLUMN: Assigned CC Sets & Set Manager -->
+                    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
+                        <StackPanel Spacing="20">
+                            <!-- Sets Overview & Actions Bar -->
+                            <Grid ColumnDefinitions="*, Auto" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding SelectedSetsCount, StringFormat='{}{0} sets added'}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                                    <TextBlock Text="•" FontSize="12" Foreground="{DynamicResource TextMuted}"/>
+                                    <TextBlock Text="{Binding SelectedSetsItemCount, StringFormat='~{0} total items'}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                                </StackPanel>
+
+                                <!-- Quick selection buttons -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <Button Classes="btn-action-sec" Command="{Binding SelectAllSetsForCollectionCommand}" Padding="8,5">
+                                        <TextBlock Text="{loc:Loc 'tools.collections.add_all'}" FontSize="11" FontWeight="SemiBold"/>
+                                    </Button>
+                                    <Button Classes="btn-action-sec" Command="{Binding DeselectAllSetsForCollectionCommand}" IsVisible="{Binding HasAssignedSets}" Padding="8,5">
+                                        <TextBlock Text="{loc:Loc 'tools.collections.remove_all'}" FontSize="11" FontWeight="SemiBold"/>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Assigned Sets List Section -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{loc:Loc 'tools.collections.currently_assigned'}" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="0.6"/>
+
+                                <Border Background="{DynamicResource BgMain}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                                        CornerRadius="8" Padding="6" MaxHeight="165">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Spacing="4">
+                                            <!-- Empty state -->
+                                            <StackPanel Spacing="4" Margin="12,16" HorizontalAlignment="Center" IsVisible="{Binding !HasAssignedSets}">
+                                                <icon:PackIconBoxIcons Kind="RegularPackage" Width="22" Height="22" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Loc 'tools.collections.no_sets_assigned'}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Loc 'tools.collections.click_add'}"
+                                                           FontSize="11" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                            <ItemsControl ItemsSource="{Binding AssignedSets}" IsVisible="{Binding HasAssignedSets}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:CollectionSetOptionViewModel">
+                                                        <Border Padding="10,7" Margin="0,1.5" CornerRadius="6" Background="{DynamicResource BgSurface}">
+                                                            <Grid ColumnDefinitions="Auto, *, Auto, Auto" VerticalAlignment="Center">
+                                                                <!-- Icon -->
+                                                                <icon:PackIconBoxIcons Grid.Column="0" Kind="{Binding IconKind}" Foreground="{Binding IconBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                                                                <!-- Text: Breadcrumb + Set Name -->
+                                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                                    <TextBlock Text="{Binding BreadcrumbPath}"
+                                                                               FontSize="10"
+                                                                               Foreground="{DynamicResource TextMuted}"
+                                                                               IsVisible="{Binding HasBreadcrumb}"
+                                                                               TextTrimming="CharacterEllipsis"/>
+                                                                    <TextBlock Text="{Binding SetName}"
+                                                                               FontSize="12.5"
+                                                                               FontWeight="SemiBold"
+                                                                               Foreground="{DynamicResource TextMain}"
+                                                                               TextTrimming="CharacterEllipsis"/>
+                                                                </StackPanel>
+
+                                                                <!-- Object Count Badge -->
+                                                                <Border Grid.Column="2" Background="{DynamicResource BgMain}" CornerRadius="4" Padding="6,2" Margin="10,0" VerticalAlignment="Center">
+                                                                    <TextBlock Text="{Binding ItemCount, StringFormat='{}{0} items'}" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
+                                                                </Border>
+
+                                                                <!-- Action Button -->
+                                                                <Button Grid.Column="3" Classes="btn-action-sec"
+                                                                        Command="{Binding $parent[UserControl].((vm:HealthViewModel)DataContext).RemoveAssignedSetCommand}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Padding="8,4"
+                                                                        ToolTip.Tip="{loc:Loc 'tools.collections.remove_tip'}">
+                                                                    <Button.Styles>
+                                                                        <Style Selector="Button:pointerover">
+                                                                            <Setter Property="Background" Value="#331518"/>
+                                                                        </Style>
+                                                                    </Button.Styles>
+                                                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                        <icon:PackIconBoxIcons Kind="RegularTrash" Width="12" Height="12" Foreground="#ef4444" VerticalAlignment="Center"/>
+                                                                        <TextBlock Text="{loc:Loc 'common.remove'}" FontSize="11" Foreground="#ef4444" VerticalAlignment="Center"/>
+                                                                    </StackPanel>
+                                                                </Button>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                             </ItemsControl>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Add More Sets Section -->
+                            <StackPanel Spacing="8" IsVisible="{Binding HasAvailableToAddSets}">
+                                <Grid ColumnDefinitions="*, Auto" VerticalAlignment="Center">
+                                    <TextBlock Grid.Column="0" Text="{loc:Loc 'tools.collections.add_cc_sets'}" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="0.6" VerticalAlignment="Center"/>
+
+                                    <!-- Search input for addable sets (Capsule Search) -->
+                                    <TextBox Grid.Column="1"
+                                             Classes="capsule-search"
+                                             Height="30"
+                                             Width="160"
+                                             FontSize="11.5"
+                                             Padding="4,0,4,0"
+                                             Text="{Binding SetSearchQuery, Mode=TwoWay}"
+                                             Watermark="{loc:Loc 'tools.collections.filter_sets'}">
+                                        <TextBox.InnerLeftContent>
+                                            <icon:PackIconBoxIcons Kind="RegularSearch" Width="11" Height="11" Foreground="{DynamicResource TextMuted}" Margin="8,0,2,0" VerticalAlignment="Center"/>
+                                        </TextBox.InnerLeftContent>
+                                        <TextBox.InnerRightContent>
+                                            <Button Command="{Binding ClearSetSearchCommand}"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Padding="0"
+                                                    Margin="0,0,4,0"
+                                                    Width="20" Height="20"
+                                                    CornerRadius="10"
+                                                    Cursor="Hand"
+                                                    IsVisible="{Binding SetSearchQuery, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                    ToolTip.Tip="{loc:Loc 'common.clear_search'}">
+                                                <icon:PackIconBoxIcons Kind="RegularX" Width="10" Height="10" Foreground="{DynamicResource TextMuted}"/>
+                                            </Button>
+                                        </TextBox.InnerRightContent>
+                                    </TextBox>
+                                </Grid>
+
+                                <Border Background="{DynamicResource BgMain}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                                        CornerRadius="8" Padding="6" MaxHeight="310">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding AvailableToAddSets}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:CollectionSetOptionViewModel">
+                                                    <Border Padding="10,7" Margin="0,1.5" CornerRadius="6" Background="{DynamicResource BgSurface}">
+                                                        <Grid ColumnDefinitions="Auto, *, Auto, Auto" VerticalAlignment="Center">
+                                                            <!-- Icon -->
+                                                            <icon:PackIconBoxIcons Grid.Column="0" Kind="{Binding IconKind}" Foreground="{Binding IconBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                                                            <!-- Text: Breadcrumb + Set Name -->
+                                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                                <TextBlock Text="{Binding BreadcrumbPath}"
+                                                                           FontSize="10"
+                                                                           Foreground="{DynamicResource TextMuted}"
+                                                                           IsVisible="{Binding HasBreadcrumb}"
+                                                                           TextTrimming="CharacterEllipsis"/>
+                                                                <TextBlock Text="{Binding SetName}"
+                                                                           FontSize="12.5"
+                                                                           FontWeight="SemiBold"
+                                                                           Foreground="{DynamicResource TextMain}"
+                                                                           TextTrimming="CharacterEllipsis"/>
+                                                            </StackPanel>
+
+                                                            <!-- Object Count Badge -->
+                                                            <Border Grid.Column="2" Background="{DynamicResource BgMain}" CornerRadius="4" Padding="6,2" Margin="10,0" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding ItemCount, StringFormat='{}{0} items'}" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
+                                                            </Border>
+
+                                                            <!-- Action Button -->
+                                                            <Button Grid.Column="3" Classes="btn-action-sec"
+                                                                    Command="{Binding $parent[UserControl].((vm:HealthViewModel)DataContext).AddSetToCollectionCommand}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Padding="8,4"
+                                                                    ToolTip.Tip="{loc:Loc 'tools.collections.add_tip'}">
+                                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                    <icon:PackIconBoxIcons Kind="RegularPlus" Width="12" Height="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                                                    <TextBlock Text="{loc:Loc 'tools.collections.add'}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                                </StackPanel>
+                                                            </Button>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,327 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             x:Class="PlumbobForge.Desktop.Views.Modals.TaskProgressModalView"
+             x:DataType="vm:TaskProgressModalViewModel">
+
+    <UserControl.Styles>
+        <!-- Spinner Rotation Animation -->
+        <Style Selector="icon|PackIconBoxIcons.spinner">
+            <Style.Animations>
+                <Animation Duration="0:0:1" IterationCount="Infinite">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="RotateTransform.Angle" Value="0.0"/>
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="RotateTransform.Angle" Value="360.0"/>
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+
+        <!-- Close Button Styling -->
+        <Style Selector="Button.modal-close-btn">
+            <Setter Property="Background" Value="#10b981"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="20,7"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.15"/>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.modal-close-btn:pointerover">
+            <Setter Property="Background" Value="#059669"/>
+        </Style>
+        <Style Selector="Button.modal-close-btn:disabled">
+            <Setter Property="Background" Value="#1e293b"/>
+            <Setter Property="Foreground" Value="#64748b"/>
+            <Setter Property="Opacity" Value="0.5"/>
+        </Style>
+
+        <!-- Checkbox Styling -->
+        <Style Selector="CheckBox.modal-chk">
+            <Setter Property="Foreground" Value="#94a3b8"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="CheckBox.modal-chk:pointerover">
+            <Setter Property="Foreground" Value="#f1f5f9"/>
+        </Style>
+        <Style Selector="CheckBox.modal-chk:checked /template/ Border#NormalRectangle">
+            <Setter Property="Background" Value="#10b981"/>
+            <Setter Property="BorderBrush" Value="#10b981"/>
+        </Style>
+        <Style Selector="CheckBox.modal-chk:checked:pointerover /template/ Border#NormalRectangle">
+            <Setter Property="Background" Value="#059669"/>
+            <Setter Property="BorderBrush" Value="#059669"/>
+        </Style>
+        <Style Selector="CheckBox.modal-chk:checked /template/ Path#CheckGlyph">
+            <Setter Property="Fill" Value="#ffffff"/>
+            <Setter Property="Stroke" Value="#ffffff"/>
+        </Style>
+
+        <!-- Step Container Dynamic Border Styling via Classes -->
+        <Style Selector="Border.step-card">
+            <Setter Property="Background" Value="#131d2e"/>
+            <Setter Property="BorderBrush" Value="#25354e"/>
+        </Style>
+        <Style Selector="Border.step-card.step-running">
+            <Setter Property="BorderBrush" Value="#22674e"/>
+        </Style>
+        <Style Selector="Border.step-card.step-completed">
+            <Setter Property="BorderBrush" Value="#164e3b"/>
+        </Style>
+        <Style Selector="Border.step-card.step-warning">
+            <Setter Property="BorderBrush" Value="#784f18"/>
+        </Style>
+        <Style Selector="Border.step-card.step-error">
+            <Setter Property="BorderBrush" Value="#7f1d1d"/>
+        </Style>
+        <Style Selector="Border.step-card.step-pending">
+            <Setter Property="BorderBrush" Value="#25354e"/>
+        </Style>
+
+        <!-- Filling Progress Bar Style -->
+        <Style Selector="ProgressBar.step-fill-bar">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Foreground" Value="#143e2e"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="Transparent" CornerRadius="7" ClipToBounds="True">
+                        <Border x:Name="PART_Indicator"
+                                Background="{TemplateBinding Foreground}"
+                                CornerRadius="7"
+                                HorizontalAlignment="Left"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="ProgressBar.bar-running">
+            <Setter Property="Foreground" Value="#143e2e"/>
+        </Style>
+        <Style Selector="ProgressBar.bar-completed">
+            <Setter Property="Foreground" Value="#0e291f"/>
+        </Style>
+        <Style Selector="ProgressBar.bar-warning">
+            <Setter Property="Foreground" Value="#38260e"/>
+        </Style>
+        <Style Selector="ProgressBar.bar-error">
+            <Setter Property="Foreground" Value="#3b1419"/>
+        </Style>
+        <Style Selector="ProgressBar.bar-pending">
+            <Setter Property="Foreground" Value="Transparent"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Modal Box Container (Fixed size, non-jumping) -->
+    <Border Width="580"
+            Height="500"
+            Background="#161f30"
+            BorderBrush="#40475569"
+            BorderThickness="1"
+            CornerRadius="14"
+            BoxShadow="0 20 50 #99000000, 0 4 16 #50000000"
+            ClipToBounds="True">
+
+        <Grid RowDefinitions="Auto, *, Auto">
+            <!-- Modal Header -->
+            <Border Grid.Row="0"
+                    Background="#1a253a"
+                    BorderBrush="#2d3b55"
+                    BorderThickness="0,0,0,1"
+                    Padding="20,16">
+                <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                    <!-- Static Header Icon (Not green, not moving) -->
+                    <Panel Grid.Column="0" Margin="0,0,12,0" VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularRefreshCw"
+                                               Width="20"
+                                               Height="20"
+                                               Foreground="#94a3b8"
+                                               IsVisible="{Binding !HasError}"/>
+                        <icon:PackIconBoxIcons Kind="RegularX"
+                                               Width="20"
+                                               Height="20"
+                                               Foreground="#ef4444"
+                                               IsVisible="{Binding HasError}"/>
+                    </Panel>
+
+                    <!-- Modal Title -->
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding Title}"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Foreground="#f8fafc"
+                               VerticalAlignment="Center"/>
+
+                    <!-- Elapsed Time Pill -->
+                    <Border Grid.Column="2"
+                            Background="#111827"
+                            BorderBrush="#374151"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="8,3"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ElapsedTimeText}"
+                                   FontSize="11"
+                                   FontWeight="Medium"
+                                   Foreground="#94a3b8"/>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- Modal Content: Scrollable Steps List (Always scrolls to bottom when new steps appear) -->
+            <ScrollViewer x:Name="StepsScrollViewer"
+                          Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          ClipToBounds="True">
+                <ItemsControl ItemsSource="{Binding Steps}" Margin="18,14,18,14">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:TaskProgressStepItemViewModel}">
+                            <Border Margin="0,0,0,8"
+                                    CornerRadius="8"
+                                    BorderThickness="1"
+                                    ClipToBounds="True"
+                                    Classes="step-card"
+                                    Classes.step-running="{Binding IsRunning}"
+                                    Classes.step-completed="{Binding IsCompleted}"
+                                    Classes.step-warning="{Binding IsWarning}"
+                                    Classes.step-error="{Binding IsError}"
+                                    Classes.step-pending="{Binding IsPending}">
+
+                                <Grid>
+                                    <!-- Background Progress Fill Layer (sliding from left to right) -->
+                                    <ProgressBar Minimum="0"
+                                                 Maximum="1"
+                                                 Value="{Binding Progress}"
+                                                 HorizontalAlignment="Stretch"
+                                                 VerticalAlignment="Stretch"
+                                                 IsHitTestVisible="False"
+                                                 Classes="step-fill-bar"
+                                                 Classes.bar-running="{Binding IsRunning}"
+                                                 Classes.bar-completed="{Binding IsCompleted}"
+                                                 Classes.bar-warning="{Binding IsWarning}"
+                                                 Classes.bar-error="{Binding IsError}"
+                                                 Classes.bar-pending="{Binding IsPending}"/>
+
+                                    <!-- Foreground Content (Icon, Title, Badge, Warning Details) -->
+                                    <Border Padding="14,10">
+                                        <Grid RowDefinitions="Auto, Auto">
+                                            <!-- Main Row -->
+                                            <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                                                <!-- Step State Icon -->
+                                                <Panel Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Center">
+                                                    <icon:PackIconBoxIcons Classes="spinner"
+                                                                           Kind="RegularRefreshCw"
+                                                                           Width="16"
+                                                                           Height="16"
+                                                                           Foreground="#10b981"
+                                                                           IsVisible="{Binding IsRunning}"/>
+                                                    <icon:PackIconBoxIcons Kind="RegularCheck"
+                                                                           Width="16"
+                                                                           Height="16"
+                                                                           Foreground="#10b981"
+                                                                           IsVisible="{Binding IsCompleted}"/>
+                                                    <icon:PackIconBoxIcons Kind="RegularInfoCircle"
+                                                                           Width="16"
+                                                                           Height="16"
+                                                                           Foreground="#f59e0b"
+                                                                           IsVisible="{Binding IsWarning}"/>
+                                                    <icon:PackIconBoxIcons Kind="RegularX"
+                                                                           Width="16"
+                                                                           Height="16"
+                                                                           Foreground="#ef4444"
+                                                                           IsVisible="{Binding IsError}"/>
+                                                    <icon:PackIconBoxIcons Kind="RegularCircle"
+                                                                           Width="16"
+                                                                           Height="16"
+                                                                           Foreground="#64748b"
+                                                                           IsVisible="{Binding IsPending}"/>
+                                                </Panel>
+
+                                                <!-- Step Title -->
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding Title}"
+                                                           FontSize="13"
+                                                           FontWeight="Medium"
+                                                           Foreground="#f1f5f9"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           VerticalAlignment="Center"/>
+
+                                                <!-- Step Badge (e.g. 1/4, 2/4, 1343/1343) -->
+                                                <Border Grid.Column="2"
+                                                        Background="#22324b"
+                                                        BorderBrush="#334155"
+                                                        BorderThickness="1"
+                                                        CornerRadius="10"
+                                                        Padding="8,2"
+                                                        VerticalAlignment="Center"
+                                                        IsVisible="{Binding HasBadge}">
+                                                    <TextBlock Text="{Binding Badge}"
+                                                               FontSize="11"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="#94a3b8"/>
+                                                </Border>
+                                            </Grid>
+
+                                            <!-- Warning / Error Details List (if any) -->
+                                            <StackPanel Grid.Row="1"
+                                                        Margin="26,8,0,2"
+                                                        Spacing="4"
+                                                        IsVisible="{Binding HasDetails}">
+                                                <ItemsControl ItemsSource="{Binding Details}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding}"
+                                                                       FontSize="11"
+                                                                       Foreground="#fbbf24"
+                                                                       TextWrapping="Wrap"/>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Modal Footer -->
+            <Border Grid.Row="2"
+                    Background="#141d2d"
+                    BorderBrush="#2d3b55"
+                    BorderThickness="0,1,0,0"
+                    Padding="20,14">
+                <Grid ColumnDefinitions="*, Auto" VerticalAlignment="Center">
+                    <!-- Close app when finished checkbox -->
+                    <CheckBox Grid.Column="0"
+                              Classes="modal-chk"
+                              IsVisible="{Binding ShowCloseAppCheckbox}"
+                              IsChecked="{Binding CloseAppOnFinish}"
+                              Content="{loc:Loc 'progress.close_app_when_finished'}"
+                              VerticalAlignment="Center"/>
+
+                    <!-- Close Button (Dimmed / disabled when running) -->
+                    <Button Grid.Column="1"
+                            Classes="modal-close-btn"
+                            Command="{Binding CloseCommand}"
+                            IsEnabled="{Binding CanClose}"
+                            Content="{loc:Loc 'common.close'}"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

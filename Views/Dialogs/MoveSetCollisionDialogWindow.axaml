@@ -1,0 +1,64 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+        xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+        x:Class="PlumbobForge.Desktop.Views.Dialogs.MoveSetCollisionDialogWindow"
+        Title="{loc:Loc 'dialogs.set_conflict.title'}"
+        Width="520"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        SystemDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        Background="{DynamicResource BgDark}">
+
+    <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" ClipToBounds="True" Background="{DynamicResource BgDark}">
+        <Grid RowDefinitions="Auto, Auto, Auto">
+            <!-- Header Bar -->
+            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="44" Padding="18,0,0,0" PointerPressed="OnHeaderPointerPressed">
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularFolder" Width="17" Height="17" Foreground="{DynamicResource AccentBrush}"/>
+                        <TextBlock Text="{loc:Loc 'dialogs.set_conflict.title'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Width="44" Height="44" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCancelClick" ToolTip.Tip="{loc:Loc 'common.close'}">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#ef4444"/>
+                            </Style>
+                            <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                <Setter Property="Foreground" Value="White"/>
+                            </Style>
+                        </Button.Styles>
+                        <icon:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Body Content -->
+            <Border Grid.Row="1" Padding="22,18">
+                <StackPanel Spacing="14">
+                    <TextBlock x:Name="MessageTextBlock" Text="{loc:Loc 'dialogs.set_conflict.message'}" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap"/>
+                    
+                    <Border Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="12,10">
+                        <Grid ColumnDefinitions="Auto, *" VerticalAlignment="Center">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularInfoCircle" Width="16" Height="16" Foreground="#38bdf8" Margin="0,1,10,0" VerticalAlignment="Top"/>
+                            <TextBlock x:Name="DescriptionTextBlock" Grid.Column="1" Text="{loc:Loc 'dialogs.set_conflict.description'}" FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="17"/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- Footer Action Buttons -->
+            <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0" Padding="18,12">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                    <Button Content="{loc:Loc 'common.cancel'}" Click="OnCancelClick" Background="#334155" Foreground="{DynamicResource TextMain}" FontWeight="SemiBold" CornerRadius="6" Padding="16,7"/>
+                    <Button Content="{loc:Loc 'dialogs.set_conflict.merge'}" Click="OnMergeClick" Background="#2563eb" Foreground="White" FontWeight="SemiBold" CornerRadius="6" Padding="18,7"/>
+                    <Button x:Name="RenameButton" Content="{loc:Loc 'common.rename'}" Click="OnRenameClick" Background="{DynamicResource AccentBrush}" Foreground="White" FontWeight="SemiBold" CornerRadius="6" Padding="20,7"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

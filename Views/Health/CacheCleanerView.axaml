@@ -1,0 +1,165 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="800"
+             x:Class="PlumbobForge.Desktop.Views.Health.CacheCleanerView"
+             x:DataType="vm:HealthViewModel">
+
+    <StackPanel Spacing="16">
+        <!-- Cache Toast Alert Popup -->
+        <Border IsVisible="{Binding IsCacheToastVisible}"
+                Background="{DynamicResource BgSidebar}"
+                BorderBrush="{DynamicResource AccentBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="14,10">
+            <Grid ColumnDefinitions="Auto, *">
+                <icon:PackIconBoxIcons Kind="RegularCheckCircle" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Grid.Column="1" Text="{Binding CacheToastMessage}" Foreground="{DynamicResource TextMain}" FontSize="13" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Cache Selection Helpers Bar -->
+        <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <icon:PackIconBoxIcons Kind="RegularFolder" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                <TextBlock Text="{loc:Loc 'tools.cache.title'}" Classes="card-title" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <Button Classes="filter-btn active"
+                        Command="{Binding SelectRecommendedCachesCommand}"
+                        BorderBrush="{DynamicResource AccentBrush}"
+                        Background="{DynamicResource AccentBadgeBgBrush}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:PackIconBoxIcons Kind="RegularCheckCircle" Width="13" Height="13" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{loc:Loc 'tools.cache.select_recommended'}" Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Button Classes="filter-btn" Command="{Binding SelectAllCachesCommand}" Content="{loc:Loc 'common.select_all'}"/>
+                <Button Classes="filter-btn" Command="{Binding DeselectAllCachesCommand}" Content="{loc:Loc 'common.deselect_all'}"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Cache Category Cards List -->
+        <ItemsControl ItemsSource="{Binding CacheCategories}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:CacheCategoryItemViewModel">
+                    <Border Classes="settings-card" Margin="0,0,0,12" Padding="18,14">
+                        <StackPanel Spacing="10">
+                            <!-- Header Row: Checkbox, Title, Badges, Size -->
+                            <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                                <!-- Checkbox -->
+                                <CheckBox Grid.Column="0"
+                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                          Margin="0,0,14,0"
+                                          VerticalAlignment="Center"/>
+
+                                <!-- Title & Recommended Badge -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                    <!-- Recommended Badge -->
+                                    <Border IsVisible="{Binding IsRecommended}"
+                                             Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
+                                         <TextBlock Text="{loc:Loc 'tools.cache.recommended'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                                     </Border>
+                                 </StackPanel>
+
+                                 <!-- Size & Count Badges -->
+                                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                     <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="8,3">
+                                         <TextBlock Text="{Binding FileCount, StringFormat='{}{0} files'}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                                     </Border>
+                                     <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="10,3">
+                                         <TextBlock Text="{Binding FormattedSize}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                                     </Border>
+                                 </StackPanel>
+                            </Grid>
+
+                            <!-- Summary Description -->
+                            <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource TextMuted}" Margin="34,0,0,0"/>
+
+                            <!-- When to Clear Badge & Expander Button -->
+                            <Grid ColumnDefinitions="*, Auto" Margin="34,2,0,0" VerticalAlignment="Center">
+                                <!-- When to clear quick indicator -->
+                                <Border Grid.Column="0" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="10,6" HorizontalAlignment="Left">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <icon:PackIconBoxIcons Kind="RegularClock12" Width="13" Height="13" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{loc:Loc 'tools.cache.when_to_clear'}" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding WhenToClear}" FontSize="11.5" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Guide Details Toggle -->
+                                <Button Grid.Column="1"
+                                        Command="{Binding ToggleInfoCommand}"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Foreground="{DynamicResource TextSubtle}"
+                                        Padding="6,4"
+                                        Cursor="Hand">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" IsVisible="{Binding !IsInfoExpanded}"/>
+                                        <icon:PackIconBoxIcons Kind="RegularChevronUp" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" IsVisible="{Binding IsInfoExpanded}"/>
+                                        <TextBlock Text="{loc:Loc 'tools.cache.why_guide'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                            <!-- Expanded Guide: Why, Why Not, and Regeneration Impact -->
+                            <Border IsVisible="{Binding IsInfoExpanded}"
+                                    Background="{DynamicResource BgSurface}"
+                                    BorderBrush="{DynamicResource BorderSubtle}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="14,10"
+                                    Margin="34,4,0,0">
+                                <StackPanel Spacing="8">
+                                    <!-- Why to clear -->
+                                    <Grid ColumnDefinitions="Auto, *" VerticalAlignment="Top">
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" Width="130" VerticalAlignment="Top">
+                                            <icon:PackIconBoxIcons Kind="RegularCheckCircle" Width="13" Height="13" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'tools.cache.why_clear'}" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="{Binding WhyClear}" FontSize="11.5" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap" LineHeight="16"/>
+                                    </Grid>
+
+                                    <!-- Why NOT to clear -->
+                                    <Grid ColumnDefinitions="Auto, *" VerticalAlignment="Top">
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" Width="130" VerticalAlignment="Top">
+                                            <icon:PackIconBoxIcons Kind="RegularBadgeExclamation" Width="13" Height="13" Foreground="{DynamicResource StatusAmber}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'tools.cache.why_not_clear'}" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource StatusAmber}"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="{Binding WhyNotClear}" FontSize="11.5" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap" LineHeight="16"/>
+                                    </Grid>
+
+                                    <!-- Regeneration Impact -->
+                                    <Grid ColumnDefinitions="Auto, *" VerticalAlignment="Top">
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" Width="130" VerticalAlignment="Top">
+                                            <icon:PackIconBoxIcons Kind="RegularRefreshCw" Width="13" Height="13" Foreground="{DynamicResource StatusCyan}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'tools.cache.regeneration'}" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource StatusCyan}"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="{Binding RegenerationImpact}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                                    </Grid>
+
+                                    <!-- Safety Guard Notice (if any) -->
+                                    <Border IsVisible="{Binding SafetyNotice, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,2,0,0">
+                                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                            <icon:PackIconBoxIcons Kind="RegularShield" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding SafetyNotice}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+</UserControl>

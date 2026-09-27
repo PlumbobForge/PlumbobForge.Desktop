@@ -1,0 +1,835 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             x:Class="PlumbobForge.Desktop.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <UserControl.Styles>
+        <!-- Card Style: Dynamic Theme Aware -->
+        <Style Selector="Border.settings-card">
+            <Setter Property="Background" Value="{DynamicResource BgSidebar}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderMain}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="20"/>
+        </Style>
+
+        <!-- Section Title Style -->
+        <Style Selector="TextBlock.card-title">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+
+        <!-- Form Label Style -->
+        <Style Selector="TextBlock.form-label">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+
+        <!-- Form Helper Text -->
+        <Style Selector="TextBlock.form-helper">
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="LineHeight" Value="16"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
+        </Style>
+
+        <!-- Settings Input Style matching Filters Search Bar with CornerRadius=7 -->
+        <Style Selector="TextBox.settings-input">
+            <Setter Property="Background" Value="{DynamicResource BgInput}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="Padding" Value="10,0,10,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style Selector="TextBox.settings-input:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Background" Value="{DynamicResource BgInput}"/>
+        </Style>
+        <Style Selector="TextBox.settings-input:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderActive}"/>
+            <Setter Property="Background" Value="{DynamicResource BgInput}"/>
+        </Style>
+
+        <!-- Settings Dropdown Selector Button -->
+        <Style Selector="Button.settings-dropdown-btn">
+            <Setter Property="Background" Value="{DynamicResource BgInput}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.settings-dropdown-btn:pointerover">
+            <Setter Property="Background" Value="{DynamicResource BgSurfaceHover}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderActive}"/>
+        </Style>
+
+        <!-- Action Button Secondary -->
+        <Style Selector="Button.btn-action-sec">
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="12,7"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.btn-action-sec:hover">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+
+        <!-- Action Button Primary -->
+        <Style Selector="Button.btn-action-primary">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.btn-action-primary:hover">
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+
+        <!-- Maintenance Tool Buttons: Seamless dark backgrounds with 0 borders -->
+        <Style Selector="Button.tool-btn">
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.tool-btn:hover">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+
+
+        <!-- Custom Emerald Compression Slider Style (Exact same as grid view zoom slider) -->
+        <Style Selector="Slider.compression-slider">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Grid x:Name="SliderContainer" Background="Transparent" Height="24" VerticalAlignment="Center">
+                        <!-- Inactive background rail running full track width -->
+                        <Border Height="4" Background="{DynamicResource BorderSubtle}" CornerRadius="2" VerticalAlignment="Center" IsHitTestVisible="False"/>
+
+                        <Track x:Name="PART_Track"
+                               Minimum="{TemplateBinding Minimum}"
+                               Maximum="{TemplateBinding Maximum}"
+                               Value="{TemplateBinding Value, Mode=TwoWay}"
+                               Orientation="Horizontal"
+                               VerticalAlignment="Center">
+                            <Track.DecreaseButton>
+                                <RepeatButton Background="{DynamicResource AccentBrush}" BorderThickness="0" Height="4" CornerRadius="2" Padding="0" Focusable="False" IsTabStop="False">
+                                    <RepeatButton.Template>
+                                        <ControlTemplate>
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}"/>
+                                        </ControlTemplate>
+                                    </RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.DecreaseButton>
+                            <Track.IncreaseButton>
+                                <RepeatButton Background="Transparent" BorderThickness="0" Height="4" Padding="0" Focusable="False" IsTabStop="False">
+                                    <RepeatButton.Template>
+                                        <ControlTemplate>
+                                            <Border Background="Transparent"/>
+                                        </ControlTemplate>
+                                    </RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.IncreaseButton>
+                            <Track.Thumb>
+                                <Thumb Width="16" Height="16"
+                                       Background="Transparent"
+                                       BorderBrush="Transparent"
+                                       BorderThickness="0"
+                                       Padding="0"
+                                       CornerRadius="8"
+                                       ClipToBounds="False"
+                                       Cursor="Hand">
+                                    <Thumb.Template>
+                                        <ControlTemplate>
+                                            <Panel Background="Transparent" Width="16" Height="16">
+                                                <Ellipse x:Name="ThumbGlow"
+                                                         Width="16" Height="16"
+                                                         Fill="{DynamicResource AccentBrush}"
+                                                         Opacity="0"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center">
+                                                    <Ellipse.Transitions>
+                                                        <Transitions>
+                                                            <DoubleTransition Property="Opacity" Duration="0:0:0.12"/>
+                                                            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12"/>
+                                                        </Transitions>
+                                                    </Ellipse.Transitions>
+                                                </Ellipse>
+                                                <Ellipse x:Name="ThumbCircle"
+                                                         Width="14" Height="14"
+                                                         Fill="#ffffff"
+                                                         Stroke="{DynamicResource AccentBrush}"
+                                                         StrokeThickness="2.5"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center">
+                                                    <Ellipse.Transitions>
+                                                        <Transitions>
+                                                            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12"/>
+                                                            <BrushTransition Property="Fill" Duration="0:0:0.12"/>
+                                                            <BrushTransition Property="Stroke" Duration="0:0:0.12"/>
+                                                        </Transitions>
+                                                    </Ellipse.Transitions>
+                                                </Ellipse>
+                                            </Panel>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <!-- Override any FluentTheme Thumb styles on this Slider -->
+        <Style Selector="Slider.compression-slider /template/ Thumb">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+        <Style Selector="Slider.compression-slider /template/ Thumb:pointerover">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+        <Style Selector="Slider.compression-slider /template/ Thumb:pressed">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+        <Style Selector="Slider.compression-slider:pointerover /template/ Thumb Ellipse#ThumbCircle">
+            <Setter Property="Fill" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Stroke" Value="#ffffff"/>
+            <Setter Property="RenderTransform" Value="scale(1.2)"/>
+        </Style>
+        <Style Selector="Slider.compression-slider:pointerover /template/ Thumb Ellipse#ThumbGlow">
+            <Setter Property="Opacity" Value="0.25"/>
+            <Setter Property="RenderTransform" Value="scale(1.6)"/>
+        </Style>
+        <Style Selector="Slider.compression-slider /template/ Thumb:pointerover Ellipse#ThumbCircle">
+            <Setter Property="Fill" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Stroke" Value="#ffffff"/>
+            <Setter Property="RenderTransform" Value="scale(1.2)"/>
+        </Style>
+        <Style Selector="Slider.compression-slider /template/ Thumb:pointerover Ellipse#ThumbGlow">
+            <Setter Property="Opacity" Value="0.25"/>
+            <Setter Property="RenderTransform" Value="scale(1.6)"/>
+        </Style>
+        <Style Selector="Slider.compression-slider /template/ Thumb:pressed Ellipse#ThumbCircle">
+            <Setter Property="Fill" Value="{DynamicResource AccentPressedBrush}"/>
+            <Setter Property="Stroke" Value="#ffffff"/>
+            <Setter Property="RenderTransform" Value="scale(1.1)"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid>
+        <!-- Main Settings Scrollable Content -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid RowDefinitions="Auto, Auto, Auto" Margin="28,20,28,32" MaxWidth="1100" HorizontalAlignment="Stretch">
+
+                <!-- Toast / Status Alert Popup -->
+                <Border Grid.Row="0"
+                        IsVisible="{Binding IsStatusToastVisible}"
+                        Background="{DynamicResource BgSidebar}"
+                        CornerRadius="10"
+                        Padding="14,10"
+                        Margin="0,0,0,16"
+                        BorderThickness="0">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <icon:PackIconBoxIcons Kind="RegularCheckCircle" Width="18" Height="18" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Grid.Column="1" Text="{Binding StatusToastMessage}" Foreground="{DynamicResource TextMain}" FontSize="13" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Pure Update Hero Header Card -->
+                <Border Grid.Row="1" Classes="settings-card" Margin="0,0,0,20">
+                    <StackPanel Spacing="12">
+                        <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                            <!-- Left: Update Icon Badge -->
+                            <Border Grid.Column="0" Background="{DynamicResource BgSurface}" CornerRadius="10" Width="48" Height="48" Margin="0,0,16,0" VerticalAlignment="Center">
+                                <icon:PackIconBoxIcons Kind="RegularRefreshCw" Width="22" Height="22" Foreground="{DynamicResource TextMain}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+
+                            <!-- Center: Version & Update Status -->
+                            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <TextBlock Text="PlumbobForge" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                                    <Border Background="{DynamicResource BgSurface}" CornerRadius="5" Padding="6,2" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding AppVersion, StringFormat='v{0}'}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                                    </Border>
+                                    <!-- New Version Alert Badge -->
+                                    <Border Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="5" Padding="6,2" VerticalAlignment="Center" IsVisible="{Binding IsUpdateAvailable}">
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <icon:PackIconBoxIcons Kind="RegularRocket" Width="12" Height="12" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding LatestVersionTag, StringFormat='v{0} Available!'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <icon:PackIconBoxIcons Kind="RegularCheckCircle" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding UpdateStatusText}" FontSize="12.5" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Right: Update Actions -->
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                <!-- Download & Install Button (Visible when update is available) -->
+                                <Button Command="{Binding DownloadAndInstallUpdateCommand}"
+                                        IsVisible="{Binding IsUpdateAvailable}"
+                                        IsEnabled="{Binding !IsDownloadingUpdate}"
+                                        Background="{DynamicResource AccentBrush}"
+                                        Foreground="White"
+                                        Padding="14,8"
+                                        CornerRadius="6"
+                                        Cursor="Hand">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <icon:PackIconBoxIcons Kind="RegularRocket" Width="14" Height="14" Foreground="White" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{loc:Loc 'settings.update.download_install'}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Classes="btn-action-primary" Command="{Binding CheckForUpdatesCommand}" IsEnabled="{Binding !IsCheckingForUpdates}">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <icon:PackIconBoxIcons Kind="RegularRefreshCw" Width="14" Height="14" Foreground="White" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{loc:Loc 'settings.update.check_updates'}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Classes="btn-action-sec" Command="{Binding OpenChangelogCommand}" ToolTip.Tip="{loc:Loc 'settings.update.view_changelog'}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <icon:PackIconBoxIcons Kind="RegularCode" Width="14" Height="14" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{loc:Loc 'settings.update.changelog'}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Download Progress Bar -->
+                        <StackPanel Spacing="6" IsVisible="{Binding IsDownloadingUpdate}" Margin="0,4,0,0">
+                            <ProgressBar Value="{Binding UpdateDownloadProgress}" Minimum="0" Maximum="1" Height="6" CornerRadius="3" Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource BorderSubtle}"/>
+                            <TextBlock Text="{Binding UpdateDownloadProgressText}" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- 2-Column Responsive Layout -->
+                <Grid Grid.Row="2" ColumnDefinitions="*, 20, *">
+
+                    <!-- LEFT COLUMN: Appearance, Storage & Automation -->
+                    <StackPanel Grid.Column="0" Spacing="20">
+
+                        <!-- CARD 0: Appearance & Personalization -->
+                        <Border Classes="settings-card">
+                            <StackPanel Spacing="16">
+                                <!-- Card Header -->
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <icon:PackIconBoxIcons Kind="RegularPalette" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'settings.appearance.title'}" Classes="card-title" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- Language Selector -->
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="{loc:Loc 'settings.appearance.language'}" Classes="form-label"/>
+                                    <Button x:Name="LanguageDropdownButton" Classes="settings-dropdown-btn">
+                                        <Grid ColumnDefinitions="*, Auto" VerticalAlignment="Center">
+                                            <TextBlock Grid.Column="0" Text="{Binding SelectedLanguageOption.DisplayName}" FontSize="12.5" FontWeight="Medium" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                            <icon:PackIconBoxIcons Grid.Column="1" Kind="RegularChevronDown" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <Button.Flyout>
+                                            <Flyout Placement="BottomEdgeAlignedLeft">
+                                                <Border Padding="8" Width="{Binding #LanguageDropdownButton.Bounds.Width}" MaxHeight="320">
+                                                    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                                                        <ItemsControl ItemsSource="{Binding LanguageOptions}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate DataType="vm:LanguageOptionItemViewModel">
+                                                                    <Button Click="OnLanguageItemClick"
+                                                                            Background="Transparent"
+                                                                            HorizontalAlignment="Stretch"
+                                                                            HorizontalContentAlignment="Left"
+                                                                            Padding="18,10"
+                                                                            Margin="0,2"
+                                                                            CornerRadius="6"
+                                                                            Cursor="Hand">
+                                                                        <Button.Styles>
+                                                                            <Style Selector="Button:pointerover">
+                                                                                <Setter Property="Background" Value="{DynamicResource BgSurfaceHover}"/>
+                                                                            </Style>
+                                                                        </Button.Styles>
+                                                                        <StackPanel VerticalAlignment="Center" Spacing="2" Margin="4,0,0,0">
+                                                                            <TextBlock Text="{Binding DisplayName}" FontSize="12.5" FontWeight="Medium" Foreground="{DynamicResource TextMain}"/>
+                                                                            <TextBlock Text="{Binding NativeName}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                                                        </StackPanel>
+                                                                    </Button>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </ScrollViewer>
+                                                </Border>
+                                            </Flyout>
+                                        </Button.Flyout>
+                                    </Button>
+                                    <TextBlock Text="{loc:Loc 'settings.appearance.language_help'}" Classes="form-helper"/>
+                                </StackPanel>
+
+                                <!-- Theme Mode Switcher -->
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="{loc:Loc 'settings.appearance.theme'}" Classes="form-label"/>
+                                    <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="3">
+                                        <Grid ColumnDefinitions="*, *, *">
+                                            <Button Grid.Column="0"
+                                                    Classes="segment-btn"
+                                                    Classes.active="{Binding IsDarkTheme}"
+                                                    Command="{Binding SetThemeCommand}"
+                                                    CommandParameter="Dark"
+                                                    HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <icon:PackIconBoxIcons Kind="RegularMoon" Width="13" Height="13" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{loc:Loc 'settings.appearance.dark'}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+
+                                            <Button Grid.Column="1"
+                                                    Classes="segment-btn"
+                                                    Classes.active="{Binding IsLightTheme}"
+                                                    Command="{Binding SetThemeCommand}"
+                                                    CommandParameter="Light"
+                                                    HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <icon:PackIconBoxIcons Kind="RegularSun" Width="13" Height="13" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{loc:Loc 'settings.appearance.light'}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+
+                                            <Button Grid.Column="2"
+                                                    Classes="segment-btn"
+                                                    Classes.active="{Binding IsSystemTheme}"
+                                                    Command="{Binding SetThemeCommand}"
+                                                    CommandParameter="System"
+                                                    HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <icon:PackIconBoxIcons Kind="RegularDesktop" Width="13" Height="13" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{loc:Loc 'settings.appearance.system'}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                    <TextBlock Text="{loc:Loc 'settings.appearance.theme_help'}" Classes="form-helper"/>
+                                </StackPanel>
+
+                                <!-- Accent Color Picker -->
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="{loc:Loc 'settings.appearance.accent_color'}" Classes="form-label"/>
+                                    <ItemsControl ItemsSource="{Binding AccentOptions}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="vm:AccentColorItemViewModel">
+                                                <Button Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).SetAccentCommand}"
+                                                        CommandParameter="{Binding Name}"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Padding="0"
+                                                        Margin="0,0,10,8"
+                                                        Cursor="Hand"
+                                                        ToolTip.Tip="{Binding DisplayName}">
+                                                    <Grid Width="34" Height="34">
+                                                        <!-- Outer ring for selected swatch -->
+                                                        <Border CornerRadius="17"
+                                                                BorderBrush="{Binding SwatchBrush}"
+                                                                BorderThickness="2"
+                                                                IsVisible="{Binding IsSelected}"/>
+                                                        <!-- Inner Color Circle -->
+                                                        <Border Background="{Binding SwatchBrush}"
+                                                                CornerRadius="13"
+                                                                Width="26" Height="26"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center">
+                                                            <icon:PackIconBoxIcons Kind="RegularCheck"
+                                                                                   Width="14" Height="14"
+                                                                                   Foreground="White"
+                                                                                   HorizontalAlignment="Center"
+                                                                                   VerticalAlignment="Center"
+                                                                                   IsVisible="{Binding IsSelected}"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Text="{loc:Loc 'settings.appearance.accent_color_help'}" Classes="form-helper"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- CARD 1: Storage & Directories -->
+                        <Border Classes="settings-card">
+                            <StackPanel Spacing="16">
+                                <!-- Card Header -->
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <icon:PackIconBoxIcons Kind="RegularFolder" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'settings.storage.title'}" Classes="card-title" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- Document Base Dir -->
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{loc:Loc 'settings.storage.library_dir'}" Classes="form-label"/>
+                                    <Grid ColumnDefinitions="*, 8, Auto, 6, Auto">
+                                        <TextBox Grid.Column="0" Classes="settings-input"
+                                                 Text="{Binding DocumentBaseDir, Mode=TwoWay}"
+                                                 LostFocus="OnDocumentBaseDirLostFocus"
+                                                 KeyDown="OnDocumentBaseDirKeyDown"
+                                                 Watermark="e.g. C:\Users\Username\Documents\PlumbobForge"/>
+                                        <Button Grid.Column="2" Classes="btn-action-sec" Click="OnBrowseDocumentBaseDirClick" ToolTip.Tip="{loc:Loc 'settings.storage.browse'}">
+                                            <icon:PackIconBoxIcons Kind="RegularFolderOpen" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                        </Button>
+                                        <Button Grid.Column="4" Classes="btn-action-sec" Command="{Binding AutoDetectBaseDirCommand}" ToolTip.Tip="{loc:Loc 'settings.storage.default'}">
+                                            <TextBlock Text="{loc:Loc 'settings.storage.default'}" FontSize="11.5"/>
+                                        </Button>
+                                    </Grid>
+                                    <TextBlock Text="{loc:Loc 'settings.storage.library_dir_help'}" Classes="form-helper"/>
+                                </StackPanel>
+
+                                <!-- Game Files Dir -->
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{loc:Loc 'settings.storage.game_dir'}" Classes="form-label"/>
+                                    <Grid ColumnDefinitions="*, 8, Auto, 6, Auto">
+                                        <TextBox Grid.Column="0" Classes="settings-input"
+                                                 Text="{Binding GameFilesDir, Mode=TwoWay}"
+                                                 LostFocus="OnGameFilesDirLostFocus"
+                                                 KeyDown="OnGameFilesDirKeyDown"
+                                                 Watermark="e.g. C:\Program Files (x86)\Electronic Arts\The Sims 3"/>
+                                        <Button Grid.Column="2" Classes="btn-action-sec" Click="OnBrowseGameFilesDirClick" ToolTip.Tip="{loc:Loc 'settings.storage.browse'}">
+                                            <icon:PackIconBoxIcons Kind="RegularFolderOpen" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                        </Button>
+                                        <Button Grid.Column="4" Classes="btn-action-sec" Command="{Binding AutoDetectGameFilesCommand}" ToolTip.Tip="{loc:Loc 'settings.storage.detect'}">
+                                            <TextBlock Text="{loc:Loc 'settings.storage.detect'}" FontSize="11.5"/>
+                                        </Button>
+                                    </Grid>
+                                    <TextBlock Text="{loc:Loc 'settings.storage.game_dir_help'}" Classes="form-helper"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- CARD 2: Monitored Observed Folders & Ingestion -->
+                        <Border Classes="settings-card">
+                            <StackPanel Spacing="16">
+                                <!-- Card Header -->
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <icon:PackIconBoxIcons Kind="RegularFolderOpen" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{loc:Loc 'settings.observed.title'}" Classes="card-title" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Classes="btn-action-sec" Click="OnAddObservedFolderClick">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <icon:PackIconBoxIcons Kind="RegularFolderPlus" Width="13" Height="13" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'settings.observed.add_folder'}" FontSize="11.5" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+
+                                <!-- Observed Folders List -->
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="{loc:Loc 'settings.observed.watched_dirs'}" Classes="form-label"/>
+
+                                    <ItemsControl ItemsSource="{Binding ObservedFolders}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="10,8" Margin="0,0,0,6">
+                                                    <Grid ColumnDefinitions="Auto, *, Auto">
+                                                        <icon:PackIconBoxIcons Kind="RegularFolder" Width="14" Height="14" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding}" FontSize="12" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                                        <Button Grid.Column="2" Classes="btn-icon"
+                                                                Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).RemoveObservedFolderCommand}"
+                                                                CommandParameter="{Binding}"
+                                                                ToolTip.Tip="{loc:Loc 'common.delete'}"
+                                                                Padding="4" Margin="4,0,0,0">
+                                                            <icon:PackIconBoxIcons Kind="RegularTrash" Width="13" Height="13" Foreground="{DynamicResource TextMuted}"/>
+                                                        </Button>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <Border IsVisible="{Binding !ObservedFolders.Count}"
+                                            Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="12,10">
+                                        <TextBlock Text="{loc:Loc 'settings.observed.no_folders'}"
+                                                   FontSize="11.5" Foreground="{DynamicResource TextMuted}" FontStyle="Italic"/>
+                                    </Border>
+                                </StackPanel>
+
+                                <Separator Background="{DynamicResource BorderMain}" Margin="0,4"/>
+
+                                <!-- Automation Controls -->
+                                <Grid ColumnDefinitions="*, Auto" Margin="0,2,0,0">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="{loc:Loc 'settings.observed.auto_scan'}" Classes="form-label" Margin="0"/>
+                                        <TextBlock Text="{loc:Loc 'settings.observed.auto_scan_help'}" Classes="form-helper"/>
+                                    </StackPanel>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding EnableAutoScan, Mode=TwoWay}" VerticalAlignment="Center"/>
+                                </Grid>
+
+                                <!-- Manual Ingest Action -->
+                                <Button Classes="btn-action-primary" Command="{Binding ImportDownloadsCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,6,0,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <icon:PackIconBoxIcons Kind="RegularFolderOpen" Width="15" Height="15" Foreground="White" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{loc:Loc 'settings.observed.scan_import'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- RIGHT COLUMN: Engine Optimization & Maintenance -->
+                    <StackPanel Grid.Column="2" Spacing="20">
+
+                        <!-- CARD 3: Cache & Engine Optimization -->
+                        <Border Classes="settings-card">
+                            <StackPanel Spacing="16">
+                                <!-- Card Header -->
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <icon:PackIconBoxIcons Kind="RegularCog" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'settings.engine.title'}" Classes="card-title" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- Cache Building Strategy Toggle -->
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="{loc:Loc 'settings.engine.cache_mode'}" Classes="form-label"/>
+
+                                    <!-- Dual Segmented Pill Toggle -->
+                                    <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="3">
+                                        <Grid ColumnDefinitions="*, *">
+                                            <Button Grid.Column="0"
+                                                    Classes="segment-btn"
+                                                    Classes.active="{Binding IsDynamicCache}"
+                                                    Command="{Binding SetDynamicCacheCommand}"
+                                                    HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <icon:PackIconBoxIcons Kind="RegularGrid" Width="14" Height="14" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{loc:Loc 'settings.engine.dynamic_cache'}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+
+                                            <Button Grid.Column="1"
+                                                    Classes="segment-btn"
+                                                    Classes.active="{Binding IsStaticCache}"
+                                                    Command="{Binding SetStaticCacheCommand}"
+                                                    HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <icon:PackIconBoxIcons Kind="RegularPackage" Width="14" Height="14" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{loc:Loc 'settings.engine.static_bundle'}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+
+                                    <TextBlock Text="{Binding CacheMethodDescription}" Classes="form-helper"/>
+                                </StackPanel>
+
+                                <Separator Background="{DynamicResource BorderMain}" Margin="0,2"/>
+
+                                <!-- Compression Level Slider (None: 0, Balanced: 1, High: 3) -->
+                                <StackPanel Spacing="4">
+                                    <Grid ColumnDefinitions="*, Auto">
+                                        <TextBlock Text="{loc:Loc 'settings.engine.compression'}" Classes="form-label"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding CompressionLevelText}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
+                                    </Grid>
+
+                                    <Slider Classes="compression-slider"
+                                            Minimum="0" Maximum="2" Value="{Binding CompressionSliderValue}"
+                                            TickFrequency="1" IsSnapToTickEnabled="True"
+                                            Margin="0,4,0,6"/>
+
+                                    <Grid ColumnDefinitions="Auto, *, Auto" Margin="2,0,2,0">
+                                        <TextBlock Grid.Column="0" Text="{loc:Loc 'settings.engine.none'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Grid.Column="1" Text="{loc:Loc 'settings.engine.balanced'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2" Text="{loc:Loc 'settings.engine.high'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                    </Grid>
+
+                                    <TextBlock Text="{Binding CompressionDescription}" Classes="form-helper" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- CARD 4: Maintenance & Diagnostics -->
+                        <Border Classes="settings-card">
+                            <StackPanel Spacing="14">
+                                <!-- Card Header -->
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <icon:PackIconBoxIcons Kind="RegularSpanner" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'settings.maintenance.title'}" Classes="card-title" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <TextBlock Text="{loc:Loc 'settings.maintenance.help'}"
+                                           Classes="form-helper"/>
+
+                                <!-- Maintenance Actions Grid -->
+                                <Grid ColumnDefinitions="*, 8, *" RowDefinitions="Auto, 8, Auto">
+                                    <!-- Recheck Package Types -->
+                                    <Button Grid.Column="0" Grid.Row="0" Classes="tool-btn" Command="{Binding RecheckTypesCommand}" HorizontalAlignment="Stretch">
+                                        <StackPanel Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <icon:PackIconBoxIcons Kind="RegularCheckCircle" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Loc 'settings.maintenance.recheck_types'}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{loc:Loc 'settings.maintenance.recheck_types_desc'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <!-- Database Auto-Fix -->
+                                    <Button Grid.Column="2" Grid.Row="0" Classes="tool-btn" Command="{Binding AutoFixCommand}" HorizontalAlignment="Stretch">
+                                        <StackPanel Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <icon:PackIconBoxIcons Kind="RegularCog" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Loc 'settings.maintenance.autofix'}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{loc:Loc 'settings.maintenance.autofix_desc'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <!-- Migration Tool -->
+                                    <Button Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="3" Classes="tool-btn" Command="{Binding MigrateCcMagicCommand}" HorizontalAlignment="Stretch">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <icon:PackIconBoxIcons Kind="RegularArchive" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock Text="{loc:Loc 'settings.maintenance.migration_tool'}" FontWeight="SemiBold" FontSize="12.5"/>
+                                                <TextBlock Text="{loc:Loc 'settings.maintenance.migration_tool_desc'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- CARD 5: Special Thanks & Acknowledgements (With Red Heart Icon) -->
+                        <Border Classes="settings-card">
+                            <StackPanel Spacing="10">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <icon:PackIconBoxIcons Kind="RegularHeart" Width="16" Height="16" Foreground="#ef4444" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'settings.thanks.title'}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <TextBlock FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16">
+                                    <Run Text="• "/><Run Text="granthes" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/><Run Text=" "/><Run Text="{loc:Loc 'settings.thanks.granthes_desc'}"/><LineBreak/>
+                                    <Run Text="• "/><Run Text="Peter &amp; Inge Jones" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/><Run Text=" "/><Run Text="{loc:Loc 'settings.thanks.peter_desc'}"/><LineBreak/>
+                                </TextBlock>
+
+                                <Button Classes="btn-action-sec" Command="{Binding OpenGithubCommand}" HorizontalAlignment="Left" Margin="0,4,0,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <icon:PackIconBoxIcons Kind="RegularCode" Width="14" Height="14" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{loc:Loc 'settings.thanks.github'}" FontSize="11.5" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+
+                </Grid>
+
+            </Grid>
+        </ScrollViewer>
+
+        <!-- Move Library Files Confirmation Modal Overlay -->
+        <Grid Background="#aa080e1a"
+              IsVisible="{Binding IsMoveFilesModalVisible}"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch">
+            <Border Background="{DynamicResource BgSidebar}"
+                    CornerRadius="14"
+                    Width="500"
+                    Padding="24"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel Spacing="16">
+                    <!-- Title & Header -->
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Width="36" Height="36">
+                            <icon:PackIconBoxIcons Kind="RegularFolder" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc 'dialogs.move_library.title'}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                            <TextBlock Text="{loc:Loc 'dialogs.move_library.existing_detected'}" FontSize="11.5" Foreground="{DynamicResource TextMuted}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock Text="{loc:Loc 'dialogs.move_library.message'}"
+                               FontSize="12.5" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap" LineHeight="17"/>
+
+                    <!-- Path Info Container -->
+                    <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="12,10">
+                        <StackPanel Spacing="8">
+                            <Grid ColumnDefinitions="Auto, *">
+                                <TextBlock Text="{loc:Loc 'dialogs.move_library.current'}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" Width="65" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding CurrentLibraryPathDisplay}" FontSize="11.5" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"/>
+                            </Grid>
+                            <Grid ColumnDefinitions="Auto, *">
+                                <TextBlock Text="{loc:Loc 'dialogs.move_library.new'}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" Width="65" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding PendingLibraryPathDisplay}" FontSize="11.5" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Action Buttons -->
+                    <Grid ColumnDefinitions="*, 8, *, 8, Auto" Margin="0,4,0,0">
+                        <Button Grid.Column="0" Classes="btn-action-primary" Command="{Binding MoveFilesAndSaveCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <icon:PackIconBoxIcons Kind="RegularArchive" Width="14" Height="14" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'dialogs.move_library.move_all'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Grid.Column="2" Classes="btn-action-sec" Command="{Binding UpdatePathOnlyCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                            <TextBlock Text="{loc:Loc 'dialogs.move_library.update_path_only'}" VerticalAlignment="Center"/>
+                        </Button>
+
+                        <Button Grid.Column="4" Classes="btn-action-sec" Command="{Binding CancelPathChangeCommand}">
+                            <TextBlock Text="{loc:Loc 'common.cancel'}" VerticalAlignment="Center"/>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

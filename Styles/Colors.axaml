@@ -1,0 +1,145 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Brand / Accent Colors (Dynamic defaults) -->
+    <Color x:Key="AccentColor">#10b981</Color>
+    <Color x:Key="AccentHoverColor">#059669</Color>
+    <Color x:Key="AccentPressedColor">#047857</Color>
+    <SolidColorBrush x:Key="AccentBrush" Color="#10b981" />
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="#059669" />
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="#047857" />
+    <SolidColorBrush x:Key="AccentBadgeBgBrush" Color="#093829" />
+    <SolidColorBrush x:Key="AccentRubberbandBgBrush" Color="#3310b981" />
+
+    <!-- Status Accents (Non-brand indicators) -->
+    <SolidColorBrush x:Key="StatusRed" Color="#ef4444" />
+    <SolidColorBrush x:Key="StatusRedBg" Color="#331518" />
+    <SolidColorBrush x:Key="StatusAmber" Color="#f59e0b" />
+    <SolidColorBrush x:Key="StatusAmberBg" Color="#33240f" />
+    <SolidColorBrush x:Key="StatusBlue" Color="#3b82f6" />
+    <SolidColorBrush x:Key="StatusBlueBg" Color="#122544" />
+    <SolidColorBrush x:Key="StatusCyan" Color="#38bdf8" />
+    <SolidColorBrush x:Key="StatusCyanBg" Color="#0c2d48" />
+    <SolidColorBrush x:Key="StatusPurple" Color="#8b5cf6" />
+    <SolidColorBrush x:Key="StatusPurpleBg" Color="#261a3d" />
+    <SolidColorBrush x:Key="StatusGreen" Color="#10b981" />
+    <SolidColorBrush x:Key="StatusGreenBg" Color="#093829" />
+
+    <!-- Root Fallbacks for Theme Keys -->
+    <SolidColorBrush x:Key="BgDark" Color="#0f172a" />
+    <SolidColorBrush x:Key="BgSidebar" Color="#182234" />
+    <SolidColorBrush x:Key="BgCard" Color="#111827" />
+    <SolidColorBrush x:Key="BgCardAlt" Color="#1e293b" />
+    <SolidColorBrush x:Key="BgSurface" Color="#101928" />
+    <SolidColorBrush x:Key="BgInput" Color="#0f172a" />
+    <SolidColorBrush x:Key="BgDarkest" Color="#080c14" />
+    <SolidColorBrush x:Key="BgPanelDark" Color="#090e17" />
+    <SolidColorBrush x:Key="BorderMain" Color="#1e293b" />
+    <SolidColorBrush x:Key="BorderSubtle" Color="#334155" />
+    <SolidColorBrush x:Key="BorderActive" Color="#475569" />
+    <SolidColorBrush x:Key="TextMain" Color="#f8fafc" />
+    <SolidColorBrush x:Key="TextMuted" Color="#94a3b8" />
+    <SolidColorBrush x:Key="TextSubtle" Color="#64748b" />
+    <SolidColorBrush x:Key="TextDisabled" Color="#475569" />
+
+    <ResourceDictionary.ThemeDictionaries>
+        <!-- Default / Dark Variant -->
+        <ResourceDictionary x:Key="Default">
+            <SolidColorBrush x:Key="BgDark" Color="#0f172a" />
+            <SolidColorBrush x:Key="BgSidebar" Color="#182234" />
+            <SolidColorBrush x:Key="BgCard" Color="#111827" />
+            <SolidColorBrush x:Key="BgCardAlt" Color="#1e293b" />
+            <SolidColorBrush x:Key="BgSurface" Color="#101928" />
+            <SolidColorBrush x:Key="BgInput" Color="#0f172a" />
+            <SolidColorBrush x:Key="BgDarkest" Color="#080c14" />
+            <SolidColorBrush x:Key="BgPanelDark" Color="#090e17" />
+            <SolidColorBrush x:Key="BorderMain" Color="#1e293b" />
+            <SolidColorBrush x:Key="BorderSubtle" Color="#334155" />
+            <SolidColorBrush x:Key="BorderActive" Color="#475569" />
+            <SolidColorBrush x:Key="TextMain" Color="#f8fafc" />
+            <SolidColorBrush x:Key="TextMuted" Color="#94a3b8" />
+            <SolidColorBrush x:Key="TextSubtle" Color="#64748b" />
+            <SolidColorBrush x:Key="TextDisabled" Color="#475569" />
+            <SolidColorBrush x:Key="CapsuleBgBrush" Color="#cc182234" />
+            <SolidColorBrush x:Key="CapsuleBorderBrush" Color="#40475569" />
+            <LinearGradientBrush x:Key="TopFadeGradientBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Color="#f00f172a" Offset="0.0"/>
+                <GradientStop Color="#c00f172a" Offset="0.5"/>
+                <GradientStop Color="#500f172a" Offset="0.85"/>
+                <GradientStop Color="#000f172a" Offset="1.0"/>
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="ItemCardGradientBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Color="#00182234" Offset="0.0"/>
+                <GradientStop Color="#50182234" Offset="0.35"/>
+                <GradientStop Color="#c0182234" Offset="0.75"/>
+                <GradientStop Color="#ff182234" Offset="1.0"/>
+            </LinearGradientBrush>
+        </ResourceDictionary>
+
+        <!-- Dark Variant -->
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="BgDark" Color="#0f172a" />
+            <SolidColorBrush x:Key="BgSidebar" Color="#182234" />
+            <SolidColorBrush x:Key="BgCard" Color="#111827" />
+            <SolidColorBrush x:Key="BgCardAlt" Color="#1e293b" />
+            <SolidColorBrush x:Key="BgSurface" Color="#101928" />
+            <SolidColorBrush x:Key="BgInput" Color="#0f172a" />
+            <SolidColorBrush x:Key="BgDarkest" Color="#080c14" />
+            <SolidColorBrush x:Key="BgPanelDark" Color="#090e17" />
+            <SolidColorBrush x:Key="BorderMain" Color="#1e293b" />
+            <SolidColorBrush x:Key="BorderSubtle" Color="#334155" />
+            <SolidColorBrush x:Key="BorderActive" Color="#475569" />
+            <SolidColorBrush x:Key="TextMain" Color="#f8fafc" />
+            <SolidColorBrush x:Key="TextMuted" Color="#94a3b8" />
+            <SolidColorBrush x:Key="TextSubtle" Color="#64748b" />
+            <SolidColorBrush x:Key="TextDisabled" Color="#475569" />
+            <SolidColorBrush x:Key="CapsuleBgBrush" Color="#cc182234" />
+            <SolidColorBrush x:Key="CapsuleBorderBrush" Color="#40475569" />
+            <LinearGradientBrush x:Key="TopFadeGradientBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Color="#f00f172a" Offset="0.0"/>
+                <GradientStop Color="#c00f172a" Offset="0.5"/>
+                <GradientStop Color="#500f172a" Offset="0.85"/>
+                <GradientStop Color="#000f172a" Offset="1.0"/>
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="ItemCardGradientBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Color="#00182234" Offset="0.0"/>
+                <GradientStop Color="#50182234" Offset="0.35"/>
+                <GradientStop Color="#c0182234" Offset="0.75"/>
+                <GradientStop Color="#ff182234" Offset="1.0"/>
+            </LinearGradientBrush>
+        </ResourceDictionary>
+
+        <!-- Light Variant -->
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="BgDark" Color="#f8fafc" />
+            <SolidColorBrush x:Key="BgSidebar" Color="#ffffff" />
+            <SolidColorBrush x:Key="BgCard" Color="#ffffff" />
+            <SolidColorBrush x:Key="BgCardAlt" Color="#f1f5f9" />
+            <SolidColorBrush x:Key="BgSurface" Color="#f1f5f9" />
+            <SolidColorBrush x:Key="BgInput" Color="#ffffff" />
+            <SolidColorBrush x:Key="BgDarkest" Color="#e2e8f0" />
+            <SolidColorBrush x:Key="BgPanelDark" Color="#f8fafc" />
+            <SolidColorBrush x:Key="BorderMain" Color="#e2e8f0" />
+            <SolidColorBrush x:Key="BorderSubtle" Color="#cbd5e1" />
+            <SolidColorBrush x:Key="BorderActive" Color="#94a3b8" />
+            <SolidColorBrush x:Key="TextMain" Color="#0f172a" />
+            <SolidColorBrush x:Key="TextMuted" Color="#64748b" />
+            <SolidColorBrush x:Key="TextSubtle" Color="#94a3b8" />
+            <SolidColorBrush x:Key="TextDisabled" Color="#cbd5e1" />
+            <SolidColorBrush x:Key="CapsuleBgBrush" Color="#f2ffffff" />
+            <SolidColorBrush x:Key="CapsuleBorderBrush" Color="#e2e8f0" />
+            <LinearGradientBrush x:Key="TopFadeGradientBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Color="#f0f8fafc" Offset="0.0"/>
+                <GradientStop Color="#c0f8fafc" Offset="0.5"/>
+                <GradientStop Color="#50f8fafc" Offset="0.85"/>
+                <GradientStop Color="#00f8fafc" Offset="1.0"/>
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="ItemCardGradientBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Color="#00ffffff" Offset="0.0"/>
+                <GradientStop Color="#50ffffff" Offset="0.35"/>
+                <GradientStop Color="#c0ffffff" Offset="0.75"/>
+                <GradientStop Color="#ffffffff" Offset="1.0"/>
+            </LinearGradientBrush>
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>

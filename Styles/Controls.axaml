@@ -1,0 +1,221 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icon="using:IconPacks.Avalonia.BoxIcons">
+
+    <!-- Global Card Container -->
+    <Style Selector="Border.card">
+        <Setter Property="Background" Value="{DynamicResource BgSidebar}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderMain}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Padding" Value="16"/>
+    </Style>
+
+    <Style Selector="Border.settings-card">
+        <Setter Property="Background" Value="{DynamicResource BgSidebar}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderMain}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Padding" Value="20"/>
+    </Style>
+
+    <!-- Section Title Style -->
+    <Style Selector="TextBlock.card-title">
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+    </Style>
+
+    <!-- Action Button Secondary -->
+    <Style Selector="Button.btn-action-sec">
+        <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="7"/>
+        <Setter Property="Padding" Value="12,7"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.btn-action-sec:hover">
+        <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+    </Style>
+
+    <!-- Action Button Primary -->
+    <Style Selector="Button.btn-action-primary">
+        <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="7"/>
+        <Setter Property="Padding" Value="14,8"/>
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.btn-action-primary:hover">
+        <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+    </Style>
+
+    <!-- Global Dual / Multi-Segmented Switcher Buttons (Settings, Health, etc.) -->
+    <Style Selector="Button.segment-btn">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Padding" Value="16,7"/>
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.segment-btn.active">
+        <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="Button.segment-btn:pointerover:not(.active)">
+        <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+    </Style>
+    <Style Selector="Button.segment-btn icon|PackIconBoxIcons">
+        <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+    </Style>
+    <Style Selector="Button.segment-btn.active icon|PackIconBoxIcons">
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+    <Style Selector="Button.segment-btn:pointerover:not(.active) icon|PackIconBoxIcons">
+        <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+    </Style>
+
+    <!-- Global Filter Pill Buttons (Health tabs, Conflict filter pills, etc.) -->
+    <Style Selector="Button.filter-btn">
+        <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderMain}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="12,6"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.filter-btn:pointerover:not(.active)">
+        <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+    </Style>
+    <Style Selector="Button.filter-btn.active">
+        <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderActive}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- Global Capsule Search Input (Used in FiltersSidebarView and ConflictScannerView) -->
+    <Style Selector="TextBox.capsule-search">
+        <Setter Property="Background" Value="{DynamicResource BgInput}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="18"/>
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        <Setter Property="Padding" Value="6,0,8,0"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="FontSize" Value="12"/>
+    </Style>
+    <Style Selector="TextBox.capsule-search:pointerover /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="{DynamicResource BgInput}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+    <!-- Global Settings Input Style (Storage & Directories, Forms, Modals) -->
+    <Style Selector="TextBox.settings-input">
+        <Setter Property="Background" Value="{DynamicResource BgInput}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="7"/>
+        <Setter Property="MinHeight" Value="34"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        <Setter Property="Padding" Value="10,7,10,7"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="FontSize" Value="12.5"/>
+    </Style>
+    <Style Selector="TextBox.settings-input:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
+        <Setter Property="Background" Value="{DynamicResource BgInput}"/>
+    </Style>
+    <Style Selector="TextBox.settings-input:pointerover /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderActive}"/>
+        <Setter Property="Background" Value="{DynamicResource BgInput}"/>
+    </Style>
+
+    <!-- Global Transparent Borderless Notes Input -->
+    <Style Selector="TextBox.transparent-notes">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource TextMain}"/>
+        <Setter Property="MinHeight" Value="22"/>
+    </Style>
+    <Style Selector="TextBox.transparent-notes:pointerover /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector="TextBox.transparent-notes:focus /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector="TextBox.transparent-notes /template/ TextBlock#PART_Watermark">
+        <Setter Property="FontStyle" Value="Italic"/>
+        <Setter Property="Foreground" Value="#64748b"/>
+    </Style>
+    <!-- Global Customizable Accent ToggleSwitch Control -->
+    <Style Selector="ToggleSwitch">
+        <Setter Property="OnContent" Value="{x:Null}"/>
+        <Setter Property="OffContent" Value="{x:Null}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="ToggleSwitch:checked /template/ Border#SwitchKnobBounds">
+        <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+    </Style>
+    <Style Selector="ToggleSwitch:checked:pointerover /template/ Border#SwitchKnobBounds">
+        <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+    </Style>
+    <Style Selector="ToggleSwitch:checked:pressed /template/ Border#SwitchKnobBounds">
+        <Setter Property="Background" Value="{DynamicResource AccentPressedBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentPressedBrush}"/>
+    </Style>
+    <Style Selector="ToggleSwitch:checked /template/ Canvas#SwitchKnob">
+        <Setter Property="Background" Value="White"/>
+    </Style>
+    <Style Selector="ToggleSwitch:checked /template/ Ellipse#SwitchKnobOn">
+        <Setter Property="Fill" Value="White"/>
+    </Style>
+    <Style Selector="ToggleSwitch /template/ Border#SwitchKnobBounds">
+        <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+    </Style>
+
+    <!-- Global Card List with Virtualization Items -->
+    <Style Selector="ListBox.card-list">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+    </Style>
+    <Style Selector="ListBox.card-list ListBoxItem">
+        <Setter Property="Padding" Value="0,0,0,10"/>
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Focusable" Value="False"/>
+    </Style>
+    <Style Selector="ListBox.card-list ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector="ListBox.card-list ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+</Styles>

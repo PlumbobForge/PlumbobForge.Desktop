@@ -1,0 +1,248 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="48"
+             x:Class="PlumbobForge.Desktop.Views.ContentManager.ItemCompactRowView"
+             x:DataType="vm:ItemViewModel"
+             x:CompileBindings="True"
+             Height="48">
+
+    <UserControl.Styles>
+        <Style Selector="Border.compact-row">
+            <Setter Property="Background" Value="{DynamicResource BgSidebar}"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.12"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.12"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.compact-row:pointerover">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+
+        <Style Selector="Button.row-action-btn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.row-action-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+
+        <Style Selector="Border.compact-row">
+            <Setter Property="BorderBrush" Value="{DynamicResource CapsuleBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Border.compact-row.selected">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Compact List Row Container -->
+    <Border Classes="compact-row"
+            Classes.selected="{Binding IsSelected}"
+            HorizontalAlignment="Stretch"
+            Margin="6, 2"
+            Padding="8, 0"
+            CornerRadius="8"
+            ClipToBounds="True"
+            Cursor="Hand"
+            PointerPressed="OnItemRowPointerPressed"
+            PointerMoved="OnItemRowPointerMoved"
+            PointerReleased="OnItemRowPointerReleased"
+            PointerCaptureLost="OnItemRowPointerCaptureLost">
+
+        <Grid ColumnDefinitions="Auto, Auto, Auto, *, Auto, Auto" Height="48" VerticalAlignment="Center">
+            <!-- 1. Selection Checkbox Pill -->
+            <Button Grid.Column="0"
+                    Command="{Binding ToggleSelectionCommand}"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Padding="0"
+                    Margin="0,0,8,0"
+                    Cursor="Hand"
+                    VerticalAlignment="Center"
+                    ToolTip.Tip="Toggle Selection">
+                <Border Width="20" Height="20" CornerRadius="10" Background="{Binding SelectionBadgeBackground}">
+                    <icon:PackIconBoxIcons Kind="RegularCheck" Width="12" Height="12" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsSelected}"/>
+                </Border>
+            </Button>
+
+            <!-- 2. Small Square Thumbnail -->
+            <Border Grid.Column="1"
+                    Width="36"
+                    Height="36"
+                    CornerRadius="6"
+                    ClipToBounds="True"
+                    Background="{DynamicResource BgDark}"
+                    Margin="0,0,10,0"
+                    VerticalAlignment="Center">
+                <Panel ClipToBounds="True">
+                    <Image Source="{Binding DisplayThumbnailBitmap}"
+                           Stretch="UniformToFill"
+                           ClipToBounds="True"
+                           Opacity="{Binding ThumbnailOpacity}"
+                           RenderOptions.BitmapInterpolationMode="MediumQuality"
+                           IsHitTestVisible="False"
+                           IsVisible="{Binding DisplayThumbnailBitmap, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+
+                    <!-- Fallback Placeholder when thumbnail is missing -->
+                    <Panel IsHitTestVisible="False" IsVisible="{Binding DisplayThumbnailBitmap, Converter={x:Static ObjectConverters.IsNull}}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularCube" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center"/>
+                    </Panel>
+                </Panel>
+            </Border>
+
+            <!-- 3. Enable/Disable Switch -->
+            <Button Grid.Column="2"
+                    Command="{Binding ToggleEnableCommand}"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Padding="0"
+                    Margin="0,0,10,0"
+                    Cursor="Hand"
+                    VerticalAlignment="Center"
+                    ToolTip.Tip="{Binding StatusText}">
+                <Panel>
+                    <icon:PackIconBoxIcons Kind="SolidToggleRight" Width="20" Height="20" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding Enabled}"/>
+                    <icon:PackIconBoxIcons Kind="SolidToggleLeft" Width="20" Height="20" Foreground="#ef4444" IsVisible="{Binding !Enabled}"/>
+                </Panel>
+            </Button>
+
+            <!-- 4. Main Details: Filename & File Info / Set Badge -->
+            <Grid Grid.Column="3" RowDefinitions="Auto, Auto" VerticalAlignment="Center" Margin="0,0,8,0">
+                <!-- Filename -->
+                <TextBlock Grid.Row="0"
+                           Text="{Binding FileName}"
+                           TextDecorations="{Binding FileNameTextDecoration}"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextMain}"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center"
+                           ToolTip.Tip="{Binding FileName}"/>
+
+                <!-- Sub-info: File size & User tags preview -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,2,0,0">
+                    <TextBlock Text="{Binding FileSizeFormatted}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                    <TextBlock Text="•" FontSize="10" Foreground="#475569" VerticalAlignment="Center" IsVisible="{Binding HasUserTags}"/>
+                    <TextBlock Text="{Binding UserTags}" FontSize="11" Foreground="#94a3b8" TextTrimming="CharacterEllipsis" MaxWidth="300" VerticalAlignment="Center" IsVisible="{Binding HasUserTags}"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- 5. Category & Package Type Badges -->
+            <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" Margin="0,0,10,0" VerticalAlignment="Center">
+                <!-- Category Pill -->
+                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" IsVisible="{Binding CategoryTagDisplay, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <TextBlock Text="{Binding CategoryTagDisplay}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                </Border>
+
+                <!-- Package Type Pill -->
+                <Border Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding PackageType}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                </Border>
+            </StackPanel>
+
+            <!-- 6. Quick Action Buttons -->
+            <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                <!-- Info / Details (i) Flyout -->
+                <Button Classes="row-action-btn" ToolTip.Tip="Details &amp; Metadata">
+                    <icon:PackIconBoxIcons Kind="RegularInfoCircle" Width="15" Height="15" Foreground="{DynamicResource TextMuted}"/>
+                    <Button.Flyout>
+                        <Flyout Placement="BottomEdgeAlignedRight">
+                            <StackPanel Width="280" Margin="14" Spacing="10" Focusable="True">
+                                <TextBlock Text="{Binding FileName}" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap"/>
+                                <Separator Background="{DynamicResource BorderSubtle}"/>
+                                <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto, Auto, Auto, Auto" Margin="0,2">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc 'common.type'}" Foreground="{DynamicResource TextMuted}" FontSize="11.5" Margin="0,0,14,6"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding PackageType}" FontWeight="Bold" Foreground="{DynamicResource TextMain}" FontSize="11.5"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc 'common.status'}" Foreground="{DynamicResource TextMuted}" FontSize="11.5" Margin="0,0,14,6"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding StatusText}" Foreground="{Binding StatusColor}" FontWeight="Bold" FontSize="11.5"/>
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc 'common.size'}" Foreground="{DynamicResource TextMuted}" FontSize="11.5" Margin="0,0,14,6"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding FileSizeText}" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" FontSize="11.5"/>
+
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc 'common.cas_category'}" Foreground="{DynamicResource TextMuted}" FontSize="11.5" Margin="0,0,14,6"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CasCategoryDisplay}" Foreground="{DynamicResource TextMain}" FontSize="11.5" TextWrapping="Wrap"/>
+
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Loc 'common.user_tags'}" Foreground="{DynamicResource TextMuted}" FontSize="11.5" Margin="0,0,14,0"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding UserTags}" Foreground="{DynamicResource TextMain}" FontSize="11.5" TextWrapping="Wrap"/>
+                                </Grid>
+
+                                <!-- Notes Separator Line -->
+                                <Separator Background="{DynamicResource BorderSubtle}"/>
+
+                                <!-- Clean transparent auto-expanding note box -->
+                                <TextBox Classes="transparent-notes"
+                                         Text="{Binding Note, Mode=TwoWay}"
+                                         Watermark="{loc:Loc 'library.edit_description'}"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         FontSize="12"
+                                         MinHeight="22"
+                                         MaxHeight="140"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+
+                                <!-- Bottom Separator Line -->
+                                <Separator Background="{DynamicResource BorderSubtle}"/>
+
+                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                                    <Button Command="{Binding SearchGoogleCommand}"
+                                            Background="{DynamicResource BgCardAlt}"
+                                            Foreground="{DynamicResource TextMain}"
+                                            BorderBrush="{DynamicResource BorderSubtle}"
+                                            BorderThickness="1"
+                                            Padding="10,5" FontSize="11.5" CornerRadius="6" Cursor="Hand">
+                                        <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                                            <icon:PackIconBoxIcons Kind="RegularSearch" Width="12" Height="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Google" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Command="{Binding OpenInExplorerCommand}"
+                                            ToolTip.Tip="{loc:Loc 'common.show_in_folder'}"
+                                            Background="{DynamicResource BgCardAlt}"
+                                            Foreground="{DynamicResource TextMain}"
+                                            BorderBrush="{DynamicResource BorderSubtle}"
+                                            BorderThickness="1"
+                                            Padding="10,5" FontSize="11.5" CornerRadius="6" Cursor="Hand">
+                                        <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                                            <icon:PackIconBoxIcons Kind="RegularFolder" Width="12" Height="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'common.folder'}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+
+                <!-- Edit Tags Button -->
+                <Button Classes="row-action-btn"
+                        Command="{Binding EditTagsCommand}"
+                        ToolTip.Tip="{loc:Loc 'library.retag_item'}">
+                    <icon:PackIconBoxIcons Kind="RegularTag" Width="14" Height="14" Foreground="{DynamicResource TextMuted}"/>
+                </Button>
+
+                <!-- Rename Button -->
+                <Button Classes="row-action-btn"
+                        Command="{Binding RenameCommand}"
+                        ToolTip.Tip="{loc:Loc 'library.rename_item'}">
+                    <icon:PackIconBoxIcons Kind="RegularEdit" Width="14" Height="14" Foreground="{DynamicResource TextMuted}"/>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

@@ -1,0 +1,241 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+        xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+        x:Class="PlumbobForge.Desktop.Views.Dialogs.MigrationDialogWindow"
+        Title="{loc:Loc 'dialogs.migration.title'}"
+        Width="520"
+        SizeToContent="Height"
+        MinHeight="360"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        SystemDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        Background="{DynamicResource BgDark}">
+
+    <Window.Styles>
+        <Style Selector="RadioButton">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="RadioButton /template/ Ellipse#OuterEllipse">
+            <Setter Property="Stroke" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="Fill" Value="Transparent"/>
+        </Style>
+        <Style Selector="RadioButton:checked /template/ Ellipse#CheckOuterEllipse">
+            <Setter Property="Fill" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Stroke" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="RadioButton:checked /template/ Ellipse#CheckGlyph">
+            <Setter Property="Fill" Value="#ffffff"/>
+            <Setter Property="Stroke" Value="#ffffff"/>
+        </Style>
+        <Style Selector="RadioButton:checked:pointerover /template/ Ellipse#CheckOuterEllipse">
+            <Setter Property="Fill" Value="{DynamicResource AccentHoverBrush}"/>
+            <Setter Property="Stroke" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+        <Style Selector="RadioButton:checked:pressed /template/ Ellipse#CheckOuterEllipse">
+            <Setter Property="Fill" Value="{DynamicResource AccentHoverBrush}"/>
+            <Setter Property="Stroke" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+    </Window.Styles>
+
+    <Border BorderBrush="#334155" BorderThickness="1" CornerRadius="8" ClipToBounds="True" Background="{DynamicResource BgDark}">
+        <Grid RowDefinitions="Auto, *, Auto">
+            <!-- Modal Title Bar Header -->
+            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="40" Padding="16,0,0,0" PointerPressed="OnHeaderPointerPressed">
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularArchive" Width="18" Height="18" Foreground="White"/>
+                        <TextBlock Text="{loc:Loc 'dialogs.migration.title'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Width="40" Height="40" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCancelClick" ToolTip.Tip="{loc:Loc 'common.cancel'}">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#ef4444"/>
+                            </Style>
+                            <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                <Setter Property="Foreground" Value="White"/>
+                            </Style>
+                        </Button.Styles>
+                        <icon:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Body Content -->
+            <StackPanel Grid.Row="1" Margin="20,16" Spacing="12">
+                <TextBlock Text="{loc:Loc 'dialogs.migration.intro'}"
+                           FontSize="12.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="18"/>
+
+                <!-- Source 1: CC Magic -->
+                <Border Background="#182234" BorderBrush="#334155" BorderThickness="1" CornerRadius="8" Padding="14,12">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <RadioButton x:Name="CcMagicRadio"
+                                     Grid.Column="0"
+                                     GroupName="MigrationSource"
+                                     IsChecked="True"
+                                     Cursor="Hand"
+                                     VerticalAlignment="Top"
+                                     Margin="0,1,0,0"/>
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0" Spacing="6">
+                            <TextBlock Text="{loc:Loc 'dialogs.migration.ccmagic_title'}"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource TextMain}"/>
+                            <TextBlock Text="{loc:Loc 'dialogs.migration.ccmagic_desc'}"
+                                       FontSize="11.5"
+                                       Foreground="{DynamicResource TextMuted}"
+                                       TextWrapping="Wrap"/>
+
+                            <!-- CC Magic Folder & Mode Options -->
+                            <StackPanel x:Name="CcMagicOptionsSection" Margin="0,4,0,0" Spacing="8" IsVisible="True">
+                                <TextBlock Text="{loc:Loc 'dialogs.migration.ccmagic_folder'}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBox x:Name="CcMagicPathBox"
+                                             Watermark="C:\Users\...\Documents\Electronic Arts\CC Magic"
+                                             Background="#0f172a"
+                                             Foreground="{DynamicResource TextMain}"
+                                             BorderBrush="#334155"
+                                             BorderThickness="1"
+                                             CornerRadius="6"
+                                             Padding="8,6"
+                                             FontSize="12"
+                                             TextChanged="OnCcMagicPathChanged"/>
+                                    <Button Grid.Column="1"
+                                             Content="{loc:Loc 'common.browse'}"
+                                             Click="OnBrowseCcMagicClick"
+                                             Background="#1e293b"
+                                             Foreground="{DynamicResource TextMain}"
+                                             Padding="12,6"
+                                             Margin="8,0,0,0"
+                                             CornerRadius="6"
+                                             Cursor="Hand"/>
+                                </Grid>
+                                <TextBlock x:Name="CcMagicValidationErrorText"
+                                           Foreground="#ef4444"
+                                           FontSize="11"
+                                           IsVisible="False"
+                                           TextWrapping="Wrap"/>
+
+                                <TextBlock Text="{loc:Loc 'dialogs.migration.mode_label'}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
+                                <Border Background="#0f172a" BorderBrush="#243247" BorderThickness="1" CornerRadius="6" Padding="10,8">
+                                    <StackPanel Spacing="8">
+                                        <RadioButton x:Name="CcMagicFullRadio"
+                                                     GroupName="CcMagicMode"
+                                                     IsChecked="True"
+                                                     Cursor="Hand">
+                                            <StackPanel Spacing="2" Margin="6,0,0,0">
+                                                <TextBlock Text="{loc:Loc 'dialogs.migration.full_mode'}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextMain}"/>
+                                                <TextBlock Text="{loc:Loc 'dialogs.migration.full_ccmagic_desc'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </RadioButton>
+
+                                        <RadioButton x:Name="CcMagicSimpleRadio"
+                                                     GroupName="CcMagicMode"
+                                                     IsChecked="False"
+                                                     Cursor="Hand">
+                                            <StackPanel Spacing="2" Margin="6,0,0,0">
+                                                <TextBlock Text="{loc:Loc 'dialogs.migration.simple_mode'}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextMain}"/>
+                                                <TextBlock Text="{loc:Loc 'dialogs.migration.simple_desc'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Source 2: Sims 3 Mod Organizer (s3mo) -->
+                <Border Background="#182234" BorderBrush="#334155" BorderThickness="1" CornerRadius="8" Padding="14,12">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <RadioButton x:Name="S3moRadio"
+                                     Grid.Column="0"
+                                     GroupName="MigrationSource"
+                                     IsChecked="False"
+                                     Cursor="Hand"
+                                     VerticalAlignment="Top"
+                                     Margin="0,1,0,0"/>
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0" Spacing="3">
+                            <TextBlock Text="{loc:Loc 'dialogs.migration.s3mo_title'}"
+                                       FontWeight="SemiBold"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource TextMain}"/>
+                            <TextBlock Text="{loc:Loc 'dialogs.migration.s3mo_desc'}"
+                                       FontSize="11.5"
+                                       Foreground="{DynamicResource TextMuted}"
+                                       TextWrapping="Wrap"/>
+
+                            <!-- S3MO Folder Picker Section -->
+                            <StackPanel x:Name="S3moPathSection" Margin="0,8,0,0" Spacing="6" IsVisible="False">
+                                <TextBlock Text="{loc:Loc 'dialogs.migration.s3mo_folder'}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBox x:Name="S3moPathBox"
+                                             Watermark="C:\Path\To\s3mo"
+                                             Background="#0f172a"
+                                             Foreground="{DynamicResource TextMain}"
+                                             BorderBrush="#334155"
+                                             BorderThickness="1"
+                                             CornerRadius="6"
+                                             Padding="8,6"
+                                             FontSize="12"
+                                             TextChanged="OnS3moPathChanged"/>
+                                    <Button Grid.Column="1"
+                                             Content="{loc:Loc 'common.browse'}"
+                                             Click="OnBrowseS3moClick"
+                                             Background="#1e293b"
+                                             Foreground="{DynamicResource TextMain}"
+                                             Padding="12,6"
+                                             Margin="8,0,0,0"
+                                             CornerRadius="6"
+                                             Cursor="Hand"/>
+                                </Grid>
+                                <TextBlock x:Name="ValidationErrorText"
+                                           Foreground="#ef4444"
+                                           FontSize="11"
+                                           IsVisible="False"
+                                           TextWrapping="Wrap"/>
+
+                                <TextBlock Text="{loc:Loc 'dialogs.migration.mode_label'}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
+                                <Border Background="#0f172a" BorderBrush="#243247" BorderThickness="1" CornerRadius="6" Padding="10,8">
+                                    <StackPanel Spacing="8">
+                                        <RadioButton x:Name="S3moFullRadio"
+                                                     GroupName="S3moMode"
+                                                     IsChecked="True"
+                                                     Cursor="Hand">
+                                            <StackPanel Spacing="2" Margin="6,0,0,0">
+                                                <TextBlock Text="{loc:Loc 'dialogs.migration.full_mode'}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextMain}"/>
+                                                <TextBlock Text="{loc:Loc 'dialogs.migration.full_s3mo_desc'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </RadioButton>
+
+                                        <RadioButton x:Name="S3moSimpleRadio"
+                                                     GroupName="S3moMode"
+                                                     IsChecked="False"
+                                                     Cursor="Hand">
+                                            <StackPanel Spacing="2" Margin="6,0,0,0">
+                                                <TextBlock Text="{loc:Loc 'dialogs.migration.simple_mode'}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextMain}"/>
+                                                <TextBlock Text="{loc:Loc 'dialogs.migration.simple_desc'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </StackPanel>
+
+            <!-- Footer Action Buttons Panel -->
+            <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" Padding="16,12">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                    <Button Content="{loc:Loc 'common.cancel'}" Click="OnCancelClick" Background="{DynamicResource BgSurface}" Foreground="{DynamicResource TextMain}" Padding="14,6" CornerRadius="6" Cursor="Hand"/>
+                    <Button x:Name="StartButton" Content="{loc:Loc 'dialogs.migration.start_btn'}" Click="OnStartClick" Background="{DynamicResource AccentBrush}" Foreground="White" FontWeight="SemiBold" Padding="14,6" CornerRadius="6" Cursor="Hand"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

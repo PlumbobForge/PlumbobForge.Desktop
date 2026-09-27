@@ -1,0 +1,641 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             x:Class="PlumbobForge.Desktop.Views.ContentManager.FiltersSidebarView"
+             x:DataType="vm:ContentManagerViewModel">
+
+    <UserControl.Styles>
+        <!-- Outer Floating Container Width & Animation -->
+        <Style Selector="Border.filters-floating-panel">
+            <Setter Property="Width" Value="280"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Width" Duration="0:0:0.25" Easing="CubicEaseOut"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.filters-floating-panel.collapsed">
+            <Setter Property="Width" Value="48"/>
+        </Style>
+
+        <!-- Inner Content Slide Animation -->
+        <Style Selector="Border.filters-inner-content">
+            <Setter Property="RenderTransform" Value="translateX(0px)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25" Easing="CubicEaseOut"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.filters-inner-content.collapsed">
+            <Setter Property="RenderTransform" Value="translateX(0px)"/>
+        </Style>
+
+        <!-- Dimmable Body & Header Content Transition -->
+        <Style Selector="Grid.dimmable-content">
+            <Setter Property="Opacity" Value="1"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.2"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Grid.dimmable-content.collapsed">
+            <Setter Property="Opacity" Value="0.2"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+        </Style>
+
+        <!-- Filter Section Main Toggle Button Style -->
+        <Style Selector="ToggleButton.filter-main-btn">
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-main-btn:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-main-btn:checked TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-main-btn:checked icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-main-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-main-btn:pointerover TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-main-btn:pointerover icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!-- Filter Sub-Category Pill Toggle Button Style -->
+        <Style Selector="ToggleButton.filter-pill">
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,6,6"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-pill:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-pill:checked TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-pill:checked icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-pill:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-pill:pointerover TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ToggleButton.filter-pill:pointerover icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+
+        <!-- Accordion Section Header Button Style -->
+        <Style Selector="Button.accordion-header">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.accordion-header:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border Classes="filters-floating-panel"
+            Classes.collapsed="{Binding IsFiltersSidebarCollapsed}"
+            Background="{DynamicResource BgSidebar}"
+            BorderThickness="0"
+            CornerRadius="12"
+            Margin="6, 12, 12, 12"
+            Padding="0"
+            ClipToBounds="True">
+        <Panel Width="280" HorizontalAlignment="Left">
+            <!-- Sliding / Cropping Content Panel (280px wide) -->
+            <Border Classes="filters-inner-content" Classes.collapsed="{Binding IsFiltersSidebarCollapsed}" Width="280" Padding="14">
+                <Grid RowDefinitions="Auto, *">
+                    <!-- Header -->
+                    <Grid Grid.Row="0" ColumnDefinitions="Auto, *" Margin="0,0,0,12">
+                        <!-- Leftmost Collapse/Expand Toggle Button (Always bright & 100% clickable) -->
+                        <Button Grid.Column="0" Command="{Binding ToggleFiltersSidebarCommand}" ZIndex="20" Background="Transparent" Foreground="{DynamicResource TextMain}" CornerRadius="6" Padding="6" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip.Tip="Toggle Filters Sidebar">
+                            <Panel>
+                                <icon:PackIconBoxIcons Kind="RegularArrowToRightStroke" Width="16" Height="16" VerticalAlignment="Center" IsVisible="{Binding !IsFiltersSidebarCollapsed}"/>
+                                <icon:PackIconBoxIcons Kind="RegularArrowToLeftStroke" Width="16" Height="16" VerticalAlignment="Center" IsVisible="{Binding IsFiltersSidebarCollapsed}"/>
+                            </Panel>
+                        </Button>
+
+                        <!-- Title (Dims when collapsed) -->
+                        <Grid Grid.Column="1" Classes="dimmable-content" Classes.collapsed="{Binding IsFiltersSidebarCollapsed}" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc 'filters.title'}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                        </Grid>
+                    </Grid>
+
+                    <!-- Filters Body Panel (Search & Accordions, Dims when collapsed) -->
+                    <Grid Grid.Row="1" RowDefinitions="Auto, *" Classes="dimmable-content" Classes.collapsed="{Binding IsFiltersSidebarCollapsed}">
+                        <!-- Capsule Search Input -->
+                        <TextBox Grid.Row="0" Classes="capsule-search" Margin="0,0,0,16" Text="{Binding SearchQuery}" Watermark="{loc:Loc 'filters.search_placeholder'}">
+                            <TextBox.InnerLeftContent>
+                                <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="10,0,4,0" VerticalAlignment="Center"/>
+                            </TextBox.InnerLeftContent>
+                            <TextBox.InnerRightContent>
+                                <Button Command="{Binding ClearSearchQueryCommand}"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Padding="0"
+                                        Margin="0,0,6,0"
+                                        Width="24" Height="24"
+                                        CornerRadius="12"
+                                        Cursor="Hand"
+                                        IsVisible="{Binding HasSearchQuery}"
+                                        ToolTip.Tip="{loc:Loc 'filters.clear_all'}">
+                                    <Button.Styles>
+                                        <Style Selector="Button:pointerover">
+                                            <Setter Property="Background" Value="#334155"/>
+                                        </Style>
+                                        <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                            <Setter Property="Foreground" Value="White"/>
+                                        </Style>
+                                    </Button.Styles>
+                                    <icon:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Button>
+                            </TextBox.InnerRightContent>
+                        </TextBox>
+
+                        <!-- Accordion Filter Categories -->
+                        <ScrollViewer Grid.Row="1" Padding="0,0,4,0">
+                            <StackPanel Spacing="16">
+                                <!-- TYPE SECTION (Collapsible) -->
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnDefinitions="*, Auto, Auto">
+                                        <Button Grid.Column="0" Classes="accordion-header" Command="{Binding ToggleTypeExpandedCommand}">
+                                            <TextBlock Text="{loc:Loc 'filters.type'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="1" VerticalAlignment="Center"/>
+                                        </Button>
+
+                                        <Button Grid.Column="1"
+                                                Command="{Binding ToggleAllTypesCommand}"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Padding="4,2"
+                                                Margin="0,0,4,0"
+                                                Cursor="Hand"
+                                                VerticalAlignment="Center">
+                                            <Panel>
+                                                <TextBlock Text="{loc:Loc 'filters.clear_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding IsAllTypesSelected}"/>
+                                                <TextBlock Text="{loc:Loc 'library.select_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding !IsAllTypesSelected}"/>
+                                            </Panel>
+                                        </Button>
+
+                                        <Button Grid.Column="2" Classes="accordion-header" Command="{Binding ToggleTypeExpandedCommand}" Padding="2" VerticalAlignment="Center">
+                                            <Panel>
+                                                <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding IsTypeExpanded}"/>
+                                                <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding !IsTypeExpanded}"/>
+                                            </Panel>
+                                        </Button>
+                                    </Grid>
+
+                                    <StackPanel Spacing="6" IsVisible="{Binding IsTypeExpanded}">
+                                        <!-- CAS Items Button with integrated Collapse/Expand chevron on the right -->
+                                        <ToggleButton Classes="filter-main-btn" IsChecked="{Binding FilterTypeCAS, Mode=TwoWay}">
+                                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                                    <icon:PackIconBoxIcons Kind="RegularHanger" Width="14" Height="14" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{loc:Loc 'filters.cas_items'}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+
+                                                <!-- Integrated Collapse/Expand Chevron (Visible when CAS Items is active) -->
+                                                <Button Grid.Column="2"
+                                                        Command="{Binding ToggleCasSubFiltersExpandedCommand}"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Width="24"
+                                                        Height="24"
+                                                        Padding="0"
+                                                        CornerRadius="4"
+                                                        Cursor="Hand"
+                                                        IsVisible="{Binding FilterTypeCAS}"
+                                                        VerticalAlignment="Center"
+                                                        HorizontalContentAlignment="Center"
+                                                        VerticalContentAlignment="Center"
+                                                        ToolTip.Tip="Toggle CAS Sub-filters">
+                                                    <Panel>
+                                                        <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="14" Height="14" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center" IsVisible="{Binding IsCasSubFiltersExpanded}"/>
+                                                        <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="14" Height="14" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center" IsVisible="{Binding !IsCasSubFiltersExpanded}"/>
+                                                    </Panel>
+                                                </Button>
+                                            </Grid>
+                                        </ToggleButton>
+
+                                        <!-- CAS Sub-filters (Rendered ONLY when CAS Items enabled AND expanded) -->
+                                        <StackPanel Margin="4,4,0,6" Spacing="10" IsVisible="{Binding ShowCasSubFilters}">
+                                            <!-- CATEGORY (Collapsible) -->
+                                            <StackPanel Spacing="6">
+                                                <Grid ColumnDefinitions="*, Auto, Auto">
+                                                    <Button Grid.Column="0" Classes="accordion-header" Command="{Binding ToggleCasCategoryExpandedCommand}">
+                                                        <TextBlock Text="{loc:Loc 'filters.category'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="1" VerticalAlignment="Center"/>
+                                                    </Button>
+
+                                                    <Button Grid.Column="1"
+                                                            Command="{Binding ToggleAllCasCategoryCommand}"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Padding="4,2"
+                                                            Margin="0,0,4,0"
+                                                            Cursor="Hand"
+                                                            VerticalAlignment="Center">
+                                                        <Panel>
+                                                            <TextBlock Text="{loc:Loc 'filters.clear_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding IsAllCasCategorySelected}"/>
+                                                            <TextBlock Text="{loc:Loc 'library.select_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding !IsAllCasCategorySelected}"/>
+                                                        </Panel>
+                                                    </Button>
+
+                                                    <Button Grid.Column="2" Classes="accordion-header" Command="{Binding ToggleCasCategoryExpandedCommand}" Padding="2" VerticalAlignment="Center">
+                                                        <Panel>
+                                                            <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding IsCasCategoryExpanded}"/>
+                                                            <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding !IsCasCategoryExpanded}"/>
+                                                        </Panel>
+                                                    </Button>
+                                                </Grid>
+
+                                                <WrapPanel IsVisible="{Binding IsCasCategoryExpanded}">
+                                                    <!-- Hair -->
+                                                    <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterCasHair, Mode=TwoWay}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <icon:PackIconBoxIcons Kind="RegularFace" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{loc:Loc 'filters.categories.Hair'}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </ToggleButton>
+
+                                                    <!-- Full Body -->
+                                                    <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterCasFullBody, Mode=TwoWay}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <icon:PackIconBoxIcons Kind="RegularBody" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{loc:Loc 'filters.categories.FullBody'}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </ToggleButton>
+
+                                                    <!-- Tops -->
+                                                    <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterCasTops, Mode=TwoWay}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <icon:PackIconBoxIcons Kind="RegularTShirt" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{loc:Loc 'filters.categories.Tops'}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </ToggleButton>
+
+                                                    <!-- Bottoms -->
+                                                    <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterCasBottoms, Mode=TwoWay}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <icon:PackIconBoxIcons Kind="RegularPant" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{loc:Loc 'filters.categories.Bottoms'}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </ToggleButton>
+
+                                                    <!-- Shoes -->
+                                                    <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterCasShoes, Mode=TwoWay}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <icon:PackIconBoxIcons Kind="RegularSneaker" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{loc:Loc 'filters.categories.Shoes'}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </ToggleButton>
+
+                                                    <!-- Details -->
+                                                    <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterCasDetails, Mode=TwoWay}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <icon:PackIconBoxIcons Kind="RegularFaceAlt" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{loc:Loc 'filters.categories.Details'}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </ToggleButton>
+
+                                                    <!-- Skins -->
+                                                    <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterCasSkins, Mode=TwoWay}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <icon:PackIconBoxIcons Kind="RegularPalette" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{loc:Loc 'filters.categories.Skins'}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </ToggleButton>
+
+                                                    <!-- Accessories -->
+                                                    <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterCasAccessories, Mode=TwoWay}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <icon:PackIconBoxIcons Kind="RegularDiamond" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{loc:Loc 'filters.categories.Accessories'}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </ToggleButton>
+
+                                                    <!-- Sliders -->
+                                                    <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterCasSliders, Mode=TwoWay}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <icon:PackIconBoxIcons Kind="RegularSlider" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{loc:Loc 'filters.categories.Sliders'}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </ToggleButton>
+
+                                                    <!-- Presets -->
+                                                    <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterCasPresets, Mode=TwoWay}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <icon:PackIconBoxIcons Kind="RegularSparkles" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{loc:Loc 'filters.categories.Presets'}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </ToggleButton>
+
+                                                    <!-- Other -->
+                                                    <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterCasOther, Mode=TwoWay}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <icon:PackIconBoxIcons Kind="RegularDotsHorizontal" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{loc:Loc 'filters.categories.Other'}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </ToggleButton>
+                                                </WrapPanel>
+                                            </StackPanel>
+
+                                            <!-- AGE (Collapsible) -->
+                                            <StackPanel Spacing="6">
+                                                <Grid ColumnDefinitions="*, Auto, Auto">
+                                                    <Button Grid.Column="0" Classes="accordion-header" Command="{Binding ToggleCasAgeExpandedCommand}">
+                                                        <TextBlock Text="{loc:Loc 'filters.age'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="1" VerticalAlignment="Center"/>
+                                                    </Button>
+
+                                                    <Button Grid.Column="1"
+                                                            Command="{Binding ToggleAllCasAgeCommand}"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Padding="4,2"
+                                                            Margin="0,0,4,0"
+                                                            Cursor="Hand"
+                                                            VerticalAlignment="Center">
+                                                        <Panel>
+                                                            <TextBlock Text="{loc:Loc 'filters.clear_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding IsAllCasAgeSelected}"/>
+                                                            <TextBlock Text="{loc:Loc 'library.select_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding !IsAllCasAgeSelected}"/>
+                                                        </Panel>
+                                                    </Button>
+
+                                                    <Button Grid.Column="2" Classes="accordion-header" Command="{Binding ToggleCasAgeExpandedCommand}" Padding="2" VerticalAlignment="Center">
+                                                        <Panel>
+                                                            <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding IsCasAgeExpanded}"/>
+                                                            <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding !IsCasAgeExpanded}"/>
+                                                        </Panel>
+                                                    </Button>
+                                                </Grid>
+
+                                                <WrapPanel IsVisible="{Binding IsCasAgeExpanded}">
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.ages.Baby'}" IsChecked="{Binding FilterAgeBaby, Mode=TwoWay}"/>
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.ages.Toddler'}" IsChecked="{Binding FilterAgeToddler, Mode=TwoWay}"/>
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.ages.Child'}" IsChecked="{Binding FilterAgeChild, Mode=TwoWay}"/>
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.ages.Teen'}" IsChecked="{Binding FilterAgeTeen, Mode=TwoWay}"/>
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.ages.YoungAdult'}" IsChecked="{Binding FilterAgeYoungAdult, Mode=TwoWay}"/>
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.ages.Adult'}" IsChecked="{Binding FilterAgeAdult, Mode=TwoWay}"/>
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.ages.Elder'}" IsChecked="{Binding FilterAgeElder, Mode=TwoWay}"/>
+                                                </WrapPanel>
+                                            </StackPanel>
+
+                                            <!-- GENDER (Collapsible) -->
+                                            <StackPanel Spacing="6">
+                                                <Grid ColumnDefinitions="*, Auto, Auto">
+                                                    <Button Grid.Column="0" Classes="accordion-header" Command="{Binding ToggleCasGenderExpandedCommand}">
+                                                        <TextBlock Text="{loc:Loc 'filters.gender'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="1" VerticalAlignment="Center"/>
+                                                    </Button>
+
+                                                    <Button Grid.Column="1"
+                                                            Command="{Binding ToggleAllCasGenderCommand}"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Padding="4,2"
+                                                            Margin="0,0,4,0"
+                                                            Cursor="Hand"
+                                                            VerticalAlignment="Center">
+                                                        <Panel>
+                                                            <TextBlock Text="{loc:Loc 'filters.clear_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding IsAllCasGenderSelected}"/>
+                                                            <TextBlock Text="{loc:Loc 'library.select_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding !IsAllCasGenderSelected}"/>
+                                                        </Panel>
+                                                    </Button>
+
+                                                    <Button Grid.Column="2" Classes="accordion-header" Command="{Binding ToggleCasGenderExpandedCommand}" Padding="2" VerticalAlignment="Center">
+                                                        <Panel>
+                                                            <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding IsCasGenderExpanded}"/>
+                                                            <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding !IsCasGenderExpanded}"/>
+                                                        </Panel>
+                                                    </Button>
+                                                </Grid>
+
+                                                <WrapPanel IsVisible="{Binding IsCasGenderExpanded}">
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.genders.Male'}" IsChecked="{Binding FilterGenderMale, Mode=TwoWay}"/>
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.genders.Female'}" IsChecked="{Binding FilterGenderFemale, Mode=TwoWay}"/>
+                                                </WrapPanel>
+                                            </StackPanel>
+
+                                            <!-- OUTFIT CATEGORY (Collapsible) -->
+                                            <StackPanel Spacing="6">
+                                                <Grid ColumnDefinitions="*, Auto, Auto">
+                                                    <Button Grid.Column="0" Classes="accordion-header" Command="{Binding ToggleCasOutfitExpandedCommand}">
+                                                        <TextBlock Text="{loc:Loc 'filters.outfit_category'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="1" VerticalAlignment="Center"/>
+                                                    </Button>
+
+                                                    <Button Grid.Column="1"
+                                                            Command="{Binding ToggleAllCasOutfitCommand}"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Padding="4,2"
+                                                            Margin="0,0,4,0"
+                                                            Cursor="Hand"
+                                                            VerticalAlignment="Center">
+                                                        <Panel>
+                                                            <TextBlock Text="{loc:Loc 'filters.clear_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding IsAllCasOutfitSelected}"/>
+                                                            <TextBlock Text="{loc:Loc 'library.select_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding !IsAllCasOutfitSelected}"/>
+                                                        </Panel>
+                                                    </Button>
+
+                                                    <Button Grid.Column="2" Classes="accordion-header" Command="{Binding ToggleCasOutfitExpandedCommand}" Padding="2" VerticalAlignment="Center">
+                                                        <Panel>
+                                                            <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding IsCasOutfitExpanded}"/>
+                                                            <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding !IsCasOutfitExpanded}"/>
+                                                        </Panel>
+                                                    </Button>
+                                                </Grid>
+
+                                                <WrapPanel IsVisible="{Binding IsCasOutfitExpanded}">
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.outfits.Everyday'}" IsChecked="{Binding FilterOutfitEveryday, Mode=TwoWay}"/>
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.outfits.Formal'}" IsChecked="{Binding FilterOutfitFormal, Mode=TwoWay}"/>
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.outfits.Sleepwear'}" IsChecked="{Binding FilterOutfitSleepwear, Mode=TwoWay}"/>
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.outfits.Swimwear'}" IsChecked="{Binding FilterOutfitSwimwear, Mode=TwoWay}"/>
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.outfits.Athletic'}" IsChecked="{Binding FilterOutfitAthletic, Mode=TwoWay}"/>
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.outfits.Career'}" IsChecked="{Binding FilterOutfitCareer, Mode=TwoWay}"/>
+                                                    <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.outfits.Outerwear'}" IsChecked="{Binding FilterOutfitOuterwear, Mode=TwoWay}"/>
+                                                </WrapPanel>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <!-- Build-Buy Items Button -->
+                                        <ToggleButton Classes="filter-main-btn" IsChecked="{Binding FilterTypeBuildBuy, Mode=TwoWay}">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <icon:PackIconBoxIcons Kind="RegularChair" Width="14" Height="14" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Loc 'filters.buildbuy_items'}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </ToggleButton>
+
+                                        <!-- Other Items Button with integrated Collapse/Expand chevron on the right -->
+                                        <ToggleButton Classes="filter-main-btn" IsChecked="{Binding FilterTypeOther, Mode=TwoWay}">
+                                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                                    <icon:PackIconBoxIcons Kind="RegularPackage" Width="14" Height="14" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{loc:Loc 'filters.other_items'}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+
+                                                <!-- Integrated Collapse/Expand Chevron (Visible when Other Items is active) -->
+                                                <Button Grid.Column="2"
+                                                        Command="{Binding ToggleOtherSubExpandedCommand}"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Width="24"
+                                                        Height="24"
+                                                        Padding="0"
+                                                        CornerRadius="4"
+                                                        Cursor="Hand"
+                                                        IsVisible="{Binding FilterTypeOther}"
+                                                        VerticalAlignment="Center"
+                                                        HorizontalContentAlignment="Center"
+                                                        VerticalContentAlignment="Center"
+                                                        ToolTip.Tip="{loc:Loc 'filters.other_items'}">
+                                                    <Panel>
+                                                        <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="14" Height="14" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center" IsVisible="{Binding IsOtherSubExpanded}"/>
+                                                        <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="14" Height="14" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center" IsVisible="{Binding !IsOtherSubExpanded}"/>
+                                                    </Panel>
+                                                </Button>
+                                            </Grid>
+                                        </ToggleButton>
+
+                                        <!-- Other Sub-categories (Rendered ONLY when Other Items enabled AND expanded) -->
+                                        <StackPanel Margin="4,4,0,6" Spacing="6" IsVisible="{Binding ShowOtherSubFilters}">
+                                            <Grid ColumnDefinitions="*, Auto, Auto">
+                                                <Button Grid.Column="0" Classes="accordion-header" Command="{Binding ToggleOtherSubExpandedCommand}">
+                                                    <TextBlock Text="{loc:Loc 'filters.category'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="1" VerticalAlignment="Center"/>
+                                                </Button>
+
+                                                <Button Grid.Column="1"
+                                                        Command="{Binding ToggleAllOtherCategoryCommand}"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Padding="4,2"
+                                                        Margin="0,0,4,0"
+                                                        Cursor="Hand"
+                                                        VerticalAlignment="Center">
+                                                    <Panel>
+                                                        <TextBlock Text="{loc:Loc 'filters.clear_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding IsAllOtherCategorySelected}"/>
+                                                        <TextBlock Text="{loc:Loc 'library.select_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding !IsAllOtherCategorySelected}"/>
+                                                    </Panel>
+                                                </Button>
+
+                                                <Button Grid.Column="2" Classes="accordion-header" Command="{Binding ToggleOtherSubExpandedCommand}" Padding="2" VerticalAlignment="Center">
+                                                    <Panel>
+                                                        <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding IsOtherSubExpanded}"/>
+                                                        <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding !IsOtherSubExpanded}"/>
+                                                    </Panel>
+                                                </Button>
+                                            </Grid>
+
+                                            <WrapPanel IsVisible="{Binding IsOtherSubExpanded}">
+                                                <!-- Worlds -->
+                                                <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterOtherWorlds, Mode=TwoWay}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                                        <icon:PackIconBoxIcons Kind="RegularGlobe" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Loc 'filters.other_subcategories.Worlds'}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </ToggleButton>
+
+                                                <!-- Sims -->
+                                                <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterOtherSims, Mode=TwoWay}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                                        <icon:PackIconBoxIcons Kind="RegularUser" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Loc 'filters.other_subcategories.Sims'}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </ToggleButton>
+
+                                                <!-- Lots -->
+                                                <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterOtherLots, Mode=TwoWay}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                                        <icon:PackIconBoxIcons Kind="RegularHome" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Loc 'filters.other_subcategories.Lots'}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </ToggleButton>
+
+                                                <!-- Misc -->
+                                                <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterOtherMisc, Mode=TwoWay}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                                        <icon:PackIconBoxIcons Kind="RegularGrid" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Loc 'filters.other_subcategories.Misc'}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </ToggleButton>
+                                            </WrapPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- MODE SECTION (Collapsible) -->
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnDefinitions="*, Auto, Auto">
+                                        <Button Grid.Column="0" Classes="accordion-header" Command="{Binding ToggleModeExpandedCommand}">
+                                            <TextBlock Text="{loc:Loc 'filters.status'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="1" VerticalAlignment="Center"/>
+                                        </Button>
+
+                                        <Button Grid.Column="1"
+                                                Command="{Binding ToggleAllModeCommand}"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Padding="4,2"
+                                                Margin="0,0,4,0"
+                                                Cursor="Hand"
+                                                VerticalAlignment="Center">
+                                            <Panel>
+                                                <TextBlock Text="{loc:Loc 'filters.clear_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding IsAllModeSelected}"/>
+                                                <TextBlock Text="{loc:Loc 'library.select_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding !IsAllModeSelected}"/>
+                                            </Panel>
+                                        </Button>
+
+                                        <Button Grid.Column="2" Classes="accordion-header" Command="{Binding ToggleModeExpandedCommand}" Padding="2" VerticalAlignment="Center">
+                                            <Panel>
+                                                <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding IsModeExpanded}"/>
+                                                <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding !IsModeExpanded}"/>
+                                            </Panel>
+                                        </Button>
+                                    </Grid>
+
+                                    <WrapPanel IsVisible="{Binding IsModeExpanded}">
+                                        <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.enabled'}" IsChecked="{Binding FilterModeEnabled, Mode=TwoWay}"/>
+                                        <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.disabled'}" IsChecked="{Binding FilterModeDisabled, Mode=TwoWay}"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Panel>
+    </Border>
+</UserControl>

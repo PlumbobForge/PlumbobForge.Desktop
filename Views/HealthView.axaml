@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:health="using:PlumbobForge.Desktop.Views.Health"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="850"
+             x:Class="PlumbobForge.Desktop.Views.HealthView"
+             x:DataType="vm:HealthViewModel">
+
+    <Grid RowDefinitions="Auto, *" Margin="28,20,28,20" MaxWidth="1100" HorizontalAlignment="Stretch">
+        <!-- Top Hero Header & Action Controls Card -->
+        <health:HealthHeaderBarView Grid.Row="0" Margin="0,0,0,16"/>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="1">
+            <!-- SECTION 1: SIMS 3 CACHE CLEANER -->
+            <ScrollViewer IsVisible="{Binding IsCacheCleanerActive}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <health:CacheCleanerView Margin="0,0,12,0"/>
+            </ScrollViewer>
+
+            <!-- SECTION 2: SIMPLIFIED ACTIONABLE CONFLICT SCANNER -->
+            <health:ConflictScannerView IsVisible="{Binding IsConflictScannerActive}"/>
+
+            <!-- SECTION 3: PATTERN FIXER -->
+            <health:PatternFixerView IsVisible="{Binding IsPatternFixerActive}"/>
+
+            <!-- SECTION 4: SIMS 3 COLLECTION CREATOR -->
+            <health:CollectionCreatorView IsVisible="{Binding IsCollectionCreatorActive}"/>
+        </Grid>
+    </Grid>
+</UserControl>

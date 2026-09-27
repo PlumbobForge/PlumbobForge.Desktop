@@ -1,0 +1,357 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+        xmlns:views="using:PlumbobForge.Desktop.Views"
+        xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+        xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+        x:Class="PlumbobForge.Desktop.Views.MainWindow"
+        x:Name="RootWindow"
+        x:DataType="vm:MainViewModel"
+        Title="PlumbobForge"
+        Icon="/Assets/appicon.ico"
+        Width="1200" Height="800"
+        MinWidth="900" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        SystemDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        TransparencyLevelHint="Mica, AcrylicBlur, Transparent"
+        TransparencyBackgroundFallback="#0f172a"
+        Background="{DynamicResource BgDark}">
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+K" Command="{Binding OpenQuickSwitcherCommand}"/>
+        <KeyBinding Gesture="Ctrl+P" Command="{Binding OpenQuickSwitcherCommand}"/>
+    </Window.KeyBindings>
+
+    <Window.DataTemplates>
+        <DataTemplate DataType="{x:Type vm:ContentManagerViewModel}">
+            <views:ContentManagerView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ConfigurationsViewModel}">
+            <views:ConfigurationsView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:HealthViewModel}">
+            <views:HealthView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+            <views:SettingsView/>
+        </DataTemplate>
+    </Window.DataTemplates>
+
+    <Window.Styles>
+        <Style Selector="Button.win-btn">
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="0"/>
+        </Style>
+        <Style Selector="Button.win-btn:pointerover">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+        <Style Selector="Button.win-btn-close:pointerover">
+            <Setter Property="Background" Value="#ef4444"/>
+        </Style>
+        <Style Selector="Button.win-btn-close:pointerover icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!-- Navigation Action Button (Transparent Icon Button) -->
+        <Style Selector="Button.nav-action-btn">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+        </Style>
+        <Style Selector="Button.nav-action-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+        <Style Selector="Button.nav-action-btn:pointerover icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <Style Selector="Button.quick-search-trigger-btn">
+            <Setter Property="Width" Value="NaN"/>
+            <Setter Property="Padding" Value="8,4"/>
+        </Style>
+
+        <!-- Rebuild Cache Button Styles -->
+        <Style Selector="Button.rebuild-btn">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.rebuild-btn icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        </Style>
+        <Style Selector="Button.rebuild-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+        <Style Selector="Button.rebuild-btn:pointerover icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+
+        <!-- Rebuild Cache Button Dirty State (Yellow with white icon) -->
+        <Style Selector="Button.rebuild-btn.dirty">
+            <Setter Property="Background" Value="#eab308"/>
+        </Style>
+        <Style Selector="Button.rebuild-btn.dirty /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#eab308"/>
+        </Style>
+        <Style Selector="Button.rebuild-btn.dirty:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#facc15"/>
+        </Style>
+        <Style Selector="Button.rebuild-btn.dirty icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.rebuild-btn.dirty:pointerover icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!-- Navigation Tab Style matching Electron version -->
+        <Style Selector="RadioButton.nav-tab">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <!-- PointerOver (Hover) State -->
+        <Style Selector="RadioButton.nav-tab:pointerover /template/ Border">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+        <Style Selector="RadioButton.nav-tab:pointerover TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <Style Selector="RadioButton.nav-tab:pointerover icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+
+        <!-- Checked (Active Tab) State: Dynamic Accent Badge and Foreground -->
+        <Style Selector="RadioButton.nav-tab:checked /template/ Border">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+        </Style>
+        <Style Selector="RadioButton.nav-tab:checked TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="RadioButton.nav-tab:checked icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+
+        <!-- Window Maximized Border Style -->
+        <Style Selector="Window[WindowState=Maximized] Border#RootBorder">
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+    </Window.Styles>
+
+    <Border x:Name="RootBorder"
+            BorderBrush="{DynamicResource BorderMain}"
+            BorderThickness="1"
+            Margin="{Binding #RootWindow.OffScreenMargin}">
+        <Grid RowDefinitions="Auto, *">
+            <!-- Header Nav Bar & Custom Title Bar -->
+            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="44" Padding="10,0,0,0"
+                    PointerPressed="OnHeaderPointerPressed">
+                <Grid ColumnDefinitions="*, Auto">
+                    <!-- Navigation Tabs (Left Aligned) -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Spacing="2">
+                        <!-- Library -->
+                        <RadioButton Classes="nav-tab"
+                                     GroupName="NavGroup"
+                                     IsChecked="{Binding IsContentManagerActive, Mode=OneWay}"
+                                     Command="{Binding NavigateToContentManagerCommand}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <icon:PackIconBoxIcons Kind="RegularFolder" Width="16" Height="16" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'nav.library'}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- Configurations -->
+                        <RadioButton Classes="nav-tab"
+                                     GroupName="NavGroup"
+                                     IsChecked="{Binding IsConfigurationsActive, Mode=OneWay}"
+                                     Command="{Binding NavigateToConfigurationsCommand}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <icon:PackIconBoxIcons Kind="RegularSliderAlt" Width="16" Height="16" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'nav.configurations'}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- Tools -->
+                        <RadioButton Classes="nav-tab"
+                                     GroupName="NavGroup"
+                                     IsChecked="{Binding IsToolsActive, Mode=OneWay}"
+                                     Command="{Binding NavigateToToolsCommand}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <icon:PackIconBoxIcons Kind="RegularSpanner" Width="16" Height="16" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'nav.tools'}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- Settings -->
+                        <RadioButton Classes="nav-tab"
+                                     GroupName="NavGroup"
+                                     IsChecked="{Binding IsSettingsActive, Mode=OneWay}"
+                                     Command="{Binding NavigateToSettingsCommand}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <icon:PackIconBoxIcons Kind="RegularCog" Width="16" Height="16" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'nav.settings'}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+                    </StackPanel>
+
+                    <!-- Custom Window Controls & Actions (Quick Jump, Rebuild Cache, Minimize, Maximize / Restore, Close) -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Stretch" HorizontalAlignment="Right">
+                        <!-- Quick Jump Button (Ctrl+K) -->
+                        <Button Classes="nav-action-btn quick-search-trigger-btn"
+                                Command="{Binding OpenQuickSwitcherCommand}"
+                                ToolTip.Tip="{loc:Loc 'common.quick_jump'}">
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <icon:PackIconBoxIcons Kind="RegularSearch" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'nav.quick_jump'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                <Border Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="3" Padding="5,1" VerticalAlignment="Center">
+                                    <TextBlock Text="{loc:Loc 'nav.ctrl_k'}" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                                </Border>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Rebuild Cache Icon Button -->
+                        <Button Classes="nav-action-btn rebuild-btn"
+                                Classes.dirty="{Binding HasDirtySets}"
+                                Command="{Binding RebuildCacheCommand}"
+                                ToolTip.Tip="{loc:Loc 'common.rebuild_cache'}">
+                            <icon:PackIconBoxIcons Kind="RegularRefreshCw" Width="15" Height="15" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="{loc:Loc 'common.force_rebuild'}" Command="{Binding ForceRebuildCacheCommand}">
+                                        <MenuItem.Icon>
+                                            <icon:PackIconBoxIcons Kind="RegularRefreshCwDot" Width="16" Height="16" Foreground="{DynamicResource StatusAmber}"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+
+                        <!-- Minimize -->
+                        <Button Classes="win-btn" Click="OnMinimizeClick" ToolTip.Tip="{loc:Loc 'nav.minimize'}">
+                            <icon:PackIconBoxIcons Kind="RegularMinus" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+
+                        <!-- Maximize / Restore -->
+                        <Button Classes="win-btn" Click="OnMaximizeRestoreClick" ToolTip.Tip="{loc:Loc 'nav.maximize'}">
+                            <icon:PackIconBoxIcons x:Name="MaximizeIcon" Kind="RegularSquare" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+
+                        <!-- Close -->
+                        <Button Classes="win-btn win-btn-close" Click="OnCloseClick" ToolTip.Tip="{loc:Loc 'nav.close'}">
+                            <icon:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Main Content Area -->
+            <TransitioningContentControl Grid.Row="1" Content="{Binding CurrentView}">
+                <TransitioningContentControl.PageTransition>
+                    <CrossFade Duration="0:0:0.15"/>
+                </TransitioningContentControl.PageTransition>
+            </TransitioningContentControl>
+
+            <!-- Quick Jump Overlay Layer -->
+            <views:QuickSwitcherOverlayView Grid.RowSpan="2"
+                                            DataContext="{Binding QuickSwitcher}"/>
+
+            <!-- Floating Update Toast Notification Layer -->
+            <Border Grid.Row="1"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,24,24"
+                    Background="{DynamicResource BgSidebar}"
+                    BorderBrush="{DynamicResource AccentBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="16,12"
+                    BoxShadow="0 8 24 #66000000"
+                    IsVisible="{Binding IsUpdateToastVisible}"
+                    ZIndex="90">
+                <Grid ColumnDefinitions="Auto, *, Auto, Auto" VerticalAlignment="Center">
+                    <!-- Rocket Icon -->
+                    <Border Grid.Column="0" Background="{DynamicResource AccentBadgeBgBrush}" CornerRadius="8" Width="36" Height="36" Margin="0,0,12,0" VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularRocket" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Message text -->
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="{loc:Loc 'settings.update_available'}" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                        <TextBlock Text="{Binding UpdateToastMessage}" FontSize="12" Foreground="{DynamicResource TextMuted}"/>
+                    </StackPanel>
+
+                    <!-- View Update Button -->
+                    <Button Grid.Column="2"
+                            Command="{Binding OpenUpdateSettingsCommand}"
+                            Background="{DynamicResource AccentBrush}"
+                            Foreground="White"
+                            FontWeight="SemiBold"
+                            FontSize="12"
+                            Padding="12,6"
+                            CornerRadius="6"
+                            Cursor="Hand"
+                            Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <icon:PackIconBoxIcons Kind="RegularCog" Width="13" Height="13" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'settings.view_changelog'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Dismiss X Button -->
+                    <Button Grid.Column="3"
+                            Command="{Binding DismissUpdateToastCommand}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="6"
+                            CornerRadius="6"
+                            Cursor="Hand"
+                            ToolTip.Tip="Dismiss">
+                        <icon:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Modal Backdrop & Dialog Layer -->
+            <Grid Grid.RowSpan="2"
+                  Background="#990a0f1d"
+                  IsVisible="{Binding ActiveProgressModal, Converter={x:Static ObjectConverters.IsNotNull}}"
+                  ClipToBounds="True">
+                <ContentControl Content="{Binding ActiveProgressModal}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"/>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

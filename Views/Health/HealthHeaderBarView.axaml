@@ -1,0 +1,275 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="100"
+             x:Class="PlumbobForge.Desktop.Views.Health.HealthHeaderBarView"
+             x:DataType="vm:HealthViewModel">
+
+    <!-- Top Header Card -->
+    <Border Classes="settings-card" Padding="16,12">
+        <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+            <!-- Left: Custom Dropdown Tool Selector -->
+            <Button Grid.Column="0"
+                    Background="{DynamicResource BgSurface}"
+                    BorderBrush="{DynamicResource BorderSubtle}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,7"
+                    Cursor="Hand"
+                    VerticalAlignment="Center">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover">
+                        <Setter Property="Background" Value="{DynamicResource BgSurfaceHover}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                    </Style>
+                </Button.Styles>
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Panel VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularTrash" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsCacheCleanerActive}"/>
+                        <icon:PackIconBoxIcons Kind="RegularShield" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsConflictScannerActive}"/>
+                        <icon:PackIconBoxIcons Kind="RegularPalette" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsPatternFixerActive}"/>
+                        <icon:PackIconBoxIcons Kind="RegularFolder" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsCollectionCreatorActive}"/>
+                    </Panel>
+
+                    <TextBlock Text="{Binding ActiveToolTitle}" FontSize="13.5" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+
+                    <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                </StackPanel>
+
+                <Button.Flyout>
+                    <Flyout Placement="BottomEdgeAlignedLeft">
+                        <Border Padding="6" Width="260" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8">
+                            <StackPanel Spacing="4">
+                                <!-- 1. Cache Cleaner Option -->
+                                <Button Command="{Binding SelectSectionCommand}" CommandParameter="Cache"
+                                        Background="Transparent" HorizontalAlignment="Stretch" Padding="10,8" CornerRadius="6" Cursor="Hand">
+                                    <Button.Styles>
+                                        <Style Selector="Button:pointerover">
+                                            <Setter Property="Background" Value="{DynamicResource BgSurfaceHover}"/>
+                                        </Style>
+                                    </Button.Styles>
+                                    <Grid ColumnDefinitions="Auto, *">
+                                        <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularTrash" Width="20" Height="20" Foreground="{DynamicResource TextMain}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{loc:Loc 'tools.cache.title'}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                                            <TextBlock Text="{loc:Loc 'tools.cache.clean_cache'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+
+                                <!-- 2. Conflict Scanner Option -->
+                                <Button Command="{Binding SelectSectionCommand}" CommandParameter="Conflicts"
+                                        Background="Transparent" HorizontalAlignment="Stretch" Padding="10,8" CornerRadius="6" Cursor="Hand">
+                                    <Button.Styles>
+                                        <Style Selector="Button:pointerover">
+                                            <Setter Property="Background" Value="{DynamicResource BgSurfaceHover}"/>
+                                        </Style>
+                                    </Button.Styles>
+                                    <Grid ColumnDefinitions="Auto, *">
+                                        <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularShield" Width="20" Height="20" Foreground="{DynamicResource TextMain}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{loc:Loc 'tools.conflicts.title'}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                                            <TextBlock Text="{loc:Loc 'tools.conflicts.scan_for_conflicts'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+
+                                <!-- 3. Pattern Fixer Option -->
+                                <Button Command="{Binding SelectSectionCommand}" CommandParameter="Patterns"
+                                        Background="Transparent" HorizontalAlignment="Stretch" Padding="10,8" CornerRadius="6" Cursor="Hand">
+                                    <Button.Styles>
+                                        <Style Selector="Button:pointerover">
+                                            <Setter Property="Background" Value="{DynamicResource BgSurfaceHover}"/>
+                                        </Style>
+                                    </Button.Styles>
+                                    <Grid ColumnDefinitions="Auto, *">
+                                        <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularPalette" Width="20" Height="20" Foreground="{DynamicResource TextMain}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{loc:Loc 'tools.patterns.title'}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                                            <TextBlock Text="{loc:Loc 'tools.patterns.scan_patterns'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+
+                                <!-- 4. Collection Creator Option -->
+                                <Button Command="{Binding SelectSectionCommand}" CommandParameter="Collections"
+                                        Background="Transparent" HorizontalAlignment="Stretch" Padding="10,8" CornerRadius="6" Cursor="Hand">
+                                    <Button.Styles>
+                                        <Style Selector="Button:pointerover">
+                                            <Setter Property="Background" Value="{DynamicResource BgSurfaceHover}"/>
+                                        </Style>
+                                    </Button.Styles>
+                                    <Grid ColumnDefinitions="Auto, *">
+                                        <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularFolder" Width="20" Height="20" Foreground="{DynamicResource TextMain}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{loc:Loc 'tools.collections.title'}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                                            <TextBlock Text="{loc:Loc 'tools.collections.new_collection'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+
+            <!-- Right Side: Action & Metric Controls -->
+            <!-- 1. Cache Cleaner Controls -->
+            <StackPanel Grid.Column="2"
+                        Orientation="Horizontal"
+                        Spacing="16"
+                        VerticalAlignment="Center"
+                        IsVisible="{Binding IsCacheCleanerActive}">
+                <!-- Stat Capsule -->
+                <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="12,8" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                        <StackPanel Spacing="1" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc 'tools.cache.detected_caches'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBlock Text="{Binding FormattedTotalCacheSize}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="{Binding TotalCacheFilesCount, StringFormat='({0})'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Separator Width="1" Height="22" Background="{DynamicResource BorderSubtle}"/>
+
+                        <StackPanel Spacing="1" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc 'tools.cache.selected_clean'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBlock Text="{Binding FormattedSelectedCacheSize}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                                <TextBlock Text="{Binding SelectedCacheFilesCount, StringFormat='({0})'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Clean Selected Caches Action Button -->
+                <Button Classes="btn-action-primary"
+                        Command="{Binding CleanSelectedCachesCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:PackIconBoxIcons Kind="RegularTrash" Width="14" Height="14" Foreground="White" VerticalAlignment="Center"/>
+                        <TextBlock Text="{loc:Loc 'tools.cache.clean_cache'}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- 2. Conflict Scanner Controls -->
+            <StackPanel Grid.Column="2"
+                        Orientation="Horizontal"
+                        Spacing="16"
+                        VerticalAlignment="Center"
+                        IsVisible="{Binding IsConflictScannerActive}">
+                <!-- Total Scanned Metric Capsule -->
+                <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="12,8" VerticalAlignment="Center">
+                    <StackPanel Spacing="1" VerticalAlignment="Center">
+                        <TextBlock Text="{loc:Loc 'tools.conflicts.detected_conflicts'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                        <TextBlock Text="{Binding TotalPackagesScanned, StringFormat='{}{0} packages'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Scan Library for Conflicts Action Button -->
+                <Button Classes="btn-action-primary"
+                        Command="{Binding ScanConflictsCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="White" VerticalAlignment="Center"/>
+                        <TextBlock Text="{loc:Loc 'tools.conflicts.scan_for_conflicts'}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- 3. Pattern Fixer Controls -->
+            <StackPanel Grid.Column="2"
+                        Orientation="Horizontal"
+                        Spacing="16"
+                        VerticalAlignment="Center"
+                        IsVisible="{Binding IsPatternFixerActive}">
+                <!-- Stat Capsule -->
+                <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="12,8" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                        <StackPanel Spacing="1" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc 'tools.patterns.patterns_found'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="{Binding TotalPatternsFound}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                        </StackPanel>
+
+                        <Separator Width="1" Height="22" Background="{DynamicResource BorderSubtle}"/>
+
+                        <StackPanel Spacing="1" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc 'tools.patterns.broken_patterns'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="{Binding BrokenPatternsCount}" FontSize="14" FontWeight="Bold" Foreground="#ef4444"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Action Buttons -->
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Classes="btn-action-primary"
+                            Command="{Binding FixAllBrokenPatternsCommand}"
+                            IsVisible="{Binding HasBrokenPatterns}"
+                            IsEnabled="{Binding !IsFixingPatterns}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <icon:PackIconBoxIcons Kind="RegularBandAid" Width="14" Height="14" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'tools.patterns.fix_all_broken'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Classes="btn-action-primary"
+                            Command="{Binding ScanPatternsCommand}"
+                            IsVisible="{Binding !HasBrokenPatterns}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'tools.patterns.scan_patterns'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- 4. Collection Creator Controls -->
+            <StackPanel Grid.Column="2"
+                        Orientation="Horizontal"
+                        Spacing="16"
+                        VerticalAlignment="Center"
+                        IsVisible="{Binding IsCollectionCreatorActive}">
+                <!-- Stat Capsule -->
+                <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="12,8" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                        <StackPanel Spacing="1" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc 'tools.collections.collections'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="{Binding TotalCollectionsCount}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                        </StackPanel>
+
+                        <Separator Width="1" Height="22" Background="{DynamicResource BorderSubtle}"/>
+
+                        <StackPanel Spacing="1" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc 'tools.collections.items_in_collection'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="{Binding TotalCollectionItemsCount}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Action Buttons -->
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Classes="btn-action-sec"
+                            Command="{Binding OpenCollectionsFolderCommand}"
+                            ToolTip.Tip="{loc:Loc 'tools.collections.open_folder'}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <icon:PackIconBoxIcons Kind="RegularFolder" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'common.folder'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Classes="btn-action-primary"
+                            Command="{Binding CreateNewCollectionCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <icon:PackIconBoxIcons Kind="RegularPlus" Width="14" Height="14" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'tools.collections.new_collection'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

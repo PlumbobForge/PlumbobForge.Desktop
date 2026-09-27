@@ -1,0 +1,215 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+        xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+        x:Class="PlumbobForge.Desktop.Views.Dialogs.UpgradeWizardWindow"
+        x:DataType="vm:UpgradeWizardViewModel"
+        Title="Welcome to PlumbobForge"
+        Width="740" Height="560"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        SystemDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        Background="{DynamicResource BgSidebar}">
+
+    <Window.Styles>
+        <!-- Step Indicator Pills -->
+        <Style Selector="Border.step-pill">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="12,4"/>
+        </Style>
+        <Style Selector="Border.step-pill.active">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="Border.step-pill.active TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <!-- Form Labels & Helpers matching SettingsView -->
+        <Style Selector="TextBlock.form-label">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+        <Style Selector="TextBlock.form-helper">
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="LineHeight" Value="16"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
+        </Style>
+    </Window.Styles>
+
+    <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" ClipToBounds="True" Background="{DynamicResource BgSidebar}">
+        <Grid RowDefinitions="Auto, *, Auto">
+            <!-- Top Step Progress Indicator (Draggable header, seamless, no top bar) -->
+            <Border Grid.Row="0" Background="Transparent" Padding="0,18,0,10" PointerPressed="OnHeaderPointerPressed">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
+                    <Border Classes="step-pill" Classes.active="{Binding IsStep1}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="1" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="Welcome" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="step-pill" Classes.active="{Binding IsStep2}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="2" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="What's New" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="step-pill" Classes.active="{Binding IsStep3}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="3" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="Ready" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- Step Content Deck -->
+            <Panel Grid.Row="1" Margin="36,16">
+                <!-- STEP 1: WELCOME -->
+                <StackPanel Spacing="20" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="620" IsVisible="{Binding IsStep1}">
+                    <Border Width="64" Height="64" CornerRadius="32" Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1.5" HorizontalAlignment="Center">
+                        <Image Source="{SvgImage /Assets/appicon.svg}" Width="36" Height="36" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <StackPanel Spacing="6" HorizontalAlignment="Center">
+                        <TextBlock Text="Welcome to the new PlumbobForge" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource TextMain}" HorizontalAlignment="Center" TextAlignment="Center"/>
+                        <TextBlock Text="Completely rewritten with an enhanced engine, better interface, and new tools for The Sims 3" FontSize="13" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" LineHeight="20"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="14" Margin="0,8,0,0">
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularBolt" Width="20" Height="20" Foreground="{DynamicResource AccentBrush}" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Text="Even Faster Engine" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Ultra-fast package indexing, faster cache rebuilding, low memory footprint, and instant search." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularPalette" Width="20" Height="20" Foreground="#38bdf8" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Text="More Personalization" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Add new icons and colors to your sets, configurations, and even the app itself." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularSearch" Width="20" Height="20" Foreground="#a855f7" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="Quick Jump" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                    <Border Background="{DynamicResource BgSurface}" CornerRadius="4" Padding="5,1" VerticalAlignment="Center">
+                                        <TextBlock Text="Ctrl+K" FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="Spotlight search bar to quickly jump to sets, search packages, and switch configurations from anywhere." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- STEP 2: WHAT'S NEW (4 DISTINCT TOOLS) -->
+                <Grid RowDefinitions="Auto, *" IsVisible="{Binding IsStep2}">
+                    <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,18">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <icon:PackIconBoxIcons Kind="RegularSpanner" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="What's New in PlumbobForge" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="Check out these new tools built directly into the app:" FontSize="12.5" Foreground="{DynamicResource TextMuted}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Spacing="14">
+                        <!-- Tool 1: Collection Creator -->
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularBookmark" Width="20" Height="20" Foreground="{DynamicResource AccentBrush}" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Text="Collection Creator" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Create in-game Build/Buy collections with your sets, and even hide them from the catalog." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Tool 2: Conflict Detector -->
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularShield" Width="20" Height="20" Foreground="#ef4444" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Text="Conflict &amp; Duplicate Detector" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Scan your library for duplicates, conflicts, and broken files to prevent crashes and glitches." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Tool 3: Cache Cleaner -->
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularTrash" Width="20" Height="20" Foreground="#38bdf8" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Text="Cache Cleaner" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Safely clean up various cache files, with explanations for what each cache file is for, all in one click." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Tool 4: Pattern Fixer -->
+                        <Grid ColumnDefinitions="Auto, *">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularGrid" Width="20" Height="20" Foreground="#a855f7" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Text="Pattern Fixer" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                <TextBlock Text="Detect and repair corrupted or duplicate Create-a-Pattern and Material resources." FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+
+                <!-- STEP 3: FINISH / READY -->
+                <StackPanel Spacing="20" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="560" IsVisible="{Binding IsStep3}">
+                    <Border Width="64" Height="64" CornerRadius="32" Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1.5" HorizontalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularCheck" Width="32" Height="32" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <StackPanel Spacing="6" HorizontalAlignment="Center">
+                        <TextBlock Text="You're All Set!" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource TextMain}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Thank you for updating PlumbobForge!" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Enjoy organizing your custom content." FontSize="12.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" LineHeight="18" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Panel>
+
+            <!-- Bottom Navigation Bar (No top border) -->
+            <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" Height="56" Padding="20,0" BorderThickness="0">
+                <Grid ColumnDefinitions="Auto, *, Auto">
+                    <!-- Back Button (Step 2 & 3) -->
+                    <Button Grid.Column="0" Command="{Binding PreviousStepCommand}" IsVisible="{Binding CanGoBack}" Classes="btn-action-sec" Padding="14,7" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <icon:PackIconBoxIcons Kind="RegularChevronLeft" Width="14" Height="14" VerticalAlignment="Center"/>
+                            <TextBlock Text="Back" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Next Button (Steps 1 & 2) -->
+                    <Button Grid.Column="2" Command="{Binding NextStepCommand}" IsVisible="{Binding CanGoNext}" Classes="btn-action-primary" Padding="18,7" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="Next" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="14" Height="14" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Finish / Launch Button (Step 3) -->
+                    <Button Grid.Column="2" Command="{Binding FinishCommand}" IsVisible="{Binding IsLastStep}" Classes="btn-action-primary" Padding="20,8" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <icon:PackIconBoxIcons Kind="RegularRocket" Width="15" Height="15" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="Let's go!" FontSize="12.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>
