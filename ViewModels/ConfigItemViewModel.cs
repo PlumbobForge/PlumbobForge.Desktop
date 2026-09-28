@@ -15,6 +15,9 @@ public partial class ConfigItemViewModel : ObservableObject
     public long Id => _entity.Id;
 
     [ObservableProperty]
+    private bool _isSelected;
+
+    [ObservableProperty]
     private string _name = string.Empty;
 
     [ObservableProperty]

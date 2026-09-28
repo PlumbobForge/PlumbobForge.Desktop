@@ -463,8 +463,8 @@
                                         </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate DataType="vm:AccentColorItemViewModel">
-                                                <Button Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).SetAccentCommand}"
-                                                        CommandParameter="{Binding Name}"
+                                                <Button Click="OnSetAccentClick"
+                                                        Tag="{Binding Name}"
                                                         Background="Transparent"
                                                         BorderThickness="0"
                                                         Padding="0"
@@ -578,8 +578,8 @@
                                                         <icon:PackIconBoxIcons Kind="RegularFolder" Width="14" Height="14" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                                         <TextBlock Grid.Column="1" Text="{Binding}" FontSize="12" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                                                         <Button Grid.Column="2" Classes="btn-icon"
-                                                                Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).RemoveObservedFolderCommand}"
-                                                                CommandParameter="{Binding}"
+                                                                Click="OnRemoveObservedFolderClick"
+                                                                Tag="{Binding}"
                                                                 ToolTip.Tip="{loc:Loc 'common.delete'}"
                                                                 Padding="4" Margin="4,0,0,0">
                                                             <icon:PackIconBoxIcons Kind="RegularTrash" Width="13" Height="13" Foreground="{DynamicResource TextMuted}"/>

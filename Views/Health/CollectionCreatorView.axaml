@@ -172,8 +172,7 @@
                                         <!-- Actions -->
                                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                                             <Button Classes="btn-action-sec"
-                                                    Command="{Binding $parent[UserControl].((vm:HealthViewModel)DataContext).EditCollectionCommand}"
-                                                    CommandParameter="{Binding}">
+                                                    Click="OnEditCollectionClick">
                                                 <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
                                                     <icon:PackIconBoxIcons Kind="RegularEdit" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
                                                     <TextBlock Text="{loc:Loc 'common.edit'}" VerticalAlignment="Center"/>
@@ -181,8 +180,7 @@
                                             </Button>
 
                                             <Button Classes="btn-action-sec"
-                                                    Command="{Binding $parent[UserControl].((vm:HealthViewModel)DataContext).DeleteCollectionCommand}"
-                                                    CommandParameter="{Binding}"
+                                                    Click="OnDeleteCollectionClick"
                                                     Padding="9,7"
                                                     ToolTip.Tip="{loc:Loc 'tools.collections.delete_tip'}">
                                                 <Button.Styles>
@@ -333,8 +331,7 @@
                                             </ItemsControl.ItemsPanel>
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate x:DataType="vm:CollectionIconItemViewModel">
-                                                    <Button Command="{Binding $parent[UserControl].((vm:HealthViewModel)DataContext).SelectIconCommand}"
-                                                            CommandParameter="{Binding}"
+                                                    <Button Click="OnSelectIconClick"
                                                             Background="Transparent"
                                                             BorderThickness="0"
                                                             Padding="0"
@@ -485,8 +482,7 @@
 
                                                                 <!-- Action Button -->
                                                                 <Button Grid.Column="3" Classes="btn-action-sec"
-                                                                        Command="{Binding $parent[UserControl].((vm:HealthViewModel)DataContext).RemoveAssignedSetCommand}"
-                                                                        CommandParameter="{Binding}"
+                                                                        Click="OnRemoveAssignedSetClick"
                                                                         Padding="8,4"
                                                                         ToolTip.Tip="{loc:Loc 'tools.collections.remove_tip'}">
                                                                     <Button.Styles>
@@ -575,8 +571,7 @@
 
                                                             <!-- Action Button -->
                                                             <Button Grid.Column="3" Classes="btn-action-sec"
-                                                                    Command="{Binding $parent[UserControl].((vm:HealthViewModel)DataContext).AddSetToCollectionCommand}"
-                                                                    CommandParameter="{Binding}"
+                                                                    Click="OnAddSetToCollectionClick"
                                                                     Padding="8,4"
                                                                     ToolTip.Tip="{loc:Loc 'tools.collections.add_tip'}">
                                                                 <StackPanel Orientation="Horizontal" Spacing="4">

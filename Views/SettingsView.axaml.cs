@@ -13,6 +13,22 @@ public partial class SettingsView : UserControl
         InitializeComponent();
     }
 
+    private void OnSetAccentClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string accentName } && DataContext is SettingsViewModel vm)
+        {
+            vm.SetAccentCommand.Execute(accentName);
+        }
+    }
+
+    private void OnRemoveObservedFolderClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string folder } && DataContext is SettingsViewModel vm)
+        {
+            vm.RemoveObservedFolderCommand.Execute(folder);
+        }
+    }
+
     private void OnLanguageItemClick(object? sender, RoutedEventArgs e)
     {
         if (sender is Button btn && btn.DataContext is LanguageOptionItemViewModel lang && DataContext is SettingsViewModel vm)

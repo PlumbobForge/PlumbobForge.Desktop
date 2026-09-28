@@ -169,6 +169,11 @@ public partial class ConfigurationsViewModel : ObservableObject
                 SelectedConfiguration = Configurations.FirstOrDefault(c => c.Active) ?? Configurations.FirstOrDefault();
             }
 
+            foreach (var c in Configurations)
+            {
+                c.IsSelected = (c == SelectedConfiguration);
+            }
+
             RefreshSetsColumns();
         }
         catch (Exception ex)
@@ -183,6 +188,10 @@ public partial class ConfigurationsViewModel : ObservableObject
 
     partial void OnSelectedConfigurationChanged(ConfigItemViewModel? value)
     {
+        foreach (var c in Configurations)
+        {
+            c.IsSelected = (c == value);
+        }
         RefreshSetsColumns();
     }
 

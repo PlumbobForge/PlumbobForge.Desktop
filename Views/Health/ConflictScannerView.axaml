@@ -208,8 +208,7 @@
 
                                             <!-- Jump to Manager Button -->
                                             <Button Grid.Column="2"
-                                                    Command="{Binding $parent[UserControl].((vm:HealthViewModel)DataContext).NavigateToPackageItemCommand}"
-                                                    CommandParameter="{Binding PrimaryPackage}"
+                                                    Click="OnNavigateToPrimaryPackageClick"
                                                     Background="{DynamicResource BgCardAlt}"
                                                     BorderBrush="{DynamicResource BorderSubtle}"
                                                     BorderThickness="1"
@@ -253,8 +252,7 @@
 
                                             <!-- Jump to Manager Button -->
                                             <Button Grid.Column="2"
-                                                    Command="{Binding $parent[UserControl].((vm:HealthViewModel)DataContext).NavigateToPackageItemCommand}"
-                                                    CommandParameter="{Binding SecondaryPackage}"
+                                                    Click="OnNavigateToSecondaryPackageClick"
                                                     Background="{DynamicResource BgCardAlt}"
                                                     BorderBrush="{DynamicResource BorderSubtle}"
                                                     BorderThickness="1"

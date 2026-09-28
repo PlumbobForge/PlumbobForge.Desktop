@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -66,6 +67,42 @@ public partial class ConfigurationsView : UserControl
                 _ = vm.LoadDataAsync();
             }
         };
+    }
+
+    private void OnSetActiveConfigClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem mi && mi.DataContext is ConfigItemViewModel item)
+        {
+            var vm = (DataContext as ConfigurationsViewModel) ?? App.Services?.GetService<ConfigurationsViewModel>();
+            if (vm != null) _ = vm.ActivateConfigurationAsync(item);
+        }
+    }
+
+    private void OnEditConfigClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem mi && mi.DataContext is ConfigItemViewModel item)
+        {
+            var vm = (DataContext as ConfigurationsViewModel) ?? App.Services?.GetService<ConfigurationsViewModel>();
+            if (vm != null) _ = vm.CustomizeConfigurationAsync(item);
+        }
+    }
+
+    private void OnDuplicateConfigClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem mi && mi.DataContext is ConfigItemViewModel item)
+        {
+            var vm = (DataContext as ConfigurationsViewModel) ?? App.Services?.GetService<ConfigurationsViewModel>();
+            if (vm != null) _ = vm.DuplicateConfigurationAsync(item);
+        }
+    }
+
+    private void OnDeleteConfigClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem mi && mi.DataContext is ConfigItemViewModel item)
+        {
+            var vm = (DataContext as ConfigurationsViewModel) ?? App.Services?.GetService<ConfigurationsViewModel>();
+            if (vm != null) _ = vm.DeleteConfigurationAsync(item);
+        }
     }
 
     private static bool IsInteractiveControl(object? source)

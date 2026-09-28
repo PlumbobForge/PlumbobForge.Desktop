@@ -348,8 +348,8 @@
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="vm:AccentColorItemViewModel">
                                             <Button Classes="swatch-btn"
-                                                    Command="{Binding $parent[Window].((vm:NewUserWalkthroughViewModel)DataContext).SetAccentCommand}"
-                                                    CommandParameter="{Binding Name}"
+                                                    Click="OnSetAccentClick"
+                                                    Tag="{Binding Name}"
                                                     ToolTip.Tip="{Binding DisplayName}">
                                                 <Grid Width="34" Height="34">
                                                     <!-- Outer ring for selected swatch -->

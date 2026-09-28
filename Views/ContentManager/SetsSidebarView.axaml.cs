@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
@@ -25,6 +26,42 @@ public partial class SetsSidebarView : UserControl
     public SetsSidebarView()
     {
         InitializeComponent();
+    }
+
+    private void OnAddSubSetClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem mi && mi.DataContext is SetNodeViewModel node)
+        {
+            var vm = (DataContext as ContentManagerViewModel) ?? App.Services?.GetService<ContentManagerViewModel>();
+            if (vm != null)
+            {
+                _ = vm.AddSubSetAsync(node);
+            }
+        }
+    }
+
+    private void OnCustomizeSetClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem mi && mi.DataContext is SetNodeViewModel node)
+        {
+            var vm = (DataContext as ContentManagerViewModel) ?? App.Services?.GetService<ContentManagerViewModel>();
+            if (vm != null)
+            {
+                _ = vm.CustomizeSetAsync(node);
+            }
+        }
+    }
+
+    private void OnDeleteSetClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem mi && mi.DataContext is SetNodeViewModel node)
+        {
+            var vm = (DataContext as ContentManagerViewModel) ?? App.Services?.GetService<ContentManagerViewModel>();
+            if (vm != null)
+            {
+                _ = vm.DeleteSetAsync(node);
+            }
+        }
     }
 
     private static bool IsInteractiveChild(object? source)

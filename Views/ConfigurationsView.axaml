@@ -190,37 +190,33 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:ConfigItemViewModel}">
                                 <Border Classes="config-node-row"
-                                        Classes.active-selected="{Binding $parent[UserControl].((vm:ConfigurationsViewModel)DataContext).SelectedConfiguration.Id, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={Binding Id}}"
+                                        Classes.active-selected="{Binding IsSelected}"
                                         PointerPressed="OnConfigItemPointerPressed"
                                         Margin="0,0,0,4">
                                     <Border.ContextMenu>
                                         <ContextMenu>
                                             <MenuItem Header="{loc:Loc 'configurations.set_active'}"
-                                                      Command="{Binding $parent[UserControl].((vm:ConfigurationsViewModel)DataContext).ActivateConfigurationCommand}"
-                                                      CommandParameter="{Binding}"
+                                                      Click="OnSetActiveConfigClick"
                                                       IsVisible="{Binding !Active}">
                                                 <MenuItem.Icon>
                                                     <icon:PackIconBoxIcons Kind="RegularPlay" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}"/>
                                                 </MenuItem.Icon>
                                             </MenuItem>
                                             <MenuItem Header="{loc:Loc 'configurations.edit_configuration'}"
-                                                      Command="{Binding $parent[UserControl].((vm:ConfigurationsViewModel)DataContext).CustomizeConfigurationCommand}"
-                                                      CommandParameter="{Binding}">
+                                                      Click="OnEditConfigClick">
                                                 <MenuItem.Icon>
                                                     <icon:PackIconBoxIcons Kind="RegularPalette" Width="14" Height="14"/>
                                                 </MenuItem.Icon>
                                             </MenuItem>
                                             <MenuItem Header="{loc:Loc 'common.duplicate'}"
-                                                      Command="{Binding $parent[UserControl].((vm:ConfigurationsViewModel)DataContext).DuplicateConfigurationCommand}"
-                                                      CommandParameter="{Binding}">
+                                                      Click="OnDuplicateConfigClick">
                                                 <MenuItem.Icon>
                                                     <icon:PackIconBoxIcons Kind="RegularCopy" Width="14" Height="14"/>
                                                 </MenuItem.Icon>
                                             </MenuItem>
                                             <Separator/>
                                             <MenuItem Header="{loc:Loc 'common.delete'}"
-                                                      Command="{Binding $parent[UserControl].((vm:ConfigurationsViewModel)DataContext).DeleteConfigurationCommand}"
-                                                      CommandParameter="{Binding}"
+                                                      Click="OnDeleteConfigClick"
                                                       IsEnabled="{Binding !Default}">
                                                 <MenuItem.Icon>
                                                     <icon:PackIconBoxIcons Kind="RegularTrash" Width="14" Height="14" Foreground="#ef4444"/>

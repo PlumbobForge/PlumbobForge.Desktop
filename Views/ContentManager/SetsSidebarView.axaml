@@ -257,18 +257,18 @@
                                             PointerCaptureLost="OnSetRowPointerCaptureLost">
                                         <Border.ContextMenu>
                                             <ContextMenu>
-                                                <MenuItem Header="{loc:Loc 'library.add_subset'}" Command="{Binding $parent[UserControl].((vm:ContentManagerViewModel)DataContext).AddSubSetCommand}" CommandParameter="{Binding}" IsVisible="{Binding !IsAllItems}">
+                                                <MenuItem Header="{loc:Loc 'library.add_subset'}" Click="OnAddSubSetClick" IsVisible="{Binding !IsAllItems}">
                                                     <MenuItem.Icon>
                                                         <icon:PackIconBoxIcons Kind="RegularFolderPlus" Width="16" Height="16"/>
                                                     </MenuItem.Icon>
                                                 </MenuItem>
-                                                <MenuItem Header="{loc:Loc 'library.customize_set'}" Command="{Binding $parent[UserControl].((vm:ContentManagerViewModel)DataContext).CustomizeSetCommand}" CommandParameter="{Binding}" IsVisible="{Binding CanCustomize}">
+                                                <MenuItem Header="{loc:Loc 'library.customize_set'}" Click="OnCustomizeSetClick" IsVisible="{Binding CanCustomize}">
                                                     <MenuItem.Icon>
                                                         <icon:PackIconBoxIcons Kind="RegularPalette" Width="16" Height="16"/>
                                                     </MenuItem.Icon>
                                                 </MenuItem>
                                                 <Separator IsVisible="{Binding CanDelete}"/>
-                                                <MenuItem Header="{loc:Loc 'common.delete'}" Command="{Binding $parent[UserControl].((vm:ContentManagerViewModel)DataContext).DeleteSetCommand}" CommandParameter="{Binding}" IsVisible="{Binding CanDelete}">
+                                                <MenuItem Header="{loc:Loc 'common.delete'}" Click="OnDeleteSetClick" IsVisible="{Binding CanDelete}">
                                                     <MenuItem.Icon>
                                                         <icon:PackIconBoxIcons Kind="RegularTrash" Width="16" Height="16" Foreground="#ef4444"/>
                                                     </MenuItem.Icon>
