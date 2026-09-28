@@ -88,6 +88,8 @@ public partial class ConfigurationsViewModel : ObservableObject
         _ => LocalizationManager.Instance.GetString("library.sort_date")
     };
 
+    private Guid? _notificationSubscriptionId;
+
     public ConfigurationsViewModel(
         IServiceProvider serviceProvider,
         AppDbContext db,
@@ -104,24 +106,50 @@ public partial class ConfigurationsViewModel : ObservableObject
             OnPropertyChanged(nameof(SetSortModeLabel));
         };
 
+        var notifier = _serviceProvider.GetService<NotificationService>();
+        if (notifier != null)
+        {
+            _notificationSubscriptionId = notifier.Subscribe(async payload =>
+            {
+                if (payload.Contains("sets_changed") || payload.Contains("library_changed") || payload.Contains("items_imported"))
+                {
+                    await LoadDataAsync();
+                }
+            });
+        }
+
         _ = LoadDataAsync();
     }
 
+    [RelayCommand]
+    public async Task RefreshAsync() => await LoadDataAsync();
+
     public async Task LoadDataAsync()
     {
+        if (!Dispatcher.UIThread.CheckAccess())
+        {
+            await Dispatcher.UIThread.InvokeAsync(LoadDataAsync);
+            return;
+        }
+
         IsLoading = true;
         try
         {
-            var rawConfigs = await _db.ConfigEntities
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            var rawConfigs = await db.ConfigEntities
                 .Include(c => c.ConfigSetsEntities)
                 .AsNoTracking()
                 .ToListAsync();
 
-            _allSets = await _db.SetsEntities
+            _allSets = await db.SetsEntities
                 .AsNoTracking()
                 .ToListAsync();
 
             _setsById = _allSets.ToDictionary(s => s.Id);
+
+            long? currentSelectedId = SelectedConfiguration?.Id;
 
             Configurations.Clear();
             foreach (var raw in rawConfigs)
@@ -131,9 +159,9 @@ public partial class ConfigurationsViewModel : ObservableObject
 
             SortConfigurationsList();
 
-            if (SelectedConfiguration != null)
+            if (currentSelectedId.HasValue)
             {
-                var match = Configurations.FirstOrDefault(c => c.Id == SelectedConfiguration.Id);
+                var match = Configurations.FirstOrDefault(c => c.Id == currentSelectedId.Value);
                 SelectedConfiguration = match ?? Configurations.FirstOrDefault(c => c.Active) ?? Configurations.FirstOrDefault();
             }
             else

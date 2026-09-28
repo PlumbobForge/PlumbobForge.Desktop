@@ -516,6 +516,17 @@ public partial class ContentManagerViewModel : ObservableObject
         {
             _ = mainVm.RefreshDirtyStateAsync();
         }
+
+        var configVm = App.Services?.GetService<ConfigurationsViewModel>();
+        if (configVm != null)
+        {
+            _ = configVm.LoadDataAsync();
+        }
+
+        if (_notificationService != null)
+        {
+            _ = _notificationService.BroadcastAsync("sets_changed", new { timestamp = DateTime.UtcNow });
+        }
     }
 
     public void RecalculateSetCounts()
