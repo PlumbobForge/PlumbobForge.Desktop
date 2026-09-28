@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -111,6 +112,12 @@ public partial class ContentManagerViewModel
         else
         {
             SelectedSetNode = allItemsNode;
+        }
+
+        var configVm = App.Services?.GetService<ConfigurationsViewModel>();
+        if (configVm != null)
+        {
+            _ = configVm.LoadDataAsync();
         }
     }
 
