@@ -8,6 +8,8 @@ namespace PlumbobForge.Desktop.ViewModels;
 
 public partial class ContentManagerViewModel
 {
+    private static readonly char[] CasFilterDelimiters = new[] { ',', ';', ' ' };
+
     // Main Type Filters
     [ObservableProperty] private bool _filterTypeCAS = true;
     [ObservableProperty] private bool _filterTypeBuildBuy = true;
@@ -517,13 +519,14 @@ public partial class ContentManagerViewModel
         var ages = item.Entity.CASAge ?? "";
         if (string.IsNullOrEmpty(ages)) return true;
 
-        if (FilterAgeBaby && ages.Contains("Baby", StringComparison.OrdinalIgnoreCase)) return true;
-        if (FilterAgeToddler && ages.Contains("Toddler", StringComparison.OrdinalIgnoreCase)) return true;
-        if (FilterAgeChild && ages.Contains("Child", StringComparison.OrdinalIgnoreCase)) return true;
-        if (FilterAgeTeen && ages.Contains("Teen", StringComparison.OrdinalIgnoreCase)) return true;
-        if (FilterAgeYoungAdult && ages.Contains("YoungAdult", StringComparison.OrdinalIgnoreCase)) return true;
-        if (FilterAgeAdult && ages.Contains("Adult", StringComparison.OrdinalIgnoreCase)) return true;
-        if (FilterAgeElder && ages.Contains("Elder", StringComparison.OrdinalIgnoreCase)) return true;
+        var parts = ages.Split(CasFilterDelimiters, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (FilterAgeBaby && parts.Any(p => string.Equals(p, "Baby", StringComparison.OrdinalIgnoreCase))) return true;
+        if (FilterAgeToddler && parts.Any(p => string.Equals(p, "Toddler", StringComparison.OrdinalIgnoreCase))) return true;
+        if (FilterAgeChild && parts.Any(p => string.Equals(p, "Child", StringComparison.OrdinalIgnoreCase))) return true;
+        if (FilterAgeTeen && parts.Any(p => string.Equals(p, "Teen", StringComparison.OrdinalIgnoreCase))) return true;
+        if (FilterAgeYoungAdult && parts.Any(p => string.Equals(p, "YoungAdult", StringComparison.OrdinalIgnoreCase))) return true;
+        if (FilterAgeAdult && parts.Any(p => string.Equals(p, "Adult", StringComparison.OrdinalIgnoreCase))) return true;
+        if (FilterAgeElder && parts.Any(p => string.Equals(p, "Elder", StringComparison.OrdinalIgnoreCase))) return true;
         return false;
     }
 
@@ -534,8 +537,9 @@ public partial class ContentManagerViewModel
         var gender = item.Entity.CASGender ?? "";
         if (string.IsNullOrEmpty(gender)) return true;
 
-        if (FilterGenderMale && gender.Contains("Male", StringComparison.OrdinalIgnoreCase)) return true;
-        if (FilterGenderFemale && gender.Contains("Female", StringComparison.OrdinalIgnoreCase)) return true;
+        var parts = gender.Split(CasFilterDelimiters, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (FilterGenderMale && parts.Any(p => string.Equals(p, "Male", StringComparison.OrdinalIgnoreCase))) return true;
+        if (FilterGenderFemale && parts.Any(p => string.Equals(p, "Female", StringComparison.OrdinalIgnoreCase))) return true;
         return false;
     }
 
