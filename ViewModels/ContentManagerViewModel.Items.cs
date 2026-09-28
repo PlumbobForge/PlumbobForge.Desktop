@@ -89,7 +89,7 @@ public partial class ContentManagerViewModel
             {
                 if (File.Exists(newCompleteFileName))
                 {
-                    await DialogHelper.ShowDuplicateAlertAsync("Rename Error", "A file with this name already exists.");
+                    await DialogHelper.ShowErrorAsync("Rename Error", "A file with this name already exists.");
                     return;
                 }
                 if (File.Exists(item.Entity.CompleteFileName))

@@ -85,6 +85,7 @@ public partial class SetNodeViewModel : ObservableObject
         _icon = "RegularFolder";
         _color = null;
         ThemeService.AccentChanged += OnAccentChanged;
+        Children.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasChildren));
     }
 
     public SetNodeViewModel(SetsEntity entity)
@@ -95,6 +96,7 @@ public partial class SetNodeViewModel : ObservableObject
         _icon = string.IsNullOrWhiteSpace(entity.Icon) ? "RegularFolder" : entity.Icon;
         _color = string.IsNullOrWhiteSpace(entity.Color) ? null : entity.Color;
         ThemeService.AccentChanged += OnAccentChanged;
+        Children.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasChildren));
     }
 
     private void OnAccentChanged()

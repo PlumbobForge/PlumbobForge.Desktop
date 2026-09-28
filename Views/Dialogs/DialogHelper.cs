@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -11,6 +13,37 @@ public static class DialogHelper
     private static Window? GetMainWindow()
     {
         return (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+    }
+
+    public static async Task ShowErrorAsync(string title, string message, Window? owner = null)
+    {
+        var parent = owner ?? GetMainWindow();
+        var dialog = new ErrorDialogWindow(title, message);
+        if (parent != null)
+        {
+            await dialog.ShowDialog(parent);
+        }
+    }
+
+    public static string BuildDetailedExceptionMessage(string prefix, Exception ex)
+    {
+        var details = new List<string>();
+        Exception? curr = ex;
+        while (curr != null)
+        {
+            if (!string.IsNullOrWhiteSpace(curr.Message) && !details.Contains(curr.Message))
+            {
+                details.Add(curr.Message);
+            }
+            curr = curr.InnerException;
+        }
+
+        if (details.Count <= 1)
+        {
+            return $"{prefix}\n\n{ex.Message}";
+        }
+
+        return $"{prefix}\n\n{string.Join("\n\nCause: ", details)}";
     }
 
     public static async Task<string?> ShowInputAsync(string title, string prompt, string initialValue, string? extension = null, Window? owner = null)

@@ -600,6 +600,10 @@ public partial class ContentManagerViewModel
                 var configSets = await _db.ConfigSetsEntities.Where(cs => cs.SetsEntityId == setEntity.Id).ToListAsync();
                 _db.ConfigSetsEntities.RemoveRange(configSets);
 
+                // Remove any collection links for this set
+                var collectionSets = await _db.CollectionSets.Where(cs => cs.SetsEntityId == setEntity.Id).ToListAsync();
+                _db.CollectionSets.RemoveRange(collectionSets);
+
                 var setItemMetas = await _db.MetaEntities.Where(m => m.SetsEntityId == setEntity.Id).ToListAsync();
 
                 if (result.DeleteFiles)
@@ -690,7 +694,8 @@ public partial class ContentManagerViewModel
         }
         catch (Exception ex)
         {
-            await DialogHelper.ShowDuplicateAlertAsync("Delete Error", $"An error occurred while deleting the set: {ex.Message}");
+            var message = DialogHelper.BuildDetailedExceptionMessage("An error occurred while deleting the set:", ex);
+            await DialogHelper.ShowErrorAsync("Delete Error", message);
         }
     }
 
