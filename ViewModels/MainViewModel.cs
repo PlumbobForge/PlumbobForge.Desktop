@@ -137,7 +137,9 @@ public partial class MainViewModel : ObservableObject
     public void NavigateToConfigurations()
     {
         ActiveTab = "Configurations";
-        CurrentView = _serviceProvider.GetRequiredService<ConfigurationsViewModel>();
+        var configVm = _serviceProvider.GetRequiredService<ConfigurationsViewModel>();
+        CurrentView = configVm;
+        _ = configVm.LoadDataAsync();
     }
 
     [RelayCommand]

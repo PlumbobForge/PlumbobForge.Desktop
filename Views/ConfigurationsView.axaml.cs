@@ -39,6 +39,11 @@ public partial class ConfigurationsView : UserControl
         // Attach pointer events for rubberband drag selection on both list hosts
         AttachedToVisualTree += (_, _) =>
         {
+            if (DataContext is ConfigurationsViewModel vm)
+            {
+                _ = vm.LoadDataAsync();
+            }
+
             if (EnabledListHost != null)
             {
                 EnabledListHost.PointerPressed += (s, e) => OnListHostPointerPressed(s, e, isEnabled: true);
@@ -51,6 +56,14 @@ public partial class ConfigurationsView : UserControl
                 DisabledListHost.PointerPressed += (s, e) => OnListHostPointerPressed(s, e, isEnabled: false);
                 DisabledListHost.PointerMoved += OnListHostPointerMoved;
                 DisabledListHost.PointerReleased += OnListHostPointerReleased;
+            }
+        };
+
+        DataContextChanged += (_, _) =>
+        {
+            if (DataContext is ConfigurationsViewModel vm && VisualRoot != null)
+            {
+                _ = vm.LoadDataAsync();
             }
         };
     }
