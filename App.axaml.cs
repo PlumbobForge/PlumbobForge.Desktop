@@ -398,6 +398,7 @@ CREATE TABLE IF NOT EXISTS CollectionSets (
             "ALTER TABLE SetsEntities ADD COLUMN Description TEXT;",
 
             "ALTER TABLE ConfigEntities ADD COLUMN Icon TEXT;",
+            "ALTER TABLE ConfigEntities ADD COLUMN Color TEXT;",
             "ALTER TABLE ConfigEntities ADD COLUMN Description TEXT;",
 
             "ALTER TABLE MetaEntities ADD COLUMN Description TEXT NOT NULL DEFAULT '';",
