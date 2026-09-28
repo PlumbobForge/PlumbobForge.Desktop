@@ -53,15 +53,17 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Margin" Value="0,1"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="Template">
                 <ControlTemplate>
-                    <StackPanel>
+                    <StackPanel HorizontalAlignment="Stretch">
                         <Border x:Name="LayoutRoot"
                                 Background="Transparent"
                                 CornerRadius="8"
                                 Padding="0"
                                 Margin="0"
-                                Cursor="Hand">
+                                Cursor="Hand"
+                                HorizontalAlignment="Stretch">
                             <ContentPresenter x:Name="HeaderPresenter"
                                               Background="Transparent"
                                               Content="{TemplateBinding Header}"
@@ -83,6 +85,7 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
         </Style>
         <Style Selector="Border.set-node-row:pointerover">
             <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
@@ -233,6 +236,8 @@
                                   Classes.multiple-sets-selected="{Binding HasMultipleSetsSelected}"
                                   ItemsSource="{Binding RootSets}"
                                   SelectedItem="{Binding SelectedSetNode}"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  HorizontalAlignment="Stretch"
                                   Background="Transparent">
                             <TreeView.ItemTemplate>
                                 <TreeDataTemplate DataType="{x:Type vm:SetNodeViewModel}" ItemsSource="{Binding Children}">
@@ -241,6 +246,7 @@
                                             CornerRadius="8"
                                             Padding="10,6,8,6"
                                             Margin="0,1"
+                                            HorizontalAlignment="Stretch"
                                             DragDrop.AllowDrop="True"
                                             DragDrop.DragOver="OnSetNodeDragOver"
                                             DragDrop.Drop="OnSetNodeDrop"
@@ -270,7 +276,7 @@
                                             </ContextMenu>
                                         </Border.ContextMenu>
 
-                                        <Grid ColumnDefinitions="Auto, *, Auto, Auto" VerticalAlignment="Center">
+                                        <Grid ColumnDefinitions="Auto, *, Auto, Auto" VerticalAlignment="Center" HorizontalAlignment="Stretch">
                                             <!-- Node Icon -->
                                             <Panel Grid.Column="0" Margin="0,0,8,0" VerticalAlignment="Center">
                                                 <icon:PackIconBoxIcons Classes="set-icon" Kind="RegularLayers" Width="16" Height="16" IsVisible="{Binding IsAllItems}"/>
