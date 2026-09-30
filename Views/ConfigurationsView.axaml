@@ -30,6 +30,7 @@
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
         </Style>
 
+        <!-- Sets Search Box in Configurations Columns (Matches BgSurface of set cards) -->
         <Style Selector="TextBox.config-search">
             <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>

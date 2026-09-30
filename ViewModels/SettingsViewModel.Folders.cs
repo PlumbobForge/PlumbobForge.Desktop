@@ -152,6 +152,7 @@ public partial class SettingsViewModel
                     item.CompleteFileName = Path.Combine(newLib, item.FileName);
                 }
                 await _db.SaveChangesAsync();
+                _db.ChangeTracker.Clear();
 
                 _options.DocumentBaseDir = newBase;
                 DocumentBaseDir = newBase;
@@ -190,6 +191,7 @@ public partial class SettingsViewModel
             item.CompleteFileName = Path.Combine(newLib, item.FileName);
         }
         await _db.SaveChangesAsync();
+        _db.ChangeTracker.Clear();
         await SaveSettingsInternalAsync(silent: true);
         ShowStatus("Library path updated!", isError: false);
     }

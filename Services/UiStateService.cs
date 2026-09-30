@@ -14,6 +14,7 @@ public class ContentManagerUiState
     public bool IsSetsSidebarCollapsed { get; set; } = false;
     public bool IsFiltersSidebarCollapsed { get; set; } = false;
     public string CurrentItemSort { get; set; } = "DateAdded";
+    public bool SortFavoritesFirst { get; set; } = true;
     public string CurrentSetSort { get; set; } = "DateCreated";
 
     // Main Type Filters

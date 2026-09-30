@@ -93,9 +93,9 @@ public partial class SetsSidebarView : UserControl
                 var point = e.GetCurrentPoint(control);
                 if (point.Properties.IsLeftButtonPressed)
                 {
-                    if (setNode.IsAllItems)
+                    if (setNode.IsSpecialNode)
                     {
-                        // "All Items" cannot be selected for drag or dragged
+                        // "All Items" & "Favorites" cannot be selected for drag or dragged
                         vm.SelectedSetNode = setNode;
                         vm.DeselectAllSets();
                         _pendingSelectionNarrow = false;
@@ -373,7 +373,7 @@ public partial class SetsSidebarView : UserControl
         {
             foreach (var node in nodes)
             {
-                if (!node.IsAllItems && node.Id.HasValue)
+                if (!node.IsSpecialNode && node.Id.HasValue)
                 {
                     node.IsSelected = currentSelectedIds.Contains(node.Id.Value);
                 }
@@ -396,6 +396,14 @@ public partial class SetsSidebarView : UserControl
         {
             if (sender is Control control && control.DataContext is SetNodeViewModel targetNode)
             {
+                // Sets cannot be dropped into Favorites
+                if (targetNode.IsFavorites)
+                {
+                    e.DragEffects = DragDropEffects.None;
+                    e.Handled = true;
+                    return;
+                }
+
                 // If target is "All Items", dropping un-subsets to root level
                 if (targetNode.IsAllItems)
                 {
@@ -433,7 +441,14 @@ public partial class SetsSidebarView : UserControl
 
         if (e.Data.Contains("plumbob-item-drag") && sender is Control control && control.DataContext is SetNodeViewModel setNode)
         {
-            await vm.MoveSelectedToSetAsync(setNode.Entity);
+            if (setNode.IsFavorites)
+            {
+                await vm.FavoriteSelectedItemsAsync(true);
+            }
+            else
+            {
+                await vm.MoveSelectedToSetAsync(setNode.Entity);
+            }
             e.Handled = true;
         }
         else if (e.Data.Contains("plumbob-sets-drag") && sender is Control ctrl && ctrl.DataContext is SetNodeViewModel targetNode)
@@ -485,5 +500,22 @@ public partial class SetsSidebarView : UserControl
             e.Handled = true;
         }
     }
+    private void OnSetRowContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        if (sender is Control control && control.DataContext is SetNodeViewModel node)
+        {
+            if (node.IsSpecialNode)
+            {
+                e.Handled = true;
+                return;
+            }
+
+            if (DataContext is ContentManagerViewModel vm && !node.IsSelected)
+            {
+                vm.SelectedSetNode = node;
+            }
+        }
+    }
+
     #endregion
 }

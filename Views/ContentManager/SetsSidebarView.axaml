@@ -130,6 +130,26 @@
         <Style Selector="Button.accordion-header:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="Transparent"/>
         </Style>
+        <Style Selector="TreeView#SetsTreeView">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
+                        <ScrollViewer Name="PART_ScrollViewer"
+                                      Background="{TemplateBinding Background}"
+                                      HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                                      VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}">
+                            <StackPanel>
+                                <ItemsPresenter Name="PART_ItemsPresenter"
+                                                ItemsPanel="{TemplateBinding ItemsPanel}" />
+                                <Border Height="48" IsHitTestVisible="False" Background="Transparent"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
     </UserControl.Styles>
 
     <!-- Outer Floating Shell with Drop Shadow -->
@@ -232,13 +252,22 @@
                           PointerPressed="OnTreeContainerPointerPressed"
                           PointerMoved="OnTreeContainerPointerMoved"
                           PointerReleased="OnTreeContainerPointerReleased">
+                        <Grid.OpacityMask>
+                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                                <GradientStop Color="#FFFFFFFF" Offset="0.0"/>
+                                <GradientStop Color="#FFFFFFFF" Offset="0.96"/>
+                                <GradientStop Color="#00FFFFFF" Offset="1.0"/>
+                            </LinearGradientBrush>
+                        </Grid.OpacityMask>
                         <TreeView x:Name="SetsTreeView"
                                   Classes.multiple-sets-selected="{Binding HasMultipleSetsSelected}"
                                   ItemsSource="{Binding RootSets}"
                                   SelectedItem="{Binding SelectedSetNode}"
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                   HorizontalAlignment="Stretch"
-                                  Background="Transparent">
+                                  Background="Transparent"
+                                  Padding="0"
+                                  Margin="0">
                             <TreeView.ItemTemplate>
                                 <TreeDataTemplate DataType="{x:Type vm:SetNodeViewModel}" ItemsSource="{Binding Children}">
                                     <Border Classes="set-node-row"
@@ -254,10 +283,11 @@
                                             PointerMoved="OnSetRowPointerMoved"
                                             PointerEntered="OnSetRowPointerEntered"
                                             PointerReleased="OnSetRowPointerReleased"
-                                            PointerCaptureLost="OnSetRowPointerCaptureLost">
+                                            PointerCaptureLost="OnSetRowPointerCaptureLost"
+                                            ContextRequested="OnSetRowContextRequested">
                                         <Border.ContextMenu>
                                             <ContextMenu>
-                                                <MenuItem Header="{loc:Loc 'library.add_subset'}" Click="OnAddSubSetClick" IsVisible="{Binding !IsAllItems}">
+                                                <MenuItem Header="{loc:Loc 'library.add_subset'}" Click="OnAddSubSetClick" IsVisible="{Binding CanAddSubSet}">
                                                     <MenuItem.Icon>
                                                         <icon:PackIconBoxIcons Kind="RegularFolderPlus" Width="16" Height="16"/>
                                                     </MenuItem.Icon>
@@ -280,7 +310,8 @@
                                             <!-- Node Icon -->
                                             <Panel Grid.Column="0" Margin="0,0,8,0" VerticalAlignment="Center">
                                                 <icon:PackIconBoxIcons Classes="set-icon" Kind="RegularLayers" Width="16" Height="16" IsVisible="{Binding IsAllItems}"/>
-                                                <icon:PackIconBoxIcons Kind="{Binding IconKind}" Foreground="{Binding IconBrush}" Width="16" Height="16" IsVisible="{Binding !IsAllItems}"/>
+                                                <icon:PackIconBoxIcons Kind="SolidStar" Foreground="#f59e0b" Width="16" Height="16" IsVisible="{Binding IsFavorites}"/>
+                                                <icon:PackIconBoxIcons Kind="{Binding IconKind}" Foreground="{Binding IconBrush}" Width="16" Height="16" IsVisible="{Binding !IsSpecialNode}"/>
                                             </Panel>
 
                                             <!-- Set Name -->

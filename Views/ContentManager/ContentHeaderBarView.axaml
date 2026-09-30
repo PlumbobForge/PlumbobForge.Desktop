@@ -300,6 +300,13 @@
                             <icon:PackIconBoxIcons Kind="RegularToggleLeft" Width="16" Height="16" Foreground="{DynamicResource TextMuted}"/>
                         </Button>
 
+                        <!-- Toggle Favorite Selected -->
+                        <Button Classes="action-btn"
+                                Command="{Binding ToggleFavoriteSelectedCommand}"
+                                ToolTip.Tip="{loc:Loc 'library.favorite_selected'}">
+                            <icon:PackIconBoxIcons Kind="RegularStar" Width="16" Height="16" Foreground="{DynamicResource TextMuted}"/>
+                        </Button>
+
                         <!-- 2. Move to Set Dropdown -->
                         <Button Classes="action-btn"
                                 ToolTip.Tip="{loc:Loc 'library.move_selected'}">
@@ -471,6 +478,24 @@
                                             <icon:PackIconBoxIcons Kind="RegularAArrowUp" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
                                             <TextBlock Text="{loc:Loc 'library.sort_alpha_desc'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
                                         </StackPanel>
+                                    </Button>
+
+                                    <Separator Height="1" Background="{DynamicResource BorderSubtle}" Margin="2,4" IsVisible="{Binding CanShowSortFavoritesFirst}"/>
+
+                                    <!-- Favorites First Sticky Toggle -->
+                                    <Button Command="{Binding ToggleSortFavoritesFirstCommand}" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4" IsVisible="{Binding CanShowSortFavoritesFirst}">
+                                        <Button.Styles>
+                                            <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                            </Style>
+                                        </Button.Styles>
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                                                <icon:PackIconBoxIcons Kind="RegularStar" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Loc 'library.favorites_first'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <icon:PackIconBoxIcons Grid.Column="1" Kind="RegularCheck" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" IsVisible="{Binding SortFavoritesFirst}"/>
+                                        </Grid>
                                     </Button>
                                 </StackPanel>
                             </Border>

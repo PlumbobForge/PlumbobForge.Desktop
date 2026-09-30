@@ -20,15 +20,20 @@ public partial class SetNodeViewModel : ObservableObject
     [ObservableProperty]
     private string _name = string.Empty;
 
+    [ObservableProperty]
+    private bool _isFavorites = false;
+
+    public bool IsSpecialNode => IsAllItems || IsFavorites;
     public bool IsDefault => string.Equals(Name, "Default", StringComparison.OrdinalIgnoreCase);
-    public bool CanCustomize => !IsAllItems && !IsDefault;
-    public bool CanDelete => !IsAllItems && !IsDefault;
+    public bool CanCustomize => !IsSpecialNode && !IsDefault;
+    public bool CanDelete => !IsSpecialNode && !IsDefault;
     public bool Dirty => _entity?.Dirty ?? false;
     public SetsEntity? Entity => _entity;
-    public bool IsAllItems => _entity == null && !Id.HasValue;
+    public bool IsAllItems => _entity == null && !Id.HasValue && !IsFavorites;
     public bool HasChildren => Children.Count > 0;
-    public bool CanSelect => !IsAllItems;
-    public bool CanDrag => !IsAllItems;
+    public bool CanSelect => !IsSpecialNode;
+    public bool CanDrag => !IsSpecialNode;
+    public bool CanAddSubSet => !IsSpecialNode;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IconKind))]

@@ -355,6 +355,7 @@ public partial class ContentManagerViewModel
     partial void OnSelectedSetNodeChanged(SetNodeViewModel? value)
     {
         _savedSetId = value?.Id;
+        OnPropertyChanged(nameof(CanShowSortFavoritesFirst));
         SaveCurrentUiState();
         RequestFilterUpdate(0);
     }
@@ -402,16 +403,23 @@ public partial class ContentManagerViewModel
     {
         var query = Items.AsEnumerable();
 
-        var selectedNodes = GetSelectedSetNodes();
-        if (selectedNodes.Count > 0)
+        if (SelectedSetNode != null && SelectedSetNode.IsFavorites)
         {
-            var targetSetIds = selectedNodes.Where(s => s.Id.HasValue).Select(s => s.Id!.Value).ToHashSet();
-            query = query.Where(i => i.Entity.SetsEntityId.HasValue && targetSetIds.Contains(i.Entity.SetsEntityId.Value));
+            query = query.Where(i => i.IsFavorite);
         }
-        else if (SelectedSetNode != null && SelectedSetNode.Id.HasValue)
+        else
         {
-            long targetSetId = SelectedSetNode.Id.Value;
-            query = query.Where(i => i.Entity.SetsEntityId.HasValue && i.Entity.SetsEntityId.Value == targetSetId);
+            var selectedNodes = GetSelectedSetNodes();
+            if (selectedNodes.Count > 0)
+            {
+                var targetSetIds = selectedNodes.Where(s => s.Id.HasValue).Select(s => s.Id!.Value).ToHashSet();
+                query = query.Where(i => i.Entity.SetsEntityId.HasValue && targetSetIds.Contains(i.Entity.SetsEntityId.Value));
+            }
+            else if (SelectedSetNode != null && SelectedSetNode.Id.HasValue)
+            {
+                long targetSetId = SelectedSetNode.Id.Value;
+                query = query.Where(i => i.Entity.SetsEntityId.HasValue && i.Entity.SetsEntityId.Value == targetSetId);
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(SearchQuery))
@@ -458,11 +466,14 @@ public partial class ContentManagerViewModel
             return false;
         });
 
-        query = CurrentItemSort switch
+        query = (CurrentItemSort, SortFavoritesFirst) switch
         {
-            "NameAsc" => query.OrderBy(i => i.FileName, StringComparer.OrdinalIgnoreCase),
-            "NameDesc" => query.OrderByDescending(i => i.FileName, StringComparer.OrdinalIgnoreCase),
-            _ => query.OrderByDescending(i => i.Id)
+            ("NameAsc", true) => query.OrderByDescending(i => i.IsFavorite).ThenBy(i => i.FileName, StringComparer.OrdinalIgnoreCase),
+            ("NameAsc", false) => query.OrderBy(i => i.FileName, StringComparer.OrdinalIgnoreCase),
+            ("NameDesc", true) => query.OrderByDescending(i => i.IsFavorite).ThenByDescending(i => i.FileName, StringComparer.OrdinalIgnoreCase),
+            ("NameDesc", false) => query.OrderByDescending(i => i.FileName, StringComparer.OrdinalIgnoreCase),
+            (_, true) => query.OrderByDescending(i => i.IsFavorite).ThenByDescending(i => i.Id),
+            (_, false) => query.OrderByDescending(i => i.Id)
         };
 
         var newMatchingList = query.ToList();

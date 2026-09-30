@@ -24,6 +24,16 @@ public partial class ItemViewModel : ObservableObject
     public double FileSize => _entity.FileSize;
     public string PackageType => _entity.PackageType;
     public bool Enabled => _entity.Enabled;
+    public bool IsFavorite => _entity.IsFavorite;
+
+    private static readonly IBrush BrushFavoriteGold = new SolidColorBrush(Color.Parse("#f59e0b"));
+    private static readonly IBrush BrushFavoriteBgActive = new SolidColorBrush(Color.Parse("#40f59e0b"));
+    private static readonly IBrush BrushFavoriteBorderActive = new SolidColorBrush(Color.Parse("#f59e0b"));
+    private static readonly IBrush BrushFavoriteBorderInactive = new SolidColorBrush(Color.Parse("#40ffffff"));
+
+    public IBrush FavoriteBadgeBackground => IsFavorite ? BrushFavoriteBgActive : BrushSemiBlack;
+    public IBrush FavoriteBadgeBorder => IsFavorite ? BrushFavoriteBorderActive : BrushFavoriteBorderInactive;
+    public IBrush FavoriteStarForeground => IsFavorite ? BrushFavoriteGold : BrushWhite;
     public string? UserTags => _entity.UserTags;
     public MetaEntity Entity => _entity;
 
@@ -188,6 +198,7 @@ public partial class ItemViewModel : ObservableObject
     public static Action<ItemViewModel>? OnRenameRequested { get; set; }
     public static Action<ItemViewModel>? OnEditTagsRequested { get; set; }
     public static Action<ItemViewModel>? OnToggleEnableRequested { get; set; }
+    public static Action<ItemViewModel>? OnToggleFavoriteRequested { get; set; }
     public static Action<ItemViewModel>? OnShowDetailsRequested { get; set; }
 
     [RelayCommand]
@@ -198,6 +209,17 @@ public partial class ItemViewModel : ObservableObject
 
     [RelayCommand]
     public void ToggleEnable() => OnToggleEnableRequested?.Invoke(this);
+
+    [RelayCommand]
+    public void ToggleFavorite()
+    {
+        _entity.IsFavorite = !_entity.IsFavorite;
+        OnPropertyChanged(nameof(IsFavorite));
+        OnPropertyChanged(nameof(FavoriteBadgeBackground));
+        OnPropertyChanged(nameof(FavoriteBadgeBorder));
+        OnPropertyChanged(nameof(FavoriteStarForeground));
+        OnToggleFavoriteRequested?.Invoke(this);
+    }
 
     [RelayCommand]
     public void ShowDetails() => OnShowDetailsRequested?.Invoke(this);
@@ -238,6 +260,10 @@ public partial class ItemViewModel : ObservableObject
         OnPropertyChanged(nameof(ThumbnailOpacity));
         OnPropertyChanged(nameof(DisplayThumbnailBitmap));
         OnPropertyChanged(nameof(ThumbnailBitmap));
+        OnPropertyChanged(nameof(IsFavorite));
+        OnPropertyChanged(nameof(FavoriteBadgeBackground));
+        OnPropertyChanged(nameof(FavoriteBadgeBorder));
+        OnPropertyChanged(nameof(FavoriteStarForeground));
         Note = _entity.Description ?? string.Empty;
         OnPropertyChanged(nameof(Note));
     }

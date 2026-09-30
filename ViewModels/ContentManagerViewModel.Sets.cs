@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using PlumbobForge.Backend.Database;
 using PlumbobForge.Backend.Services;
 using PlumbobForge.Desktop.Views.Dialogs;
+using PlumbobForge.Desktop.Services.Localization;
 
 namespace PlumbobForge.Desktop.ViewModels;
 
@@ -26,7 +27,8 @@ public partial class ContentManagerViewModel
         if (RootSets.Count <= 1) return;
 
         var allItemsNode = RootSets.FirstOrDefault(n => n.IsAllItems);
-        var otherNodes = RootSets.Where(n => !n.IsAllItems).ToList();
+        var favoritesNode = RootSets.FirstOrDefault(n => n.IsFavorites);
+        var otherNodes = RootSets.Where(n => !n.IsSpecialNode).ToList();
 
         otherNodes = SortNodeList(otherNodes);
 
@@ -34,6 +36,10 @@ public partial class ContentManagerViewModel
         if (allItemsNode != null)
         {
             RootSets.Add(allItemsNode);
+        }
+        if (favoritesNode != null)
+        {
+            RootSets.Add(favoritesNode);
         }
         foreach (var node in otherNodes)
         {
@@ -75,10 +81,17 @@ public partial class ContentManagerViewModel
             FlatSets.Add(set);
         }
 
-        var allItemsNode = RootSets.FirstOrDefault(n => n.IsAllItems) ?? new SetNodeViewModel("All Items", null);
+        var allItemsNode = RootSets.FirstOrDefault(n => n.IsAllItems) ?? new SetNodeViewModel(LocalizationManager.Instance.GetString("library.all_items"), null);
+        var favoritesNode = RootSets.FirstOrDefault(n => n.IsFavorites) ?? new SetNodeViewModel(LocalizationManager.Instance.GetString("library.favorites"), null)
+        {
+            IsFavorites = true,
+            Icon = "SolidStar",
+            Color = "#f59e0b"
+        };
 
         RootSets.Clear();
         RootSets.Add(allItemsNode);
+        RootSets.Add(favoritesNode);
 
         var nodeMap = setsList.ToDictionary(s => s.Id, s => new SetNodeViewModel(s));
         foreach (var set in setsList)
@@ -103,8 +116,13 @@ public partial class ContentManagerViewModel
         }
         UpdateSelectedSetsCount();
 
+        bool wasFavoritesSelected = SelectedSetNode?.IsFavorites == true;
         long? targetId = selectedSetIdToRestore ?? SelectedSetNode?.Id;
-        if (targetId.HasValue)
+        if (wasFavoritesSelected)
+        {
+            SelectedSetNode = favoritesNode;
+        }
+        else if (targetId.HasValue)
         {
             var targetNode = FindNodeById(RootSets, targetId.Value);
             SelectedSetNode = targetNode ?? allItemsNode;
@@ -628,6 +646,7 @@ public partial class ContentManagerViewModel
                                 existingTomb.IsUserTagged = meta.IsUserTagged;
                                 existingTomb.Description = meta.Description;
                                 existingTomb.SetsEntityId = meta.SetsEntityId;
+                                existingTomb.IsFavorite = meta.IsFavorite;
                                 existingTomb.DeletedAt = DateTime.UtcNow;
                             }
                             else
@@ -639,6 +658,7 @@ public partial class ContentManagerViewModel
                                     UserTags = meta.UserTags,
                                     IsUserTagged = meta.IsUserTagged,
                                     Description = meta.Description,
+                                    IsFavorite = meta.IsFavorite,
                                     SetsEntityId = meta.SetsEntityId,
                                     DeletedAt = DateTime.UtcNow
                                 });

@@ -87,6 +87,19 @@ public partial class ContentManagerViewModel : ObservableObject
     }
 
     [ObservableProperty]
+    private bool _sortFavoritesFirst = true;
+
+    public bool CanShowSortFavoritesFirst => SelectedSetNode?.IsFavorites != true;
+
+    [RelayCommand]
+    public void ToggleSortFavoritesFirst()
+    {
+        SortFavoritesFirst = !SortFavoritesFirst;
+        SaveCurrentUiState();
+        ApplyFilter();
+    }
+
+    [ObservableProperty]
     private bool _isSetsSidebarCollapsed = false;
 
     [ObservableProperty]
@@ -206,6 +219,15 @@ public partial class ContentManagerViewModel : ObservableObject
         ItemViewModel.OnToggleEnableRequested = item => _ = ToggleEnableItemAsync(item);
         ItemViewModel.OnShowDetailsRequested = item => OpenDetailsModal(item);
         ItemViewModel.OnNoteChangedCallback = (item, note) => _ = SaveItemNoteAsync(item, note);
+        ItemViewModel.OnToggleFavoriteRequested = item => _ = ToggleFavoriteItemAsync(item);
+
+        LocalizationManager.Instance.LanguageChanged += _ =>
+        {
+            var allNode = RootSets.FirstOrDefault(n => n.IsAllItems);
+            if (allNode != null) allNode.Name = LocalizationManager.Instance.GetString("library.all_items");
+            var favNode = RootSets.FirstOrDefault(n => n.IsFavorites);
+            if (favNode != null) favNode.Name = LocalizationManager.Instance.GetString("library.favorites");
+        };
         
         _notificationSubscriptionId = _notificationService.Subscribe(async payload =>
         {
@@ -235,6 +257,7 @@ public partial class ContentManagerViewModel : ObservableObject
             IsFiltersSidebarCollapsed = state.IsFiltersSidebarCollapsed;
             if (!string.IsNullOrEmpty(state.CurrentItemSort)) CurrentItemSort = state.CurrentItemSort;
             if (!string.IsNullOrEmpty(state.CurrentSetSort)) CurrentSetSort = state.CurrentSetSort;
+            SortFavoritesFirst = state.SortFavoritesFirst;
 
             // Main Type Filters
             FilterTypeCAS = state.FilterTypeCAS;
@@ -317,6 +340,7 @@ public partial class ContentManagerViewModel : ObservableObject
             IsFiltersSidebarCollapsed = IsFiltersSidebarCollapsed,
             CurrentItemSort = CurrentItemSort,
             CurrentSetSort = CurrentSetSort,
+            SortFavoritesFirst = SortFavoritesFirst,
 
             FilterTypeCAS = FilterTypeCAS,
             FilterTypeBuildBuy = FilterTypeBuildBuy,
@@ -427,8 +451,15 @@ public partial class ContentManagerViewModel : ObservableObject
             }
 
             RootSets.Clear();
-            var allItemsNode = new SetNodeViewModel("All Items", null);
+            var allItemsNode = new SetNodeViewModel(LocalizationManager.Instance.GetString("library.all_items"), null);
             RootSets.Add(allItemsNode);
+            var favoritesNode = new SetNodeViewModel(LocalizationManager.Instance.GetString("library.favorites"), null)
+            {
+                IsFavorites = true,
+                Icon = "SolidStar",
+                Color = "#f59e0b"
+            };
+            RootSets.Add(favoritesNode);
 
             var nodeMap = setsList.ToDictionary(s => s.Id, s => new SetNodeViewModel(s));
             foreach (var set in setsList)
@@ -485,6 +516,7 @@ public partial class ContentManagerViewModel : ObservableObject
 
             // 3. UI Thread: Populate items collection and apply initial view
             allItemsNode.ItemCount = totalCount;
+            favoritesNode.ItemCount = items.Count(i => i.IsFavorite);
             foreach (var rootNode in RootSets)
             {
                 if (rootNode.Id.HasValue)
@@ -544,6 +576,12 @@ public partial class ContentManagerViewModel : ObservableObject
         if (allItemsNode != null)
         {
             allItemsNode.ItemCount = Items.Count;
+        }
+
+        var favoritesNode = RootSets.FirstOrDefault(n => n.IsFavorites);
+        if (favoritesNode != null)
+        {
+            favoritesNode.ItemCount = Items.Count(i => i.IsFavorite);
         }
 
         foreach (var rootNode in RootSets)

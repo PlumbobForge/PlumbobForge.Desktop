@@ -60,6 +60,55 @@ public partial class ContentManagerViewModel
     }
 
     [RelayCommand]
+    public async Task ToggleFavoriteItemAsync(ItemViewModel? item)
+    {
+        if (item == null) return;
+
+        var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
+        if (meta != null)
+        {
+            meta.IsFavorite = item.IsFavorite;
+            await _db.SaveChangesAsync();
+        }
+
+        RecalculateSetCounts();
+        ApplyFilter();
+    }
+
+    [RelayCommand]
+    public async Task ToggleFavoriteSelectedAsync()
+    {
+        var selected = Items.Where(i => i.IsSelected).ToList();
+        if (selected.Count == 0) return;
+
+        bool targetState = selected.Any(i => !i.IsFavorite);
+        await FavoriteSelectedItemsAsync(targetState);
+    }
+
+    public async Task FavoriteSelectedItemsAsync(bool isFavorite)
+    {
+        var selected = Items.Where(i => i.IsSelected).ToList();
+        if (selected.Count == 0) return;
+
+        var ids = selected.Select(i => i.Entity.Id).ToList();
+        var metas = await _db.MetaEntities.Where(m => ids.Contains(m.Id)).ToListAsync();
+        foreach (var meta in metas)
+        {
+            meta.IsFavorite = isFavorite;
+        }
+        await _db.SaveChangesAsync();
+
+        foreach (var item in selected)
+        {
+            item.Entity.IsFavorite = isFavorite;
+            item.NotifyEntityChanged();
+        }
+
+        RecalculateSetCounts();
+        ApplyFilter();
+    }
+
+    [RelayCommand]
     public async Task RenameItemAsync(ItemViewModel? item)
     {
         if (item == null) return;
@@ -169,6 +218,7 @@ public partial class ContentManagerViewModel
                 existingTomb.IsUserTagged = item.Entity.IsUserTagged;
                 existingTomb.Description = item.Entity.Description;
                 existingTomb.SetsEntityId = item.Entity.SetsEntityId;
+                existingTomb.IsFavorite = item.Entity.IsFavorite;
                 existingTomb.DeletedAt = DateTime.UtcNow;
             }
             else
@@ -181,6 +231,7 @@ public partial class ContentManagerViewModel
                     IsUserTagged = item.Entity.IsUserTagged,
                     Description = item.Entity.Description,
                     SetsEntityId = item.Entity.SetsEntityId,
+                    IsFavorite = item.Entity.IsFavorite,
                     DeletedAt = DateTime.UtcNow
                 });
             }
@@ -437,6 +488,7 @@ public partial class ContentManagerViewModel
                     existingTomb.IsUserTagged = item.Entity.IsUserTagged;
                     existingTomb.Description = item.Entity.Description;
                     existingTomb.SetsEntityId = item.Entity.SetsEntityId;
+                    existingTomb.IsFavorite = item.Entity.IsFavorite;
                     existingTomb.DeletedAt = DateTime.UtcNow;
                 }
                 else
@@ -449,6 +501,7 @@ public partial class ContentManagerViewModel
                         IsUserTagged = item.Entity.IsUserTagged,
                         Description = item.Entity.Description,
                         SetsEntityId = item.Entity.SetsEntityId,
+                        IsFavorite = item.Entity.IsFavorite,
                         DeletedAt = DateTime.UtcNow
                     });
                 }

@@ -192,7 +192,14 @@
 
                         <!-- Accordion Filter Categories -->
                         <ScrollViewer Grid.Row="1" Padding="0,0,4,0">
-                            <StackPanel Spacing="16">
+                            <ScrollViewer.OpacityMask>
+                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                                    <GradientStop Color="#FFFFFFFF" Offset="0.0"/>
+                                    <GradientStop Color="#FFFFFFFF" Offset="0.96"/>
+                                    <GradientStop Color="#00FFFFFF" Offset="1.0"/>
+                                </LinearGradientBrush>
+                            </ScrollViewer.OpacityMask>
+                            <StackPanel Spacing="16" Margin="0,0,0,48">
                                 <!-- TYPE SECTION (Collapsible) -->
                                 <StackPanel Spacing="8">
                                     <Grid ColumnDefinitions="*, Auto, Auto">
