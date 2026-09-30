@@ -18,12 +18,6 @@
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="7,5"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Transitions">
-                <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.1"/>
-                    <BrushTransition Property="Foreground" Duration="0:0:0.1"/>
-                </Transitions>
-            </Setter>
         </Style>
         <Style Selector="Button.card-action-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource BorderActive}"/>
@@ -40,6 +34,21 @@
         <Style Selector="Border.item-card.selected">
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+
+        <Style Selector="Button.card-fav-btn">
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.item-card:pointerover Button.card-fav-btn">
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        <Style Selector="Button.card-fav-btn.is-fav">
+            <Setter Property="Opacity" Value="1"/>
         </Style>
     </UserControl.Styles>
 
@@ -81,12 +90,33 @@
                             <TextBlock Text="{Binding CategoryTagDisplay}" FontSize="10" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" LineHeight="12"/>
                         </Border>
 
-                        <!-- Selection Checkbox Button on Top Right (Inset from the edge) -->
-                        <Button Grid.Column="2" Command="{Binding ToggleSelectionCommand}" Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,2,0" Cursor="Hand" ToolTip.Tip="Toggle Selection">
-                            <Border Width="20" Height="20" CornerRadius="10" Background="{Binding SelectionBadgeBackground}">
-                                <icon:PackIconBoxIcons Kind="RegularCheck" Width="12" Height="12" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsSelected}"/>
-                            </Border>
-                        </Button>
+                        <!-- Top Right Actions: Favorite & Selection Checkbox -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top" Margin="0,0,2,0">
+                            <!-- Favorite Star Button -->
+                            <Button Classes="card-fav-btn"
+                                    Classes.is-fav="{Binding IsFavorite}"
+                                    Command="{Binding ToggleFavoriteCommand}"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Padding="0"
+                                    Cursor="Hand"
+                                    ToolTip.Tip="{loc:Loc 'library.toggle_favorite'}">
+                                <Border Width="20" Height="20" CornerRadius="10"
+                                        Background="{Binding FavoriteBadgeBackground}">
+                                    <Panel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <icon:PackIconBoxIcons Kind="SolidStar" Width="12" Height="12" Foreground="#f59e0b" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsFavorite}"/>
+                                        <icon:PackIconBoxIcons Kind="RegularStar" Width="12" Height="12" Foreground="White" Opacity="0.85" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !IsFavorite}"/>
+                                    </Panel>
+                                </Border>
+                            </Button>
+
+                            <!-- Selection Checkbox Button -->
+                            <Button Command="{Binding ToggleSelectionCommand}" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand" ToolTip.Tip="Toggle Selection">
+                                <Border Width="20" Height="20" CornerRadius="10" Background="{Binding SelectionBadgeBackground}">
+                                    <icon:PackIconBoxIcons Kind="RegularCheck" Width="12" Height="12" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsSelected}"/>
+                                </Border>
+                            </Button>
+                        </StackPanel>
                     </Grid>
 
                     <!-- Bottom Scrim Gradient Overlay (Smoothly fading thumbnail into card background) -->

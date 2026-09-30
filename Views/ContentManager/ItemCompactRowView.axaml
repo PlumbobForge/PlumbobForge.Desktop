@@ -14,12 +14,6 @@
     <UserControl.Styles>
         <Style Selector="Border.compact-row">
             <Setter Property="Background" Value="{DynamicResource BgSidebar}"/>
-            <Setter Property="Transitions">
-                <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.12"/>
-                    <BrushTransition Property="BorderBrush" Duration="0:0:0.12"/>
-                </Transitions>
-            </Setter>
         </Style>
         <Style Selector="Border.compact-row:pointerover">
             <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
@@ -48,6 +42,19 @@
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="BorderThickness" Value="2"/>
         </Style>
+        <Style Selector="Border.compact-fav-badge">
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Border.compact-fav-badge.is-fav">
+            <Setter Property="Background" Value="#30f59e0b"/>
+            <Setter Property="BorderBrush" Value="#f59e0b"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Button.compact-fav-btn:pointerover Border.compact-fav-badge">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
     </UserControl.Styles>
 
     <!-- Compact List Row Container -->
@@ -64,14 +71,14 @@
             PointerReleased="OnItemRowPointerReleased"
             PointerCaptureLost="OnItemRowPointerCaptureLost">
 
-        <Grid ColumnDefinitions="Auto, Auto, Auto, *, Auto, Auto" Height="48" VerticalAlignment="Center">
+        <Grid ColumnDefinitions="Auto, Auto, Auto, Auto, *, Auto, Auto" Height="48" VerticalAlignment="Center">
             <!-- 1. Selection Checkbox Pill -->
             <Button Grid.Column="0"
                     Command="{Binding ToggleSelectionCommand}"
                     Background="Transparent"
                     BorderThickness="0"
                     Padding="0"
-                    Margin="0,0,8,0"
+                    Margin="0,0,6,0"
                     Cursor="Hand"
                     VerticalAlignment="Center"
                     ToolTip.Tip="Toggle Selection">
@@ -80,8 +87,30 @@
                 </Border>
             </Button>
 
-            <!-- 2. Small Square Thumbnail -->
-            <Border Grid.Column="1"
+            <!-- 2. Favorite Star Button -->
+            <Button Grid.Column="1"
+                    Classes="compact-fav-btn"
+                    Classes.is-fav="{Binding IsFavorite}"
+                    Command="{Binding ToggleFavoriteCommand}"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Padding="0"
+                    Margin="0,0,8,0"
+                    Cursor="Hand"
+                    VerticalAlignment="Center"
+                    ToolTip.Tip="{loc:Loc 'library.toggle_favorite'}">
+                <Border Width="20" Height="20" CornerRadius="10"
+                        Classes="compact-fav-badge"
+                        Classes.is-fav="{Binding IsFavorite}">
+                    <Panel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="SolidStar" Width="12" Height="12" Foreground="#f59e0b" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsFavorite}"/>
+                        <icon:PackIconBoxIcons Kind="RegularStar" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !IsFavorite}"/>
+                    </Panel>
+                </Border>
+            </Button>
+
+            <!-- 3. Small Square Thumbnail -->
+            <Border Grid.Column="2"
                     Width="36"
                     Height="36"
                     CornerRadius="6"
@@ -105,8 +134,8 @@
                 </Panel>
             </Border>
 
-            <!-- 3. Enable/Disable Switch -->
-            <Button Grid.Column="2"
+            <!-- 4. Enable/Disable Switch -->
+            <Button Grid.Column="3"
                     Command="{Binding ToggleEnableCommand}"
                     Background="Transparent"
                     BorderThickness="0"
@@ -121,8 +150,8 @@
                 </Panel>
             </Button>
 
-            <!-- 4. Main Details: Filename & File Info / Set Badge -->
-            <Grid Grid.Column="3" RowDefinitions="Auto, Auto" VerticalAlignment="Center" Margin="0,0,8,0">
+            <!-- 5. Main Details: Filename & File Info / Set Badge -->
+            <Grid Grid.Column="4" RowDefinitions="Auto, Auto" VerticalAlignment="Center" Margin="0,0,8,0">
                 <!-- Filename -->
                 <TextBlock Grid.Row="0"
                            Text="{Binding FileName}"
@@ -142,8 +171,8 @@
                 </StackPanel>
             </Grid>
 
-            <!-- 5. Category & Package Type Badges -->
-            <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" Margin="0,0,10,0" VerticalAlignment="Center">
+            <!-- 6. Category & Package Type Badges -->
+            <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="6" Margin="0,0,10,0" VerticalAlignment="Center">
                 <!-- Category Pill -->
                 <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" IsVisible="{Binding CategoryTagDisplay, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                     <TextBlock Text="{Binding CategoryTagDisplay}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
@@ -155,8 +184,8 @@
                 </Border>
             </StackPanel>
 
-            <!-- 6. Quick Action Buttons -->
-            <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+            <!-- 7. Quick Action Buttons -->
+            <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
                 <!-- Info / Details (i) Flyout -->
                 <Button Classes="row-action-btn" ToolTip.Tip="Details &amp; Metadata">
                     <icon:PackIconBoxIcons Kind="RegularInfoCircle" Width="15" Height="15" Foreground="{DynamicResource TextMuted}"/>
