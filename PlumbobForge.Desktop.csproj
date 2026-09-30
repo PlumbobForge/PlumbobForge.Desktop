@@ -6,42 +6,25 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\appicon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
 
-    <!-- Low RAM Footprint & Workstation Garbage Collector Optimizations -->
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
     <RetainVM>false</RetainVM>
   </PropertyGroup>
 
-  <!-- Release Publish Optimizations for Minimal Binary Size & Single-File Extraction -->
-  <PropertyGroup Condition="'$(SelfContained)' == 'true'">
-    <PublishTrimmed>false</PublishTrimmed>
-    <PublishReadyToRun>false</PublishReadyToRun>
-    <PublishSingleFile>true</PublishSingleFile>
-    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <DebugType>none</DebugType>
-    <DebugSymbols>false</DebugSymbols>
-    <Optimize>true</Optimize>
-  </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.2.5" />
     <PackageReference Include="Avalonia.Desktop" Version="11.2.5" />
-    <PackageReference Include="Avalonia.Svg.Skia" Version="11.2.0.2" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.5" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.5" />
+    <PackageReference Include="Avalonia.Svg.Skia" Version="11.2.0.2" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="IconPacks.Avalonia.BoxIcons" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.10" />
     <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
   </ItemGroup>
@@ -55,6 +38,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PlumbobForge.Backend\PlumbobForge.Backend.csproj" />
+    <ProjectReference Include="..\PlumbobForge.Installer.Shared\PlumbobForge.Installer.Shared.csproj" />
     <ProjectReference Include="..\S3ForgeTools.GameFiles\S3ForgeTools.GameFiles.csproj" />
     <ProjectReference Include="..\S3ForgeTools.Utils\S3ForgeTools.Utils.csproj" />
   </ItemGroup>
@@ -76,9 +60,26 @@
       <HintPath>..\libs\s3pi.CASPartResource.dll</HintPath>
       <Private>true</Private>
     </Reference>
-    <None Include="..\libs\*.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <Reference Include="s3pi.Package">
+      <HintPath>..\libs\s3pi.Package.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="s3pi.WrapperDealer">
+      <HintPath>..\libs\s3pi.WrapperDealer.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="s3pi.CustomForms">
+      <HintPath>..\libs\s3pi.CustomForms.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="s3pi.NameMapResource">
+      <HintPath>..\libs\s3pi.NameMapResource.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="s3pi.ObjKeyResource">
+      <HintPath>..\libs\s3pi.ObjKeyResource.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
 
 </Project>
