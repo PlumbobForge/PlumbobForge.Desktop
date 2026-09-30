@@ -113,6 +113,11 @@ public partial class HealthViewModel : ObservableObject
             _ = SetPackageEnabledAsync(item, isEnabled);
         };
 
+        SimpleConflictCardViewModel.OnNavigateRequested = (item) =>
+        {
+            NavigateToPackageItem(item);
+        };
+
         PatternIssueItemViewModel.OnFixRequested = (item) =>
         {
             _ = FixSinglePatternAsync(item);
