@@ -69,6 +69,34 @@ public partial class ConfigurationsViewModel : ObservableObject
     private List<long> _pendingDescendantSetIds = new();
     private bool _pendingTargetToEnabled = false;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasEnabledSetsSearchQuery))]
+    private string _enabledSetsSearchQuery = string.Empty;
+
+    public bool HasEnabledSetsSearchQuery => !string.IsNullOrWhiteSpace(EnabledSetsSearchQuery);
+
+    partial void OnEnabledSetsSearchQueryChanged(string value)
+    {
+        RefreshSetsColumns();
+    }
+
+    [RelayCommand]
+    public void ClearEnabledSetsSearch() => EnabledSetsSearchQuery = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasDisabledSetsSearchQuery))]
+    private string _disabledSetsSearchQuery = string.Empty;
+
+    public bool HasDisabledSetsSearchQuery => !string.IsNullOrWhiteSpace(DisabledSetsSearchQuery);
+
+    partial void OnDisabledSetsSearchQueryChanged(string value)
+    {
+        RefreshSetsColumns();
+    }
+
+    [RelayCommand]
+    public void ClearDisabledSetsSearch() => DisabledSetsSearchQuery = string.Empty;
+
     public ObservableCollection<ConfigItemViewModel> Configurations { get; } = new();
     public ObservableCollection<ConfigSetItemViewModel> EnabledSets { get; } = new();
     public ObservableCollection<ConfigSetItemViewModel> DisabledSets { get; } = new();
@@ -269,6 +297,24 @@ public partial class ConfigurationsViewModel : ObservableObject
 
         enabledList = SortSetsList(enabledList);
         disabledList = SortSetsList(disabledList);
+
+        if (!string.IsNullOrWhiteSpace(EnabledSetsSearchQuery))
+        {
+            var q = EnabledSetsSearchQuery.Trim();
+            enabledList = enabledList.Where(s =>
+                s.Name.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrEmpty(s.BreadcrumbPath) && s.BreadcrumbPath.Contains(q, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+        }
+
+        if (!string.IsNullOrWhiteSpace(DisabledSetsSearchQuery))
+        {
+            var q = DisabledSetsSearchQuery.Trim();
+            disabledList = disabledList.Where(s =>
+                s.Name.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrEmpty(s.BreadcrumbPath) && s.BreadcrumbPath.Contains(q, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+        }
 
         EnabledSets.Clear();
         foreach (var item in enabledList) EnabledSets.Add(item);
