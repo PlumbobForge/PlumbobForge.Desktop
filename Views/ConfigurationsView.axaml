@@ -30,6 +30,19 @@
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
         </Style>
 
+        <Style Selector="TextBox.config-search">
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+        </Style>
+        <Style Selector="TextBox.config-search:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderActive}"/>
+        </Style>
+        <Style Selector="TextBox.config-search:focus /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+
         <!-- Set Card Item Styles (Two-Column Panel) -->
         <Style Selector="Border.config-set-card">
             <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
@@ -186,7 +199,14 @@
 
                 <!-- Configurations List -->
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <ItemsControl ItemsSource="{Binding Configurations}">
+                    <ScrollViewer.OpacityMask>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                            <GradientStop Color="#FFFFFFFF" Offset="0.0"/>
+                            <GradientStop Color="#FFFFFFFF" Offset="0.96"/>
+                            <GradientStop Color="#00FFFFFF" Offset="1.0"/>
+                        </LinearGradientBrush>
+                    </ScrollViewer.OpacityMask>
+                    <ItemsControl ItemsSource="{Binding Configurations}" Margin="0,0,4,48">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:ConfigItemViewModel}">
                                 <Border Classes="config-node-row"
@@ -411,17 +431,48 @@
                         Padding="16"
                         ClipToBounds="True"
                         DragDrop.AllowDrop="True">
-                    <Grid RowDefinitions="Auto, *">
+                    <Grid RowDefinitions="Auto, Auto, *">
                         <!-- Clean Header (No icon, background, color, badge) -->
                         <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
                             <TextBlock Grid.Column="0" Text="{loc:Loc 'configurations.enabled_sets'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" Text="{loc:Loc 'configurations.drag_to_disable'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
                         </Grid>
 
+                        <!-- Sets Search Input -->
+                        <TextBox Grid.Row="1" Classes="capsule-search config-search" Margin="0,0,0,10"
+                                 Text="{Binding EnabledSetsSearchQuery, Mode=TwoWay}"
+                                 Watermark="{loc:Loc 'configurations.search_sets_placeholder'}">
+                            <TextBox.InnerLeftContent>
+                                <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="10,0,4,0" VerticalAlignment="Center"/>
+                            </TextBox.InnerLeftContent>
+                            <TextBox.InnerRightContent>
+                                <Button Command="{Binding ClearEnabledSetsSearchCommand}"
+                                        Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,6,0" Width="24" Height="24" CornerRadius="12" Cursor="Hand"
+                                        IsVisible="{Binding HasEnabledSetsSearchQuery}">
+                                    <Button.Styles>
+                                        <Style Selector="Button:pointerover">
+                                            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+                                        </Style>
+                                        <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+                                        </Style>
+                                    </Button.Styles>
+                                    <icon:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Button>
+                            </TextBox.InnerRightContent>
+                        </TextBox>
+
                         <!-- Enabled Sets List with Rubberband Container -->
-                        <Panel Grid.Row="1" x:Name="EnabledListHost" Background="Transparent">
+                        <Panel Grid.Row="2" x:Name="EnabledListHost" Background="Transparent">
                             <ScrollViewer x:Name="EnabledScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                                <ItemsControl x:Name="EnabledItemsControl" ItemsSource="{Binding EnabledSets}">
+                                <ScrollViewer.OpacityMask>
+                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                                        <GradientStop Color="#FFFFFFFF" Offset="0.0"/>
+                                        <GradientStop Color="#FFFFFFFF" Offset="0.96"/>
+                                        <GradientStop Color="#00FFFFFF" Offset="1.0"/>
+                                    </LinearGradientBrush>
+                                </ScrollViewer.OpacityMask>
+                                <ItemsControl x:Name="EnabledItemsControl" ItemsSource="{Binding EnabledSets}" Margin="0,0,4,48">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="{x:Type vm:ConfigSetItemViewModel}">
                                             <Border Classes="config-set-card"
@@ -515,17 +566,48 @@
                         Padding="16"
                         ClipToBounds="True"
                         DragDrop.AllowDrop="True">
-                    <Grid RowDefinitions="Auto, *">
+                    <Grid RowDefinitions="Auto, Auto, *">
                         <!-- Clean Header (No icon, background, color, badge) -->
                         <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
                             <TextBlock Grid.Column="0" Text="{loc:Loc 'configurations.disabled_sets'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" Text="{loc:Loc 'configurations.drag_to_enable'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
                         </Grid>
 
+                        <!-- Sets Search Input -->
+                        <TextBox Grid.Row="1" Classes="capsule-search config-search" Margin="0,0,0,10"
+                                 Text="{Binding DisabledSetsSearchQuery, Mode=TwoWay}"
+                                 Watermark="{loc:Loc 'configurations.search_sets_placeholder'}">
+                            <TextBox.InnerLeftContent>
+                                <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="10,0,4,0" VerticalAlignment="Center"/>
+                            </TextBox.InnerLeftContent>
+                            <TextBox.InnerRightContent>
+                                <Button Command="{Binding ClearDisabledSetsSearchCommand}"
+                                        Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,6,0" Width="24" Height="24" CornerRadius="12" Cursor="Hand"
+                                        IsVisible="{Binding HasDisabledSetsSearchQuery}">
+                                    <Button.Styles>
+                                        <Style Selector="Button:pointerover">
+                                            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+                                        </Style>
+                                        <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+                                        </Style>
+                                    </Button.Styles>
+                                    <icon:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Button>
+                            </TextBox.InnerRightContent>
+                        </TextBox>
+
                         <!-- Disabled Sets List with Rubberband Container -->
-                        <Panel Grid.Row="1" x:Name="DisabledListHost" Background="Transparent">
+                        <Panel Grid.Row="2" x:Name="DisabledListHost" Background="Transparent">
                             <ScrollViewer x:Name="DisabledScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                                <ItemsControl x:Name="DisabledItemsControl" ItemsSource="{Binding DisabledSets}">
+                                <ScrollViewer.OpacityMask>
+                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                                        <GradientStop Color="#FFFFFFFF" Offset="0.0"/>
+                                        <GradientStop Color="#FFFFFFFF" Offset="0.96"/>
+                                        <GradientStop Color="#00FFFFFF" Offset="1.0"/>
+                                    </LinearGradientBrush>
+                                </ScrollViewer.OpacityMask>
+                                <ItemsControl x:Name="DisabledItemsControl" ItemsSource="{Binding DisabledSets}" Margin="0,0,4,48">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="{x:Type vm:ConfigSetItemViewModel}">
                                             <Border Classes="config-set-card"
