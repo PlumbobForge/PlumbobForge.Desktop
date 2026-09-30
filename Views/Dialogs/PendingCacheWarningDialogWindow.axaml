@@ -13,16 +13,16 @@
         ExtendClientAreaTitleBarHeightHint="-1"
         Background="{DynamicResource BgDark}">
 
-    <Border BorderBrush="#334155" BorderThickness="1" CornerRadius="8" ClipToBounds="True" Background="{DynamicResource BgDark}">
+    <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" ClipToBounds="True" Background="{DynamicResource BgDark}">
         <Grid RowDefinitions="Auto, *, Auto">
             <!-- Modal Title Bar Header -->
-            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="40" Padding="16,0,0,0" PointerPressed="OnHeaderPointerPressed">
+            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="42" Padding="18,0,0,0" PointerPressed="OnHeaderPointerPressed">
                 <Grid ColumnDefinitions="*, Auto">
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <icon:PackIconBoxIcons Kind="RegularBadgeExclamation" Width="18" Height="18" Foreground="#eab308"/>
                         <TextBlock Text="{loc:Loc 'dialogs.pending_cache.title'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Width="40" Height="40" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCancelClick" ToolTip.Tip="{loc:Loc 'common.cancel'}">
+                    <Button Grid.Column="1" Width="42" Height="42" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCancelClick" ToolTip.Tip="{loc:Loc 'common.cancel'}">
                         <Button.Styles>
                             <Style Selector="Button:pointerover">
                                 <Setter Property="Background" Value="#ef4444"/>
@@ -43,10 +43,10 @@
             </ScrollViewer>
 
             <!-- Footer Action Buttons Panel -->
-            <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" Padding="16,10">
+            <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0" Padding="18,12">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-                    <Button Content="{loc:Loc 'common.cancel'}" Click="OnCancelClick" Background="#1e293b" Foreground="{DynamicResource TextMuted}" Padding="14,6" CornerRadius="6" Cursor="Hand"/>
-                    <Button Content="{loc:Loc 'dialogs.pending_cache.close_anyway'}" Click="OnCloseAnywayClick" Background="#dc2626" Foreground="White" FontWeight="SemiBold" Padding="14,6" CornerRadius="6" Cursor="Hand"/>
+                    <Button Content="{loc:Loc 'common.cancel'}" Click="OnCancelClick" Background="Transparent" Foreground="{DynamicResource TextMain}" BorderThickness="1" BorderBrush="{DynamicResource BorderSubtle}" CornerRadius="7" Padding="16,7" FontSize="12.5" Cursor="Hand"/>
+                    <Button Content="{loc:Loc 'dialogs.pending_cache.close_anyway'}" Click="OnCloseAnywayClick" Background="#dc2626" Foreground="White" FontWeight="SemiBold" BorderThickness="0" CornerRadius="7" Padding="18,7" FontSize="12.5" Cursor="Hand"/>
                 </StackPanel>
             </Border>
         </Grid>

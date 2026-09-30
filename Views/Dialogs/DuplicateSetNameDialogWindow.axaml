@@ -54,8 +54,8 @@
             <!-- Footer Action Buttons -->
             <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0" Padding="18,12">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
-                    <Button Content="{loc:Loc 'common.cancel'}" Click="OnCancelClick" Background="#334155" Foreground="{DynamicResource TextMain}" FontWeight="SemiBold" CornerRadius="6" Padding="18,7"/>
-                    <Button x:Name="RenameButton" Content="{loc:Loc 'common.rename'}" Click="OnRenameClick" Background="{DynamicResource AccentBrush}" Foreground="White" FontWeight="SemiBold" CornerRadius="6" Padding="20,7"/>
+                    <Button Content="{loc:Loc 'common.cancel'}" Click="OnCancelClick" Background="Transparent" Foreground="{DynamicResource TextMain}" BorderThickness="1" BorderBrush="{DynamicResource BorderSubtle}" CornerRadius="7" Padding="16,7" FontSize="12.5" Cursor="Hand"/>
+                    <Button x:Name="RenameButton" Content="{loc:Loc 'common.rename'}" Click="OnRenameClick" Background="{DynamicResource AccentBrush}" Foreground="White" FontWeight="SemiBold" BorderThickness="0" CornerRadius="7" Padding="20,7" FontSize="12.5" Cursor="Hand"/>
                 </StackPanel>
             </Border>
         </Grid>

@@ -13,16 +13,16 @@
         ExtendClientAreaTitleBarHeightHint="-1"
         Background="{DynamicResource BgDark}">
 
-    <Border BorderBrush="#334155" BorderThickness="1" CornerRadius="8" ClipToBounds="True" Background="{DynamicResource BgDark}">
+    <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" ClipToBounds="True" Background="{DynamicResource BgDark}">
         <Grid RowDefinitions="Auto, *, Auto">
             <!-- Modal Title Bar Header -->
-            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="40" Padding="16,0,0,0" PointerPressed="OnHeaderPointerPressed">
+            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="42" Padding="18,0,0,0" PointerPressed="OnHeaderPointerPressed">
                 <Grid ColumnDefinitions="*, Auto">
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <icon:PackIconBoxIcons Kind="RegularBadgeExclamation" Width="16" Height="16" Foreground="White"/>
+                        <icon:PackIconBoxIcons Kind="RegularBadgeExclamation" Width="16" Height="16" Foreground="#eab308"/>
                         <TextBlock x:Name="TitleTextBlock" Text="Duplicate File Import" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Width="40" Height="40" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCancelClick" ToolTip.Tip="{loc:Loc 'common.close'}">
+                    <Button Grid.Column="1" Width="42" Height="42" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCancelClick" ToolTip.Tip="{loc:Loc 'common.close'}">
                         <Button.Styles>
                             <Style Selector="Button:pointerover">
                                 <Setter Property="Background" Value="#ef4444"/>
@@ -42,12 +42,12 @@
             </ScrollViewer>
 
             <!-- Footer Action Buttons Panel -->
-            <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" Padding="16,10">
+            <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0" Padding="18,12">
                 <StackPanel x:Name="ButtonsPanel" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-                    <Button Content="{loc:Loc 'dialogs.duplicate.rename_all'}" Click="OnRenameAllClick" Background="#3b82f6" Foreground="White" Padding="12,6"/>
-                    <Button Content="{loc:Loc 'dialogs.duplicate.replace_all'}" Click="OnReplaceAllClick" Background="#eab308" Foreground="Black" FontWeight="SemiBold" Padding="12,6"/>
-                    <Button Content="{loc:Loc 'dialogs.duplicate.skip_all'}" Click="OnSkipAllClick" Background="#334155" Foreground="{DynamicResource TextMain}" Padding="12,6"/>
-                    <Button Content="{loc:Loc 'common.cancel'}" Click="OnCancelClick" Background="#1e293b" Foreground="{DynamicResource TextMuted}" Padding="12,6"/>
+                    <Button Content="{loc:Loc 'dialogs.duplicate.rename_all'}" Click="OnRenameAllClick" Background="#3b82f6" Foreground="White" FontWeight="SemiBold" BorderThickness="0" CornerRadius="7" Padding="16,7" FontSize="12.5" Cursor="Hand"/>
+                    <Button Content="{loc:Loc 'dialogs.duplicate.replace_all'}" Click="OnReplaceAllClick" Background="#eab308" Foreground="Black" FontWeight="SemiBold" BorderThickness="0" CornerRadius="7" Padding="16,7" FontSize="12.5" Cursor="Hand"/>
+                    <Button Content="{loc:Loc 'dialogs.duplicate.skip_all'}" Click="OnSkipAllClick" Background="{DynamicResource BgSurface}" Foreground="{DynamicResource TextMain}" BorderThickness="1" BorderBrush="{DynamicResource BorderSubtle}" CornerRadius="7" Padding="16,7" FontSize="12.5" Cursor="Hand"/>
+                    <Button Content="{loc:Loc 'common.cancel'}" Click="OnCancelClick" Background="Transparent" Foreground="{DynamicResource TextMuted}" BorderThickness="1" BorderBrush="{DynamicResource BorderSubtle}" CornerRadius="7" Padding="16,7" FontSize="12.5" Cursor="Hand"/>
                 </StackPanel>
             </Border>
         </Grid>

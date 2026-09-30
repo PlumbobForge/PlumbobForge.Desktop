@@ -42,16 +42,16 @@
         </Style>
     </Window.Styles>
 
-    <Border BorderBrush="#334155" BorderThickness="1" CornerRadius="8" ClipToBounds="True" Background="{DynamicResource BgDark}">
+    <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" ClipToBounds="True" Background="{DynamicResource BgDark}">
         <Grid RowDefinitions="Auto, *, Auto">
             <!-- Modal Title Bar Header -->
-            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="40" Padding="16,0,0,0" PointerPressed="OnHeaderPointerPressed">
+            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="42" Padding="18,0,0,0" PointerPressed="OnHeaderPointerPressed">
                 <Grid ColumnDefinitions="*, Auto">
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <icon:PackIconBoxIcons Kind="RegularArchive" Width="18" Height="18" Foreground="White"/>
+                        <icon:PackIconBoxIcons Kind="RegularArchive" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}"/>
                         <TextBlock Text="{loc:Loc 'dialogs.migration.title'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Width="40" Height="40" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCancelClick" ToolTip.Tip="{loc:Loc 'common.cancel'}">
+                    <Button Grid.Column="1" Width="42" Height="42" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCancelClick" ToolTip.Tip="{loc:Loc 'common.cancel'}">
                         <Button.Styles>
                             <Style Selector="Button:pointerover">
                                 <Setter Property="Background" Value="#ef4444"/>
@@ -71,7 +71,7 @@
                            FontSize="12.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="18"/>
 
                 <!-- Source 1: CC Magic -->
-                <Border Background="#182234" BorderBrush="#334155" BorderThickness="1" CornerRadius="8" Padding="14,12">
+                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" Padding="14,12">
                     <Grid ColumnDefinitions="Auto, *">
                         <RadioButton x:Name="CcMagicRadio"
                                      Grid.Column="0"
@@ -96,9 +96,8 @@
                                 <Grid ColumnDefinitions="*, Auto">
                                     <TextBox x:Name="CcMagicPathBox"
                                              Watermark="C:\Users\...\Documents\Electronic Arts\CC Magic"
-                                             Background="#0f172a"
+                                             Background="{DynamicResource BgDark}" BorderBrush="{DynamicResource BorderSubtle}"
                                              Foreground="{DynamicResource TextMain}"
-                                             BorderBrush="#334155"
                                              BorderThickness="1"
                                              CornerRadius="6"
                                              Padding="8,6"
@@ -107,7 +106,7 @@
                                     <Button Grid.Column="1"
                                              Content="{loc:Loc 'common.browse'}"
                                              Click="OnBrowseCcMagicClick"
-                                             Background="#1e293b"
+                                             Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
                                              Foreground="{DynamicResource TextMain}"
                                              Padding="12,6"
                                              Margin="8,0,0,0"
@@ -121,7 +120,7 @@
                                            TextWrapping="Wrap"/>
 
                                 <TextBlock Text="{loc:Loc 'dialogs.migration.mode_label'}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
-                                <Border Background="#0f172a" BorderBrush="#243247" BorderThickness="1" CornerRadius="6" Padding="10,8">
+                                <Border Background="{DynamicResource BgDark}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="10,8">
                                     <StackPanel Spacing="8">
                                         <RadioButton x:Name="CcMagicFullRadio"
                                                      GroupName="CcMagicMode"
@@ -150,7 +149,7 @@
                 </Border>
 
                 <!-- Source 2: Sims 3 Mod Organizer (s3mo) -->
-                <Border Background="#182234" BorderBrush="#334155" BorderThickness="1" CornerRadius="8" Padding="14,12">
+                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" Padding="14,12">
                     <Grid ColumnDefinitions="Auto, *">
                         <RadioButton x:Name="S3moRadio"
                                      Grid.Column="0"
@@ -175,9 +174,8 @@
                                 <Grid ColumnDefinitions="*, Auto">
                                     <TextBox x:Name="S3moPathBox"
                                              Watermark="C:\Path\To\s3mo"
-                                             Background="#0f172a"
+                                             Background="{DynamicResource BgDark}" BorderBrush="{DynamicResource BorderSubtle}"
                                              Foreground="{DynamicResource TextMain}"
-                                             BorderBrush="#334155"
                                              BorderThickness="1"
                                              CornerRadius="6"
                                              Padding="8,6"
@@ -186,7 +184,7 @@
                                     <Button Grid.Column="1"
                                              Content="{loc:Loc 'common.browse'}"
                                              Click="OnBrowseS3moClick"
-                                             Background="#1e293b"
+                                             Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
                                              Foreground="{DynamicResource TextMain}"
                                              Padding="12,6"
                                              Margin="8,0,0,0"
@@ -200,7 +198,7 @@
                                            TextWrapping="Wrap"/>
 
                                 <TextBlock Text="{loc:Loc 'dialogs.migration.mode_label'}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
-                                <Border Background="#0f172a" BorderBrush="#243247" BorderThickness="1" CornerRadius="6" Padding="10,8">
+                                <Border Background="{DynamicResource BgDark}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="10,8">
                                     <StackPanel Spacing="8">
                                         <RadioButton x:Name="S3moFullRadio"
                                                      GroupName="S3moMode"
