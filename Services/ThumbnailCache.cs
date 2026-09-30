@@ -1,41 +1,41 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using SkiaSharp;
 
 namespace PlumbobForge.Desktop.Services;
 
 /// <summary>
-/// Thread-safe single-decode persistent memory cache for package thumbnails.
-/// Decodes each thumbnail to 140px color and grayscale versions.
-/// Zero allocations, zero disk reads, and zero disposes during scrolling.
+/// Thread-safe bounded LRU memory cache for package thumbnails.
+/// Decodes each thumbnail to display resolution (~180px) lazily on-demand.
+/// Caps memory usage to ~35-45 MB regardless of library size.
 /// </summary>
 public static class ThumbnailCache
 {
-    private static readonly ConcurrentDictionary<long, Bitmap> _bitmaps = new();
-    private static readonly ConcurrentDictionary<long, Bitmap> _grayscaleBitmaps = new();
-    private static readonly ConcurrentDictionary<long, Task<(Bitmap? Color, Bitmap? Grayscale)>> _inFlight = new();
+    private const int MaxCacheCapacity = 300;
+    private const int TargetThumbnailWidth = 180;
+
+    private readonly record struct CacheKey(long ItemId, bool Grayscale);
+
+    private static readonly LruCache<CacheKey, Bitmap> _cache = new(MaxCacheCapacity);
+    private static readonly ConcurrentDictionary<CacheKey, Task<Bitmap?>> _inFlight = new();
 
     public static Bitmap? TryGet(long itemId, bool grayscale = false)
     {
-        if (grayscale)
-        {
-            return _grayscaleBitmaps.TryGetValue(itemId, out var gBmp) ? gBmp : null;
-        }
-        return _bitmaps.TryGetValue(itemId, out var bmp) ? bmp : null;
+        return _cache.TryGetValue(new CacheKey(itemId, grayscale), out var bmp) ? bmp : null;
     }
 
     public static async Task<Bitmap?> GetOrLoadAsync(long itemId, string filePath, bool grayscale = false)
     {
-        if (grayscale && _grayscaleBitmaps.TryGetValue(itemId, out var existingGray))
+        var key = new CacheKey(itemId, grayscale);
+        if (_cache.TryGetValue(key, out var existing))
         {
-            return existingGray;
-        }
-        if (!grayscale && _bitmaps.TryGetValue(itemId, out var existingColor))
-        {
-            return existingColor;
+            return existing;
         }
 
         if (!File.Exists(filePath))
@@ -43,7 +43,7 @@ public static class ThumbnailCache
             return null;
         }
 
-        var result = await _inFlight.GetOrAdd(itemId, async id =>
+        return await _inFlight.GetOrAdd(key, async k =>
         {
             try
             {
@@ -52,109 +52,186 @@ public static class ThumbnailCache
                     try
                     {
                         using var original = SKBitmap.Decode(filePath);
-                        if (original == null) return (null, null);
+                        if (original == null || original.Width <= 0 || original.Height <= 0)
+                        {
+                            return null;
+                        }
 
-                        int targetWidth = 320;
+                        int targetWidth = Math.Min(TargetThumbnailWidth, original.Width);
                         int targetHeight = (int)((float)original.Height / original.Width * targetWidth);
                         if (targetHeight <= 0) targetHeight = targetWidth;
 
                         var info = new SKImageInfo(targetWidth, targetHeight, SKColorType.Bgra8888, SKAlphaType.Premul);
+                        using var surface = SKSurface.Create(info);
+                        if (surface == null) return null;
 
-                        // 1. Color Bitmap
-                        Bitmap? colorBmp = null;
-                        using (var colorSurface = SKSurface.Create(info))
+                        using var paint = new SKPaint
                         {
-                            if (colorSurface != null)
+                            FilterQuality = SKFilterQuality.Medium
+                        };
+
+                        if (k.Grayscale)
+                        {
+                            // Luma weights: 0.2126 R + 0.7152 G + 0.0722 B
+                            paint.ColorFilter = SKColorFilter.CreateColorMatrix(new float[]
                             {
-                                using var colorPaint = new SKPaint { FilterQuality = SKFilterQuality.High };
-                                colorSurface.Canvas.DrawBitmap(original, new SKRect(0, 0, targetWidth, targetHeight), colorPaint);
-                                using var colorImage = colorSurface.Snapshot();
-                                using var colorData = colorImage.Encode(SKEncodedImageFormat.Png, 95);
-                                using var colorMs = new MemoryStream();
-                                colorData.SaveTo(colorMs);
-                                colorMs.Position = 0;
-                                colorBmp = new Bitmap(colorMs);
-                            }
+                                0.2126f, 0.7152f, 0.0722f, 0, 0,
+                                0.2126f, 0.7152f, 0.0722f, 0, 0,
+                                0.2126f, 0.7152f, 0.0722f, 0, 0,
+                                0,       0,       0,       1, 0
+                            });
                         }
 
-                        // 2. Grayscale Bitmap (Luma weights: 0.2126 R + 0.7152 G + 0.0722 B)
-                        Bitmap? grayBmp = null;
-                        using (var graySurface = SKSurface.Create(info))
+                        surface.Canvas.DrawBitmap(original, new SKRect(0, 0, targetWidth, targetHeight), paint);
+
+                        // Direct zero-copy into Avalonia WriteableBitmap (no PNG/JPEG re-encoding)
+                        var wb = new WriteableBitmap(
+                            new PixelSize(targetWidth, targetHeight),
+                            new Vector(96, 96),
+                            PixelFormat.Bgra8888,
+                            AlphaFormat.Premul);
+
+                        using (var fb = wb.Lock())
                         {
-                            if (graySurface != null)
-                            {
-                                using var grayPaint = new SKPaint
-                                {
-                                    ColorFilter = SKColorFilter.CreateColorMatrix(new float[]
-                                    {
-                                        0.2126f, 0.7152f, 0.0722f, 0, 0,
-                                        0.2126f, 0.7152f, 0.0722f, 0, 0,
-                                        0.2126f, 0.7152f, 0.0722f, 0, 0,
-                                        0,       0,       0,       1, 0
-                                    }),
-                                    FilterQuality = SKFilterQuality.High
-                                };
-                                graySurface.Canvas.DrawBitmap(original, new SKRect(0, 0, targetWidth, targetHeight), grayPaint);
-                                using var grayImage = graySurface.Snapshot();
-                                using var grayData = grayImage.Encode(SKEncodedImageFormat.Png, 95);
-                                using var grayMs = new MemoryStream();
-                                grayData.SaveTo(grayMs);
-                                grayMs.Position = 0;
-                                grayBmp = new Bitmap(grayMs);
-                            }
+                            surface.ReadPixels(info, fb.Address, fb.RowBytes, 0, 0);
                         }
 
-                        return (colorBmp, grayBmp);
+                        _cache.Set(k, wb);
+                        return (Bitmap)wb;
                     }
                     catch
                     {
-                        return (null, null);
+                        return null;
                     }
                 });
             }
             finally
             {
-                _inFlight.TryRemove(id, out _);
+                _inFlight.TryRemove(k, out _);
             }
         });
-
-        if (result.Color != null)
-        {
-            _bitmaps[itemId] = result.Color;
-        }
-        if (result.Grayscale != null)
-        {
-            _grayscaleBitmaps[itemId] = result.Grayscale;
-        }
-
-        return grayscale ? result.Grayscale : result.Color;
     }
 
     public static void Invalidate(long itemId)
     {
-        if (_bitmaps.TryRemove(itemId, out var bmp))
+        if (_cache.Remove(new CacheKey(itemId, false), out var colorBmp))
         {
-            try { bmp.Dispose(); } catch { }
+            try { colorBmp?.Dispose(); } catch { }
         }
-        if (_grayscaleBitmaps.TryRemove(itemId, out var gBmp))
+        if (_cache.Remove(new CacheKey(itemId, true), out var grayBmp))
         {
-            try { gBmp.Dispose(); } catch { }
+            try { grayBmp?.Dispose(); } catch { }
         }
     }
 
     public static void Clear()
     {
-        foreach (var bmp in _bitmaps.Values)
+        var bitmaps = _cache.Clear();
+        foreach (var bmp in bitmaps)
         {
             try { bmp.Dispose(); } catch { }
         }
-        _bitmaps.Clear();
-
-        foreach (var bmp in _grayscaleBitmaps.Values)
-        {
-            try { bmp.Dispose(); } catch { }
-        }
-        _grayscaleBitmaps.Clear();
         _inFlight.Clear();
+    }
+
+    private sealed class LruCache<TKey, TValue> where TKey : notnull
+    {
+        private readonly int _capacity;
+        private readonly Dictionary<TKey, LinkedListNode<CacheItem>> _map;
+        private readonly LinkedList<CacheItem> _list = new();
+        private readonly object _lock = new();
+
+        private readonly struct CacheItem
+        {
+            public readonly TKey Key;
+            public readonly TValue Value;
+            public CacheItem(TKey key, TValue value)
+            {
+                Key = key;
+                Value = value;
+            }
+        }
+
+        public LruCache(int capacity)
+        {
+            _capacity = capacity;
+            _map = new Dictionary<TKey, LinkedListNode<CacheItem>>(capacity);
+        }
+
+        public bool TryGetValue(TKey key, out TValue? value)
+        {
+            lock (_lock)
+            {
+                if (_map.TryGetValue(key, out var node))
+                {
+                    _list.Remove(node);
+                    _list.AddFirst(node);
+                    value = node.Value.Value;
+                    return true;
+                }
+                value = default;
+                return false;
+            }
+        }
+
+        public void Set(TKey key, TValue value)
+        {
+            lock (_lock)
+            {
+                if (_map.TryGetValue(key, out var existingNode))
+                {
+                    _list.Remove(existingNode);
+                    _map.Remove(key);
+                }
+                else if (_map.Count >= _capacity)
+                {
+                    var oldest = _list.Last;
+                    if (oldest != null)
+                    {
+                        _list.RemoveLast();
+                        _map.Remove(oldest.Value.Key);
+                        if (oldest.Value.Value is IDisposable d)
+                        {
+                            try { d.Dispose(); } catch { }
+                        }
+                    }
+                }
+
+                var newNode = new LinkedListNode<CacheItem>(new CacheItem(key, value));
+                _list.AddFirst(newNode);
+                _map[key] = newNode;
+            }
+        }
+
+        public bool Remove(TKey key, out TValue? value)
+        {
+            lock (_lock)
+            {
+                if (_map.TryGetValue(key, out var node))
+                {
+                    _list.Remove(node);
+                    _map.Remove(key);
+                    value = node.Value.Value;
+                    return true;
+                }
+                value = default;
+                return false;
+            }
+        }
+
+        public List<TValue> Clear()
+        {
+            lock (_lock)
+            {
+                var values = new List<TValue>(_map.Count);
+                foreach (var node in _map.Values)
+                {
+                    values.Add(node.Value.Value);
+                }
+                _map.Clear();
+                _list.Clear();
+                return values;
+            }
+        }
     }
 }
