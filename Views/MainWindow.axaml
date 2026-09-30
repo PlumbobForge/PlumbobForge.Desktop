@@ -312,7 +312,7 @@
                         <TextBlock Text="{Binding UpdateToastMessage}" FontSize="12" Foreground="{DynamicResource TextMuted}"/>
                     </StackPanel>
 
-                    <!-- View Update Button -->
+                    <!-- Go Update Button -->
                     <Button Grid.Column="2"
                             Command="{Binding OpenUpdateSettingsCommand}"
                             Background="{DynamicResource AccentBrush}"
@@ -324,8 +324,8 @@
                             Cursor="Hand"
                             Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <icon:PackIconBoxIcons Kind="RegularCog" Width="13" Height="13" Foreground="White" VerticalAlignment="Center"/>
-                            <TextBlock Text="{loc:Loc 'settings.view_changelog'}" VerticalAlignment="Center"/>
+                            <icon:PackIconBoxIcons Kind="RegularRocket" Width="13" Height="13" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'settings.go_update'}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
