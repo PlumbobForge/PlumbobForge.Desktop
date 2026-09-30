@@ -1,6 +1,7 @@
+using System;
+using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Interactivity;
-using PlumbobForge.Desktop.ViewModels;
+using Avalonia.Input;
 
 namespace PlumbobForge.Desktop.Views.Health;
 
@@ -11,25 +12,13 @@ public partial class ConflictScannerView : UserControl
         InitializeComponent();
     }
 
-    private void OnNavigateToPrimaryPackageClick(object? sender, RoutedEventArgs e)
+    private void OnFilterPointerWheelChanged(object? sender, PointerWheelEventArgs e)
     {
-        if (sender is Button btn && btn.DataContext is SimpleConflictCardViewModel card && DataContext is HealthViewModel vm)
+        if (sender is ScrollViewer sv && e.Delta.Y != 0)
         {
-            if (card.PrimaryPackage != null)
-            {
-                vm.NavigateToPackageItemCommand.Execute(card.PrimaryPackage);
-            }
-        }
-    }
-
-    private void OnNavigateToSecondaryPackageClick(object? sender, RoutedEventArgs e)
-    {
-        if (sender is Button btn && btn.DataContext is SimpleConflictCardViewModel card && DataContext is HealthViewModel vm)
-        {
-            if (card.SecondaryPackage != null)
-            {
-                vm.NavigateToPackageItemCommand.Execute(card.SecondaryPackage);
-            }
+            double newX = Math.Clamp(sv.Offset.X - (e.Delta.Y * 60), 0, Math.Max(0, sv.Extent.Width - sv.Viewport.Width));
+            sv.Offset = new Vector(newX, sv.Offset.Y);
+            e.Handled = true;
         }
     }
 }

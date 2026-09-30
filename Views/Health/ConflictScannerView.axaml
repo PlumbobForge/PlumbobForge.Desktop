@@ -9,14 +9,25 @@
              x:Class="PlumbobForge.Desktop.Views.Health.ConflictScannerView"
              x:DataType="vm:HealthViewModel">
 
+        <UserControl.Styles>
+        <Style Selector="Border.conflict-pkg-row:pointerover">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+    </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto, *"
-          HorizontalAlignment="Stretch">
+    <Grid RowDefinitions="Auto, *" HorizontalAlignment="Stretch">
 
-        <!-- Row 0: Filter Pills with Badges & Search -->
-        <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center" Margin="0,0,0,16" IsVisible="{Binding HasScannedConflicts}">
-            <!-- Filter Pills with embedded counts and color-coded icons -->
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+        <!-- Row 0: Filter Pills with Badges, Bulk Actions & Search -->
+        <Grid Grid.Row="0" ColumnDefinitions="*, Auto" VerticalAlignment="Center" Margin="0,0,0,16" IsVisible="{Binding HasScannedConflicts}">
+            <!-- Filter Pills in Horizontal ScrollViewer with smooth wheel scrolling -->
+            <ScrollViewer x:Name="FilterScrollViewer"
+                          Grid.Column="0"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Disabled"
+                          AllowAutoHide="True"
+                          PointerWheelChanged="OnFilterPointerWheelChanged"
+                          Margin="0,0,12,0">
+                <StackPanel Orientation="Horizontal" Spacing="8">
                 <!-- All Issues -->
                 <Button Classes="filter-btn"
                         Classes.active="{Binding IsFilterAll}"
@@ -85,11 +96,29 @@
                         </Border>
                     </StackPanel>
                 </Button>
-            </StackPanel>
 
-            <!-- Capsule Search Input matching ContentManager Filters Sidebar -->
-            <TextBox Grid.Column="2"
+                <!-- Ignored Conflicts Filter Pill -->
+                <Button Classes="filter-btn"
+                        Classes.active="{Binding IsFilterIgnored}"
+                        Command="{Binding SetFilterCommand}"
+                        CommandParameter="Ignored">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularBellSlash" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{loc:Loc 'tools.conflicts.ignored'}" VerticalAlignment="Center"/>
+                        <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="5,1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding IgnoredCount}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/>
+                        </Border>
+                    </StackPanel>
+                </Button>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Right Controls: Capsule Search Input -->
+            <TextBox Grid.Column="1"
                      Classes="capsule-search"
+                     Width="180"
+                     HorizontalAlignment="Right"
+                     VerticalAlignment="Center"
                      Text="{Binding ConflictSearchQuery, Mode=TwoWay}"
                      Watermark="{loc:Loc 'tools.conflicts.search_watermark'}">
                 <TextBox.InnerLeftContent>
@@ -120,9 +149,50 @@
             </TextBox>
         </Grid>
 
-        <!-- Row 1: Problem Cards List -->
-        <Grid Grid.Row="1">
-            <!-- Initial / Empty Clean State before scan -->
+        <!-- Row 1: Problem Cards List + Duplicate Action Banner -->
+        <Grid Grid.Row="1" RowDefinitions="Auto, *">
+            <!-- Duplicate Cleanup Action Banner (Visible when viewing Duplicates filter and duplicates exist) -->
+            <Border Grid.Row="0"
+                    IsVisible="{Binding CanShowDuplicatesBanner}"
+                    Background="{DynamicResource BgSidebar}"
+                    BorderBrush="#f59e0b"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="16,12"
+                    Margin="0,0,0,14">
+                <Grid ColumnDefinitions="*, Auto" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
+                        <TextBlock Text="{loc:Loc 'tools.conflicts.bulk_duplicates_title'}" FontWeight="Bold" FontSize="13.5" Foreground="{DynamicResource TextMain}"/>
+                        <TextBlock Text="{loc:Loc 'tools.conflicts.bulk_duplicates_desc'}" FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <Button Grid.Column="1"
+                            Command="{Binding DisableRedundantDuplicatesCommand}"
+                            Background="#f59e0b"
+                            Foreground="#0f172a"
+                            FontWeight="Bold"
+                            FontSize="12"
+                            BorderThickness="0"
+                            CornerRadius="7"
+                            Padding="14,9"
+                            Cursor="Hand"
+                            VerticalAlignment="Center">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#fbbf24"/>
+                            </Style>
+                        </Button.Styles>
+                        <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+                            <icon:PackIconBoxIcons Kind="RegularCheckSquare" Width="15" Height="15" Foreground="#0f172a" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'tools.conflicts.disable_duplicates'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Cards Container -->
+            <Grid Grid.Row="1">
+            <!-- Initial State before scan -->
             <Border Classes="settings-card"
                     IsVisible="{Binding !HasScannedConflicts}"
                     Padding="32"
@@ -136,7 +206,7 @@
                 </StackPanel>
             </Border>
 
-            <!-- Clean State (No issues found after scan) -->
+            <!-- Clean State (No issues found in current filter) -->
             <Border Classes="settings-card"
                     IsVisible="{Binding IsNoIssuesFound}"
                     Padding="32"
@@ -163,7 +233,7 @@
                     <DataTemplate DataType="vm:SimpleConflictCardViewModel">
                         <Border Classes="settings-card" Margin="0,0,0,12" Padding="18,14">
                             <StackPanel Spacing="12">
-                                <!-- Card Header: Badge, Title, Scope, Resource Count -->
+                                <!-- Card Header: Category Badge, Title, Badges, Ignore Button -->
                                 <Grid ColumnDefinitions="Auto, *, Auto, Auto" VerticalAlignment="Center">
                                     <!-- Category Badge -->
                                     <Border Grid.Column="0" Background="{Binding CategoryBadgeBg}" BorderBrush="{Binding CategoryBadgeBorder}" BorderThickness="1" CornerRadius="6" Padding="8,3" VerticalAlignment="Center">
@@ -177,123 +247,159 @@
                                     </Border>
 
                                     <!-- Title -->
-                                    <TextBlock Grid.Column="1" Text="{Binding Title}" FontWeight="Bold" FontSize="14.5" Foreground="{DynamicResource TextMain}" Margin="12,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Title}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource TextMain}" Margin="12,0,12,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
 
-                                    <!-- Same Set Badge (if intra-set) -->
-                                    <Border Grid.Column="2" IsVisible="{Binding IsIntraSet}" Background="{DynamicResource StatusPurpleBg}" BorderBrush="{DynamicResource StatusPurple}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" Margin="0,0,8,0">
-                                        <TextBlock Text="{loc:Loc 'tools.conflicts.same_set'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource StatusPurple}"/>
-                                    </Border>
-
-                                    <!-- Resource Count Badge -->
-                                    <Border Grid.Column="3" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="8,3" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding AffectedResourceCount, StringFormat='{}{0} shared resources'}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
-                                    </Border>
-                                </Grid>
-
-                                <!-- Files In Conflict: Side-by-side balanced panels with ToggleSwitches -->
-                                <Grid ColumnDefinitions="*, Auto, *" Margin="0,2,0,2">
-                                    <!-- File A Panel -->
-                                    <Border Grid.Column="0" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderMain}" BorderThickness="1" CornerRadius="8" Padding="12,10">
-                                        <Grid ColumnDefinitions="Auto, *, Auto, Auto" VerticalAlignment="Center">
-                                            <!-- Package Icon -->
-                                            <Border Grid.Column="0" Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="6" Width="30" Height="30" Margin="0,0,10,0" VerticalAlignment="Center">
-                                                <icon:PackIconBoxIcons Kind="RegularPackage" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-
-                                            <!-- Package Name & Set -->
-                                            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding PrimaryPackage.PackageFileName}" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{Binding PrimaryPackage.SetName, StringFormat='Set: {0}'}" FontSize="11" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis"/>
-                                            </StackPanel>
-
-                                            <!-- Jump to Manager Button -->
-                                            <Button Grid.Column="2"
-                                                    Click="OnNavigateToPrimaryPackageClick"
-                                                    Background="{DynamicResource BgCardAlt}"
-                                                    BorderBrush="{DynamicResource BorderSubtle}"
-                                                    BorderThickness="1"
-                                                    Foreground="{DynamicResource TextMain}"
-                                                    CornerRadius="6"
-                                                    Padding="8,6"
-                                                    Margin="8,0,10,0"
-                                                    Cursor="Hand"
-                                                    ToolTip.Tip="{loc:Loc 'tools.conflicts.view_in_library'}">
-                                                <icon:PackIconBoxIcons Kind="RegularFolder" Width="13" Height="13" Foreground="{DynamicResource AccentBrush}"/>
-                                            </Button>
-
-                                            <!-- Enable / Disable ToggleSwitch -->
-                                            <ToggleSwitch Grid.Column="3"
-                                                          IsChecked="{Binding IsPrimaryEnabled, Mode=TwoWay}"
-                                                          VerticalAlignment="Center"
-                                                          ToolTip.Tip="{loc:Loc 'tools.conflicts.enable_disable_mod'}"/>
-                                        </Grid>
-                                    </Border>
-
-                                    <!-- Conflict Connector Icon -->
-                                    <Border Grid.Column="1" Margin="8,0" VerticalAlignment="Center" IsVisible="{Binding HasSecondaryPackage}">
-                                        <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderMain}" BorderThickness="1" CornerRadius="6" Width="26" Height="26">
-                                            <icon:PackIconBoxIcons Kind="RegularSwapHorizontal" Width="14" Height="14" Foreground="{DynamicResource TextSubtle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <!-- Badges: Same Set, Files Count, Shared Resources -->
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,10,0">
+                                        <!-- Same Set Badge -->
+                                        <Border IsVisible="{Binding IsIntraSet}" Background="{DynamicResource StatusPurpleBg}" BorderBrush="{DynamicResource StatusPurple}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                            <TextBlock Text="{loc:Loc 'tools.conflicts.same_set'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource StatusPurple}"/>
                                         </Border>
-                                    </Border>
 
-                                    <!-- File B Panel -->
-                                    <Border Grid.Column="2" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderMain}" BorderThickness="1" CornerRadius="8" Padding="12,10" IsVisible="{Binding HasSecondaryPackage}">
-                                        <Grid ColumnDefinitions="Auto, *, Auto, Auto" VerticalAlignment="Center">
-                                            <!-- Package Icon -->
-                                            <Border Grid.Column="0" Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="6" Width="30" Height="30" Margin="0,0,10,0" VerticalAlignment="Center">
-                                                <icon:PackIconBoxIcons Kind="RegularPackage" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
+                                        <!-- Files Count Badge -->
+                                        <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="5" Padding="6,2" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding FileCountBadgeText}" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                                        </Border>
 
-                                            <!-- Package Name & Set -->
-                                            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding SecondaryPackage.PackageFileName}" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{Binding SecondaryPackage.SetName, StringFormat='Set: {0}'}" FontSize="11" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis"/>
-                                            </StackPanel>
+                                        <!-- Resource Count Badge -->
+                                        <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="5" Padding="6,2" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding AffectedResourceCount, StringFormat='{}{0} resources'}" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                                        </Border>
+                                    </StackPanel>
 
-                                            <!-- Jump to Manager Button -->
-                                            <Button Grid.Column="2"
-                                                    Click="OnNavigateToSecondaryPackageClick"
-                                                    Background="{DynamicResource BgCardAlt}"
-                                                    BorderBrush="{DynamicResource BorderSubtle}"
-                                                    BorderThickness="1"
-                                                    Foreground="{DynamicResource TextMain}"
-                                                    CornerRadius="6"
-                                                    Padding="8,6"
-                                                    Margin="8,0,10,0"
-                                                    Cursor="Hand"
-                                                    ToolTip.Tip="{loc:Loc 'tools.conflicts.view_in_library'}">
-                                                <icon:PackIconBoxIcons Kind="RegularFolder" Width="13" Height="13" Foreground="{DynamicResource AccentBrush}"/>
-                                            </Button>
-
-                                            <!-- Enable / Disable ToggleSwitch -->
-                                            <ToggleSwitch Grid.Column="3"
-                                                          IsChecked="{Binding IsSecondaryEnabled, Mode=TwoWay}"
-                                                          VerticalAlignment="Center"
-                                                          ToolTip.Tip="{loc:Loc 'tools.conflicts.enable_disable_mod'}"/>
-                                        </Grid>
-                                    </Border>
+                                    <!-- Ignore / Restore Button -->
+                                    <Button Grid.Column="3"
+                                            Command="{Binding ToggleIgnoreCommand}"
+                                            Classes="btn-action-sec"
+                                            Padding="8,5"
+                                            VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                            <icon:PackIconBoxIcons Kind="RegularBellSlash" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding !IsIgnored}" VerticalAlignment="Center"/>
+                                            <icon:PackIconBoxIcons Kind="RegularEye" Width="12" Height="12" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsIgnored}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'tools.conflicts.ignore_conflict'}" FontSize="11" IsVisible="{Binding !IsIgnored}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'tools.conflicts.unignore_conflict'}" FontSize="11" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsIgnored}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
                                 </Grid>
 
                                 <!-- Explanation & Recommendation Banner -->
                                 <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderMain}" BorderThickness="1" CornerRadius="8" Padding="12,10">
                                     <StackPanel Spacing="6">
-                                        <Grid ColumnDefinitions="Auto, *" VerticalAlignment="Top">
-                                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" Width="110" VerticalAlignment="Top">
+                                        <!-- Explanation Row -->
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" Margin="0,0,12,0" VerticalAlignment="Top" Width="115">
                                                 <icon:PackIconBoxIcons Kind="RegularInfoCircle" Width="13" Height="13" Foreground="{DynamicResource StatusCyan}" VerticalAlignment="Center"/>
-                                                <TextBlock Text="{loc:Loc 'tools.conflicts.explanation'}" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource StatusCyan}"/>
+                                                <TextBlock Text="{loc:Loc 'tools.conflicts.explanation'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource StatusCyan}"/>
                                             </StackPanel>
-                                            <TextBlock Grid.Column="1" Text="{Binding Explanation}" FontSize="12" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap" LineHeight="16"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Explanation}" FontSize="12" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap" LineHeight="17"/>
                                         </Grid>
 
-                                        <Grid ColumnDefinitions="Auto, *" VerticalAlignment="Top" IsVisible="{Binding Recommendation, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" Width="110" VerticalAlignment="Top">
+                                        <!-- Recommendation Row -->
+                                        <Grid ColumnDefinitions="Auto, *" IsVisible="{Binding Recommendation, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" Margin="0,0,12,0" VerticalAlignment="Top" Width="115">
                                                 <icon:PackIconBoxIcons Kind="RegularCheckCircle" Width="13" Height="13" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
-                                                <TextBlock Text="{loc:Loc 'tools.conflicts.action'}" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                                                <TextBlock Text="{loc:Loc 'tools.conflicts.action'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
                                             </StackPanel>
-                                            <TextBlock Grid.Column="1" Text="{Binding Recommendation}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" FontWeight="SemiBold" TextWrapping="Wrap" LineHeight="16"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Recommendation}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" FontWeight="SemiBold" TextWrapping="Wrap" LineHeight="17"/>
                                         </Grid>
                                     </StackPanel>
                                 </Border>
+
+                                <!-- Conflicting Packages Vertical List -->
+                                <ItemsControl ItemsSource="{Binding Packages}" Margin="0,2,0,2">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="vm:ConflictPackageItemViewModel">
+                                            <Border Classes="conflict-pkg-row"
+                                                    Background="{DynamicResource BgSurface}"
+                                                    BorderBrush="{DynamicResource BorderSubtle}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8"
+                                                    Padding="12,10"
+                                                    Margin="0,0,0,8">
+                                                <Grid ColumnDefinitions="Auto, *, Auto, Auto, Auto" VerticalAlignment="Center">
+                                                    <!-- Status Badge / Winning in load order -->
+                                                    <Border Grid.Column="0" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                        <Panel>
+                                                            <!-- Active (Winning in Game) -->
+                                                            <Border IsVisible="{Binding ShowActiveBadge}" Background="#132e22" BorderBrush="#10b981" BorderThickness="1" CornerRadius="4" Padding="6,2">
+                                                                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                                    <icon:PackIconBoxIcons Kind="SolidCheckCircle" Width="10" Height="10" Foreground="#10b981" VerticalAlignment="Center"/>
+                                                                    <TextBlock Text="{loc:Loc 'tools.conflicts.active_in_game'}" FontSize="10" FontWeight="Bold" Foreground="#10b981"/>
+                                                                </StackPanel>
+                                                            </Border>
+
+                                                            <!-- Disabled -->
+                                                            <Border IsVisible="{Binding ShowDisabledBadge}" Background="{DynamicResource BgDark}" BorderBrush="{DynamicResource BorderMain}" BorderThickness="1" CornerRadius="4" Padding="6,2">
+                                                                <TextBlock Text="{loc:Loc 'tools.conflicts.disabled'}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSubtle}"/>
+                                                            </Border>
+
+                                                            <!-- Enabled but Overridden -->
+                                                            <Border IsVisible="{Binding ShowOverriddenBadge}" Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="6,2">
+                                                                <TextBlock Text="{loc:Loc 'tools.conflicts.overridden_in_game'}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                                                            </Border>
+                                                        </Panel>
+                                                    </Border>
+
+                                                    <!-- File Name & Set -->
+                                                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center" Margin="0,0,12,0">
+                                                        <TextBlock Text="{Binding PackageFileName}" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding SetName, StringFormat='Set: {0}'}" FontSize="11" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis"/>
+                                                    </StackPanel>
+
+                                                    <!-- "Keep Only This" Button -->
+                                                    <Button Grid.Column="2"
+                                                            Command="{Binding KeepOnlyThisCommand}"
+                                                            IsVisible="{Binding CanKeepOnlyThis}"
+                                                            Background="{DynamicResource BgCardAlt}"
+                                                            BorderBrush="{DynamicResource BorderSubtle}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="10,6"
+                                                            Margin="0,0,8,0"
+                                                            VerticalAlignment="Center"
+                                                            Cursor="Hand"
+                                                            ToolTip.Tip="{loc:Loc 'tools.conflicts.keep_only_this'}">
+                                                        <Button.Styles>
+                                                            <Style Selector="Button:pointerover">
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                                            </Style>
+                                                        </Button.Styles>
+                                                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                            <icon:PackIconBoxIcons Kind="RegularCheck" Width="13" Height="13" Foreground="{DynamicResource AccentBrush}"/>
+                                                            <TextBlock Text="{loc:Loc 'tools.conflicts.keep_only_this'}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                                                        </StackPanel>
+                                                    </Button>
+
+                                                    <!-- "View in Library" Button -->
+                                                    <Button Grid.Column="3"
+                                                            Command="{Binding NavigateToLibraryCommand}"
+                                                            Background="{DynamicResource BgCardAlt}"
+                                                            BorderBrush="{DynamicResource BorderSubtle}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="6"
+                                                            Padding="8,6"
+                                                            Margin="0,0,10,0"
+                                                            VerticalAlignment="Center"
+                                                            Cursor="Hand"
+                                                            ToolTip.Tip="{loc:Loc 'tools.conflicts.view_in_library'}">
+                                                        <Button.Styles>
+                                                            <Style Selector="Button:pointerover">
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                                            </Style>
+                                                        </Button.Styles>
+                                                        <icon:PackIconBoxIcons Kind="RegularFolder" Width="13" Height="13" Foreground="{DynamicResource AccentBrush}"/>
+                                                    </Button>
+
+                                                    <!-- ToggleSwitch -->
+                                                    <ToggleSwitch Grid.Column="4"
+                                                                  IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                                                  VerticalAlignment="Center"
+                                                                  ToolTip.Tip="{loc:Loc 'tools.conflicts.enable_disable_mod'}"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
 
                                 <!-- Technical Details Expander Toggle -->
                                 <StackPanel Spacing="6" IsVisible="{Binding HasTechnicalDetails}">
@@ -332,6 +438,7 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>

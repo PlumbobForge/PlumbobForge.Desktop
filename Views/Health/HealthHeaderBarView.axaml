@@ -163,11 +163,20 @@
                         Spacing="16"
                         VerticalAlignment="Center"
                         IsVisible="{Binding IsConflictScannerActive}">
-                <!-- Total Scanned Metric Capsule -->
+                <!-- Stat Capsule: Packages Scanned & Detected Conflicts -->
                 <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="12,8" VerticalAlignment="Center">
-                    <StackPanel Spacing="1" VerticalAlignment="Center">
-                        <TextBlock Text="{loc:Loc 'tools.conflicts.detected_conflicts'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
-                        <TextBlock Text="{Binding TotalPackagesScanned, StringFormat='{}{0} packages'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                        <StackPanel Spacing="1" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc 'tools.conflicts.packages_scanned'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="{Binding TotalPackagesScanned, StringFormat='{}{0} packages'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                        </StackPanel>
+
+                        <Separator Width="1" Height="22" Background="{DynamicResource BorderSubtle}"/>
+
+                        <StackPanel Spacing="1" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc 'tools.conflicts.detected_conflicts'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="{Binding TotalIssuesCount, StringFormat='{}{0} issues'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
