@@ -1,137 +1,256 @@
 using System;
 using System.Collections.Generic;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using IconPacks.Avalonia.BoxIcons;
 using PlumbobForge.Desktop.Services;
-using PlumbobForge.Desktop.Utils;
 
 namespace PlumbobForge.Desktop.Views.Dialogs;
 
-public record CustomizeConfigResult(bool Confirmed, string Name, string? Description, string? Icon, string? Color);
-
 public partial class CustomizeConfigDialogWindow : Window
 {
+    private string _configName;
+    private string? _description;
+    private string? _selectedColorHex;
+    private string? _selectedIconName;
+    private readonly bool _isActive;
+
+    private readonly List<Button> _allIconButtons = new();
+    private readonly List<Button> _colorButtons = new();
+
+    public string ResultConfigName => ConfigNameTextBox.Text?.Trim() ?? _configName;
+    public string? ResultDescription => string.IsNullOrWhiteSpace(DescriptionTextBox.Text) ? null : DescriptionTextBox.Text.Trim();
+    public string? ResultColorHex => _selectedColorHex;
+    public string? ResultIconName => _selectedIconName;
+
+    // Curated Configuration / Preset Profile Icons
     private static readonly List<PackIconBoxIconsKind> AvailableIcons = new()
     {
-        // Settings & Configurations
+        // Core Config & System
         PackIconBoxIconsKind.RegularSlider,
-        PackIconBoxIconsKind.RegularLayers,
-        PackIconBoxIconsKind.RegularGrid,
-        PackIconBoxIconsKind.RegularTag,
-        PackIconBoxIconsKind.RegularBookmark,
-        PackIconBoxIconsKind.RegularBookmarks,
-        PackIconBoxIconsKind.RegularPackage,
-        PackIconBoxIconsKind.RegularBox,
+                PackIconBoxIconsKind.RegularCog,
+                PackIconBoxIconsKind.RegularLayers,
         PackIconBoxIconsKind.RegularFolder,
         PackIconBoxIconsKind.RegularFolderOpen,
-        PackIconBoxIconsKind.RegularFolderHeart,
         PackIconBoxIconsKind.RegularFolderStar,
-        PackIconBoxIconsKind.RegularFolderCheck,
+        PackIconBoxIconsKind.RegularPackage,
+        PackIconBoxIconsKind.RegularBox,
+        PackIconBoxIconsKind.RegularGrid,
+        PackIconBoxIconsKind.RegularBookmarks,
 
-        // Sims, CAS & Clothing
+        // Pets & Animals
+        PackIconBoxIconsKind.RegularCat,
+        PackIconBoxIconsKind.RegularDog,
+        PackIconBoxIconsKind.RegularPawPrint,
+        PackIconBoxIconsKind.RegularBone,
+        PackIconBoxIconsKind.RegularFish,
+        PackIconBoxIconsKind.RegularBird,
+        PackIconBoxIconsKind.RegularBug,
+
+        // Nature, Gardening & Weather
+        PackIconBoxIconsKind.RegularLeaf,
+        PackIconBoxIconsKind.RegularFlower,
+        PackIconBoxIconsKind.RegularTree,
+        PackIconBoxIconsKind.RegularPlantPot,
+        PackIconBoxIconsKind.RegularSun,
+        PackIconBoxIconsKind.RegularMoon,
+        PackIconBoxIconsKind.RegularFlame,
+        PackIconBoxIconsKind.RegularWater,
+
+        // Occult, Supernatural & Magic
+        PackIconBoxIconsKind.RegularMagicWand,
+        PackIconBoxIconsKind.RegularGhost,
+        PackIconBoxIconsKind.RegularSparkles,
+        PackIconBoxIconsKind.RegularPlanet,
+
+        // CAS & Sims
         PackIconBoxIconsKind.RegularUser,
         PackIconBoxIconsKind.RegularFace,
-        PackIconBoxIconsKind.RegularFaceAlt,
-        PackIconBoxIconsKind.RegularBody,
         PackIconBoxIconsKind.RegularHanger,
         PackIconBoxIconsKind.RegularTShirt,
-        PackIconBoxIconsKind.RegularPant,
-        PackIconBoxIconsKind.RegularSneaker,
         PackIconBoxIconsKind.RegularGlasses,
-        PackIconBoxIconsKind.RegularSmile,
-        PackIconBoxIconsKind.RegularPalette,
+        PackIconBoxIconsKind.RegularMask,
         PackIconBoxIconsKind.RegularDiamond,
+        PackIconBoxIconsKind.RegularSmile,
 
         // Lots, Objects & Build/Buy
         PackIconBoxIconsKind.RegularHome,
+        PackIconBoxIconsKind.RegularBuilding,
+        PackIconBoxIconsKind.RegularStore,
         PackIconBoxIconsKind.RegularGlobe,
         PackIconBoxIconsKind.RegularChair,
         PackIconBoxIconsKind.RegularBed,
+        PackIconBoxIconsKind.RegularBath,
+        PackIconBoxIconsKind.RegularTv,
         PackIconBoxIconsKind.RegularCar,
-        PackIconBoxIconsKind.RegularCoffee,
 
-        // Extras, Media & Lifestyle
-        PackIconBoxIconsKind.RegularHeart,
-        PackIconBoxIconsKind.RegularStar,
-        PackIconBoxIconsKind.RegularSparkles,
-        PackIconBoxIconsKind.RegularShoppingBag,
-        PackIconBoxIconsKind.RegularShoppingBagAlt,
-        PackIconBoxIconsKind.RegularGift,
-        PackIconBoxIconsKind.RegularTrophy,
+        // Food, Dining & Kitchen
+        PackIconBoxIconsKind.RegularForkKnife,
+        PackIconBoxIconsKind.RegularCoffee,
+        PackIconBoxIconsKind.RegularBirthdayCake,
+        PackIconBoxIconsKind.RegularPizza,
+        PackIconBoxIconsKind.RegularWine,
+        PackIconBoxIconsKind.RegularCookie,
+
+        // Hobbies, Activities & Lifestyle
+        PackIconBoxIconsKind.RegularPalette,
+        PackIconBoxIconsKind.RegularBrush,
         PackIconBoxIconsKind.RegularMusic,
         PackIconBoxIconsKind.RegularFilm,
         PackIconBoxIconsKind.RegularJoystick,
         PackIconBoxIconsKind.RegularCamera,
         PackIconBoxIconsKind.RegularBook,
-        PackIconBoxIconsKind.RegularPlanet,
-        PackIconBoxIconsKind.RegularGhost,
-        PackIconBoxIconsKind.RegularSun,
-        PackIconBoxIconsKind.RegularMoon
+        PackIconBoxIconsKind.RegularFootball,
+        PackIconBoxIconsKind.RegularBasketball,
+        PackIconBoxIconsKind.RegularSwimming,
+
+        // Celebrations & Rewards
+        PackIconBoxIconsKind.RegularParty,
+        PackIconBoxIconsKind.RegularGift,
+        PackIconBoxIconsKind.RegularCrown,
+        PackIconBoxIconsKind.RegularTrophy,
+        PackIconBoxIconsKind.RegularMedal,
+        PackIconBoxIconsKind.RegularHeart,
+        PackIconBoxIconsKind.RegularStar,
+        PackIconBoxIconsKind.RegularShield
     };
 
-    private static readonly List<(string Name, string? Hex)> AvailableColors = new()
+    private static readonly Dictionary<PackIconBoxIconsKind, string> IconKeywords = new()
     {
-        ("Default", null),
-        ("Emerald", "#10b981"),
-        ("Teal", "#14b8a6"),
-        ("Cyan", "#06b6d4"),
-        ("Sky", "#38bdf8"),
-        ("Blue", "#3b82f6"),
+        [PackIconBoxIconsKind.RegularSlider] = "slider settings tune adjust sliders config preset",
+                [PackIconBoxIconsKind.RegularCog] = "cog gear settings options system preference",
+                [PackIconBoxIconsKind.RegularLayers] = "layers stack set config settings build preset",
+        [PackIconBoxIconsKind.RegularFolder] = "folder directory set container",
+        [PackIconBoxIconsKind.RegularFolderOpen] = "folder open directory set",
+        [PackIconBoxIconsKind.RegularFolderStar] = "folder star bookmark favorite set",
+        [PackIconBoxIconsKind.RegularPackage] = "package box cc mod archive item",
+        [PackIconBoxIconsKind.RegularBox] = "box package storage archive",
+        [PackIconBoxIconsKind.RegularGrid] = "grid gallery layout view items",
+        [PackIconBoxIconsKind.RegularBookmarks] = "bookmarks favorites saved",
+
+        // Pets
+        [PackIconBoxIconsKind.RegularCat] = "cat kitten pet pets animal",
+        [PackIconBoxIconsKind.RegularDog] = "dog puppy pet pets animal",
+        [PackIconBoxIconsKind.RegularPawPrint] = "paw print pet pets animal dog cat",
+        [PackIconBoxIconsKind.RegularBone] = "bone pet pets dog treat",
+        [PackIconBoxIconsKind.RegularFish] = "fish pet pets nature water ocean aquarium",
+        [PackIconBoxIconsKind.RegularBird] = "bird pet pets animal nature fly parrot",
+        [PackIconBoxIconsKind.RegularBug] = "bug butterfly insect nature garden pet",
+
+        // Nature & Occult
+        [PackIconBoxIconsKind.RegularLeaf] = "leaf nature plant garden outdoor fall autumn tree",
+        [PackIconBoxIconsKind.RegularFlower] = "flower nature plant garden spring rose beauty flora",
+        [PackIconBoxIconsKind.RegularTree] = "tree nature plant forest wood outdoor landscaping",
+        [PackIconBoxIconsKind.RegularPlantPot] = "plant pot garden flower nature indoor decor deco",
+        [PackIconBoxIconsKind.RegularSun] = "sun sunny summer weather day light nature warm",
+        [PackIconBoxIconsKind.RegularMoon] = "moon night occult vampire lunar supernatural dark sleep",
+        [PackIconBoxIconsKind.RegularFlame] = "flame fire hot fireplace warm burn heat",
+        [PackIconBoxIconsKind.RegularWater] = "water drop pool ocean bath rain liquid aqua",
+        [PackIconBoxIconsKind.RegularMagicWand] = "magic wand occult witch wizard supernatural fantasy spell",
+        [PackIconBoxIconsKind.RegularGhost] = "ghost spooky halloween occult spirit supernatural haunted",
+        [PackIconBoxIconsKind.RegularSparkles] = "sparkles magic special shiny effects glitter star new",
+        [PackIconBoxIconsKind.RegularPlanet] = "planet space alien futuristic sci-fi astronomy",
+
+        // CAS
+        [PackIconBoxIconsKind.RegularUser] = "user sim person avatar profile cas",
+        [PackIconBoxIconsKind.RegularFace] = "face sim cas head makeup skin beauty",
+        [PackIconBoxIconsKind.RegularHanger] = "hanger closet wardrobe clothes cas fashion outfit",
+        [PackIconBoxIconsKind.RegularTShirt] = "shirt tshirt clothes cas top outfit apparel",
+        [PackIconBoxIconsKind.RegularGlasses] = "glasses accessories eyewear cas shades sunglasses",
+        [PackIconBoxIconsKind.RegularMask] = "mask masquerade cas makeup costume facial skin",
+        [PackIconBoxIconsKind.RegularSmile] = "smile happy emotion mood traits personality",
+        [PackIconBoxIconsKind.RegularDiamond] = "diamond gem plumbob crystal rare premium jewelry",
+
+        // Home & Build
+        [PackIconBoxIconsKind.RegularHome] = "home house lot build architecture residential",
+        [PackIconBoxIconsKind.RegularBuilding] = "building venue community lot city commercial highrise",
+        [PackIconBoxIconsKind.RegularStore] = "store shop market retail commercial boutique",
+        [PackIconBoxIconsKind.RegularGlobe] = "globe world travel map earth world vacation",
+        [PackIconBoxIconsKind.RegularChair] = "chair furniture seat comfort buy living dining",
+        [PackIconBoxIconsKind.RegularBed] = "bed sleep furniture bedroom buy comfort",
+        [PackIconBoxIconsKind.RegularBath] = "bath bathroom shower wash tub hygiene plumbing",
+        [PackIconBoxIconsKind.RegularTv] = "tv television electronics screen appliance video media",
+        [PackIconBoxIconsKind.RegularCar] = "car vehicle transport drive parking automobile auto",
+
+        // Food
+        [PackIconBoxIconsKind.RegularForkKnife] = "food kitchen dinner meal eat cooking recipe restaurant dish",
+        [PackIconBoxIconsKind.RegularCoffee] = "coffee cup drink cafe food kitchen mug beverage morning",
+        [PackIconBoxIconsKind.RegularBirthdayCake] = "cake birthday party dessert sweet food celebration bakery",
+        [PackIconBoxIconsKind.RegularPizza] = "pizza food dinner fast snack slice Italian",
+        [PackIconBoxIconsKind.RegularWine] = "wine drink alcohol beverage bar dinner celebration glass",
+        [PackIconBoxIconsKind.RegularCookie] = "cookie snack dessert sweet biscuit baking food",
+
+        // Hobbies & Rewards
+        [PackIconBoxIconsKind.RegularPalette] = "palette color art paint draw theme design easel",
+        [PackIconBoxIconsKind.RegularBrush] = "brush paint art makeup hair craft beauty",
+        [PackIconBoxIconsKind.RegularMusic] = "music audio sound song radio stereo instruments band",
+        [PackIconBoxIconsKind.RegularFilm] = "film movie video cinema media tv watch recording",
+        [PackIconBoxIconsKind.RegularJoystick] = "game gaming joystick arcade play console toys",
+        [PackIconBoxIconsKind.RegularCamera] = "camera photo photography picture snapshot image lens",
+        [PackIconBoxIconsKind.RegularBook] = "book read library study novel skill novel homework",
+        [PackIconBoxIconsKind.RegularFootball] = "football soccer sport sports ball fitness athletics",
+        [PackIconBoxIconsKind.RegularBasketball] = "basketball sport sports ball fitness hoop game",
+        [PackIconBoxIconsKind.RegularSwimming] = "swimming swim pool water fitness summer sport resort",
+        [PackIconBoxIconsKind.RegularParty] = "party celebrate confetti holiday festival event fun",
+        [PackIconBoxIconsKind.RegularGift] = "gift present reward box party holiday christmas",
+        [PackIconBoxIconsKind.RegularCrown] = "crown king queen royal royalty luxury gold vip prestige",
+        [PackIconBoxIconsKind.RegularTrophy] = "trophy award win achievement champion first tournament",
+        [PackIconBoxIconsKind.RegularMedal] = "medal award win achievement prize honor sport badge",
+        [PackIconBoxIconsKind.RegularHeart] = "heart love favorite romantic like romance wedding",
+        [PackIconBoxIconsKind.RegularStar] = "star rating favorite sparkle highlight review celebrity",
+        [PackIconBoxIconsKind.RegularShield] = "shield security protection safe verified protect"
+    };
+
+    // Preset Accent Palette
+    private static readonly (string Name, string? Hex)[] AvailableColors = new[]
+    {
+        ("Default", (string?)null),
+        ("Sky Blue", "#0ea5e9"),
         ("Indigo", "#6366f1"),
-        ("Violet", "#8b5cf6"),
-        ("Purple", "#a855f7"),
-        ("Fuchsia", "#d946ef"),
+        ("Purple", "#8b5cf6"),
+        ("Emerald Green", "#10b981"),
+        ("Teal", "#14b8a6"),
         ("Pink", "#ec4899"),
         ("Rose", "#f43f5e"),
-        ("Red", "#ef4444"),
-        ("Orange", "#f97316"),
-        ("Amber", "#eab308"),
-        ("Lime", "#84cc16"),
-        ("Slate", "#94a3b8")
+        ("Amber Orange", "#f59e0b"),
+        ("Yellow", "#eab308"),
+        ("Slate Gray", "#64748b")
     };
-
-    private string _selectedIconName = "RegularSlider";
-    private string? _selectedColorHex = null;
-    private readonly bool _isDefault = false;
-    private readonly bool _isActive = false;
-    private readonly List<Button> _iconButtons = new();
-    private readonly List<Button> _colorButtons = new();
 
     public CustomizeConfigDialogWindow()
     {
         InitializeComponent();
-        PopulatePickers();
+        _configName = string.Empty;
+        PopulateVisualPickers();
     }
 
-    public CustomizeConfigDialogWindow(string currentName, string? currentDesc, string? currentIcon, string? currentColor, bool isDefault, bool isActive) : this()
+    public CustomizeConfigDialogWindow(string currentName, string? currentDesc, string? currentIconName, string? currentColorHex, bool isDefault = false, bool isActive = false)
     {
-        _isDefault = isDefault;
+        InitializeComponent();
+
+        _configName = currentName ?? string.Empty;
+        _description = currentDesc;
+        _selectedColorHex = currentColorHex;
+        _selectedIconName = currentIconName;
         _isActive = isActive;
 
-        ConfigNameTextBox.Text = currentName;
-        DescriptionTextBox.Text = currentDesc ?? string.Empty;
-        _selectedIconName = string.IsNullOrWhiteSpace(currentIcon) ? "RegularSlider" : currentIcon;
-        // If color was emerald default or null, treat as default (null)
-        _selectedColorHex = (string.IsNullOrWhiteSpace(currentColor) || currentColor == "#10b981") ? null : currentColor;
+        ConfigNameTextBox.Text = _configName;
+        DescriptionTextBox.Text = _description ?? string.Empty;
+        PreviewBadge.IsVisible = _isActive;
 
-        if (isDefault)
-        {
-            ConfigNameTextBox.IsEnabled = false;
-        }
-
+        PopulateVisualPickers();
         UpdateActiveSelections();
         UpdatePreview();
-        ValidateInput();
     }
 
-    private void PopulatePickers()
+    private void PopulateVisualPickers()
     {
         // 1. Populate Icons
-        IconsWrapPanel.Children.Clear();
-        _iconButtons.Clear();
+        IconsGrid.Children.Clear();
+        _allIconButtons.Clear();
 
         foreach (var iconKind in AvailableIcons)
         {
@@ -143,9 +262,8 @@ public partial class CustomizeConfigDialogWindow : Window
                 Content = new PackIconBoxIcons
                 {
                     Kind = iconKind,
-                    Width = 18,
-                    Height = 18,
-                    Foreground = Brushes.White,
+                    Width = 16,
+                    Height = 16,
                     HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                     VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
                 }
@@ -159,8 +277,8 @@ public partial class CustomizeConfigDialogWindow : Window
                 UpdatePreview();
             };
 
-            _iconButtons.Add(btn);
-            IconsWrapPanel.Children.Add(btn);
+            _allIconButtons.Add(btn);
+            IconsGrid.Children.Add(btn);
         }
 
         // 2. Populate Colors
@@ -190,9 +308,56 @@ public partial class CustomizeConfigDialogWindow : Window
         }
     }
 
+    private void OnIconSearchChanged(object? sender, TextChangedEventArgs e)
+    {
+        FilterIcons(IconSearchBox.Text);
+    }
+
+    private void FilterIcons(string? query)
+    {
+        query = query?.Trim().ToLowerInvariant() ?? string.Empty;
+        IconsGrid.Children.Clear();
+        int matchCount = 0;
+
+        foreach (var btn in _allIconButtons)
+        {
+            bool match = false;
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                match = true;
+            }
+            else
+            {
+                var iconTag = (string?)btn.Tag ?? string.Empty;
+                if (iconTag.ToLowerInvariant().Contains(query))
+                {
+                    match = true;
+                }
+                else if (Enum.TryParse<PackIconBoxIconsKind>(iconTag, out var kind))
+                {
+                    if (IconKeywords.TryGetValue(kind, out var keywords) && keywords.Contains(query))
+                    {
+                        match = true;
+                    }
+                }
+            }
+
+            if (match)
+            {
+                IconsGrid.Children.Add(btn);
+                matchCount++;
+            }
+        }
+
+        if (NoIconsTextBlock != null)
+        {
+            NoIconsTextBlock.IsVisible = matchCount == 0;
+        }
+    }
+
     private void UpdateActiveSelections()
     {
-        foreach (var btn in _iconButtons)
+        foreach (var btn in _allIconButtons)
         {
             bool isSel = (string?)btn.Tag == _selectedIconName;
             if (isSel)
@@ -221,7 +386,14 @@ public partial class CustomizeConfigDialogWindow : Window
 
     private void UpdatePreview()
     {
-        if (Enum.TryParse<PackIconBoxIconsKind>(_selectedIconName, out var kind))
+        var displayName = string.IsNullOrWhiteSpace(ConfigNameTextBox.Text) ? "Configuration Name" : ConfigNameTextBox.Text.Trim();
+        PreviewName.Text = displayName;
+
+        var desc = string.IsNullOrWhiteSpace(DescriptionTextBox.Text) ? "No description provided." : DescriptionTextBox.Text.Trim();
+        PreviewDescription.Text = desc;
+
+        // Update Icon
+        if (!string.IsNullOrEmpty(_selectedIconName) && Enum.TryParse<PackIconBoxIconsKind>(_selectedIconName, out var kind))
         {
             PreviewIcon.Kind = kind;
         }
@@ -230,53 +402,15 @@ public partial class CustomizeConfigDialogWindow : Window
             PreviewIcon.Kind = PackIconBoxIconsKind.RegularSlider;
         }
 
-        var colorBrush = (!string.IsNullOrEmpty(_selectedColorHex) && _selectedColorHex != "#10b981")
-            ? Brush.Parse(_selectedColorHex)
-            : ThemeService.GetCurrentAccentBrush();
-
-        PreviewIcon.Foreground = colorBrush;
-        PreviewName.Text = string.IsNullOrWhiteSpace(ConfigNameTextBox.Text) ? "Configuration Name" : ConfigNameTextBox.Text.Trim();
-
-        var desc = DescriptionTextBox.Text?.Trim();
-        if (string.IsNullOrWhiteSpace(desc))
-        {
-            PreviewDescription.Text = "No description";
-            PreviewDescription.Opacity = 0.6;
-        }
-        else
-        {
-            PreviewDescription.Text = desc;
-            PreviewDescription.Opacity = 1.0;
-        }
-
-        if (_isActive || _isDefault)
-        {
-            PreviewBadge.IsVisible = true;
-            if (_isActive)
-            {
-                PreviewBadgeText.Text = "ACTIVE";
-                PreviewBadge.Background = ThemeService.GetCurrentAccentBrush();
-                PreviewBadge.BorderBrush = Brushes.Transparent;
-                PreviewBadge.BorderThickness = new Avalonia.Thickness(0);
-            }
-            else
-            {
-                PreviewBadgeText.Text = "DEFAULT";
-                PreviewBadge.Background = Brush.Parse("#1e293b");
-                PreviewBadge.BorderBrush = Brush.Parse("#334155");
-                PreviewBadge.BorderThickness = new Avalonia.Thickness(1);
-            }
-        }
-        else
-        {
-            PreviewBadge.IsVisible = false;
-        }
+        // Update Icon Color (clean, without background box)
+        var iconBrush = _selectedColorHex != null ? Brush.Parse(_selectedColorHex) : ThemeService.GetCurrentAccentBrush();
+        PreviewIcon.Foreground = iconBrush;
     }
 
     private void OnNameChanged(object? sender, TextChangedEventArgs e)
     {
         UpdatePreview();
-        ValidateInput();
+        ValidateName();
     }
 
     private void OnDescriptionChanged(object? sender, TextChangedEventArgs e)
@@ -284,20 +418,12 @@ public partial class CustomizeConfigDialogWindow : Window
         UpdatePreview();
     }
 
-    private bool ValidateInput()
+    private bool ValidateName()
     {
-        var name = ConfigNameTextBox.Text?.Trim();
-        if (string.IsNullOrEmpty(name))
+        var text = ConfigNameTextBox.Text?.Trim();
+        if (string.IsNullOrEmpty(text))
         {
-            ErrorTextBlock.Text = "Name cannot be empty.";
-            ErrorTextBlock.IsVisible = true;
-            SaveButton.IsEnabled = false;
-            return false;
-        }
-
-        if (!NameValidator.IsValidName(name, out var error))
-        {
-            ErrorTextBlock.Text = error;
+            ErrorTextBlock.Text = "Configuration name cannot be empty.";
             ErrorTextBlock.IsVisible = true;
             SaveButton.IsEnabled = false;
             return false;
@@ -310,10 +436,22 @@ public partial class CustomizeConfigDialogWindow : Window
 
     private void OnResetDefaultClick(object? sender, RoutedEventArgs e)
     {
-        _selectedIconName = "RegularSlider";
         _selectedColorHex = null;
+        _selectedIconName = null;
+        IconSearchBox.Text = string.Empty;
         UpdateActiveSelections();
         UpdatePreview();
+    }
+
+    private void OnSaveClick(object? sender, RoutedEventArgs e)
+    {
+        if (!ValidateName()) return;
+        Close(new CustomizeConfigResult(true, ResultConfigName, ResultDescription, ResultIconName, ResultColorHex));
+    }
+
+    private void OnCancelClick(object? sender, RoutedEventArgs e)
+    {
+        Close(new CustomizeConfigResult(false, _configName, _description, _selectedIconName, _selectedColorHex));
     }
 
     private void OnHeaderPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -323,18 +461,6 @@ public partial class CustomizeConfigDialogWindow : Window
             BeginMoveDrag(e);
         }
     }
-
-    private void OnCancelClick(object? sender, RoutedEventArgs e)
-    {
-        Close(new CustomizeConfigResult(false, ConfigNameTextBox.Text?.Trim() ?? string.Empty, null, null, null));
-    }
-
-    private void OnSaveClick(object? sender, RoutedEventArgs e)
-    {
-        if (!ValidateInput()) return;
-
-        var name = ConfigNameTextBox.Text?.Trim() ?? string.Empty;
-        var desc = DescriptionTextBox.Text?.Trim();
-        Close(new CustomizeConfigResult(true, name, desc, _selectedIconName, _selectedColorHex));
-    }
 }
+
+public record CustomizeConfigResult(bool Confirmed, string Name, string? Description, string? Icon, string? Color);

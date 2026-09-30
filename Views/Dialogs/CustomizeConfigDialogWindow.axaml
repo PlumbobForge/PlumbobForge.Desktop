@@ -4,7 +4,7 @@
         xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
         x:Class="PlumbobForge.Desktop.Views.Dialogs.CustomizeConfigDialogWindow"
         Title="{loc:Loc 'dialogs.customize_config.title'}"
-        Width="540" Height="650"
+        Width="680" Height="480"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         SystemDecorations="Full"
@@ -14,41 +14,79 @@
         Background="{DynamicResource BgDark}">
 
     <Window.Styles>
-        <!-- Icon Button Styles -->
-        <Style Selector="Button.icon-pick-btn">
-            <Setter Property="Width" Value="36"/>
-            <Setter Property="Height" Value="36"/>
-            <Setter Property="Background" Value="{DynamicResource BgSidebar}"/>
+        <!-- Avatar Button Styles -->
+        <Style Selector="Button.avatar-btn">
+            <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.12"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.avatar-btn:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="RenderTransform" Value="scale(1.05)"/>
+        </Style>
+        <Style Selector="Button.avatar-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
+        <!-- Icon Button Styles -->
+        <Style Selector="Button.icon-pick-btn">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
+        <Style Selector="Button.icon-pick-btn icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
         <Style Selector="Button.icon-pick-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="Button.icon-pick-btn:pointerover icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
         </Style>
         <Style Selector="Button.icon-pick-btn.selected /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="BorderThickness" Value="2"/>
         </Style>
+        <Style Selector="Button.icon-pick-btn.selected icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
 
         <!-- Color Swatch Button Styles -->
         <Style Selector="Button.color-pick-btn">
-            <Setter Property="Width" Value="28"/>
-            <Setter Property="Height" Value="28"/>
-            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12"/>
+                </Transitions>
+            </Setter>
         </Style>
         <Style Selector="Button.color-pick-btn:pointerover">
-            <Setter Property="RenderTransform" Value="scale(1.15)"/>
+            <Setter Property="RenderTransform" Value="scale(1.18)"/>
         </Style>
         <Style Selector="Button.color-pick-btn.selected">
             <Setter Property="BorderBrush" Value="{DynamicResource TextMain}"/>
@@ -78,80 +116,92 @@
                 </Grid>
             </Border>
 
-            <!-- Body Content (Scrollable) -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <StackPanel Margin="20,16" Spacing="16">
+            <!-- Body Content (Two-Column Desktop Layout) -->
+            <Grid Grid.Row="1" ColumnDefinitions="1.1*, 16, 0.9*" Margin="20,16">
+                <!-- Left Column: Unified Identity & Form Controls -->
+                <StackPanel Grid.Column="0" Spacing="12">
+                    <!-- Unified Live Preview Card -->
+                    <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderMain}" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                        <Grid ColumnDefinitions="Auto, *, Auto">
+                            <!-- Clean Live Preview Icon (no background or border box) -->
+                            <icon:PackIconBoxIcons x:Name="PreviewIcon" Kind="RegularSlider" Width="30" Height="30" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
 
-                    <!-- Live Preview Card -->
-                    <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderMain}" BorderThickness="1" CornerRadius="8" Padding="14,10">
-                        <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
-                            <!-- Preview Icon -->
-                            <icon:PackIconBoxIcons x:Name="PreviewIcon" Kind="RegularSlider" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-
-                            <!-- Preview Text -->
+                            <!-- Live Title & Description -->
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                <TextBlock Text="{loc:Loc 'dialogs.customize_config.live_preview'}" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/>
-                                <TextBlock x:Name="PreviewName" Text="Configuration Name" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock x:Name="PreviewName" Text="Configuration Name" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"/>
                                 <TextBlock x:Name="PreviewDescription" Text="Description preview" FontSize="11" FontStyle="Italic" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
 
                             <!-- Badge Preview -->
-                            <Border x:Name="PreviewBadge" Grid.Column="2" Background="{DynamicResource AccentBrush}" CornerRadius="4" Height="18" Padding="6,0" VerticalAlignment="Center" IsVisible="False">
+                            <Border x:Name="PreviewBadge" Grid.Column="2" Background="{DynamicResource AccentBrush}" CornerRadius="4" Height="18" Padding="6,0" VerticalAlignment="Center" Margin="8,0,0,0" IsVisible="False">
                                 <TextBlock x:Name="PreviewBadgeText" Text="{loc:Loc 'dialogs.customize_config.active'}" FontSize="9.5" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                             </Border>
                         </Grid>
                     </Border>
 
                     <!-- Configuration Name Input -->
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="{loc:Loc 'dialogs.customize_config.name_label'}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="{loc:Loc 'dialogs.customize_config.name_label'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="0.5"/>
                         <TextBox x:Name="ConfigNameTextBox" Classes="settings-input" Watermark="{loc:Loc 'dialogs.customize_config.name_watermark'}" FontSize="12.5" TextChanged="OnNameChanged"/>
                         <TextBlock x:Name="ErrorTextBlock" Foreground="#ef4444" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap" IsVisible="False"/>
                     </StackPanel>
 
                     <!-- Description Input -->
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="{loc:Loc 'dialogs.customize_config.description_label'}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
-                        <TextBox x:Name="DescriptionTextBox" Classes="settings-input" Watermark="{loc:Loc 'dialogs.customize_config.description_watermark'}" FontSize="12.5" Height="60" Padding="10,8" VerticalContentAlignment="Top" TextWrapping="Wrap" AcceptsReturn="True" TextChanged="OnDescriptionChanged"/>
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="{loc:Loc 'dialogs.customize_config.description_label'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="0.5"/>
+                        <TextBox x:Name="DescriptionTextBox" Classes="settings-input" Watermark="{loc:Loc 'dialogs.customize_config.description_watermark'}" FontSize="12" Height="58" Padding="8,6" VerticalContentAlignment="Top" TextWrapping="Wrap" AcceptsReturn="True" TextChanged="OnDescriptionChanged"/>
                     </StackPanel>
 
-                    <!-- Icon Selection -->
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="{loc:Loc 'dialogs.customize_config.choose_icon'}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
-                        <WrapPanel x:Name="IconsWrapPanel" Orientation="Horizontal" ItemWidth="42" ItemHeight="42">
-                            <!-- Dynamically populated icon buttons -->
-                        </WrapPanel>
-                    </StackPanel>
-
-                    <!-- Color Accent Selection -->
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="{loc:Loc 'dialogs.customize_config.choose_color'}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
-                        <WrapPanel x:Name="ColorsWrapPanel" Orientation="Horizontal" ItemWidth="36" ItemHeight="36">
-                            <!-- Color swatch buttons populated in code-behind -->
-                        </WrapPanel>
-                    </StackPanel>
-
-                </StackPanel>
-            </ScrollViewer>
-
-            <!-- Footer Action Buttons -->
-            <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" Padding="16,12">
-                <Grid ColumnDefinitions="Auto, *">
                     <!-- Reset to Default Button -->
-                    <Button Grid.Column="0" Content="{loc:Loc 'dialogs.customize_config.reset_default'}" Click="OnResetDefaultClick" Background="Transparent" Foreground="{DynamicResource TextMuted}" FontSize="12" Padding="8,6" Cursor="Hand">
-                        <Button.Styles>
-                            <Style Selector="Button:pointerover">
-                                <Setter Property="Foreground" Value="#ef4444"/>
-                            </Style>
-                        </Button.Styles>
+                    <Button Click="OnResetDefaultClick" Classes="btn-action-sec" HorizontalAlignment="Left" Padding="10,6" Margin="0,2,0,0">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <icon:PackIconBoxIcons Kind="RegularRefreshCw" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'dialogs.customize_config.reset_default'}" FontSize="11.5" VerticalAlignment="Center"/>
+                        </StackPanel>
                     </Button>
+                </StackPanel>
 
-                    <!-- Save / Cancel Buttons -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
-                        <Button Content="{loc:Loc 'common.cancel'}" Click="OnCancelClick" Background="{DynamicResource BgCardAlt}" Foreground="{DynamicResource TextMain}" Padding="16,6" CornerRadius="6" Cursor="Hand"/>
-                        <Button x:Name="SaveButton" Content="{loc:Loc 'dialogs.customize_config.save_changes'}" Click="OnSaveClick" Background="{DynamicResource AccentBrush}" Foreground="White" FontWeight="SemiBold" Padding="18,6" CornerRadius="6" Cursor="Hand"/>
+                <!-- Right Column: Visual Customization (Color Palette & Compact Icon Picker) -->
+                <StackPanel Grid.Column="2" Spacing="14">
+                    <!-- Accent Color Selection -->
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="{loc:Loc 'dialogs.customize_config.choose_color'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="0.5"/>
+                        <WrapPanel x:Name="ColorsWrapPanel" Orientation="Horizontal" ItemWidth="28" ItemHeight="28">
+                            <!-- Populated in code-behind -->
+                        </WrapPanel>
                     </StackPanel>
-                </Grid>
+
+                    <!-- Compact Icon Picker with Search Filter -->
+                    <StackPanel Spacing="6">
+                        <Grid ColumnDefinitions="*, Auto" VerticalAlignment="Center">
+                            <TextBlock Grid.Column="0" Text="{loc:Loc 'dialogs.customize_config.choose_icon'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="0.5" VerticalAlignment="Center"/>
+                            <TextBox x:Name="IconSearchBox" Grid.Column="1" Classes="capsule-search" Width="130" Height="28" Padding="6,0" FontSize="11" Watermark="{loc:Loc 'dialogs.customize_config.search_icons'}" TextChanged="OnIconSearchChanged">
+                                <TextBox.InnerLeftContent>
+                                    <icon:PackIconBoxIcons Kind="RegularSearch" Width="11" Height="11" Foreground="{DynamicResource TextMuted}" Margin="6,0,2,0" VerticalAlignment="Center"/>
+                                </TextBox.InnerLeftContent>
+                            </TextBox>
+                        </Grid>
+
+                        <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="6,6,4,6" Height="150">
+                            <Panel>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                    <UniformGrid x:Name="IconsGrid" Columns="7" HorizontalAlignment="Stretch">
+                                        <!-- Populated in code-behind -->
+                                    </UniformGrid>
+                                </ScrollViewer>
+                                <TextBlock x:Name="NoIconsTextBlock" Text="{loc:Loc 'dialogs.customize_config.no_icons'}" FontSize="11" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="False"/>
+                            </Panel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
+            <!-- Modal Action Footer -->
+            <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" Height="52" Padding="20,0" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" VerticalAlignment="Center">
+                    <Button Click="OnCancelClick" Content="{loc:Loc 'common.cancel'}" Background="Transparent" Foreground="{DynamicResource TextMain}" BorderThickness="1" BorderBrush="{DynamicResource BorderSubtle}" CornerRadius="7" Padding="14,7" FontSize="12.5" Cursor="Hand"/>
+                    <Button x:Name="SaveButton" Click="OnSaveClick" Content="{loc:Loc 'dialogs.customize_config.save_changes'}" Classes="btn-action-primary" CornerRadius="7" Padding="16,7" FontSize="12.5" Cursor="Hand"/>
+                </StackPanel>
             </Border>
         </Grid>
     </Border>
