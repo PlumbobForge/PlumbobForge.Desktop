@@ -831,5 +831,37 @@
                 </StackPanel>
             </Border>
         </Grid>
+        <!-- In-App Updating Modal Overlay -->
+        <Grid Background="#cc080e1a"
+              IsVisible="{Binding IsUpdatingModalVisible}"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch">
+            <Border Background="{DynamicResource BgSidebar}"
+                    BorderBrush="{DynamicResource AccentBrush}"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    Width="440"
+                    Padding="28,24"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    BoxShadow="0 16 48 #88000000">
+                <StackPanel Spacing="16">
+                    <StackPanel Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                        <Border Background="{DynamicResource AccentBadgeBgBrush}" CornerRadius="10" Width="44" Height="44">
+                            <icon:PackIconBoxIcons Kind="RegularRocket" Width="22" Height="22" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding UpdatingModalTitle}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                            <TextBlock Text="{Binding UpdatingModalStatus}" FontSize="12" Foreground="{DynamicResource TextMuted}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <ProgressBar IsIndeterminate="True" Height="4" CornerRadius="2" Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource BorderSubtle}"/>
+
+                    <TextBlock Text="The application will close momentarily and reopen automatically once files are updated."
+                               FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

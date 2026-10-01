@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -10,7 +11,7 @@ namespace PlumbobForge.Desktop.ViewModels;
 public partial class SettingsViewModel
 {
     [ObservableProperty]
-    private string _appVersion = "2.0.0";
+    private string _appVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.4";
 
     [ObservableProperty]
     private bool _isCheckingForUpdates = false;
@@ -20,6 +21,9 @@ public partial class SettingsViewModel
 
     [ObservableProperty]
     private bool _isUpdateAvailable = false;
+
+    [ObservableProperty]
+    private bool _isDeltaUpdate = false;
 
     [ObservableProperty]
     private string _latestVersionTag = string.Empty;
@@ -57,6 +61,15 @@ public partial class SettingsViewModel
     [ObservableProperty]
     private string? _downloadedInstallerPath = null;
 
+    [ObservableProperty]
+    private bool _isUpdatingModalVisible = false;
+
+    [ObservableProperty]
+    private string _updatingModalTitle = "Updating PlumbobForge";
+
+    [ObservableProperty]
+    private string _updatingModalStatus = "Preparing update & restarting...";
+
     [RelayCommand]
     public async Task CheckForUpdatesAsync()
     {
@@ -76,6 +89,7 @@ public partial class SettingsViewModel
             }
 
             IsUpdateAvailable = result.IsUpdateAvailable;
+            IsDeltaUpdate = result.IsDeltaUpdate;
             LatestVersionTag = result.LatestVersion;
             ReleaseTitle = result.ReleaseTitle ?? result.LatestVersion;
             ReleaseNotes = result.ReleaseNotes ?? string.Empty;
@@ -86,7 +100,11 @@ public partial class SettingsViewModel
 
             if (result.IsUpdateAvailable)
             {
-                UpdateStatusText = $"A new version (v{result.LatestVersion}) is available!";
+                string patchTypeDesc = result.IsDeltaUpdate ? "High-Speed Delta Patch" : "Full Package";
+                double sizeMb = result.FileSize.HasValue ? result.FileSize.Value / (1024.0 * 1024.0) : 0;
+                string sizeStr = sizeMb > 0 ? $" ({sizeMb:F1} MB, {patchTypeDesc})" : string.Empty;
+
+                UpdateStatusText = $"A new version (v{result.LatestVersion}) is available!{sizeStr}";
                 ShowStatus($"New version v{result.LatestVersion} is available to download!", isError: false);
             }
             else
@@ -137,14 +155,23 @@ public partial class SettingsViewModel
             var downloadedPath = await _updateService.DownloadUpdateAsync(DownloadUrl, AssetName, progress);
             DownloadedInstallerPath = downloadedPath;
             IsUpdateDownloaded = true;
-            UpdateStatusText = $"Downloaded {AssetName}! Launching installer...";
-            ShowStatus($"Update downloaded successfully! Launching installer...", isError: false);
 
-            await Task.Delay(1000);
-            _updateService.LaunchInstallerAndExit(downloadedPath);
+            // Trigger In-App Mini Progress Overlay
+            UpdatingModalTitle = $"Updating to v{LatestVersionTag}";
+            UpdatingModalStatus = IsDeltaUpdate 
+                ? "Applying high-speed patch & restarting..." 
+                : "Launching setup & restarting...";
+            IsUpdatingModalVisible = true;
+
+            UpdateStatusText = $"Downloaded {AssetName}! Restarting...";
+            ShowStatus($"Update downloaded! Restarting application...", isError: false);
+
+            await Task.Delay(1200);
+            _updateService.ApplyUpdateAndExit(downloadedPath);
         }
         catch (Exception ex)
         {
+            IsUpdatingModalVisible = false;
             UpdateStatusText = $"Download failed: {ex.Message}";
             ShowStatus($"Download failed: {ex.Message}", isError: true);
         }

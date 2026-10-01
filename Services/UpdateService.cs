@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -23,6 +24,7 @@ public record UpdateCheckResult(
     string? DownloadUrl,
     string? AssetName,
     long? FileSize,
+    bool IsDeltaUpdate = false,
     string? ErrorMessage = null
 );
 
@@ -34,7 +36,8 @@ public class UpdateService
     public UpdateService()
     {
         _httpClient = new HttpClient();
-        _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("PlumbobForge-Desktop", "2.0.0"));
+        var ver = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.4";
+        _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("PlumbobForge-Desktop", ver));
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
         _httpClient.Timeout = TimeSpan.FromSeconds(20);
     }
@@ -50,16 +53,16 @@ public class UpdateService
             {
                 if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    return new UpdateCheckResult(false, currentVersionString, currentVersionString, null, null, null, null, null, null, "No published releases found yet.");
+                    return new UpdateCheckResult(false, currentVersionString, currentVersionString, null, null, null, null, null, null, false, "No published releases found yet.");
                 }
-                return new UpdateCheckResult(false, currentVersionString, currentVersionString, null, null, null, null, null, null, $"GitHub API returned {response.StatusCode}");
+                return new UpdateCheckResult(false, currentVersionString, currentVersionString, null, null, null, null, null, null, false, $"GitHub API returned {response.StatusCode}");
             }
 
             var json = await response.Content.ReadAsStringAsync(ct);
             var node = JsonNode.Parse(json);
             if (node == null)
             {
-                return new UpdateCheckResult(false, currentVersionString, currentVersionString, null, null, null, null, null, null, "Invalid response from GitHub.");
+                return new UpdateCheckResult(false, currentVersionString, currentVersionString, null, null, null, null, null, null, false, "Invalid response from GitHub.");
             }
 
             string tagName = node["tag_name"]?.GetValue<string>() ?? string.Empty;
@@ -72,30 +75,59 @@ public class UpdateService
 
             bool isNewer = CompareVersions(cleanLatest, cleanCurrent) > 0;
 
-            // Find suitable Windows asset (.exe installer preferred, fallback to .zip)
+            // Check if delta patch updater is present on local installation
+            var localAppDir = AppDomain.CurrentDomain.BaseDirectory;
+            bool canApplyDelta = File.Exists(Path.Combine(localAppDir, "PlumbobForge-Updater.exe"));
+
             string? downloadUrl = null;
             string? assetName = null;
             long? fileSize = null;
+            bool isDelta = false;
 
             if (node["assets"] is JsonArray assets && assets.Count > 0)
             {
                 JsonObject? chosenAsset = null;
 
-                // Priority 1: .exe installer
-                foreach (var a in assets)
+                // Priority 1: High-speed Differential / Delta Patch zip (if local updater is available)
+                if (canApplyDelta)
                 {
-                    if (a is JsonObject obj)
+                    foreach (var a in assets)
                     {
-                        var name = obj["name"]?.GetValue<string>() ?? string.Empty;
-                        if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && !name.EndsWith(".blockmap", StringComparison.OrdinalIgnoreCase))
+                        if (a is JsonObject obj)
                         {
-                            chosenAsset = obj;
-                            break;
+                            var name = obj["name"]?.GetValue<string>() ?? string.Empty;
+                            if ((name.Contains("delta", StringComparison.OrdinalIgnoreCase) ||
+                                 name.Contains("patch", StringComparison.OrdinalIgnoreCase)) &&
+                                name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                            {
+                                chosenAsset = obj;
+                                isDelta = true;
+                                break;
+                            }
                         }
                     }
                 }
 
-                // Priority 2: .zip archive
+                // Priority 2: Standalone .exe Installer
+                if (chosenAsset == null)
+                {
+                    foreach (var a in assets)
+                    {
+                        if (a is JsonObject obj)
+                        {
+                            var name = obj["name"]?.GetValue<string>() ?? string.Empty;
+                            if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
+                                !name.EndsWith(".blockmap", StringComparison.OrdinalIgnoreCase))
+                            {
+                                chosenAsset = obj;
+                                isDelta = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Priority 3: Fallback .zip archive
                 if (chosenAsset == null)
                 {
                     foreach (var a in assets)
@@ -106,6 +138,7 @@ public class UpdateService
                             if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
                             {
                                 chosenAsset = obj;
+                                isDelta = false;
                                 break;
                             }
                         }
@@ -129,7 +162,8 @@ public class UpdateService
                 ReleaseUrl: releaseUrl,
                 DownloadUrl: downloadUrl,
                 AssetName: assetName,
-                FileSize: fileSize
+                FileSize: fileSize,
+                IsDeltaUpdate: isDelta
             );
         }
         catch (Exception ex)
@@ -144,6 +178,7 @@ public class UpdateService
                 DownloadUrl: null,
                 AssetName: null,
                 FileSize: null,
+                IsDeltaUpdate: false,
                 ErrorMessage: ex.Message
             );
         }
@@ -185,59 +220,80 @@ public class UpdateService
         return destinationPath;
     }
 
-    public void LaunchInstallerAndExit(string installerFilePath)
+    /// <summary>
+    /// Applies update directly without PowerShell or console flashes, using native watchdog process hand-off.
+    /// </summary>
+    public void ApplyUpdateAndExit(string updateFilePath)
     {
         try
         {
-            if (File.Exists(installerFilePath))
+            if (!File.Exists(updateFilePath))
             {
-                var currentAppExe = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
-                int currentPid = Environment.ProcessId;
+                throw new FileNotFoundException("Update file not found", updateFilePath);
+            }
 
-                // Escaped paths for PowerShell
-                string escapedInstaller = installerFilePath.Replace("'", "''");
-                string escapedExe = (currentAppExe ?? string.Empty).Replace("'", "''");
+            var currentAppExe = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
+            int currentPid = Environment.ProcessId;
+            var appDir = AppDomain.CurrentDomain.BaseDirectory;
 
-                // Wrapper script:
-                // 1. Waits for current app process to exit
-                // 2. Runs the installer headless/silently with /S and /SILENT
-                // 3. Deletes the installer file from %TEMP%
-                // 4. Relaunches the updated application
-                string psCommand = $@"
-                    try {{ Wait-Process -Id {currentPid} -Timeout 15 -ErrorAction SilentlyContinue }} catch {{}};
-                    Start-Sleep -Milliseconds 500;
-                    $proc = Start-Process -FilePath '{escapedInstaller}' -ArgumentList '/S','/SILENT','/VERYSILENT','/NORESTART' -PassThru -Wait;
-                    Start-Sleep -Seconds 1;
-                    try {{ Remove-Item -Path '{escapedInstaller}' -Force -ErrorAction SilentlyContinue }} catch {{}};
-                    if ('{escapedExe}' -ne '' -and (Test-Path '{escapedExe}')) {{
-                        Start-Process -FilePath '{escapedExe}';
-                    }}
-                ";
-
-                var psi = new ProcessStartInfo
+            // Scenario 1: Differential / Delta ZIP patch
+            if (updateFilePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                var localUpdater = Path.Combine(appDir, "PlumbobForge-Updater.exe");
+                if (File.Exists(localUpdater))
                 {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -NonInteractive -WindowStyle Hidden -Command \"{psCommand.Trim()}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    WindowStyle = ProcessWindowStyle.Hidden
-                };
+                    // Copy updater to %TEMP% so no assembly in appDir is locked
+                    var tempUpdaterDir = Path.Combine(Path.GetTempPath(), "PlumbobForge", "Updater");
+                    Directory.CreateDirectory(tempUpdaterDir);
+                    var tempUpdaterPath = Path.Combine(tempUpdaterDir, "PlumbobForge-Updater.exe");
+                    File.Copy(localUpdater, tempUpdaterPath, overwrite: true);
 
-                Process.Start(psi);
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = tempUpdaterPath,
+                        Arguments = $"--wait-pid {currentPid} --patch \"{updateFilePath}\" --target \"{appDir}\" --relaunch \"{currentAppExe}\"",
+                        UseShellExecute = true,
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    };
 
-                if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-                {
-                    desktop.Shutdown();
-                }
-                else
-                {
-                    Environment.Exit(0);
+                    Process.Start(psi);
+                    ShutdownApplication();
+                    return;
                 }
             }
+
+            // Scenario 2: Standalone Setup Installer (Bootstrapper)
+            var setupPsi = new ProcessStartInfo
+            {
+                FileName = updateFilePath,
+                Arguments = $"/S /RUN /WAITPID={currentPid}",
+                UseShellExecute = true,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden
+            };
+
+            Process.Start(setupPsi);
+            ShutdownApplication();
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"Could not launch installer: {ex.Message}", ex);
+            throw new InvalidOperationException($"Could not apply update: {ex.Message}", ex);
+        }
+    }
+
+    [Obsolete("Use ApplyUpdateAndExit instead.")]
+    public void LaunchInstallerAndExit(string installerFilePath) => ApplyUpdateAndExit(installerFilePath);
+
+    private static void ShutdownApplication()
+    {
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            desktop.Shutdown();
+        }
+        else
+        {
+            Environment.Exit(0);
         }
     }
 
@@ -254,13 +310,8 @@ public class UpdateService
 
     private static string NormalizeVersionString(string ver)
     {
-        // Remove any prerelease dash e.g. "2.0.1-beta" -> "2.0.1"
         int dashIdx = ver.IndexOf('-');
         if (dashIdx > 0) ver = ver.Substring(0, dashIdx);
-
-        // Ensure at least 2 parts (e.g. "2" -> "2.0")
-        var parts = ver.Split('.');
-        if (parts.Length == 1) return $"{parts[0]}.0";
-        return ver;
+        return ver.Trim();
     }
 }
