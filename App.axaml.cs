@@ -32,11 +32,17 @@ public class App : Application
 
     public override void Initialize()
     {
+        
+        
         AvaloniaXamlLoader.Load(this);
+        
     }
 
     public override void OnFrameworkInitializationCompleted()
     {
+        
+        
+        // 1. Kick off filesystem & registry safety validation asynchronously so startup is non-blocking
         Task.Run(EnsureInstallSafetyOnStartup);
 
         var appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "plumbobforge-app");
@@ -107,12 +113,16 @@ public class App : Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            
             var mainVm = Services.GetRequiredService<MainViewModel>();
             var mainWindow = new MainWindow
             {
                 DataContext = mainVm
             };
             desktop.MainWindow = mainWindow;
+            
+            
+            
 
             if (shouldShowUpgradeWizard)
             {
@@ -347,26 +357,6 @@ PRAGMA cache_size = -8000;
         }
         catch { }
 
-        try
-        {
-            db.Database.ExecuteSqlRaw(@"
-CREATE TABLE IF NOT EXISTS Tombstones (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    FileName TEXT NOT NULL,
-    PackageType TEXT NOT NULL DEFAULT '',
-    CASCategories TEXT,
-    CASAge TEXT,
-    CASGender TEXT,
-    CASOutfitCategory TEXT,
-    IsUserTagged INTEGER NOT NULL DEFAULT 0,
-    UserTags TEXT,
-    Description TEXT,
-    SetsEntityId INTEGER,
-    DeletedAt TEXT NOT NULL DEFAULT ''
-);");
-        }
-        catch { }
-
         int userVersion = 0;
         try
         {
@@ -385,6 +375,7 @@ CREATE TABLE IF NOT EXISTS Tombstones (
         }
         catch { }
 
+        // If schema is up to date, skip table creation and the 43+ ALTER TABLE queries entirely!
         if (userVersion >= CurrentDbSchemaVersion)
         {
             return;
@@ -393,6 +384,26 @@ CREATE TABLE IF NOT EXISTS Tombstones (
         try
         {
             db.Database.EnsureCreated();
+        }
+        catch { }
+
+        try
+        {
+            db.Database.ExecuteSqlRaw(@"
+CREATE TABLE IF NOT EXISTS Tombstones (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    FileName TEXT NOT NULL,
+    PackageType TEXT NOT NULL DEFAULT '',
+    CASCategories TEXT,
+    CASAge TEXT,
+    CASGender TEXT,
+    CASOutfitCategory TEXT,
+    IsUserTagged INTEGER NOT NULL DEFAULT 0,
+    UserTags TEXT,
+    Description TEXT,
+    SetsEntityId INTEGER,
+    DeletedAt TEXT NOT NULL DEFAULT ''
+);");
         }
         catch { }
 
@@ -477,6 +488,7 @@ CREATE TABLE IF NOT EXISTS CollectionSets (
             catch { }
         }
 
+        // Fast SQL deduplication for duplicate MetaEntities if any exist
         try
         {
             db.Database.ExecuteSqlRaw(@"
