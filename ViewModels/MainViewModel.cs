@@ -14,7 +14,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IServiceProvider _serviceProvider;
 
     [ObservableProperty]
-    private ObservableObject _currentView = null!;
+    private ObservableObject? _currentView;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsContentManagerActive))]
@@ -51,8 +51,14 @@ public partial class MainViewModel : ObservableObject
     {
         _serviceProvider = serviceProvider;
         QuickSwitcher = serviceProvider.GetRequiredService<QuickSwitcherViewModel>();
-        NavigateToContentManager();
-        _ = RefreshDirtyStateAsync();
+
+        // Defer heavy content loading until after MainWindow renders its initial frame
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            NavigateToContentManager();
+            _ = RefreshDirtyStateAsync();
+        }, Avalonia.Threading.DispatcherPriority.Loaded);
+
         _ = CheckForUpdatesOnStartupAsync();
     }
 

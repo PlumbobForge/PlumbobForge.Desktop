@@ -37,77 +37,34 @@ public class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        EnsureInstallSafetyOnStartup();
+        Task.Run(EnsureInstallSafetyOnStartup);
 
         var appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "plumbobforge-app");
         var dbPath = Path.Combine(appDataPath, "plumbobforge.db");
         var appSettingsPath = Path.Combine(appDataPath, "appsettings.json");
 
-        bool dbExistedBefore = File.Exists(dbPath);
         bool appSettingsExistedBefore = File.Exists(appSettingsPath);
 
         var services = new ServiceCollection();
         ConfigureServices(services);
         var rootProvider = services.BuildServiceProvider();
 
-        // Initialize SQLite DB using a temporary scope
-        using (var initScope = rootProvider.CreateScope())
+        // 2. Run DB schema check and default seeding in background so UI opens instantly
+        Task.Run(() =>
         {
-            var db = initScope.ServiceProvider.GetRequiredService<AppDbContext>();
-            EnsureDatabaseSchema(db);
-
             try
             {
-                var defaultSet = db.SetsEntities.FirstOrDefault(s => s.Name == "Default");
-                if (defaultSet == null)
-                {
-                    defaultSet = new SetsEntity { Name = "Default", FolderName = "Default", IsDefault = true };
-                    db.SetsEntities.Add(defaultSet);
-                    db.SaveChanges();
-                }
-
-                var defaultConfig = db.ConfigEntities.Include(c => c.ConfigSetsEntities).FirstOrDefault(c => c.Name == "Default" || c.Default);
-                if (defaultConfig == null)
-                {
-                    defaultConfig = new ConfigEntity { Name = "Default", Active = true, Default = true };
-                    db.ConfigEntities.Add(defaultConfig);
-                    db.SaveChanges();
-
-                    var allSets = db.SetsEntities.ToList();
-                    foreach (var set in allSets)
-                    {
-                        if (!db.ConfigSetsEntities.Any(cs => cs.ConfigEntityId == defaultConfig.Id && cs.SetsEntityId == set.Id))
-                        {
-                            db.ConfigSetsEntities.Add(new ConfigSetsEntity { ConfigEntityId = defaultConfig.Id, SetsEntityId = set.Id });
-                        }
-                    }
-                    db.SaveChanges();
-                }
+                using var initScope = rootProvider.CreateScope();
+                var db = initScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                EnsureDatabaseSchema(db);
+                EnsureDefaultSetAndConfig(db);
             }
-            catch { }
-
-            try
+            catch (Exception ex)
             {
-                // Initialize CachedHash for clean sets that don't have one yet
-                var unhashedCleanSets = db.SetsEntities
-                    .Include(s => s.MetaEntities)
-                    .Where(s => s.CachedHash == null && !s.Dirty)
-                    .ToList();
-
-                if (unhashedCleanSets.Count > 0)
-                {
-                    foreach (var s in unhashedCleanSets)
-                    {
-                        s.CachedHash = SetDirtyTracker.ComputeContentHash(s);
-                    }
-                    db.SaveChanges();
-                }
+                AppLogger.LogError("Background DB init error", ex);
             }
-            catch { }
-        }
-
-        // Create a long-lived application scope so scoped services
-        // (AppDbContext, ThumbnailService, IOptionsSnapshot, etc.) resolve correctly
+        });
+        // 3. Create a long-lived application scope so scoped services resolve correctly
         _appScope = rootProvider.CreateScope();
         Services = _appScope.ServiceProvider;
 
@@ -127,78 +84,24 @@ public class App : Application
         bool shouldShowUpgradeWizard = false;
         bool shouldShowWalkthrough = false;
 
-        // Auto-migrate old Tombstones columns if missing
-        using (var migrationScope = Services.CreateScope())
+        if (appSettingsExistedBefore)
         {
-            var db = migrationScope.ServiceProvider.GetRequiredService<AppDbContext>();
-            try
+            if (!options.HasCompletedUpgradeWizard)
             {
-                db.Database.ExecuteSqlRaw("ALTER TABLE Tombstones ADD COLUMN Description TEXT;");
+                shouldShowUpgradeWizard = true;
             }
-            catch { }
-            try
+        }
+        else
+        {
+            if (!options.HasCompletedUpgradeWizard)
             {
-                db.Database.ExecuteSqlRaw("ALTER TABLE Tombstones ADD COLUMN IsUserTagged INTEGER NOT NULL DEFAULT 0;");
+                options.HasCompletedUpgradeWizard = true;
+                _ = AppSettingsService.SaveOptionsAsync(options);
             }
-            catch { }
-            try
+
+            if (!options.HasSeenWalkthrough)
             {
-                db.Database.ExecuteSqlRaw("ALTER TABLE MetaEntities ADD COLUMN Description TEXT NOT NULL DEFAULT '';");
-            }
-            catch { }
-
-            // Deduplicate any accidental duplicate MetaEntities
-            try
-            {
-                var allMeta = db.MetaEntities.ToList();
-                var duplicates = allMeta
-                    .GroupBy(m => m.FileName, StringComparer.OrdinalIgnoreCase)
-                    .Where(g => g.Count() > 1);
-
-                bool dbChanged = false;
-                foreach (var group in duplicates)
-                {
-                    var keeper = group
-                        .OrderByDescending(m => (m.SetsEntityId.HasValue && m.SetsEntityId != 1) ? 1 : 0)
-                        .ThenByDescending(m => !string.IsNullOrEmpty(m.Description))
-                        .First();
-
-                    foreach (var dup in group)
-                    {
-                        if (dup.Id != keeper.Id)
-                        {
-                            db.MetaEntities.Remove(dup);
-                            dbChanged = true;
-                        }
-                    }
-                }
-
-                if (dbChanged)
-                {
-                    db.SaveChanges();
-                }
-            }
-            catch { }
-
-            if (appSettingsExistedBefore)
-            {
-                if (!options.HasCompletedUpgradeWizard)
-                {
-                    shouldShowUpgradeWizard = true;
-                }
-            }
-            else
-            {
-                if (!options.HasCompletedUpgradeWizard)
-                {
-                    options.HasCompletedUpgradeWizard = true;
-                    _ = AppSettingsService.SaveOptionsAsync(options);
-                }
-
-                if (!options.HasSeenWalkthrough)
-                {
-                    shouldShowWalkthrough = true;
-                }
+                shouldShowWalkthrough = true;
             }
         }
 
@@ -228,11 +131,29 @@ public class App : Application
                 };
             }
 
+            // 4. Run background maintenance, clean set hashing, library scanning, and file watching asynchronously
             Task.Run(async () =>
             {
                 try
                 {
                     using var scope = Services.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                    // Initialize CachedHash for clean sets in background (doesn't delay UI)
+                    var unhashedCleanSets = db.SetsEntities
+                        .Include(s => s.MetaEntities)
+                        .Where(s => s.CachedHash == null && !s.Dirty)
+                        .ToList();
+
+                    if (unhashedCleanSets.Count > 0)
+                    {
+                        foreach (var s in unhashedCleanSets)
+                        {
+                            s.CachedHash = SetDirtyTracker.ComputeContentHash(s);
+                        }
+                        db.SaveChanges();
+                    }
+
                     var pkgManager = scope.ServiceProvider.GetRequiredService<PKGManager>();
                     await pkgManager.ScanLibraryDiskAsync();
                 }
@@ -242,7 +163,7 @@ public class App : Application
             try
             {
                 var watcher = Services.GetRequiredService<DownloadsWatcherService>();
-                watcher.StartAsync(CancellationToken.None);
+                Task.Run(() => watcher.StartAsync(CancellationToken.None));
             }
             catch { }
 
@@ -378,14 +299,43 @@ public class App : Application
         services.AddTransient<NewUserWalkthroughViewModel>();
     }
 
-    private static void EnsureDatabaseSchema(AppDbContext db)
+    private const int CurrentDbSchemaVersion = 4;
+
+    private static void EnsureDefaultSetAndConfig(AppDbContext db)
     {
         try
         {
-            db.Database.EnsureCreated();
+            var defaultSet = db.SetsEntities.FirstOrDefault(s => s.Name == "Default");
+            if (defaultSet == null)
+            {
+                defaultSet = new SetsEntity { Name = "Default", FolderName = "Default", IsDefault = true };
+                db.SetsEntities.Add(defaultSet);
+                db.SaveChanges();
+            }
+
+            var defaultConfig = db.ConfigEntities.Include(c => c.ConfigSetsEntities).FirstOrDefault(c => c.Name == "Default" || c.Default);
+            if (defaultConfig == null)
+            {
+                defaultConfig = new ConfigEntity { Name = "Default", Active = true, Default = true };
+                db.ConfigEntities.Add(defaultConfig);
+                db.SaveChanges();
+
+                var allSets = db.SetsEntities.ToList();
+                foreach (var set in allSets)
+                {
+                    if (!db.ConfigSetsEntities.Any(cs => cs.ConfigEntityId == defaultConfig.Id && cs.SetsEntityId == set.Id))
+                    {
+                        db.ConfigSetsEntities.Add(new ConfigSetsEntity { ConfigEntityId = defaultConfig.Id, SetsEntityId = set.Id });
+                    }
+                }
+                db.SaveChanges();
+            }
         }
         catch { }
+    }
 
+    private static void EnsureDatabaseSchema(AppDbContext db)
+    {
         try
         {
             db.Database.ExecuteSqlRaw(@"
@@ -414,6 +364,35 @@ CREATE TABLE IF NOT EXISTS Tombstones (
     SetsEntityId INTEGER,
     DeletedAt TEXT NOT NULL DEFAULT ''
 );");
+        }
+        catch { }
+
+        int userVersion = 0;
+        try
+        {
+            using var conn = db.Database.GetDbConnection();
+            if (conn.State != System.Data.ConnectionState.Open)
+            {
+                conn.Open();
+            }
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "PRAGMA user_version;";
+            var res = cmd.ExecuteScalar();
+            if (res != null && res != DBNull.Value)
+            {
+                userVersion = Convert.ToInt32(res);
+            }
+        }
+        catch { }
+
+        if (userVersion >= CurrentDbSchemaVersion)
+        {
+            return;
+        }
+
+        try
+        {
+            db.Database.EnsureCreated();
         }
         catch { }
 
@@ -497,5 +476,21 @@ CREATE TABLE IF NOT EXISTS CollectionSets (
             }
             catch { }
         }
+
+        try
+        {
+            db.Database.ExecuteSqlRaw(@"
+                DELETE FROM MetaEntities 
+                WHERE Id NOT IN (
+                    SELECT MIN(Id) FROM MetaEntities GROUP BY LOWER(FileName)
+                );");
+        }
+        catch { }
+
+        try
+        {
+            db.Database.ExecuteSqlRaw($"PRAGMA user_version = {CurrentDbSchemaVersion};");
+        }
+        catch { }
     }
 }
