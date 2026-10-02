@@ -370,8 +370,8 @@
       "title": "Storage & Paths",
       "library_dir": "PlumbobForge Library Directory",
       "library_dir_help": "Location where your raw CC .package files and set folders are stored.",
-      "game_dir": "The Sims 3 User Directory",
-      "game_dir_help": "Your Documents Electronic Arts The Sims 3 folder where Mods and cache packages are deployed.",
+      "game_dir": "The Sims 3 Directory",
+      "game_dir_help": "Your The Sims 3 folder where the game files are stored.",
       "browse": "Browse...",
       "default": "Default",
       "detect": "Auto-Detect"

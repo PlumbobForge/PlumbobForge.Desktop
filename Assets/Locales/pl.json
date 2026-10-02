@@ -370,11 +370,11 @@
       "title": "Dane i ścieżki",
       "library_dir": "Folder biblioteki PlumbobForge",
       "library_dir_help": "Lokalizacja, w której przechowywane są Twoje pliki .package i foldery zestawów CC.",
-      "game_dir": "Folder użytkownika The Sims 3",
-      "game_dir_help": "Twój folder Dokumenty\\Electronic Arts\\The Sims 3, w którym wdrażane są pakiety Mods i pamięć podręczna.",
+      "game_dir": "Folder The Sims 3",
+      "game_dir_help": "Twój folder The Sims 3, w którym trzymasz pliki gry.",
       "browse": "Przeglądaj...",
       "default": "Domyślny",
-      "detect": "Wykryj automatycznie"
+      "detect": "Wykryj"
     },
     "observed": {
       "title": "Monitorowane foldery i automatyczny import",
