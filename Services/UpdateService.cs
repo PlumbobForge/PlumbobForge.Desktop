@@ -36,7 +36,8 @@ public class UpdateService
     public UpdateService()
     {
         _httpClient = new HttpClient();
-        var ver = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.4";
+        var asmVer = Assembly.GetExecutingAssembly().GetName().Version;
+        var ver = asmVer != null ? (asmVer.Revision > 0 ? asmVer.ToString(4) : asmVer.ToString(3)) : "1.0.5";
         _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("PlumbobForge-Desktop", ver));
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
         _httpClient.Timeout = TimeSpan.FromSeconds(20);
@@ -232,9 +233,9 @@ public class UpdateService
                 throw new FileNotFoundException("Update file not found", updateFilePath);
             }
 
-            var currentAppExe = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
+            var currentAppExe = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName ?? string.Empty;
             int currentPid = Environment.ProcessId;
-            var appDir = AppDomain.CurrentDomain.BaseDirectory;
+            var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\', '/');
 
             // Scenario 1: Differential / Delta ZIP patch
             if (updateFilePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))

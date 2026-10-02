@@ -11,7 +11,13 @@ namespace PlumbobForge.Desktop.ViewModels;
 public partial class SettingsViewModel
 {
     [ObservableProperty]
-    private string _appVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.4";
+    private string _appVersion = GetExecutingAppVersion();
+
+    private static string GetExecutingAppVersion()
+    {
+        var asmVer = Assembly.GetExecutingAssembly().GetName().Version;
+        return asmVer != null ? (asmVer.Revision > 0 ? asmVer.ToString(4) : asmVer.ToString(3)) : "1.0.5";
+    }
 
     [ObservableProperty]
     private bool _isCheckingForUpdates = false;
@@ -158,8 +164,8 @@ public partial class SettingsViewModel
 
             // Trigger In-App Mini Progress Overlay
             UpdatingModalTitle = $"Updating to v{LatestVersionTag}";
-            UpdatingModalStatus = IsDeltaUpdate 
-                ? "Applying high-speed patch & restarting..." 
+            UpdatingModalStatus = IsDeltaUpdate
+                ? "Applying high-speed patch & restarting..."
                 : "Launching setup & restarting...";
             IsUpdatingModalVisible = true;
 
