@@ -124,7 +124,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 foreach (var c in configs)
                 {
                     var iconKind = Enum.TryParse<PackIconBoxIconsKind>(c.Icon, out var k) ? k : PackIconBoxIconsKind.RegularSlider;
-                    var brush = (!string.IsNullOrEmpty(c.Color) && c.Color != "#10b981")
+                    var brush = !string.IsNullOrEmpty(c.Color)
                         ? Brush.Parse(c.Color)
                         : (c.Active ? ThemeService.GetCurrentAccentBrush() : Brush.Parse("#60a5fa"));
 
@@ -163,7 +163,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                     }
 
                     var iconKind = Enum.TryParse<PackIconBoxIconsKind>(s.Icon, out var k) ? k : PackIconBoxIconsKind.RegularFolder;
-                    var brush = (!string.IsNullOrEmpty(s.Color) && s.Color != "#10b981" && s.Color != "#34d399")
+                    var brush = !string.IsNullOrEmpty(s.Color)
                         ? Brush.Parse(s.Color)
                         : ThemeService.GetCurrentAccentBrush();
 
