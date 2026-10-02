@@ -47,7 +47,7 @@ public partial class SetNodeViewModel : ObservableObject
     public PackIconBoxIconsKind IconKind =>
         Enum.TryParse<PackIconBoxIconsKind>(Icon, out var kind) ? kind : PackIconBoxIconsKind.RegularFolder;
 
-    public bool HasCustomColor => !string.IsNullOrEmpty(Color) && Color != "#10b981" && Color != "#34d399";
+    public bool HasCustomColor => !string.IsNullOrEmpty(Color);
 
     public IBrush IconBrush =>
         HasCustomColor ? Brush.Parse(Color!) : ThemeService.GetCurrentAccentBrush();
