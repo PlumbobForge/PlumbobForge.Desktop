@@ -11,44 +11,44 @@ public static class AppSettingsService
 {
     public static string GetAppSettingsPath()
     {
-        var appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "plumbobforge-app");
-        Directory.CreateDirectory(appDataPath);
-        return Path.Combine(appDataPath, "appsettings.json");
+        string text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "plumbobforge-app");
+        Directory.CreateDirectory(text);
+        return Path.Combine(text, "appsettings.json");
     }
 
     public static async Task SaveOptionsAsync(PlumbobForgeOptions options)
     {
         try
         {
-            var filePath = GetAppSettingsPath();
-            JsonObject jObject;
+            string filePath = GetAppSettingsPath();
+            JsonObject jsonObject;
             if (File.Exists(filePath))
             {
                 try
                 {
-                    var text = await File.ReadAllTextAsync(filePath);
-                    jObject = (JsonNode.Parse(text) as JsonObject) ?? new JsonObject();
+                    jsonObject = (JsonNode.Parse(await File.ReadAllTextAsync(filePath), null) as JsonObject) ?? new JsonObject((JsonNodeOptions?)null);
                 }
                 catch
                 {
-                    jObject = new JsonObject();
+                    jsonObject = new JsonObject((JsonNodeOptions?)null);
                 }
             }
             else
             {
-                jObject = new JsonObject();
+                jsonObject = new JsonObject((JsonNodeOptions?)null);
             }
-
-            var jsonObserved = new JsonArray();
+            JsonArray jsonArray = new JsonArray((JsonNodeOptions?)null);
             if (options.ObservedFolders != null)
             {
-                foreach (var folder in options.ObservedFolders)
+                foreach (string observedFolder in options.ObservedFolders)
                 {
-                    if (!string.IsNullOrWhiteSpace(folder)) jsonObserved.Add(folder);
+                    if (!string.IsNullOrWhiteSpace(observedFolder))
+                    {
+                        jsonArray.Add(observedFolder);
+                    }
                 }
             }
-
-            var ccNode = new JsonObject
+            JsonObject value = new JsonObject((JsonNodeOptions?)null)
             {
                 ["DocumentBaseDir"] = options.DocumentBaseDir,
                 ["DownloadFolderName"] = options.DownloadFolderName ?? "Downloads",
@@ -68,17 +68,18 @@ public static class AppSettingsService
                 ["CacheMethod"] = options.CacheMethod ?? "Dynamic",
                 ["EnableAutoScan"] = options.EnableAutoScan,
                 ["LastActiveTool"] = options.LastActiveTool ?? "Cache",
-                ["ObservedFolders"] = jsonObserved
+                ["ObservedFolders"] = jsonArray
             };
-
-            jObject["PlumbobForge"] = ccNode;
-
-            var jsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true };
-            await File.WriteAllTextAsync(filePath, jObject.ToJsonString(jsonSerializerOptions));
+            jsonObject["PlumbobForge"] = value;
+            JsonSerializerOptions options2 = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+            await File.WriteAllTextAsync(filePath, jsonObject.ToJsonString(options2));
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AppSettingsService] Failed to save appsettings.json: {ex.Message}");
+            Console.WriteLine("[AppSettingsService] Failed to save appsettings.json: " + ex.Message);
         }
     }
 }

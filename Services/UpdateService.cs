@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
+using PlumbobForge.Installer.Shared;
 
 namespace PlumbobForge.Desktop.Services;
 
@@ -37,7 +38,7 @@ public class UpdateService
     {
         _httpClient = new HttpClient();
         var asmVer = Assembly.GetExecutingAssembly().GetName().Version;
-        var ver = asmVer != null ? (asmVer.Revision > 0 ? asmVer.ToString(4) : asmVer.ToString(3)) : "1.0.5";
+        var ver = asmVer != null ? (asmVer.Revision > 0 ? asmVer.ToString(4) : asmVer.ToString(3)) : InstallerConstants.DisplayVersion;
         _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("PlumbobForge-Desktop", ver));
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
         _httpClient.Timeout = TimeSpan.FromSeconds(20);
@@ -118,25 +119,7 @@ public class UpdateService
                         {
                             var name = obj["name"]?.GetValue<string>() ?? string.Empty;
                             if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
-                                !name.EndsWith(".blockmap", StringComparison.OrdinalIgnoreCase))
-                            {
-                                chosenAsset = obj;
-                                isDelta = false;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                // Priority 3: Fallback .zip archive
-                if (chosenAsset == null)
-                {
-                    foreach (var a in assets)
-                    {
-                        if (a is JsonObject obj)
-                        {
-                            var name = obj["name"]?.GetValue<string>() ?? string.Empty;
-                            if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                                !name.Contains("updater", StringComparison.OrdinalIgnoreCase))
                             {
                                 chosenAsset = obj;
                                 isDelta = false;
@@ -148,15 +131,18 @@ public class UpdateService
 
                 if (chosenAsset != null)
                 {
-                    assetName = chosenAsset["name"]?.GetValue<string>();
                     downloadUrl = chosenAsset["browser_download_url"]?.GetValue<string>();
-                    fileSize = chosenAsset["size"]?.GetValue<long>();
+                    assetName = chosenAsset["name"]?.GetValue<string>();
+                    if (chosenAsset["size"] is JsonNode sizeNode)
+                    {
+                        fileSize = sizeNode.GetValue<long>();
+                    }
                 }
             }
 
             return new UpdateCheckResult(
                 IsUpdateAvailable: isNewer,
-                CurrentVersion: currentVersionString,
+                CurrentVersion: cleanCurrent,
                 LatestVersion: cleanLatest,
                 ReleaseTitle: releaseTitle,
                 ReleaseNotes: releaseNotes,
@@ -169,128 +155,84 @@ public class UpdateService
         }
         catch (Exception ex)
         {
-            return new UpdateCheckResult(
-                IsUpdateAvailable: false,
-                CurrentVersion: currentVersionString,
-                LatestVersion: currentVersionString,
-                ReleaseTitle: null,
-                ReleaseNotes: null,
-                ReleaseUrl: null,
-                DownloadUrl: null,
-                AssetName: null,
-                FileSize: null,
-                IsDeltaUpdate: false,
-                ErrorMessage: ex.Message
-            );
+            return new UpdateCheckResult(false, currentVersionString, currentVersionString, null, null, null, null, null, null, false, ex.Message);
         }
     }
 
-    public async Task<string> DownloadUpdateAsync(string downloadUrl, string assetName, IProgress<(long downloaded, long total, double percent, double speedMbPerSec)>? progress = null, CancellationToken ct = default)
+    public async Task<string> DownloadUpdateAsync(string downloadUrl, string destinationFileName, IProgress<(long downloaded, long total, double percent, double speedMbPerSec)>? progress = null, CancellationToken ct = default)
     {
         var tempFolder = Path.Combine(Path.GetTempPath(), "PlumbobForge", "Updates");
         Directory.CreateDirectory(tempFolder);
-
-        var destinationPath = Path.Combine(tempFolder, assetName);
+        var targetFile = Path.Combine(tempFolder, destinationFileName);
 
         using var response = await _httpClient.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, ct);
         response.EnsureSuccessStatusCode();
 
-        long totalBytes = response.Content.Headers.ContentLength ?? -1L;
-        using var stream = await response.Content.ReadAsStreamAsync(ct);
-        using var fileStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
+        var totalBytes = response.Content.Headers.ContentLength ?? -1L;
+        using var sourceStream = await response.Content.ReadAsStreamAsync(ct);
+        using var destStream = new FileStream(targetFile, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
 
-        var buffer = new byte[8192];
-        long totalDownloaded = 0;
+        var buffer = new byte[81920];
+        long totalRead = 0;
         var stopwatch = Stopwatch.StartNew();
+
         int bytesRead;
-
-        while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
+        while ((bytesRead = await sourceStream.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
         {
-            await fileStream.WriteAsync(buffer, 0, bytesRead, ct);
-            totalDownloaded += bytesRead;
+            await destStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct);
+            totalRead += bytesRead;
 
-            if (progress != null && totalBytes > 0)
+            if (progress != null)
             {
-                double percent = (double)totalDownloaded / totalBytes;
-                double seconds = Math.Max(stopwatch.Elapsed.TotalSeconds, 0.001);
-                double speedMbPerSec = (totalDownloaded / (1024.0 * 1024.0)) / seconds;
-                progress.Report((totalDownloaded, totalBytes, percent, speedMbPerSec));
+                double percent = totalBytes > 0 ? (double)totalRead / totalBytes : 0.0;
+                double speedMbPerSec = (totalRead / (1024.0 * 1024.0)) / Math.Max(0.001, stopwatch.Elapsed.TotalSeconds);
+                progress.Report((totalRead, totalBytes, percent, speedMbPerSec));
             }
         }
 
-        return destinationPath;
+        return targetFile;
     }
 
-    /// <summary>
-    /// Applies update directly without PowerShell or console flashes, using native watchdog process hand-off.
-    /// </summary>
-    public void ApplyUpdateAndExit(string updateFilePath)
+    public void ApplyUpdateAndExit(string downloadedFilePath)
     {
-        try
+        var currentPid = Process.GetCurrentProcess().Id;
+        var baseDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\', '/');
+        var localUpdater = Path.Combine(baseDir, "PlumbobForge-Updater.exe");
+        var currentExe = Process.GetCurrentProcess().MainModule?.FileName ?? Path.Combine(baseDir, "PlumbobForge.Desktop.exe");
+
+        if (downloadedFilePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) && File.Exists(localUpdater))
         {
-            if (!File.Exists(updateFilePath))
+            // Fast differential in-place update using native updater
+            // Copy updater to %TEMP% to prevent file in-use lock during binary replacement
+            var tempUpdaterDir = Path.Combine(Path.GetTempPath(), "PlumbobForge", "Updater");
+            Directory.CreateDirectory(tempUpdaterDir);
+            var stagingUpdater = Path.Combine(tempUpdaterDir, "PlumbobForge-Updater.exe");
+            File.Copy(localUpdater, stagingUpdater, overwrite: true);
+
+            var psi = new ProcessStartInfo
             {
-                throw new FileNotFoundException("Update file not found", updateFilePath);
-            }
-
-            var currentAppExe = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName ?? string.Empty;
-            int currentPid = Environment.ProcessId;
-            var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\', '/');
-
-            // Scenario 1: Differential / Delta ZIP patch
-            if (updateFilePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-            {
-                var localUpdater = Path.Combine(appDir, "PlumbobForge-Updater.exe");
-                if (File.Exists(localUpdater))
-                {
-                    // Copy updater to %TEMP% so no assembly in appDir is locked
-                    var tempUpdaterDir = Path.Combine(Path.GetTempPath(), "PlumbobForge", "Updater");
-                    Directory.CreateDirectory(tempUpdaterDir);
-                    var tempUpdaterPath = Path.Combine(tempUpdaterDir, "PlumbobForge-Updater.exe");
-                    File.Copy(localUpdater, tempUpdaterPath, overwrite: true);
-
-                    var psi = new ProcessStartInfo
-                    {
-                        FileName = tempUpdaterPath,
-                        Arguments = $"--wait-pid {currentPid} --patch \"{updateFilePath}\" --target \"{appDir}\" --relaunch \"{currentAppExe}\"",
-                        UseShellExecute = true,
-                        CreateNoWindow = true,
-                        WindowStyle = ProcessWindowStyle.Hidden
-                    };
-
-                    Process.Start(psi);
-                    ShutdownApplication();
-                    return;
-                }
-            }
-
-            // Scenario 2: Standalone Setup Installer (Bootstrapper)
-            var setupPsi = new ProcessStartInfo
-            {
-                FileName = updateFilePath,
-                Arguments = $"/S /RUN /WAITPID={currentPid}",
-                UseShellExecute = true,
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden
+                FileName = stagingUpdater,
+                Arguments = $"--wait-pid {currentPid} --patch \"{downloadedFilePath}\" --target \"{baseDir}\" --relaunch \"{currentExe}\"",
+                UseShellExecute = true
             };
-
-            Process.Start(setupPsi);
-            ShutdownApplication();
+            Process.Start(psi);
         }
-        catch (Exception ex)
+        else
         {
-            throw new InvalidOperationException($"Could not apply update: {ex.Message}", ex);
+            // Standalone Setup executable update
+            var psi = new ProcessStartInfo
+            {
+                FileName = downloadedFilePath,
+                Arguments = $"/SILENT --wait-pid={currentPid}",
+                UseShellExecute = true
+            };
+            Process.Start(psi);
         }
-    }
 
-    [Obsolete("Use ApplyUpdateAndExit instead.")]
-    public void LaunchInstallerAndExit(string installerFilePath) => ApplyUpdateAndExit(installerFilePath);
-
-    private static void ShutdownApplication()
-    {
+        // Gracefully shutdown this application
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.Shutdown();
+            desktop.Shutdown(0);
         }
         else
         {
@@ -298,21 +240,25 @@ public class UpdateService
         }
     }
 
-    private static int CompareVersions(string v1, string v2)
+    private static int CompareVersions(string vA, string vB)
     {
-        if (Version.TryParse(NormalizeVersionString(v1), out var ver1) &&
-            Version.TryParse(NormalizeVersionString(v2), out var ver2))
+        if (Version.TryParse(vA, out var verA) && Version.TryParse(vB, out var verB))
         {
-            return ver1.CompareTo(ver2);
+            return verA.CompareTo(verB);
         }
 
-        return string.Compare(v1, v2, StringComparison.OrdinalIgnoreCase);
-    }
+        // Fallback segment comparison
+        var partsA = vA.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        var partsB = vB.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        int max = Math.Max(partsA.Length, partsB.Length);
 
-    private static string NormalizeVersionString(string ver)
-    {
-        int dashIdx = ver.IndexOf('-');
-        if (dashIdx > 0) ver = ver.Substring(0, dashIdx);
-        return ver.Trim();
+        for (int i = 0; i < max; i++)
+        {
+            int numA = i < partsA.Length && int.TryParse(partsA[i], out var a) ? a : 0;
+            int numB = i < partsB.Length && int.TryParse(partsB[i], out var b) ? b : 0;
+            if (numA != numB) return numA.CompareTo(numB);
+        }
+
+        return 0;
     }
 }

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PlumbobForge.Desktop.Services;
+using PlumbobForge.Installer.Shared;
 
 namespace PlumbobForge.Desktop.ViewModels;
 
@@ -16,7 +17,7 @@ public partial class SettingsViewModel
     private static string GetExecutingAppVersion()
     {
         var asmVer = Assembly.GetExecutingAssembly().GetName().Version;
-        return asmVer != null ? (asmVer.Revision > 0 ? asmVer.ToString(4) : asmVer.ToString(3)) : "1.0.5";
+        return asmVer != null ? (asmVer.Revision > 0 ? asmVer.ToString(4) : asmVer.ToString(3)) : InstallerConstants.DisplayVersion;
     }
 
     [ObservableProperty]

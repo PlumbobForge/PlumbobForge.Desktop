@@ -1,11 +1,16 @@
 using System;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PlumbobForge.Backend.Database;
+using PlumbobForge.Desktop.Services;
 
 namespace PlumbobForge.Desktop.ViewModels;
 
@@ -24,12 +29,6 @@ public partial class MainViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsSettingsActive))]
     private string _activeTab = "ContentManager";
 
-    public bool IsContentManagerActive => ActiveTab == "ContentManager";
-    public bool IsConfigurationsActive => ActiveTab == "Configurations";
-    public bool IsHealthActive => ActiveTab == "Health" || ActiveTab == "Tools";
-    public bool IsToolsActive => ActiveTab == "Health" || ActiveTab == "Tools";
-    public bool IsSettingsActive => ActiveTab == "Settings";
-
     [ObservableProperty]
     private string _statusMessage = "Ready";
 
@@ -37,7 +36,10 @@ public partial class MainViewModel : ObservableObject
     private bool _hasDirtySets;
 
     [ObservableProperty]
-    private bool _isUpdateToastVisible = false;
+    private TaskProgressModalViewModel? _activeProgressModal;
+
+    [ObservableProperty]
+    private bool _isUpdateToastVisible;
 
     [ObservableProperty]
     private string _updateToastVersion = string.Empty;
@@ -45,48 +47,138 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _updateToastMessage = string.Empty;
 
+    [ObservableProperty]
+    private bool _isCacheOptimizationToastVisible;
+
+    public bool IsContentManagerActive => ActiveTab == "ContentManager";
+    public bool IsConfigurationsActive => ActiveTab == "Configurations";
+    public bool IsHealthActive => ActiveTab == "Health" || ActiveTab == "Tools";
+    public bool IsToolsActive => ActiveTab == "Health" || ActiveTab == "Tools";
+    public bool IsSettingsActive => ActiveTab == "Settings";
+
     public QuickSwitcherViewModel QuickSwitcher { get; }
 
     public MainViewModel(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
         QuickSwitcher = serviceProvider.GetRequiredService<QuickSwitcherViewModel>();
-
-        // Defer heavy content loading until after MainWindow renders its initial frame
-        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        Dispatcher.UIThread.Post(() =>
         {
             NavigateToContentManager();
-            _ = RefreshDirtyStateAsync();
-        }, Avalonia.Threading.DispatcherPriority.Loaded);
+            RefreshDirtyStateAsync();
+        }, DispatcherPriority.Loaded);
 
         _ = CheckForUpdatesOnStartupAsync();
+        _ = CheckCacheOptimizationOnStartupAsync();
+    }
+
+    private async Task CheckCacheOptimizationOnStartupAsync()
+    {
+        try
+        {
+            await Task.Delay(1500);
+
+            string settingsPath = AppSettingsService.GetAppSettingsPath();
+            if (!File.Exists(settingsPath)) return;
+
+            string json = await File.ReadAllTextAsync(settingsPath);
+            var node = JsonNode.Parse(json);
+            var pfNode = node?["PlumbobForge"];
+            if (pfNode == null) return;
+
+            bool hasSeen = pfNode["HasSeenWalkthrough"]?.GetValue<bool>() ?? false;
+            if (!hasSeen) return;
+
+            string? lastOpt = pfNode["LastOptimizedCacheVersion"]?.GetValue<string>();
+            var asmVersion = typeof(MainViewModel).Assembly.GetName().Version;
+            string currentVer = asmVersion != null ? asmVersion.ToString(3) : "1.0.6";
+
+            if (lastOpt != currentVer)
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    IsCacheOptimizationToastVisible = true;
+                });
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task MarkCacheOptimizedVersionAsync()
+    {
+        try
+        {
+            string settingsPath = AppSettingsService.GetAppSettingsPath();
+            JsonObject root;
+            if (File.Exists(settingsPath))
+            {
+                root = (JsonNode.Parse(await File.ReadAllTextAsync(settingsPath)) as JsonObject) ?? new JsonObject();
+            }
+            else
+            {
+                root = new JsonObject();
+            }
+
+            var pfNode = root["PlumbobForge"] as JsonObject;
+            if (pfNode == null)
+            {
+                pfNode = new JsonObject();
+                root["PlumbobForge"] = pfNode;
+            }
+
+            var asmVersion = typeof(MainViewModel).Assembly.GetName().Version;
+            string currentVer = asmVersion != null ? asmVersion.ToString(3) : "1.0.6";
+            pfNode["LastOptimizedCacheVersion"] = currentVer;
+
+            var opts = new JsonSerializerOptions { WriteIndented = true };
+            await File.WriteAllTextAsync(settingsPath, root.ToJsonString(opts));
+        }
+        catch
+        {
+        }
+    }
+
+    [RelayCommand]
+    public async Task DismissCacheOptimizationToastAsync()
+    {
+        IsCacheOptimizationToastVisible = false;
+        await MarkCacheOptimizedVersionAsync();
+    }
+
+    [RelayCommand]
+    public async Task ForceRebuildFromToastAsync()
+    {
+        IsCacheOptimizationToastVisible = false;
+        await MarkCacheOptimizedVersionAsync();
+        await ForceRebuildCacheAsync();
     }
 
     private async Task CheckForUpdatesOnStartupAsync()
     {
         try
         {
-            // Delay slightly to let MainWindow finish rendering
             await Task.Delay(2500);
+            UpdateService requiredService = _serviceProvider.GetRequiredService<UpdateService>();
+            Version version = typeof(MainViewModel).Assembly.GetName().Version;
+            string currentVersionString = version != null
+                ? (version.Revision > 0 ? version.ToString(4) : version.ToString(3))
+                : "1.0.6";
 
-            var updateService = _serviceProvider.GetRequiredService<Services.UpdateService>();
-            var asmVersion = typeof(MainViewModel).Assembly.GetName().Version;
-            string currentVersion = asmVersion != null ? (asmVersion.Revision > 0 ? asmVersion.ToString(4) : asmVersion.ToString(3)) : "1.0.5";
-
-            var result = await updateService.CheckForUpdatesAsync(currentVersion);
+            UpdateCheckResult result = await requiredService.CheckForUpdatesAsync(currentVersionString);
             if (result.IsUpdateAvailable)
             {
-                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     UpdateToastVersion = result.LatestVersion;
-                    UpdateToastMessage = $"PlumbobForge v{result.LatestVersion} is available!";
+                    UpdateToastMessage = "PlumbobForge v" + result.LatestVersion + " is available!";
                     IsUpdateToastVisible = true;
                 });
             }
         }
         catch
         {
-            // Background check failure is non-blocking
         }
     }
 
@@ -101,10 +193,10 @@ public partial class MainViewModel : ObservableObject
     {
         IsUpdateToastVisible = false;
         NavigateToSettings();
-        var settingsVm = _serviceProvider.GetRequiredService<SettingsViewModel>();
-        if (!settingsVm.IsUpdateAvailable)
+        SettingsViewModel requiredService = _serviceProvider.GetRequiredService<SettingsViewModel>();
+        if (!requiredService.IsUpdateAvailable)
         {
-            await settingsVm.CheckForUpdatesAsync();
+            await requiredService.CheckForUpdatesAsync();
         }
     }
 
@@ -112,17 +204,15 @@ public partial class MainViewModel : ObservableObject
     {
         try
         {
-            using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var dirty = await db.SetsEntities.AsNoTracking().AnyAsync(s => s.Dirty);
-            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            using IServiceScope scope = _serviceProvider.CreateScope();
+            bool dirty = await scope.ServiceProvider.GetRequiredService<AppDbContext>().SetsEntities.AsNoTracking().AnyAsync((SetsEntity s) => s.Dirty);
+            await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 HasDirtySets = dirty;
             });
         }
         catch
         {
-            // Ignore temporary DB concurrency or startup state
         }
     }
 
@@ -130,6 +220,20 @@ public partial class MainViewModel : ObservableObject
     public async Task OpenQuickSwitcherAsync()
     {
         await QuickSwitcher.OpenAsync();
+    }
+
+    [RelayCommand]
+    public async Task RebuildCacheAsync()
+    {
+        await _serviceProvider.GetRequiredService<ContentManagerViewModel>().RebuildCacheAsync();
+        await RefreshDirtyStateAsync();
+    }
+
+    [RelayCommand]
+    public async Task ForceRebuildCacheAsync()
+    {
+        await _serviceProvider.GetRequiredService<ContentManagerViewModel>().RebuildCacheAsync(forceRebuild: true);
+        await RefreshDirtyStateAsync();
     }
 
     [RelayCommand]
@@ -143,9 +247,8 @@ public partial class MainViewModel : ObservableObject
     public void NavigateToConfigurations()
     {
         ActiveTab = "Configurations";
-        var configVm = _serviceProvider.GetRequiredService<ConfigurationsViewModel>();
-        CurrentView = configVm;
-        _ = configVm.LoadDataAsync();
+        ConfigurationsViewModel configurationsViewModel = (ConfigurationsViewModel)(CurrentView = _serviceProvider.GetRequiredService<ConfigurationsViewModel>());
+        configurationsViewModel.LoadDataAsync();
     }
 
     [RelayCommand]
@@ -172,8 +275,7 @@ public partial class MainViewModel : ObservableObject
     public void NavigateToSet(long setId)
     {
         NavigateToContentManager();
-        var contentVm = _serviceProvider.GetRequiredService<ContentManagerViewModel>();
-        contentVm.SelectSetById(setId);
+        _serviceProvider.GetRequiredService<ContentManagerViewModel>().SelectSetById(setId, null);
     }
 
     public void NavigateToContentManagerAndSelectSet(long setId, long metaId)
@@ -181,51 +283,27 @@ public partial class MainViewModel : ObservableObject
         NavigateToContentManager();
         try
         {
-            var contentVm = _serviceProvider.GetRequiredService<ContentManagerViewModel>();
-            contentVm.SelectSetById(setId);
+            _serviceProvider.GetRequiredService<ContentManagerViewModel>().SelectSetById(setId, metaId);
         }
-        catch { }
+        catch
+        {
+        }
+    }
+
+    public void NavigateToItem(long itemId, long setId)
+    {
+        NavigateToContentManager();
+        _serviceProvider.GetRequiredService<ContentManagerViewModel>().SelectSetById(setId, itemId);
     }
 
     public void NavigateToConfiguration(long configId)
     {
         NavigateToConfigurations();
-        var configVm = _serviceProvider.GetRequiredService<ConfigurationsViewModel>();
-        var target = configVm.Configurations.FirstOrDefault(c => c.Id == configId);
-        if (target != null)
+        ConfigurationsViewModel requiredService = _serviceProvider.GetRequiredService<ConfigurationsViewModel>();
+        ConfigItemViewModel configItemViewModel = requiredService.Configurations.FirstOrDefault((ConfigItemViewModel c) => c.Id == configId);
+        if (configItemViewModel != null)
         {
-            configVm.SelectedConfiguration = target;
+            requiredService.SelectedConfiguration = configItemViewModel;
         }
-    }
-
-    public void NavigateToItem(long setId, long itemId)
-    {
-        NavigateToContentManager();
-        var contentVm = _serviceProvider.GetRequiredService<ContentManagerViewModel>();
-        contentVm.SelectSetById(setId, itemId);
-    }
-
-    [ObservableProperty]
-    private bool _isRebuildingCache;
-
-    [ObservableProperty]
-    private TaskProgressModalViewModel? _activeProgressModal;
-
-    [RelayCommand]
-    public async Task RebuildCacheAsync()
-    {
-        if (IsRebuildingCache || ActiveProgressModal?.IsRunning == true) return;
-        var contentVm = _serviceProvider.GetRequiredService<ContentManagerViewModel>();
-        await contentVm.RebuildCacheAsync(forceRebuild: false);
-        await RefreshDirtyStateAsync();
-    }
-
-    [RelayCommand]
-    public async Task ForceRebuildCacheAsync()
-    {
-        if (IsRebuildingCache || ActiveProgressModal?.IsRunning == true) return;
-        var contentVm = _serviceProvider.GetRequiredService<ContentManagerViewModel>();
-        await contentVm.RebuildCacheAsync(forceRebuild: true);
-        await RefreshDirtyStateAsync();
     }
 }
