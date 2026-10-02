@@ -71,7 +71,7 @@ public partial class MainViewModel : ObservableObject
 
             var updateService = _serviceProvider.GetRequiredService<Services.UpdateService>();
             var asmVersion = typeof(MainViewModel).Assembly.GetName().Version;
-            string currentVersion = asmVersion != null ? $"{asmVersion.Major}.{asmVersion.Minor}.{asmVersion.Build}" : "2.0.0";
+            string currentVersion = asmVersion != null ? (asmVersion.Revision > 0 ? asmVersion.ToString(4) : asmVersion.ToString(3)) : "1.0.5";
 
             var result = await updateService.CheckForUpdatesAsync(currentVersion);
             if (result.IsUpdateAvailable)

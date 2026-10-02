@@ -44,7 +44,7 @@ public partial class ConfigItemViewModel : ObservableObject
     public PackIconBoxIconsKind IconKind =>
         Enum.TryParse<PackIconBoxIconsKind>(Icon, out var kind) ? kind : PackIconBoxIconsKind.RegularSlider;
 
-    public bool HasCustomColor => !string.IsNullOrEmpty(Color) && Color != "#10b981" && Color != "#34d399";
+    public bool HasCustomColor => !string.IsNullOrEmpty(Color);
 
     public IBrush IconBrush =>
         HasCustomColor
@@ -84,6 +84,7 @@ public partial class ConfigItemViewModel : ObservableObject
         ThemeService.AccentChanged += () =>
         {
             OnPropertyChanged(nameof(IconBrush));
+            OnPropertyChanged(nameof(HasCustomColor));
             OnPropertyChanged(nameof(BadgeBackgroundBrush));
             OnPropertyChanged(nameof(BadgeBackground));
         };

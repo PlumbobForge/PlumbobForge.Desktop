@@ -35,12 +35,13 @@ public partial class ConfigSetItemViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IconBrush))]
+    [NotifyPropertyChangedFor(nameof(HasCustomColor))]
     private string? _color;
 
     public PackIconBoxIconsKind IconKind =>
         Enum.TryParse<PackIconBoxIconsKind>(Icon, out var kind) ? kind : PackIconBoxIconsKind.RegularFolder;
 
-    public bool HasCustomColor => !string.IsNullOrEmpty(Color) && Color != "#10b981" && Color != "#34d399";
+    public bool HasCustomColor => !string.IsNullOrEmpty(Color);
 
     public IBrush IconBrush =>
         HasCustomColor
@@ -58,6 +59,10 @@ public partial class ConfigSetItemViewModel : ObservableObject
         _isEnabledInConfig = isEnabledInConfig;
         _icon = string.IsNullOrWhiteSpace(entity.Icon) ? "RegularFolder" : entity.Icon;
         _color = string.IsNullOrWhiteSpace(entity.Color) ? null : entity.Color;
-        ThemeService.AccentChanged += () => OnPropertyChanged(nameof(IconBrush));
+        ThemeService.AccentChanged += () =>
+        {
+            OnPropertyChanged(nameof(IconBrush));
+            OnPropertyChanged(nameof(HasCustomColor));
+        };
     }
 }
