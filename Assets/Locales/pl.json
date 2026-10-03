@@ -16,7 +16,11 @@
     "minimize": "Minimalizuj",
     "maximize": "Maksymalizuj",
     "restore": "Przywróć",
-    "close": "Zamknij"
+    "close": "Zamknij",
+    "cache_optimization_title": "Dostępna optymalizacja wydajności",
+    "cache_optimization_message": "PlumbobForge został zaktualizowany o szybsze budowanie pamięci podręcznej i ulepszenia wydajności w grze! Zaleca się jednorazowe wymuszenie przebudowy w celu optymalizacji.",
+    "rebuild_now": "Przebuduj teraz",
+    "later": "Później"
   },
   "common": {
     "ok": "OK",
@@ -401,7 +405,9 @@
       "none_desc": "Brak kompresji. Najszybsza przebudowa, ale największy rozmiar pamięci podręcznej na dysku.",
       "high_label": "Wysoka",
       "static_bundle_desc": "Pakiet statyczny: Łączy wszystkie aktywne zestawy w jeden pakiet, aby zmaksymalizować wydajność ładowania gry. Każda zmiana wymaga pełnej przebudowy.",
-      "balanced_label": "Zrównoważona - Zalecana"
+      "balanced_label": "Zrównoważona - Zalecana",
+      "auto_rebuild_static": "Automatyczna przebudowa pakietu statycznego",
+      "auto_rebuild_static_desc": "Automatycznie przebudowuj pakiet statyczny natychmiast po zmianie konfiguracji lub przełączeniu zestawów. Po wyłączeniu zmiany są oznaczane jako oczekujące, co pozwala na wprowadzenie wielu modyfikacji przed przebudową."
     },
     "maintenance": {
       "title": "Diagnostyka",

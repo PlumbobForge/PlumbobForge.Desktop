@@ -16,7 +16,11 @@
     "minimize": "Minimize",
     "maximize": "Maximize",
     "restore": "Restore",
-    "close": "Close"
+    "close": "Close",
+    "cache_optimization_title": "Performance Optimization Available",
+    "cache_optimization_message": "PlumbobForge has been updated with faster cache building and in-game performance improvements! Doing a Force Rebuild once to optimize is recommended.",
+    "rebuild_now": "Rebuild Now",
+    "later": "Later"
   },
   "common": {
     "ok": "OK",
@@ -401,7 +405,9 @@
       "none_desc": "No compression. Fastest rebuild speed, but largest cache size on disk.",
       "high_label": "High",
       "static_bundle_desc": "Static Bundle: Merges all active sets into a single bundle to maximize in-game loading performance. Any change requires a full rebuild.",
-      "balanced_label": "Balanced - Recommended"
+      "balanced_label": "Balanced - Recommended",
+      "auto_rebuild_static": "Auto-Rebuild Static Cache",
+      "auto_rebuild_static_desc": "Automatically rebuild the static bundle immediately whenever configurations are switched or sets are enabled/disabled. When disabled, changes are marked pending so you can make multiple edits before rebuilding."
     },
     "maintenance": {
       "title": "Maintenance & Diagnostics",
