@@ -11,7 +11,8 @@ public static class AppSettingsService
 {
     public static string GetAppSettingsPath()
     {
-        string text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "plumbobforge-app");
+        string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        string text = Path.Combine(folderPath, "plumbobforge-app");
         Directory.CreateDirectory(text);
         return Path.Combine(text, "appsettings.json");
     }
@@ -24,9 +25,10 @@ public static class AppSettingsService
             JsonObject jsonObject;
             if (File.Exists(filePath))
             {
+                string json = await File.ReadAllTextAsync(filePath);
                 try
                 {
-                    jsonObject = (JsonNode.Parse(await File.ReadAllTextAsync(filePath), null) as JsonObject) ?? new JsonObject((JsonNodeOptions?)null);
+                    jsonObject = JsonNode.Parse(json)?.AsObject() ?? new JsonObject((JsonNodeOptions?)null);
                 }
                 catch
                 {
@@ -37,6 +39,18 @@ public static class AppSettingsService
             {
                 jsonObject = new JsonObject((JsonNodeOptions?)null);
             }
+
+            JsonObject plumbobNode;
+            if (jsonObject.TryGetPropertyValue("PlumbobForge", out var existingPfNode) && existingPfNode is JsonObject existingPfObj)
+            {
+                plumbobNode = existingPfObj;
+            }
+            else
+            {
+                plumbobNode = new JsonObject((JsonNodeOptions?)null);
+                jsonObject["PlumbobForge"] = plumbobNode;
+            }
+
             JsonArray jsonArray = new JsonArray((JsonNodeOptions?)null);
             if (options.ObservedFolders != null)
             {
@@ -48,38 +62,44 @@ public static class AppSettingsService
                     }
                 }
             }
-            JsonObject value = new JsonObject((JsonNodeOptions?)null)
+
+            plumbobNode["Language"] = options.Language ?? "auto";
+            plumbobNode["DocumentBaseDir"] = options.DocumentBaseDir ?? "";
+            plumbobNode["GameFilesDir"] = options.GameFilesDir ?? "";
+            plumbobNode["DownloadFolderName"] = string.IsNullOrWhiteSpace(options.DownloadFolderName) ? "Downloads" : options.DownloadFolderName;
+            plumbobNode["ArchiveFolderName"] = string.IsNullOrWhiteSpace(options.ArchiveFolderName) ? "Archive" : options.ArchiveFolderName;
+            plumbobNode["TS3PackFolderName"] = string.IsNullOrWhiteSpace(options.TS3PackFolderName) ? "Downloads" : options.TS3PackFolderName;
+            plumbobNode["ManagedPackageFolderName"] = string.IsNullOrWhiteSpace(options.ManagedPackageFolderName) ? "Library" : options.ManagedPackageFolderName;
+            plumbobNode["SetCacheFolderName"] = string.IsNullOrWhiteSpace(options.SetCacheFolderName) ? "Builds" : options.SetCacheFolderName;
+            plumbobNode["LegacyPackageFolderName"] = string.IsNullOrWhiteSpace(options.LegacyPackageFolderName) ? "Legacy" : options.LegacyPackageFolderName;
+            plumbobNode["TS3PackStoreFolderName"] = string.IsNullOrWhiteSpace(options.TS3PackStoreFolderName) ? "Store" : options.TS3PackStoreFolderName;
+            plumbobNode["CompressionLevel"] = options.CompressionLevel;
+            plumbobNode["CacheMethod"] = options.CacheMethod ?? "Dynamic";
+            plumbobNode["AutoRebuildStaticCache"] = options.AutoRebuildStaticCache;
+            plumbobNode["EnableAutoScan"] = options.EnableAutoScan;
+            plumbobNode["Theme"] = options.Theme ?? "Dark";
+            plumbobNode["AccentColor"] = options.AccentColor ?? "Emerald";
+            plumbobNode["ObservedFolders"] = jsonArray;
+            plumbobNode["HasSeenWalkthrough"] = options.HasSeenWalkthrough;
+            plumbobNode["HasCompletedUpgradeWizard"] = options.HasCompletedUpgradeWizard;
+
+            if (options.LastOptimizedCacheMilestone > 0 || !plumbobNode.ContainsKey("LastOptimizedCacheMilestone"))
             {
-                ["DocumentBaseDir"] = options.DocumentBaseDir,
-                ["DownloadFolderName"] = options.DownloadFolderName ?? "Downloads",
-                ["ArchiveFolderName"] = options.ArchiveFolderName ?? "",
-                ["TS3PackFolderName"] = options.TS3PackFolderName ?? "",
-                ["ManagedPackageFolderName"] = "Library",
-                ["SetCacheFolderName"] = "Builds",
-                ["LegacyPackageFolderName"] = options.LegacyPackageFolderName ?? "",
-                ["TS3PackStoreFolderName"] = options.TS3PackStoreFolderName ?? "",
-                ["GameFilesDir"] = options.GameFilesDir ?? "",
-                ["CompressionLevel"] = options.CompressionLevel,
-                ["HasSeenWalkthrough"] = options.HasSeenWalkthrough,
-                ["HasCompletedUpgradeWizard"] = options.HasCompletedUpgradeWizard,
-                ["Language"] = options.Language ?? "auto",
-                ["Theme"] = options.Theme ?? "Dark",
-                ["AccentColor"] = options.AccentColor ?? "Emerald",
-                ["CacheMethod"] = options.CacheMethod ?? "Dynamic",
-                ["EnableAutoScan"] = options.EnableAutoScan,
-                ["LastActiveTool"] = options.LastActiveTool ?? "Cache",
-                ["ObservedFolders"] = jsonArray
-            };
-            jsonObject["PlumbobForge"] = value;
-            JsonSerializerOptions options2 = new JsonSerializerOptions
+                plumbobNode["LastOptimizedCacheMilestone"] = options.LastOptimizedCacheMilestone;
+            }
+            if (!string.IsNullOrEmpty(options.LastOptimizedCacheVersion) || !plumbobNode.ContainsKey("LastOptimizedCacheVersion"))
+            {
+                plumbobNode["LastOptimizedCacheVersion"] = options.LastOptimizedCacheVersion ?? "";
+            }
+
+            var optionsJson = new JsonSerializerOptions
             {
                 WriteIndented = true
             };
-            await File.WriteAllTextAsync(filePath, jsonObject.ToJsonString(options2));
+            await File.WriteAllTextAsync(filePath, jsonObject.ToJsonString(optionsJson));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine("[AppSettingsService] Failed to save appsettings.json: " + ex.Message);
         }
     }
 }

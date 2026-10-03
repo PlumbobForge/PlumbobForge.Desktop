@@ -665,6 +665,19 @@
                                     </Border>
 
                                     <TextBlock Text="{Binding CacheMethodDescription}" Classes="form-helper"/>
+
+                                    <!-- Auto-Rebuild Static Cache (Visible only when Static Bundle is selected) -->
+                                    <Grid ColumnDefinitions="*, Auto"
+                                          Margin="0,8,0,0"
+                                          IsVisible="{Binding IsStaticCache}">
+                                        <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,16,0">
+                                            <TextBlock Text="{loc:Loc 'settings.engine.auto_rebuild_static'}" Classes="form-label" Margin="0"/>
+                                            <TextBlock Text="{loc:Loc 'settings.engine.auto_rebuild_static_desc'}" Classes="form-helper" Margin="0"/>
+                                        </StackPanel>
+                                        <ToggleSwitch Grid.Column="1"
+                                                      IsChecked="{Binding AutoRebuildStaticCache, Mode=TwoWay}"
+                                                      VerticalAlignment="Center"/>
+                                    </Grid>
                                 </StackPanel>
 
                                 <Separator Background="{DynamicResource BorderMain}" Margin="0,2"/>

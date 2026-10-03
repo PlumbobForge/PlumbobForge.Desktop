@@ -602,11 +602,47 @@ public partial class ConfigurationsViewModel : ObservableObject
     {
         if (config == null || config.Active) return;
 
+        bool isStatic = string.Equals(_options.CacheMethod, "Static", StringComparison.OrdinalIgnoreCase);
+        bool shouldAutoRebuild = isStatic ? _options.AutoRebuildStaticCache : true;
+
+        if (isStatic && !shouldAutoRebuild)
+        {
+            try
+            {
+                var allConfigs = await _db.ConfigEntities.ToListAsync();
+                foreach (var c in allConfigs)
+                {
+                    c.Active = (c.Id == config.Id);
+                }
+
+                // In static mode without auto-rebuild, mark all sets dirty so user can rebuild when ready
+                var allSets = await _db.SetsEntities.ToListAsync();
+                foreach (var s in allSets)
+                {
+                    s.Dirty = true;
+                }
+
+                await _db.SaveChangesAsync();
+
+                foreach (var c in Configurations)
+                {
+                    c.Active = (c.Id == config.Id);
+                }
+                config.Active = true;
+
+                _ = App.Services?.GetService<MainViewModel>()?.RefreshDirtyStateAsync();
+                ShowStatusToast($"'{config.Name}' is now active. Rebuild cache when ready.", isError: false);
+            }
+            catch (Exception ex)
+            {
+                ShowStatusToast($"Failed to activate configuration: {ex.Message}", isError: true);
+            }
+            return;
+        }
+
         var mainVm = _serviceProvider.GetService<MainViewModel>();
         var modal = new TaskProgressModalViewModel();
         modal.Start(LocalizationManager.Instance.GetString("progress.activating_config", config.Name));
-
-        bool isStatic = string.Equals(_options.CacheMethod, "Static", StringComparison.OrdinalIgnoreCase);
 
         if (mainVm != null && isStatic) mainVm.ActiveProgressModal = modal;
         modal.Closed += () => { if (mainVm != null) mainVm.ActiveProgressModal = null; };
@@ -792,7 +828,11 @@ public partial class ConfigurationsViewModel : ObservableObject
                         var allSets = await _db.SetsEntities.ToListAsync();
                         foreach (var s in allSets) s.Dirty = true;
                         await _db.SaveChangesAsync();
-                        await _pkgManager.SyncToSims3Async(forceRebuildStatic: true);
+
+                        if (_options.AutoRebuildStaticCache)
+                        {
+                            await _pkgManager.SyncToSims3Async(forceRebuildStatic: true);
+                        }
                     }
                     else
                     {
@@ -848,7 +888,11 @@ public partial class ConfigurationsViewModel : ObservableObject
                         var allSets = await _db.SetsEntities.ToListAsync();
                         foreach (var s in allSets) s.Dirty = true;
                         await _db.SaveChangesAsync();
-                        await _pkgManager.SyncToSims3Async(forceRebuildStatic: true);
+
+                        if (_options.AutoRebuildStaticCache)
+                        {
+                            await _pkgManager.SyncToSims3Async(forceRebuildStatic: true);
+                        }
                     }
                     else
                     {

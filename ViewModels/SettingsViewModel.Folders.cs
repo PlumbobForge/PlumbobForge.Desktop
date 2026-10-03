@@ -65,6 +65,19 @@ public partial class SettingsViewModel
     public void PromptOrApplyDocumentBaseDir(string newPath)
     {
         if (string.IsNullOrWhiteSpace(newPath)) return;
+
+        // If the user picked the "Library" folder itself (e.g. C:\...\PlumbobForge\Library),
+        // adjust to the parent folder because PlumbobForge always appends "Library" to DocumentBaseDir.
+        try
+        {
+            var dirInfo = new DirectoryInfo(newPath.TrimEnd('\\', '/'));
+            if (dirInfo.Exists && dirInfo.Name.Equals("Library", StringComparison.OrdinalIgnoreCase) && dirInfo.Parent != null)
+            {
+                newPath = dirInfo.Parent.FullName;
+            }
+        }
+        catch { }
+
         string oldPath = _options.DocumentBaseDir ?? string.Empty;
         if (string.Equals(oldPath.TrimEnd('\\', '/'), newPath.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase))
         {
@@ -158,6 +171,10 @@ public partial class SettingsViewModel
                 DocumentBaseDir = newBase;
                 await SaveSettingsInternalAsync(silent: true);
 
+                // Reload watcher on new path
+                var watcher = _serviceProvider.GetService<DownloadsWatcherService>();
+                watcher?.ReloadWatchers(_options);
+
                 // Rebuild cache
                 await _pkgManager.RunAsync(isRefresh: true, onProgress: null, progress: modal, forceRebuild: true);
             });
@@ -193,6 +210,16 @@ public partial class SettingsViewModel
         await _db.SaveChangesAsync();
         _db.ChangeTracker.Clear();
         await SaveSettingsInternalAsync(silent: true);
+
+        // Reload watcher on new path
+        var watcher = _serviceProvider.GetService<DownloadsWatcherService>();
+        watcher?.ReloadWatchers(_options);
+
+        // Rescan and refresh library view
+        await _pkgManager.ScanLibraryDiskAsync();
+        var contentVm = _serviceProvider.GetService<ContentManagerViewModel>();
+        if (contentVm != null) await contentVm.LoadDataAsync();
+
         ShowStatus("Library path updated!", isError: false);
     }
 

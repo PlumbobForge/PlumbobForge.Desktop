@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
@@ -17,53 +18,47 @@ using PlumbobForge.Desktop.Services.Localization;
 
 namespace PlumbobForge.Desktop.ViewModels;
 
-public partial class LanguageOptionItemViewModel : ObservableObject
-{
-    public LanguageOption Option { get; }
-    public string Code => Option.Code;
-    public string DisplayName => Option.DisplayName;
-    public string NativeName => Option.NativeName;
-
-    [ObservableProperty]
-    private bool _isSelected;
-
-    public LanguageOptionItemViewModel(LanguageOption option, bool isSelected)
-    {
-        Option = option;
-        _isSelected = isSelected;
-    }
-}
-
-public partial class AccentColorItemViewModel : ObservableObject
-{
-    public AccentOption Option { get; }
-    public string Name => Option.Name;
-    public string DisplayName => Option.DisplayName;
-    public string Hex => Option.Hex;
-    public Avalonia.Media.IBrush SwatchBrush { get; }
-
-    [ObservableProperty]
-    private bool _isSelected;
-
-    public AccentColorItemViewModel(AccentOption option, bool isSelected)
-    {
-        Option = option;
-        SwatchBrush = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse(option.Hex));
-        _isSelected = isSelected;
-    }
-}
-
 public partial class SettingsViewModel : ObservableObject
 {
-    private readonly IServiceProvider _serviceProvider;
     private readonly AppDbContext _db;
-    private readonly PKGManager _pkgManager;
     private readonly PlumbobForgeOptions _options;
+    private readonly PKGManager _pkgManager;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly LocalizationService _localizer;
     private readonly UpdateService _updateService;
+
+    [ObservableProperty]
+    private string _statusToastMessage = string.Empty;
+
+    [ObservableProperty]
+    private bool _isStatusToastVisible = false;
+
+    [ObservableProperty]
+    private bool _isStatusToastError = false;
+
+    [ObservableProperty]
+    private bool _isSaving = false;
 
     private bool _isInitializing = false;
 
-    #region Appearance & Theme Settings
+    #region Localization & Appearance
+
+    [ObservableProperty]
+    private LanguageOptionItemViewModel? _selectedLanguageOption;
+
+    public ObservableCollection<LanguageOptionItemViewModel> LanguageOptions { get; } = new();
+
+    public void SelectLanguage(LanguageOptionItemViewModel? lang)
+    {
+        if (lang == null) return;
+        SelectedLanguageOption = lang;
+        LocalizationManager.Instance.SetLanguage(lang.Code);
+        _options.Language = lang.Code;
+        _ = SaveSettingsInternalAsync(silent: true);
+        OnPropertyChanged(nameof(CacheMethodDescription));
+        OnPropertyChanged(nameof(CompressionDescription));
+        OnPropertyChanged(nameof(CompressionLevelText));
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsDarkTheme))]
@@ -73,59 +68,44 @@ public partial class SettingsViewModel : ObservableObject
 
     public bool IsDarkTheme => string.Equals(SelectedTheme, "Dark", StringComparison.OrdinalIgnoreCase);
     public bool IsLightTheme => string.Equals(SelectedTheme, "Light", StringComparison.OrdinalIgnoreCase);
-    public bool IsSystemTheme => string.Equals(SelectedTheme, "System", StringComparison.OrdinalIgnoreCase) || string.Equals(SelectedTheme, "Auto", StringComparison.OrdinalIgnoreCase);
-
-    [ObservableProperty]
-    private LanguageOptionItemViewModel? _selectedLanguageOption;
-
-    public ObservableCollection<LanguageOptionItemViewModel> LanguageOptions { get; } = new();
+    public bool IsSystemTheme => string.Equals(SelectedTheme, "System", StringComparison.OrdinalIgnoreCase);
 
     [RelayCommand]
-    public void SelectLanguage(LanguageOptionItemViewModel? lang)
+    public void SetTheme(string? theme)
     {
-        if (lang == null) return;
-        SelectedLanguageOption = lang;
-    }
-
-    partial void OnSelectedLanguageOptionChanged(LanguageOptionItemViewModel? value)
-    {
-        if (_isInitializing || value == null) return;
-        _options.Language = value.Code;
-        LocalizationManager.Instance.SetLanguage(value.Code);
-        foreach (var item in LanguageOptions)
-        {
-            item.IsSelected = (item.Code == value.Code);
-        }
+        if (string.IsNullOrWhiteSpace(theme)) return;
+        SelectedTheme = theme;
+        ThemeService.ApplyTheme(theme);
+        _options.Theme = theme;
         _ = SaveSettingsInternalAsync(silent: true);
     }
+
+    public ObservableCollection<AccentColorItemViewModel> AccentOptions { get; } = new();
 
     [ObservableProperty]
     private string _selectedAccent = "Emerald";
 
-    public ObservableCollection<AccentColorItemViewModel> AccentOptions { get; } = new();
-
     [RelayCommand]
-    public void SetTheme(string theme)
+    public void SetAccent(string? accentName)
     {
-        SelectedTheme = theme;
-        _options.Theme = theme;
-        ThemeService.ApplyTheme(theme);
+        if (string.IsNullOrWhiteSpace(accentName)) return;
+        SelectedAccent = accentName;
+        ThemeService.ApplyAccent(accentName);
+        _options.AccentColor = accentName;
+
+        foreach (var opt in AccentOptions)
+        {
+            opt.IsSelected = string.Equals(opt.Name, accentName, StringComparison.OrdinalIgnoreCase);
+        }
+
         _ = SaveSettingsInternalAsync(silent: true);
     }
 
     [RelayCommand]
-    public void SetAccent(string accentName)
+    public void SelectAccent(AccentColorItemViewModel? item)
     {
-        SelectedAccent = accentName;
-        _options.AccentColor = accentName;
-        ThemeService.ApplyAccent(accentName);
-
-        foreach (var item in AccentOptions)
-        {
-            item.IsSelected = string.Equals(item.Name, accentName, StringComparison.OrdinalIgnoreCase);
-        }
-
-        _ = SaveSettingsInternalAsync(silent: true);
+        if (item == null) return;
+        SetAccent(item.Name);
     }
 
     #endregion
@@ -144,6 +124,16 @@ public partial class SettingsViewModel : ObservableObject
     public string CacheMethodDescription => IsDynamicCache
         ? LocalizationManager.Instance.GetString("settings.engine.dynamic_cache_desc")
         : LocalizationManager.Instance.GetString("settings.engine.static_bundle_desc");
+
+    [ObservableProperty]
+    private bool _autoRebuildStaticCache = false;
+
+    partial void OnAutoRebuildStaticCacheChanged(bool value)
+    {
+        if (_isInitializing) return;
+        _options.AutoRebuildStaticCache = value;
+        _ = SaveSettingsInternalAsync(silent: true);
+    }
 
     // Slider: 0 = None (0), 1 = Balanced (1), 2 = High (3)
     [ObservableProperty]
@@ -174,19 +164,26 @@ public partial class SettingsViewModel : ObservableObject
         }
     }
 
-    public string CompressionLevelText => CompressionLevel switch
+    public string CompressionLevelText => (int)Math.Round(CompressionSliderValue) switch
     {
         0 => LocalizationManager.Instance.GetString("settings.engine.none_label"),
         1 => LocalizationManager.Instance.GetString("settings.engine.balanced_label"),
         _ => LocalizationManager.Instance.GetString("settings.engine.high_label")
     };
 
-    public string CompressionDescription => CompressionLevel switch
+    public string CompressionDescription => (int)Math.Round(CompressionSliderValue) switch
     {
         0 => LocalizationManager.Instance.GetString("settings.engine.none_desc"),
         1 => LocalizationManager.Instance.GetString("settings.engine.balanced_desc"),
         _ => LocalizationManager.Instance.GetString("settings.engine.high_desc")
     };
+
+    partial void OnCompressionSliderValueChanged(double value)
+    {
+        if (_isInitializing) return;
+        _options.CompressionLevel = CompressionLevel;
+        _ = SaveSettingsInternalAsync(silent: true);
+    }
 
     [ObservableProperty]
     private bool _enableAutoScan = true;
@@ -195,13 +192,6 @@ public partial class SettingsViewModel : ObservableObject
     {
         if (_isInitializing) return;
         _options.EnableAutoScan = value;
-        _ = SaveSettingsInternalAsync(silent: true);
-    }
-
-    partial void OnCompressionSliderValueChanged(double value)
-    {
-        if (_isInitializing) return;
-        _options.CompressionLevel = CompressionLevel;
         _ = SaveSettingsInternalAsync(silent: true);
     }
 
@@ -244,12 +234,7 @@ public partial class SettingsViewModel : ObservableObject
                 set.Dirty = true;
             }
             await _db.SaveChangesAsync();
-
-            var mainVm = _serviceProvider.GetService<MainViewModel>();
-            if (mainVm != null)
-            {
-                await mainVm.RefreshDirtyStateAsync();
-            }
+            _ = App.Services?.GetService<MainViewModel>()?.RefreshDirtyStateAsync();
         }
         catch { }
     }
@@ -257,68 +242,56 @@ public partial class SettingsViewModel : ObservableObject
     public ObservableCollection<string> ObservedFolders { get; } = new();
 
     [ObservableProperty]
-    private int _totalSetsCount = 0;
+    private int _totalSetsCount;
 
     [ObservableProperty]
-    private int _totalItemsCount = 0;
-
-    [ObservableProperty]
-    private bool _isSaving = false;
-
-    [ObservableProperty]
-    private string _statusToastMessage = string.Empty;
-
-    [ObservableProperty]
-    private bool _isStatusToastVisible = false;
-
-    [ObservableProperty]
-    private bool _isStatusToastError = false;
+    private int _totalItemsCount;
 
     #endregion
 
-    public SettingsViewModel(IServiceProvider serviceProvider, AppDbContext db, PKGManager pkgManager, IOptions<PlumbobForgeOptions> options, UpdateService updateService)
+    #region Maintenance & Diagnostics
+
+    [ObservableProperty]
+    private bool _isMaintenanceRunning = false;
+
+    [ObservableProperty]
+    private string _maintenanceStatus = string.Empty;
+
+    #endregion
+
+    public SettingsViewModel(
+        AppDbContext db,
+        IOptions<PlumbobForgeOptions> options,
+        PKGManager pkgManager,
+        IServiceProvider serviceProvider,
+        LocalizationService localizer,
+        UpdateService updateService)
     {
-        _serviceProvider = serviceProvider;
         _db = db;
+        _options = options.Value;
         _pkgManager = pkgManager;
-        _options = options.Value ?? new PlumbobForgeOptions();
+        _serviceProvider = serviceProvider;
+        _localizer = localizer;
         _updateService = updateService;
 
-        var asmVersion = typeof(SettingsViewModel).Assembly.GetName().Version;
-        if (asmVersion != null)
-        {
-            AppVersion = $"{asmVersion.Major}.{asmVersion.Minor}.{asmVersion.Build}";
-        }
-
-        LocalizationManager.Instance.LanguageChanged += _ =>
-        {
-            OnPropertyChanged(nameof(CacheMethodDescription));
-            OnPropertyChanged(nameof(CompressionLevelText));
-            OnPropertyChanged(nameof(CompressionDescription));
-        };
-
-        LoadInitialValues();
-        _ = LoadStatsAsync();
+        _ = LoadSettingsAsync();
     }
 
-    private void LoadInitialValues()
+    public async Task LoadSettingsAsync()
     {
         _isInitializing = true;
         try
         {
-            SelectedTheme = string.IsNullOrWhiteSpace(_options.Theme) ? "Dark" : _options.Theme;
-            SelectedAccent = string.IsNullOrWhiteSpace(_options.AccentColor) ? "Emerald" : _options.AccentColor;
-
             LanguageOptions.Clear();
-            string currentLang = string.IsNullOrWhiteSpace(_options.Language) ? "auto" : _options.Language;
             foreach (var lang in LocalizationManager.SupportedLanguages)
             {
-                bool isSel = lang.Code.Equals(currentLang, StringComparison.OrdinalIgnoreCase);
-                LanguageOptions.Add(new LanguageOptionItemViewModel(lang, isSel));
+                LanguageOptions.Add(new LanguageOptionItemViewModel(lang));
             }
+            SelectedLanguageOption = LanguageOptions.FirstOrDefault(l => l.Code == LocalizationManager.Instance.CurrentLanguage)
+                ?? LanguageOptions.FirstOrDefault(l => l.Code == "auto");
 
-            SelectedLanguageOption = LanguageOptions.FirstOrDefault(l =>
-                l.Code.Equals(currentLang, StringComparison.OrdinalIgnoreCase)) ?? LanguageOptions.FirstOrDefault();
+            SelectedTheme = string.IsNullOrWhiteSpace(_options.Theme) ? ThemeService.CurrentTheme : _options.Theme;
+            SelectedAccent = string.IsNullOrWhiteSpace(_options.AccentColor) ? ThemeService.CurrentAccent : _options.AccentColor;
 
             AccentOptions.Clear();
             foreach (var accent in ThemeService.Accents)
@@ -329,6 +302,7 @@ public partial class SettingsViewModel : ObservableObject
             DocumentBaseDir = _options.DocumentBaseDir ?? string.Empty;
             GameFilesDir = _options.GameFilesDir ?? string.Empty;
             CacheMethod = string.IsNullOrEmpty(_options.CacheMethod) ? "Dynamic" : _options.CacheMethod;
+            AutoRebuildStaticCache = _options.AutoRebuildStaticCache;
             CompressionLevel = _options.CompressionLevel;
             EnableAutoScan = _options.EnableAutoScan;
 
@@ -343,6 +317,8 @@ public partial class SettingsViewModel : ObservableObject
                     }
                 }
             }
+
+            await LoadStatsAsync();
         }
         finally
         {
@@ -363,6 +339,7 @@ public partial class SettingsViewModel : ObservableObject
             _options.DocumentBaseDir = DocumentBaseDir;
             _options.GameFilesDir = GameFilesDir;
             _options.CacheMethod = CacheMethod;
+            _options.AutoRebuildStaticCache = AutoRebuildStaticCache;
             _options.CompressionLevel = CompressionLevel;
             _options.EnableAutoScan = EnableAutoScan;
             _options.ObservedFolders = ObservedFolders.ToList();
@@ -378,12 +355,15 @@ public partial class SettingsViewModel : ObservableObject
 
             if (!silent)
             {
-                ShowStatus("Settings saved successfully!", isError: false);
+                ShowStatus(LocalizationManager.Instance.GetString("settings.status.saved"), isError: false);
             }
         }
         catch (Exception ex)
         {
-            ShowStatus($"Failed to save settings: {ex.Message}", isError: true);
+            if (!silent)
+            {
+                ShowStatus(LocalizationManager.Instance.GetString("settings.status.error", ex.Message), isError: true);
+            }
         }
         finally
         {
@@ -391,18 +371,18 @@ public partial class SettingsViewModel : ObservableObject
         }
     }
 
-    public void ShowStatus(string message, bool isError = false)
+    public void ShowStatus(string message, bool isError)
     {
         StatusToastMessage = message;
         IsStatusToastError = isError;
         IsStatusToastVisible = true;
+        _ = ClearStatusAfterDelayAsync();
+    }
 
-        Task.Delay(3500).ContinueWith(_ =>
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-            {
-                IsStatusToastVisible = false;
-            });
-        });
+    private async Task ClearStatusAfterDelayAsync()
+    {
+        await Task.Delay(4000);
+        IsStatusToastVisible = false;
+        StatusToastMessage = string.Empty;
     }
 }

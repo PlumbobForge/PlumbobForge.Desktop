@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PlumbobForge.Backend.Database;
+using PlumbobForge.Installer.Shared;
 using PlumbobForge.Desktop.Services;
 
 namespace PlumbobForge.Desktop.ViewModels;
@@ -17,6 +18,7 @@ namespace PlumbobForge.Desktop.ViewModels;
 public partial class MainViewModel : ObservableObject
 {
     private readonly IServiceProvider _serviceProvider;
+    public const int CurrentCacheOptimizationMilestone = 1;
 
     [ObservableProperty]
     private ObservableObject? _currentView;
@@ -62,21 +64,23 @@ public partial class MainViewModel : ObservableObject
     {
         _serviceProvider = serviceProvider;
         QuickSwitcher = serviceProvider.GetRequiredService<QuickSwitcherViewModel>();
+
+        // Defer heavy content loading until after MainWindow renders its initial frame
         Dispatcher.UIThread.Post(() =>
         {
             NavigateToContentManager();
-            RefreshDirtyStateAsync();
+            _ = RefreshDirtyStateAsync();
+            _ = CheckCacheOptimizationOnStartupAsync();
         }, DispatcherPriority.Loaded);
 
         _ = CheckForUpdatesOnStartupAsync();
-        _ = CheckCacheOptimizationOnStartupAsync();
     }
 
     private async Task CheckCacheOptimizationOnStartupAsync()
     {
         try
         {
-            await Task.Delay(1500);
+            await Task.Delay(1000);
 
             string settingsPath = AppSettingsService.GetAppSettingsPath();
             if (!File.Exists(settingsPath)) return;
@@ -89,11 +93,15 @@ public partial class MainViewModel : ObservableObject
             bool hasSeen = pfNode["HasSeenWalkthrough"]?.GetValue<bool>() ?? false;
             if (!hasSeen) return;
 
-            string? lastOpt = pfNode["LastOptimizedCacheVersion"]?.GetValue<string>();
-            var asmVersion = typeof(MainViewModel).Assembly.GetName().Version;
-            string currentVer = asmVersion != null ? asmVersion.ToString(3) : "1.0.6";
+            int lastMilestone = pfNode["LastOptimizedCacheMilestone"]?.GetValue<int>() ?? 0;
+            // Backward compatibility: If LastOptimizedCacheVersion was already recorded,
+            // milestone 1 is already completed so the toast will not reappear when updating to future versions.
+            if (lastMilestone == 0 && !string.IsNullOrEmpty(pfNode["LastOptimizedCacheVersion"]?.GetValue<string>()))
+            {
+                lastMilestone = 1;
+            }
 
-            if (lastOpt != currentVer)
+            if (lastMilestone < CurrentCacheOptimizationMilestone)
             {
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
@@ -129,8 +137,9 @@ public partial class MainViewModel : ObservableObject
             }
 
             var asmVersion = typeof(MainViewModel).Assembly.GetName().Version;
-            string currentVer = asmVersion != null ? asmVersion.ToString(3) : "1.0.6";
+            string currentVer = asmVersion != null ? asmVersion.ToString(3) : InstallerConstants.DisplayVersion;
             pfNode["LastOptimizedCacheVersion"] = currentVer;
+            pfNode["LastOptimizedCacheMilestone"] = CurrentCacheOptimizationMilestone;
 
             var opts = new JsonSerializerOptions { WriteIndented = true };
             await File.WriteAllTextAsync(settingsPath, root.ToJsonString(opts));
@@ -164,7 +173,7 @@ public partial class MainViewModel : ObservableObject
             Version version = typeof(MainViewModel).Assembly.GetName().Version;
             string currentVersionString = version != null
                 ? (version.Revision > 0 ? version.ToString(4) : version.ToString(3))
-                : "1.0.6";
+                : InstallerConstants.DisplayVersion;
 
             UpdateCheckResult result = await requiredService.CheckForUpdatesAsync(currentVersionString);
             if (result.IsUpdateAvailable)

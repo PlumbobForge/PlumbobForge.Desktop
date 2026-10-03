@@ -107,7 +107,7 @@ public partial class SettingsViewModel
 
             if (result.IsUpdateAvailable)
             {
-                string patchTypeDesc = result.IsDeltaUpdate ? "High-Speed Delta Patch" : "Full Package";
+                string patchTypeDesc = result.IsDeltaUpdate ? "Update Patch" : "Full Package";
                 double sizeMb = result.FileSize.HasValue ? result.FileSize.Value / (1024.0 * 1024.0) : 0;
                 string sizeStr = sizeMb > 0 ? $" ({sizeMb:F1} MB, {patchTypeDesc})" : string.Empty;
 
