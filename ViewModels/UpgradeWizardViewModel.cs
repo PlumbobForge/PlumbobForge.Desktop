@@ -43,9 +43,6 @@ public partial class UpgradeWizardViewModel : ObservableObject
     {
         _pkgManager = pkgManager;
         _options = options;
-
-        // Automatically clean legacy cached thumbnails on wizard launch
-        _ = AutoCleanThumbnailsAsync();
     }
 
     private async Task AutoCleanThumbnailsAsync()
@@ -98,6 +95,7 @@ public partial class UpgradeWizardViewModel : ObservableObject
     public async Task FinishAsync()
     {
         _options.Value.HasCompletedUpgradeWizard = true;
+        await AutoCleanThumbnailsAsync();
         await AppSettingsService.SaveOptionsAsync(_options.Value);
         RequestClose?.Invoke(true);
     }
