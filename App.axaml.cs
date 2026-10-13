@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -25,43 +26,33 @@ using PlumbobForge.Installer.Shared;
 
 namespace PlumbobForge.Desktop;
 
-public class App : Application
+public partial class App : Application
 {
-    public static IServiceProvider? Services { get; private set; }
     private IServiceScope? _appScope;
+    public static IServiceProvider Services { get; private set; } = null!;
 
     public override void Initialize()
     {
-        
-        
         AvaloniaXamlLoader.Load(this);
-        
     }
 
     public override void OnFrameworkInitializationCompleted()
     {
-        
-        
-        // 1. Kick off filesystem & registry safety validation asynchronously so startup is non-blocking
-        Task.Run(EnsureInstallSafetyOnStartup);
+        _ = Task.Run(EnsureInstallSafetyOnStartup);
 
-        var appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "plumbobforge-app");
-        var dbPath = Path.Combine(appDataPath, "plumbobforge.db");
-        var appSettingsPath = Path.Combine(appDataPath, "appsettings.json");
-
-        bool appSettingsExistedBefore = File.Exists(appSettingsPath);
+        string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "plumbobforge-app");
+        bool appSettingsExistedBefore = File.Exists(Path.Combine(appDataPath, "appsettings.json"));
 
         var services = new ServiceCollection();
         ConfigureServices(services);
         var rootProvider = services.BuildServiceProvider();
 
-        // 2. Run DB schema check and default seeding in background so UI opens instantly
-        Task.Run(() =>
+        _ = Task.Run(() =>
         {
             try
             {
-                using var initScope = rootProvider.CreateScope();
-                var db = initScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                using var scope = rootProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 EnsureDatabaseSchema(db);
                 EnsureDefaultSetAndConfig(db);
             }
@@ -70,11 +61,12 @@ public class App : Application
                 AppLogger.LogError("Background DB init error", ex);
             }
         });
-        // 3. Create a long-lived application scope so scoped services resolve correctly
+
         _appScope = rootProvider.CreateScope();
         Services = _appScope.ServiceProvider;
 
         var options = Services.GetRequiredService<IOptions<PlumbobForgeOptions>>().Value;
+
         if (!string.IsNullOrWhiteSpace(options.DocumentBaseDir))
         {
             AppLogger.SetLogsDirectory(Path.Combine(options.DocumentBaseDir, "Logs"));
@@ -102,6 +94,7 @@ public class App : Application
             if (!options.HasCompletedUpgradeWizard)
             {
                 options.HasCompletedUpgradeWizard = true;
+                options.LastOptimizedCacheMilestone = MainViewModel.CurrentCacheOptimizationMilestone;
                 _ = AppSettingsService.SaveOptionsAsync(options);
             }
 
@@ -113,69 +106,73 @@ public class App : Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            
             var mainVm = Services.GetRequiredService<MainViewModel>();
             var mainWindow = new MainWindow
             {
                 DataContext = mainVm
             };
             desktop.MainWindow = mainWindow;
-            
-            
-            
 
             if (shouldShowUpgradeWizard)
             {
                 mainWindow.Loaded += async (_, _) =>
                 {
-                    var wizardVm = Services.GetRequiredService<UpgradeWizardViewModel>();
-                    await DialogHelper.ShowUpgradeWizardAsync(wizardVm, mainWindow);
+                    await DialogHelper.ShowUpgradeWizardAsync(Services.GetRequiredService<UpgradeWizardViewModel>(), mainWindow);
                 };
             }
             else if (shouldShowWalkthrough)
             {
                 mainWindow.Loaded += async (_, _) =>
                 {
-                    var walkthroughVm = Services.GetRequiredService<NewUserWalkthroughViewModel>();
-                    await DialogHelper.ShowNewUserWalkthroughAsync(walkthroughVm, mainWindow);
+                    await DialogHelper.ShowNewUserWalkthroughAsync(Services.GetRequiredService<NewUserWalkthroughViewModel>(), mainWindow);
                 };
             }
 
-            // 4. Run background maintenance, clean set hashing, library scanning, and file watching asynchronously
-            Task.Run(async () =>
+            _ = Task.Run(async () =>
             {
                 try
                 {
                     using var scope = Services.CreateScope();
                     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                    // Initialize CachedHash for clean sets in background (doesn't delay UI)
-                    var unhashedCleanSets = db.SetsEntities
+                    var unhashedSets = db.SetsEntities
                         .Include(s => s.MetaEntities)
                         .Where(s => s.CachedHash == null && !s.Dirty)
                         .ToList();
 
-                    if (unhashedCleanSets.Count > 0)
+                    if (unhashedSets.Count > 0)
                     {
-                        foreach (var s in unhashedCleanSets)
+                        foreach (var set in unhashedSets)
                         {
-                            s.CachedHash = SetDirtyTracker.ComputeContentHash(s);
+                            set.CachedHash = SetDirtyTracker.ComputeContentHash(set);
                         }
                         db.SaveChanges();
                     }
 
-                    var pkgManager = scope.ServiceProvider.GetRequiredService<PKGManager>();
-                    await pkgManager.ScanLibraryDiskAsync();
+                    await scope.ServiceProvider.GetRequiredService<PKGManager>().ScanLibraryDiskAsync();
+
+                    var contentVm = Services?.GetService<ContentManagerViewModel>();
+                    if (contentVm != null)
+                    {
+                        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
+                        {
+                            await contentVm.LoadDataAsync();
+                        });
+                    }
                 }
-                catch { }
+                catch
+                {
+                }
             });
 
             try
             {
                 var watcher = Services.GetRequiredService<DownloadsWatcherService>();
-                Task.Run(() => watcher.StartAsync(CancellationToken.None));
+                _ = Task.Run(() => watcher.StartAsync(CancellationToken.None));
             }
-            catch { }
+            catch
+            {
+            }
 
             desktop.ShutdownRequested += (_, _) =>
             {
@@ -183,14 +180,16 @@ public class App : Application
                 {
                     Services?.GetService<DownloadsWatcherService>()?.StopAsync(CancellationToken.None).GetAwaiter().GetResult();
                 }
-                catch { }
-
+                catch
+                {
+                }
                 try
                 {
                     Services?.GetService<ContentManagerViewModel>()?.SaveCurrentUiState(immediate: true);
                 }
-                catch { }
-
+                catch
+                {
+                }
                 _appScope?.Dispose();
             };
         }
@@ -202,12 +201,8 @@ public class App : Application
     {
         try
         {
-            var appDir = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            var manifestPath = Path.Combine(appDir, InstallerConstants.InstallManifestFileName);
-
-            // If manifest does not exist yet (e.g. legacy install prior to 1.0.1),
-            // auto-generate it from recognized application components.
-            if (!File.Exists(manifestPath))
+            string appDir = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (!File.Exists(Path.Combine(appDir, "install-manifest.json")))
             {
                 var files = new List<string>();
                 if (Directory.Exists(appDir))
@@ -219,48 +214,40 @@ public class App : Application
                             files.Add(Path.GetFileName(file));
                         }
                     }
-
-                    var localesDir = Path.Combine(appDir, "Assets", "Locales");
+                    string localesDir = Path.Combine(appDir, "Assets", "Locales");
                     if (Directory.Exists(localesDir))
                     {
-                        foreach (var f in Directory.GetFiles(localesDir, "*.json"))
+                        foreach (var localeFile in Directory.GetFiles(localesDir, "*.json"))
                         {
-                            files.Add(Path.GetRelativePath(appDir, f).Replace('\\', '/'));
+                            files.Add(Path.GetRelativePath(appDir, localeFile).Replace('\\', '/'));
                         }
                     }
-
-                    files.Add(InstallerConstants.InstallManifestFileName);
-                    _ = InstallManifest.SaveAsync(appDir, files);
+                    files.Add("install-manifest.json");
+                    InstallManifest.SaveAsync(appDir, files);
                 }
             }
 
-            // Heal registry location if it points directly to a system directory like Program Files
-            var regLocation = RegistryManager.GetInstalledLocation();
-            if (!string.IsNullOrEmpty(regLocation))
+            string installedLocation = RegistryManager.GetInstalledLocation();
+            if (!string.IsNullOrEmpty(installedLocation) && (PathSafety.IsForbiddenDirectory(installedLocation) || !PathSafety.IsDedicatedAppDirectory(installedLocation)))
             {
-                if (PathSafety.IsForbiddenDirectory(regLocation) || !PathSafety.IsDedicatedAppDirectory(regLocation))
-                {
-                    RegistryManager.RegisterInstallation(appDir);
-                }
+                RegistryManager.RegisterInstallation(appDir);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            System.Diagnostics.Debug.WriteLine($"[Startup] EnsureInstallSafetyOnStartup failed: {ex.Message}");
         }
     }
 
     private void ConfigureServices(IServiceCollection services)
     {
-        var appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "plumbobforge-app");
+        string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "plumbobforge-app");
         Directory.CreateDirectory(appDataPath);
 
-        var configBuilder = new ConfigurationBuilder()
-            .AddJsonFile(Path.Combine(appDataPath, "appsettings.json"), optional: true, reloadOnChange: true);
+        var config = new ConfigurationBuilder()
+            .AddJsonFile(Path.Combine(appDataPath, "appsettings.json"), optional: true, reloadOnChange: true)
+            .Build();
 
-        var configuration = configBuilder.Build();
-        services.Configure<PlumbobForgeOptions>(configuration.GetSection("PlumbobForge"));
-
+        services.Configure<PlumbobForgeOptions>(config.GetSection("PlumbobForge"));
         services.PostConfigure<PlumbobForgeOptions>(opts =>
         {
             if (string.IsNullOrEmpty(opts.DocumentBaseDir))
@@ -271,8 +258,8 @@ public class App : Application
 
         services.AddDbContext<AppDbContext>(options =>
         {
-            var dbFile = Path.Combine(appDataPath, "plumbobforge.db");
-            options.UseSqlite($"Data Source={dbFile}");
+            string dbPath = Path.Combine(appDataPath, "plumbobforge.db");
+            options.UseSqlite($"Data Source={dbPath}");
         });
 
         services.AddLogging(builder =>
@@ -286,7 +273,6 @@ public class App : Application
         services.AddSingleton<NotificationService>();
         services.AddSingleton<UpdateService>();
         services.AddSingleton<DownloadsWatcherService>();
-
         services.AddScoped<LocalizationService>();
         services.AddScoped<PackageTypeService>();
         services.AddScoped<ArchiveService>();
@@ -304,12 +290,9 @@ public class App : Application
         services.AddSingleton<ConfigurationsViewModel>();
         services.AddSingleton<HealthViewModel>();
         services.AddSingleton<SettingsViewModel>();
-
         services.AddTransient<UpgradeWizardViewModel>();
         services.AddTransient<NewUserWalkthroughViewModel>();
     }
-
-    private const int CurrentDbSchemaVersion = 4;
 
     private static void EnsureDefaultSetAndConfig(AppDbContext db)
     {
@@ -318,123 +301,107 @@ public class App : Application
             var defaultSet = db.SetsEntities.FirstOrDefault(s => s.Name == "Default");
             if (defaultSet == null)
             {
-                defaultSet = new SetsEntity { Name = "Default", FolderName = "Default", IsDefault = true };
+                defaultSet = new SetsEntity
+                {
+                    Name = "Default",
+                    FolderName = "Default",
+                    IsDefault = true
+                };
                 db.SetsEntities.Add(defaultSet);
                 db.SaveChanges();
             }
 
-            var defaultConfig = db.ConfigEntities.Include(c => c.ConfigSetsEntities).FirstOrDefault(c => c.Name == "Default" || c.Default);
-            if (defaultConfig == null)
-            {
-                defaultConfig = new ConfigEntity { Name = "Default", Active = true, Default = true };
-                db.ConfigEntities.Add(defaultConfig);
-                db.SaveChanges();
+            var defaultConfig = db.ConfigEntities
+                .Include(c => c.ConfigSetsEntities)
+                .FirstOrDefault(c => c.Name == "Default" || c.Default);
 
-                var allSets = db.SetsEntities.ToList();
-                foreach (var set in allSets)
+            if (defaultConfig != null) return;
+
+            defaultConfig = new ConfigEntity
+            {
+                Name = "Default",
+                Active = true,
+                Default = true
+            };
+            db.ConfigEntities.Add(defaultConfig);
+            db.SaveChanges();
+
+            foreach (var set in db.SetsEntities.ToList())
+            {
+                if (!db.ConfigSetsEntities.Any(cs => cs.ConfigEntityId == defaultConfig.Id && cs.SetsEntityId == set.Id))
                 {
-                    if (!db.ConfigSetsEntities.Any(cs => cs.ConfigEntityId == defaultConfig.Id && cs.SetsEntityId == set.Id))
+                    db.ConfigSetsEntities.Add(new ConfigSetsEntity
                     {
-                        db.ConfigSetsEntities.Add(new ConfigSetsEntity { ConfigEntityId = defaultConfig.Id, SetsEntityId = set.Id });
-                    }
+                        ConfigEntityId = defaultConfig.Id,
+                        SetsEntityId = set.Id
+                    });
                 }
-                db.SaveChanges();
             }
+            db.SaveChanges();
         }
-        catch { }
+        catch
+        {
+        }
     }
 
     private static void EnsureDatabaseSchema(AppDbContext db)
     {
         try
         {
-            db.Database.ExecuteSqlRaw(@"
-PRAGMA journal_mode = WAL;
-PRAGMA synchronous = NORMAL;
-PRAGMA temp_store = MEMORY;
-PRAGMA cache_size = -8000;
-");
+            db.Database.ExecuteSqlRaw("\r\nPRAGMA journal_mode = WAL;\r\nPRAGMA synchronous = NORMAL;\r\nPRAGMA temp_store = MEMORY;\r\nPRAGMA cache_size = -8000;\r\n");
         }
-        catch { }
+        catch
+        {
+        }
 
         int userVersion = 0;
         try
         {
             using var conn = db.Database.GetDbConnection();
-            if (conn.State != System.Data.ConnectionState.Open)
+            if (conn.State != ConnectionState.Open)
             {
                 conn.Open();
             }
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "PRAGMA user_version;";
-            var res = cmd.ExecuteScalar();
-            if (res != null && res != DBNull.Value)
+            var val = cmd.ExecuteScalar();
+            if (val != null && val != DBNull.Value)
             {
-                userVersion = Convert.ToInt32(res);
+                userVersion = Convert.ToInt32(val);
             }
         }
-        catch { }
-
-        // If schema is up to date, skip table creation and the 43+ ALTER TABLE queries entirely!
-        if (userVersion >= CurrentDbSchemaVersion)
+        catch
         {
-            return;
         }
+
+        if (userVersion >= 4) return;
 
         try
         {
             db.Database.EnsureCreated();
         }
-        catch { }
+        catch
+        {
+        }
 
         try
         {
-            db.Database.ExecuteSqlRaw(@"
-CREATE TABLE IF NOT EXISTS Tombstones (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    FileName TEXT NOT NULL,
-    PackageType TEXT NOT NULL DEFAULT '',
-    CASCategories TEXT,
-    CASAge TEXT,
-    CASGender TEXT,
-    CASOutfitCategory TEXT,
-    IsUserTagged INTEGER NOT NULL DEFAULT 0,
-    UserTags TEXT,
-    Description TEXT,
-    SetsEntityId INTEGER,
-    DeletedAt TEXT NOT NULL DEFAULT ''
-);");
+            db.Database.ExecuteSqlRaw("\r\nCREATE TABLE IF NOT EXISTS Tombstones (\r\n    Id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\r\n    FileName TEXT NOT NULL,\r\n    PackageType TEXT NOT NULL DEFAULT '',\r\n    CASCategories TEXT,\r\n    CASAge TEXT,\r\n    CASGender TEXT,\r\n    CASOutfitCategory TEXT,\r\n    IsUserTagged INTEGER NOT NULL DEFAULT 0,\r\n    UserTags TEXT,\r\n    Description TEXT,\r\n    SetsEntityId INTEGER,\r\n    DeletedAt TEXT NOT NULL DEFAULT ''\r\n);");
         }
-        catch { }
+        catch
+        {
+        }
 
         try
         {
-            db.Database.ExecuteSqlRaw(@"
-CREATE TABLE IF NOT EXISTS Collections (
-    Id INTEGER PRIMARY KEY NOT NULL,
-    Name TEXT NOT NULL,
-    IconType INTEGER NOT NULL,
-    IconGroup INTEGER NOT NULL,
-    IconInstance INTEGER NOT NULL,
-    Flags INTEGER NOT NULL,
-    IsPlumbobForge INTEGER NOT NULL DEFAULT 1,
-    HideFromCatalog INTEGER NOT NULL DEFAULT 0,
-    CreatedAt TEXT NOT NULL,
-    UpdatedAt TEXT NOT NULL
-);");
-
-            db.Database.ExecuteSqlRaw(@"
-CREATE TABLE IF NOT EXISTS CollectionSets (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    CollectionEntityId INTEGER NOT NULL,
-    SetsEntityId INTEGER NOT NULL,
-    FOREIGN KEY (CollectionEntityId) REFERENCES Collections(Id) ON DELETE CASCADE,
-    FOREIGN KEY (SetsEntityId) REFERENCES SetsEntities(Id) ON DELETE CASCADE
-);");
+            db.Database.ExecuteSqlRaw("\r\nCREATE TABLE IF NOT EXISTS Collections (\r\n    Id INTEGER PRIMARY KEY NOT NULL,\r\n    Name TEXT NOT NULL,\r\n    IconType INTEGER NOT NULL,\r\n    IconGroup INTEGER NOT NULL,\r\n    IconInstance INTEGER NOT NULL,\r\n    Flags INTEGER NOT NULL,\r\n    IsPlumbobForge INTEGER NOT NULL DEFAULT 1,\r\n    HideFromCatalog INTEGER NOT NULL DEFAULT 0,\r\n    CreatedAt TEXT NOT NULL,\r\n    UpdatedAt TEXT NOT NULL\r\n);");
+            db.Database.ExecuteSqlRaw("\r\nCREATE TABLE IF NOT EXISTS CollectionSets (\r\n    Id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\r\n    CollectionEntityId INTEGER NOT NULL,\r\n    SetsEntityId INTEGER NOT NULL,\r\n    FOREIGN KEY (CollectionEntityId) REFERENCES Collections(Id) ON DELETE CASCADE,\r\n    FOREIGN KEY (SetsEntityId) REFERENCES SetsEntities(Id) ON DELETE CASCADE\r\n);");
         }
-        catch { }
+        catch
+        {
+        }
 
-        var alterQueries = new[]
+        string[] migrations = new string[41]
         {
             "ALTER TABLE Tombstones ADD COLUMN PackageType TEXT NOT NULL DEFAULT '';",
             "ALTER TABLE Tombstones ADD COLUMN CASCategories TEXT;",
@@ -479,30 +446,31 @@ CREATE TABLE IF NOT EXISTS CollectionSets (
             "ALTER TABLE Tombstones ADD COLUMN IsFavorite INTEGER NOT NULL DEFAULT 0;"
         };
 
-        foreach (var sql in alterQueries)
+        foreach (var sql in migrations)
         {
             try
             {
                 db.Database.ExecuteSqlRaw(sql);
             }
-            catch { }
+            catch
+            {
+            }
         }
-
-        // Fast SQL deduplication for duplicate MetaEntities if any exist
-        try
-        {
-            db.Database.ExecuteSqlRaw(@"
-                DELETE FROM MetaEntities 
-                WHERE Id NOT IN (
-                    SELECT MIN(Id) FROM MetaEntities GROUP BY LOWER(FileName)
-                );");
-        }
-        catch { }
 
         try
         {
-            db.Database.ExecuteSqlRaw($"PRAGMA user_version = {CurrentDbSchemaVersion};");
+            db.Database.ExecuteSqlRaw("\r\n                DELETE FROM MetaEntities \r\n                WHERE Id NOT IN (\r\n                    SELECT MIN(Id) FROM MetaEntities GROUP BY LOWER(FileName)\r\n                );");
         }
-        catch { }
+        catch
+        {
+        }
+
+        try
+        {
+            db.Database.ExecuteSqlRaw($"PRAGMA user_version = 4;");
+        }
+        catch
+        {
+        }
     }
 }
