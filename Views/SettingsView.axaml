@@ -546,6 +546,25 @@
                                     </Grid>
                                     <TextBlock Text="{loc:Loc 'settings.storage.game_dir_help'}" Classes="form-helper"/>
                                 </StackPanel>
+
+                                <!-- Sims 3 User Documents Dir -->
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{loc:Loc 'settings.storage.sims3_user_dir'}" Classes="form-label"/>
+                                    <Grid ColumnDefinitions="*, 8, Auto, 6, Auto">
+                                        <TextBox Grid.Column="0" Classes="settings-input"
+                                                 Text="{Binding Sims3UserDir, Mode=TwoWay}"
+                                                 LostFocus="OnSims3UserDirLostFocus"
+                                                 KeyDown="OnSims3UserDirKeyDown"
+                                                 Watermark="e.g. C:\Users\Username\Documents\Electronic Arts\The Sims 3"/>
+                                        <Button Grid.Column="2" Classes="btn-action-sec" Click="OnBrowseSims3UserDirClick" ToolTip.Tip="{loc:Loc 'settings.storage.browse'}">
+                                            <icon:PackIconBoxIcons Kind="RegularFolderOpen" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                        </Button>
+                                        <Button Grid.Column="4" Classes="btn-action-sec" Command="{Binding AutoDetectSims3UserDirCommand}" ToolTip.Tip="{loc:Loc 'settings.storage.detect'}">
+                                            <TextBlock Text="{loc:Loc 'settings.storage.detect'}" FontSize="11.5"/>
+                                        </Button>
+                                    </Grid>
+                                    <TextBlock Text="{loc:Loc 'settings.storage.sims3_user_dir_help'}" Classes="form-helper"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
 

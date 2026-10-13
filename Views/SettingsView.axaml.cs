@@ -99,4 +99,30 @@ public partial class SettingsView : UserControl
             TopLevel.GetTopLevel(this)?.Focus();
         }
     }
+
+    private async void OnBrowseSims3UserDirClick(object? sender, RoutedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.StorageProvider != null && DataContext is SettingsViewModel vm)
+        {
+            await vm.BrowseSims3UserDirAsync(topLevel.StorageProvider);
+        }
+    }
+
+    private void OnSims3UserDirLostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox tb && DataContext is SettingsViewModel vm)
+        {
+            vm.Sims3UserDir = tb.Text ?? string.Empty;
+        }
+    }
+
+    private void OnSims3UserDirKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && sender is TextBox tb && DataContext is SettingsViewModel vm)
+        {
+            vm.Sims3UserDir = tb.Text ?? string.Empty;
+            TopLevel.GetTopLevel(this)?.Focus();
+        }
+    }
 }
