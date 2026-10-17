@@ -283,13 +283,17 @@
                 </Grid>
             </Border>
 
-            <!-- Main Content Area -->
-            <TransitioningContentControl Grid.Row="1"
-                                         Content="{Binding CurrentView}">
-                <TransitioningContentControl.PageTransition>
-                    <CrossFade Duration="0:00:00.150"/>
-                </TransitioningContentControl.PageTransition>
-            </TransitioningContentControl>
+            <!-- Main Content Area (Persistent tab views for instant switching & state preservation) -->
+            <Grid Grid.Row="1">
+                <ContentControl Content="{Binding ContentManagerVm}"
+                                IsVisible="{Binding IsContentManagerActive}"/>
+                <ContentControl Content="{Binding ConfigurationsVm}"
+                                IsVisible="{Binding IsConfigurationsActive}"/>
+                <ContentControl Content="{Binding HealthVm}"
+                                IsVisible="{Binding IsToolsActive}"/>
+                <ContentControl Content="{Binding SettingsVm}"
+                                IsVisible="{Binding IsSettingsActive}"/>
+            </Grid>
 
             <!-- Quick Switcher Modal Overlay -->
             <views:QuickSwitcherOverlayView Grid.RowSpan="2"
