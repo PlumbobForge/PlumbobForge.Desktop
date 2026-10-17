@@ -120,6 +120,8 @@
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <Button Content="{loc:Loc 'common.all'}" Classes="category-pill" Classes.selected="{Binding IsAllSelected}"
                                 Command="{Binding SetCategoryCommand}" CommandParameter="All"/>
+                        <Button Content="{loc:Loc 'nav.places'}" Classes="category-pill" Classes.selected="{Binding IsPlacesSelected}"
+                                Command="{Binding SetCategoryCommand}" CommandParameter="Places"/>
                         <Button Content="{loc:Loc 'library.sets'}" Classes="category-pill" Classes.selected="{Binding IsSetsSelected}"
                                 Command="{Binding SetCategoryCommand}" CommandParameter="Sets"/>
                         <Button Content="{loc:Loc 'nav.configurations'}" Classes="category-pill" Classes.selected="{Binding IsConfigsSelected}"

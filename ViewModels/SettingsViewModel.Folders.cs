@@ -30,6 +30,16 @@ public partial class SettingsViewModel
     }
 
     [ObservableProperty]
+    private string _sims3UserDir = string.Empty;
+
+    partial void OnSims3UserDirChanged(string value)
+    {
+        if (_isInitializing) return;
+        _options.Sims3UserDir = value;
+        _ = SaveSettingsInternalAsync(silent: true);
+    }
+
+    [ObservableProperty]
     private string _pendingDocumentBaseDir = string.Empty;
 
     [ObservableProperty]
@@ -59,6 +69,22 @@ public partial class SettingsViewModel
         else
         {
             ShowStatus("Could not automatically locate The Sims 3 installation. Please use Browse.", isError: true);
+        }
+    }
+
+    [RelayCommand]
+    public void AutoDetectSims3UserDir()
+    {
+        string detected = Sims3PathResolver.AutodetectSims3UserFolder();
+        if (!string.IsNullOrEmpty(detected) && Directory.Exists(detected))
+        {
+            Sims3UserDir = detected;
+            ShowStatus($"Auto-detected The Sims 3 folder: {Path.GetFileName(detected)}", isError: false);
+            _ = SaveSettingsInternalAsync(silent: true);
+        }
+        else
+        {
+            ShowStatus("Could not automatically locate The Sims 3 user folder. Please use Browse.", isError: true);
         }
     }
 
@@ -274,6 +300,34 @@ public partial class SettingsViewModel
                     _options.GameFilesDir = path;
                     await SaveSettingsInternalAsync(silent: true);
                     ShowStatus("Game directory updated!", isError: false);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Error selecting directory: {ex.Message}", isError: true);
+        }
+    }
+
+    public async Task BrowseSims3UserDirAsync(IStorageProvider storageProvider)
+    {
+        try
+        {
+            var folders = await storageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = "Select The Sims 3 User Documents Folder",
+                AllowMultiple = false
+            });
+
+            if (folders.Count > 0)
+            {
+                string path = folders[0].Path.LocalPath;
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    Sims3UserDir = path;
+                    _options.Sims3UserDir = path;
+                    await SaveSettingsInternalAsync(silent: true);
+                    ShowStatus("The Sims 3 user folder updated!", isError: false);
                 }
             }
         }

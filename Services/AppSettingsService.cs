@@ -66,6 +66,7 @@ public static class AppSettingsService
             plumbobNode["Language"] = options.Language ?? "auto";
             plumbobNode["DocumentBaseDir"] = options.DocumentBaseDir ?? "";
             plumbobNode["GameFilesDir"] = options.GameFilesDir ?? "";
+            plumbobNode["Sims3UserDir"] = options.Sims3UserDir ?? "";
             plumbobNode["DownloadFolderName"] = string.IsNullOrWhiteSpace(options.DownloadFolderName) ? "Downloads" : options.DownloadFolderName;
             plumbobNode["ArchiveFolderName"] = string.IsNullOrWhiteSpace(options.ArchiveFolderName) ? "Archive" : options.ArchiveFolderName;
             plumbobNode["TS3PackFolderName"] = string.IsNullOrWhiteSpace(options.TS3PackFolderName) ? "Downloads" : options.TS3PackFolderName;

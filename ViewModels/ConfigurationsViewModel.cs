@@ -152,6 +152,8 @@ public partial class ConfigurationsViewModel : ObservableObject
     [RelayCommand]
     public async Task RefreshAsync() => await LoadDataAsync();
 
+    private bool _isDataLoading = false;
+
     public async Task LoadDataAsync()
     {
         if (!Dispatcher.UIThread.CheckAccess())
@@ -160,6 +162,8 @@ public partial class ConfigurationsViewModel : ObservableObject
             return;
         }
 
+        if (_isDataLoading) return;
+        _isDataLoading = true;
         IsLoading = true;
         try
         {
@@ -210,6 +214,7 @@ public partial class ConfigurationsViewModel : ObservableObject
         }
         finally
         {
+            _isDataLoading = false;
             IsLoading = false;
         }
     }

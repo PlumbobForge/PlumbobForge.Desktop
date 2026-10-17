@@ -41,6 +41,13 @@ public partial class SettingsViewModel : ObservableObject
 
     private bool _isInitializing = false;
 
+    public event Action<string>? RequestScrollAndHighlight;
+
+    public void ScrollToAndHighlightSection(string sectionName)
+    {
+        RequestScrollAndHighlight?.Invoke(sectionName);
+    }
+
     #region Localization & Appearance
 
     [ObservableProperty]
@@ -301,6 +308,7 @@ public partial class SettingsViewModel : ObservableObject
 
             DocumentBaseDir = _options.DocumentBaseDir ?? string.Empty;
             GameFilesDir = _options.GameFilesDir ?? string.Empty;
+            Sims3UserDir = _options.Sims3UserDir ?? string.Empty;
             CacheMethod = string.IsNullOrEmpty(_options.CacheMethod) ? "Dynamic" : _options.CacheMethod;
             AutoRebuildStaticCache = _options.AutoRebuildStaticCache;
             CompressionLevel = _options.CompressionLevel;
@@ -338,6 +346,7 @@ public partial class SettingsViewModel : ObservableObject
             _options.Language = SelectedLanguageOption?.Code ?? "auto";
             _options.DocumentBaseDir = DocumentBaseDir;
             _options.GameFilesDir = GameFilesDir;
+            _options.Sims3UserDir = Sims3UserDir;
             _options.CacheMethod = CacheMethod;
             _options.AutoRebuildStaticCache = AutoRebuildStaticCache;
             _options.CompressionLevel = CompressionLevel;

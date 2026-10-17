@@ -27,7 +27,12 @@ public partial class ContentManagerView : UserControl
         {
             if (DataContext is ContentManagerViewModel vm)
             {
-                await vm.LoadDataAsync();
+                vm.RequestScrollToItem -= OnRequestScrollToItem;
+                vm.RequestScrollToItem += OnRequestScrollToItem;
+                if (vm.Items.Count == 0)
+                {
+                    await vm.LoadDataAsync();
+                }
             }
         };
 
@@ -432,6 +437,82 @@ public partial class ContentManagerView : UserControl
         }
 
         vm.UpdateSelectionState();
+    }
+    #endregion
+
+    #region Quick Jump Scroll Support
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+        if (DataContext is ContentManagerViewModel vm)
+        {
+            vm.RequestScrollToItem -= OnRequestScrollToItem;
+            vm.RequestScrollToItem += OnRequestScrollToItem;
+        }
+    }
+
+    private void OnRequestScrollToItem(long itemId)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            ExecuteScrollToItem(itemId);
+        }, Avalonia.Threading.DispatcherPriority.Loaded);
+    }
+
+    private void ExecuteScrollToItem(long itemId, int retryCount = 0)
+    {
+        if (DataContext is not ContentManagerViewModel vm) return;
+
+        if (vm.IsCompactListView)
+        {
+            var targetItem = vm.FilteredItems.FirstOrDefault(i => i.Id == itemId);
+            if (targetItem != null)
+            {
+                ItemsCompactListBox.ScrollIntoView(targetItem);
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    var container = ItemsCompactListBox.ContainerFromItem(targetItem) as Control;
+                    if (container != null)
+                    {
+                        container.BringIntoView();
+                    }
+                    else if (retryCount < 4)
+                    {
+                        Avalonia.Threading.DispatcherTimer.RunOnce(() => ExecuteScrollToItem(itemId, retryCount + 1), TimeSpan.FromMilliseconds(50));
+                    }
+                }, Avalonia.Threading.DispatcherPriority.Loaded);
+            }
+        }
+        else
+        {
+            var targetRow = vm.FilteredRows.FirstOrDefault(r => r.Items.Any(i => i.Id == itemId));
+            if (targetRow != null)
+            {
+                ItemsListBox.ScrollIntoView(targetRow);
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    var rowContainer = ItemsListBox.ContainerFromItem(targetRow) as Control;
+                    if (rowContainer != null)
+                    {
+                        var card = rowContainer.GetVisualDescendants()
+                            .OfType<Border>()
+                            .FirstOrDefault(b => b.Classes.Contains("item-card") && (b.DataContext as ItemViewModel)?.Id == itemId);
+                        if (card != null)
+                        {
+                            card.BringIntoView();
+                        }
+                        else
+                        {
+                            rowContainer.BringIntoView();
+                        }
+                    }
+                    else if (retryCount < 4)
+                    {
+                        Avalonia.Threading.DispatcherTimer.RunOnce(() => ExecuteScrollToItem(itemId, retryCount + 1), TimeSpan.FromMilliseconds(50));
+                    }
+                }, Avalonia.Threading.DispatcherPriority.Loaded);
+            }
+        }
     }
     #endregion
 }

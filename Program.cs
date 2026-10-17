@@ -32,6 +32,8 @@ internal class Program
         };
 
         AppLogger.Initialize();
+        
+        
 
         AppDomain.CurrentDomain.UnhandledException += (s, e) =>
         {
@@ -45,6 +47,8 @@ internal class Program
 
         try
         {
+            
+            
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
         catch (Exception ex)

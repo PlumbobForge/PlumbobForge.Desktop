@@ -59,11 +59,19 @@ public partial class MainViewModel : ObservableObject
     public bool IsSettingsActive => ActiveTab == "Settings";
 
     public QuickSwitcherViewModel QuickSwitcher { get; }
+    public ContentManagerViewModel ContentManagerVm { get; }
+    public ConfigurationsViewModel ConfigurationsVm { get; }
+    public HealthViewModel HealthVm { get; }
+    public SettingsViewModel SettingsVm { get; }
 
     public MainViewModel(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
         QuickSwitcher = serviceProvider.GetRequiredService<QuickSwitcherViewModel>();
+        ContentManagerVm = serviceProvider.GetRequiredService<ContentManagerViewModel>();
+        ConfigurationsVm = serviceProvider.GetRequiredService<ConfigurationsViewModel>();
+        HealthVm = serviceProvider.GetRequiredService<HealthViewModel>();
+        SettingsVm = serviceProvider.GetRequiredService<SettingsViewModel>();
 
         // Defer heavy content loading until after MainWindow renders its initial frame
         Dispatcher.UIThread.Post(() =>
@@ -170,7 +178,7 @@ public partial class MainViewModel : ObservableObject
         {
             await Task.Delay(2500);
             UpdateService requiredService = _serviceProvider.GetRequiredService<UpdateService>();
-            Version version = typeof(MainViewModel).Assembly.GetName().Version;
+            Version? version = typeof(MainViewModel).Assembly.GetName().Version;
             string currentVersionString = version != null
                 ? (version.Revision > 0 ? version.ToString(4) : version.ToString(3))
                 : InstallerConstants.DisplayVersion;
@@ -249,42 +257,42 @@ public partial class MainViewModel : ObservableObject
     public void NavigateToContentManager()
     {
         ActiveTab = "ContentManager";
-        CurrentView = _serviceProvider.GetRequiredService<ContentManagerViewModel>();
+        CurrentView = ContentManagerVm;
     }
 
     [RelayCommand]
     public void NavigateToConfigurations()
     {
         ActiveTab = "Configurations";
-        ConfigurationsViewModel configurationsViewModel = (ConfigurationsViewModel)(CurrentView = _serviceProvider.GetRequiredService<ConfigurationsViewModel>());
-        configurationsViewModel.LoadDataAsync();
+        CurrentView = ConfigurationsVm;
+        _ = ConfigurationsVm.LoadDataAsync();
     }
 
     [RelayCommand]
     public void NavigateToHealth()
     {
         ActiveTab = "Tools";
-        CurrentView = _serviceProvider.GetRequiredService<HealthViewModel>();
+        CurrentView = HealthVm;
     }
 
     [RelayCommand]
     public void NavigateToTools()
     {
         ActiveTab = "Tools";
-        CurrentView = _serviceProvider.GetRequiredService<HealthViewModel>();
+        CurrentView = HealthVm;
     }
 
     [RelayCommand]
     public void NavigateToSettings()
     {
         ActiveTab = "Settings";
-        CurrentView = _serviceProvider.GetRequiredService<SettingsViewModel>();
+        CurrentView = SettingsVm;
     }
 
     public void NavigateToSet(long setId)
     {
         NavigateToContentManager();
-        _serviceProvider.GetRequiredService<ContentManagerViewModel>().SelectSetById(setId, null);
+        ContentManagerVm.SelectSetById(setId, null);
     }
 
     public void NavigateToContentManagerAndSelectSet(long setId, long metaId)
@@ -292,27 +300,52 @@ public partial class MainViewModel : ObservableObject
         NavigateToContentManager();
         try
         {
-            _serviceProvider.GetRequiredService<ContentManagerViewModel>().SelectSetById(setId, metaId);
+            ContentManagerVm.SelectSetById(setId, metaId);
         }
         catch
         {
         }
     }
 
-    public void NavigateToItem(long itemId, long setId)
+    public void NavigateToItem(long itemId, long? setId = null)
     {
         NavigateToContentManager();
-        _serviceProvider.GetRequiredService<ContentManagerViewModel>().SelectSetById(setId, itemId);
+        try
+        {
+            if (setId.HasValue)
+            {
+                ContentManagerVm.SelectSetById(setId.Value, itemId);
+            }
+            else
+            {
+                ContentManagerVm.SelectAllItemsAndSelectItem(itemId);
+            }
+        }
+        catch
+        {
+        }
     }
 
     public void NavigateToConfiguration(long configId)
     {
         NavigateToConfigurations();
         ConfigurationsViewModel requiredService = _serviceProvider.GetRequiredService<ConfigurationsViewModel>();
-        ConfigItemViewModel configItemViewModel = requiredService.Configurations.FirstOrDefault((ConfigItemViewModel c) => c.Id == configId);
+        ConfigItemViewModel? configItemViewModel = requiredService.Configurations.FirstOrDefault((ConfigItemViewModel c) => c.Id == configId);
         if (configItemViewModel != null)
         {
             requiredService.SelectedConfiguration = configItemViewModel;
         }
+    }
+
+    public void NavigateToToolSection(string section)
+    {
+        NavigateToTools();
+        HealthVm.SelectSection(section);
+    }
+
+    public void NavigateToSettingsSection(string section)
+    {
+        NavigateToSettings();
+        SettingsVm.ScrollToAndHighlightSection(section);
     }
 }

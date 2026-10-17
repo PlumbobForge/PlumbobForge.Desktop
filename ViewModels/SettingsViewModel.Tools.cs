@@ -236,7 +236,7 @@ public partial class SettingsViewModel
     {
         try
         {
-            var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Electronic Arts", "The Sims 3");
+            var path = Sims3PathResolver.ResolveSims3UserFolder(_options.Sims3UserDir);
             if (Directory.Exists(path))
             {
                 Process.Start(new ProcessStartInfo("explorer.exe", path) { UseShellExecute = true });
