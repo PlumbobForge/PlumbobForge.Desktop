@@ -87,6 +87,8 @@
     "manual_select": "Select",
     "move_selected": "Move to Set",
     "retag_selected": "Edit Tags & Categories",
+    "refresh_selected": "Refresh Selected / Reload Metadata",
+    "refresh_item": "Refresh Item / Reload Metadata",
     "delete_selected": "Delete Selected",
     "retag_item": "Edit Tags & Category",
     "rename_item": "Rename Item",
@@ -359,6 +361,7 @@
       "remove_tip": "Remove set from this collection",
       "add_cc_sets": "Add CC Sets",
       "filter_sets": "Filter sets...",
+      "loading_sets": "Loading CC sets...",
       "add_tip": "Add this set to collection",
       "add": "Add"
     }
@@ -773,6 +776,7 @@
     "tools": "Tools",
     "settings": "Settings",
     "maximize": "Maximize",
-    "quick_jump": "Quick Jump"
+    "quick_jump": "Quick Jump",
+    "places": "Places"
   }
 }

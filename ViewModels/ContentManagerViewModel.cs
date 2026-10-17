@@ -12,6 +12,7 @@ using PlumbobForge.Backend.Database;
 using PlumbobForge.Backend.Services;
 using PlumbobForge.Desktop.Services;
 using PlumbobForge.Desktop.Services.Localization;
+using PlumbobForge.Desktop.Utils;
 using PlumbobForge.Desktop.Views.Dialogs;
 
 namespace PlumbobForge.Desktop.ViewModels;
@@ -26,6 +27,10 @@ public partial class ContentManagerViewModel : ObservableObject
     private readonly Guid _notificationSubscriptionId;
     private bool _isInitializingState = false;
     private long? _savedSetId = null;
+
+    public event Action<long>? RequestScrollToItem;
+    public void ScrollToItem(long itemId) => RequestScrollToItem?.Invoke(itemId);
+    private (long itemId, long? setId)? _pendingNavigateToItem = null;
 
     [ObservableProperty]
     private bool _isLoading = true;
@@ -56,9 +61,13 @@ public partial class ContentManagerViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DeleteItemsMenuHeader))]
+    [NotifyPropertyChangedFor(nameof(RefreshItemsMenuHeader))]
     private int _selectedCount = 0;
 
     public string DeleteItemsMenuHeader => SelectedCount > 1 ? "Delete Items" : "Delete Item";
+    public string RefreshItemsMenuHeader => SelectedCount > 1
+        ? LocalizationManager.Instance.GetString("library.refresh_selected")
+        : LocalizationManager.Instance.GetString("library.refresh_item");
 
     [ObservableProperty]
     private bool _hasSelectedItems = false;
@@ -179,9 +188,9 @@ public partial class ContentManagerViewModel : ObservableObject
 
     public ObservableCollection<SetNodeViewModel> RootSets { get; } = new();
     public ObservableCollection<SetsEntity> FlatSets { get; } = new();
-    public ObservableCollection<ItemViewModel> Items { get; } = new();
-    public ObservableCollection<ItemViewModel> FilteredItems { get; } = new();
-    public ObservableCollection<ItemRowViewModel> FilteredRows { get; } = new();
+    public RangeObservableCollection<ItemViewModel> Items { get; } = new();
+    public RangeObservableCollection<ItemRowViewModel> FilteredRows { get; } = new();
+    public RangeObservableCollection<ItemViewModel> FilteredItems { get; } = new();
     public int ColumnCount { get; private set; } = 4;
     public List<string> AvailablePackageTypes { get; } = new() { "CAS", "Build", "Buy", "Pattern", "Other" };
 
@@ -214,12 +223,14 @@ public partial class ContentManagerViewModel : ObservableObject
         _uiStateService = uiStateService;
         _notificationService = notificationService;
         ItemViewModel.GlobalThumbnailService = thumbnailService;
+        ItemViewModel.GlobalThumbnailDirectory = thumbnailService.GetThumbnailDirectory();
         ItemViewModel.OnRenameRequested = item => _ = RenameItemAsync(item);
         ItemViewModel.OnEditTagsRequested = item => _ = EditItemTagsAsync(item);
         ItemViewModel.OnToggleEnableRequested = item => _ = ToggleEnableItemAsync(item);
         ItemViewModel.OnShowDetailsRequested = item => OpenDetailsModal(item);
         ItemViewModel.OnNoteChangedCallback = (item, note) => _ = SaveItemNoteAsync(item, note);
         ItemViewModel.OnToggleFavoriteRequested = item => _ = ToggleFavoriteItemAsync(item);
+        ItemViewModel.OnRefreshRequested = item => _ = RefreshSingleItemAsync(item);
 
         LocalizationManager.Instance.LanguageChanged += _ =>
         {
@@ -227,6 +238,8 @@ public partial class ContentManagerViewModel : ObservableObject
             if (allNode != null) allNode.Name = LocalizationManager.Instance.GetString("library.all_items");
             var favNode = RootSets.FirstOrDefault(n => n.IsFavorites);
             if (favNode != null) favNode.Name = LocalizationManager.Instance.GetString("library.favorites");
+            OnPropertyChanged(nameof(RefreshItemsMenuHeader));
+            OnPropertyChanged(nameof(DeleteItemsMenuHeader));
         };
         
         _notificationSubscriptionId = _notificationService.Subscribe(async payload =>
@@ -421,9 +434,9 @@ public partial class ContentManagerViewModel : ObservableObject
 
     public void RebuildRows()
     {
-        FilteredRows.Clear();
         int cols = ColumnCount > 0 ? ColumnCount : 4;
         var items = FilteredItems;
+        var newRows = new List<ItemRowViewModel>((items.Count + cols - 1) / cols);
         for (int i = 0; i < items.Count; i += cols)
         {
             int count = Math.Min(cols, items.Count - i);
@@ -432,17 +445,24 @@ public partial class ContentManagerViewModel : ObservableObject
             {
                 rowItems.Add(items[i + j]);
             }
-            FilteredRows.Add(new ItemRowViewModel(rowItems, cols));
+            newRows.Add(new ItemRowViewModel(rowItems, cols));
         }
+        FilteredRows.ReplaceAll(newRows);
     }
+
+    private bool _isDataLoading = false;
 
     public async Task LoadDataAsync()
     {
+        if (_isDataLoading) return;
+        _isDataLoading = true;
         IsLoading = true;
         try
         {
             // 1. Instant: Load & build Set hierarchy first
-            var setsList = await _db.SetsEntities.AsNoTracking().ToListAsync();
+            using var scope = App.Services?.CreateScope();
+            var db = scope != null ? scope.ServiceProvider.GetRequiredService<AppDbContext>() : _db;
+            var setsList = await db.SetsEntities.AsNoTracking().ToListAsync();
 
             FlatSets.Clear();
             foreach (var set in setsList)
@@ -525,18 +545,29 @@ public partial class ContentManagerViewModel : ObservableObject
                 }
             }
 
-            Items.Clear();
-            foreach (var vm in items)
-            {
-                Items.Add(vm);
-            }
+            Items.ReplaceAll(items);
 
             UpdateSelectionState();
             ApplyFilter();
             NotifyDirtyStateChanged();
+
+            if (_pendingNavigateToItem.HasValue)
+            {
+                var pending = _pendingNavigateToItem.Value;
+                _pendingNavigateToItem = null;
+                if (pending.setId.HasValue)
+                {
+                    SelectSetById(pending.setId.Value, pending.itemId);
+                }
+                else
+                {
+                    SelectAllItemsAndSelectItem(pending.itemId);
+                }
+            }
         }
         finally
         {
+            _isDataLoading = false;
             IsLoading = false;
         }
     }
@@ -547,12 +578,6 @@ public partial class ContentManagerViewModel : ObservableObject
         if (mainVm != null)
         {
             _ = mainVm.RefreshDirtyStateAsync();
-        }
-
-        var configVm = App.Services?.GetService<ConfigurationsViewModel>();
-        if (configVm != null)
-        {
-            _ = configVm.LoadDataAsync();
         }
 
         if (_notificationService != null)

@@ -65,6 +65,7 @@ public partial class CollectionIconItemViewModel : ObservableObject
     public string BoxIconKind => Model.BoxIconKind;
     public Bitmap? IconBitmap { get; }
     public bool HasBitmap => IconBitmap != null;
+    public bool IsCustom => Model.IsCustom;
 
     [ObservableProperty]
     private bool _isActiveSelection;
@@ -109,15 +110,21 @@ public partial class CollectionSetOptionViewModel : ObservableObject
     [ObservableProperty]
     private bool _isSelected;
 
-    public CollectionSetOptionViewModel(CollectionSetOption model, bool isSelected = false)
+    public CollectionSetOptionViewModel(CollectionSetOption model, bool? isSelected = null)
     {
         Model = model;
-        _isSelected = isSelected;
+        _isSelected = isSelected ?? model.IsSelected;
+        Model.IsSelected = _isSelected;
         ThemeService.AccentChanged += () =>
         {
             OnPropertyChanged(nameof(IconBrush));
             OnPropertyChanged(nameof(HasCustomColor));
         };
+    }
+
+    partial void OnIsSelectedChanged(bool value)
+    {
+        Model.IsSelected = value;
     }
 }
 
@@ -125,12 +132,12 @@ public partial class HealthViewModel
 {
     #region Collection Creator Properties & Commands
 
-    public ObservableCollection<CollectionItemViewModel> AllCollections { get; } = new();
+    public RangeObservableCollection<CollectionItemViewModel> AllCollections { get; } = new();
     public RangeObservableCollection<CollectionItemViewModel> FilteredCollections { get; } = new();
-    public ObservableCollection<CollectionSetOptionViewModel> AvailableSetOptions { get; } = new();
-    public ObservableCollection<CollectionSetOptionViewModel> AssignedSets { get; } = new();
+    public RangeObservableCollection<CollectionSetOptionViewModel> AvailableSetOptions { get; } = new();
+    public RangeObservableCollection<CollectionSetOptionViewModel> AssignedSets { get; } = new();
     public RangeObservableCollection<CollectionSetOptionViewModel> AvailableToAddSets { get; } = new();
-    public ObservableCollection<CollectionIconItemViewModel> AllIcons { get; } = new();
+    public RangeObservableCollection<CollectionIconItemViewModel> AllIcons { get; } = new();
     public RangeObservableCollection<CollectionIconItemViewModel> FilteredIcons { get; } = new();
 
     [ObservableProperty]
@@ -141,6 +148,9 @@ public partial class HealthViewModel
 
     [ObservableProperty]
     private bool _isCollectionEditorOpen = false;
+
+    [ObservableProperty]
+    private bool _isLoadingSetOptions = false;
 
     [ObservableProperty]
     private bool _isSavingCollection = false;
@@ -214,7 +224,12 @@ public partial class HealthViewModel
     }
 
     public bool IsIconCategoryAll => IconCategoryFilter == "All";
+    public bool IsIconCategoryCustom => IconCategoryFilter == "Custom";
     public bool IsIconCategoryFurniture => IconCategoryFilter == "Furniture";
+    public bool IsIconCategoryBuild => IconCategoryFilter == "Build";
+    public bool IsIconCategoryOccult => IconCategoryFilter == "Occult";
+    public bool IsIconCategorySeasons => IconCategoryFilter == "Seasons";
+    public bool IsIconCategoryVehicles => IconCategoryFilter == "Vehicles";
     public bool IsIconCategorySkills => IconCategoryFilter == "Skills";
     public bool IsIconCategoryCareers => IconCategoryFilter == "Careers";
     public bool IsIconCategoryPets => IconCategoryFilter == "Pets";
@@ -224,7 +239,12 @@ public partial class HealthViewModel
     partial void OnIconCategoryFilterChanged(string value)
     {
         OnPropertyChanged(nameof(IsIconCategoryAll));
+        OnPropertyChanged(nameof(IsIconCategoryCustom));
         OnPropertyChanged(nameof(IsIconCategoryFurniture));
+        OnPropertyChanged(nameof(IsIconCategoryBuild));
+        OnPropertyChanged(nameof(IsIconCategoryOccult));
+        OnPropertyChanged(nameof(IsIconCategorySeasons));
+        OnPropertyChanged(nameof(IsIconCategoryVehicles));
         OnPropertyChanged(nameof(IsIconCategorySkills));
         OnPropertyChanged(nameof(IsIconCategoryCareers));
         OnPropertyChanged(nameof(IsIconCategoryPets));
@@ -247,8 +267,8 @@ public partial class HealthViewModel
 
     private void InitCollectionIcons()
     {
-        AllIcons.Clear();
         var icons = _collectionService.GetStandardIcons();
+        var iconVms = new List<CollectionIconItemViewModel>(icons.Count);
         foreach (var ic in icons)
         {
             var vm = new CollectionIconItemViewModel(ic);
@@ -256,8 +276,9 @@ public partial class HealthViewModel
             {
                 vm.IsActiveSelection = true;
             }
-            AllIcons.Add(vm);
+            iconVms.Add(vm);
         }
+        AllIcons.ReplaceAll(iconVms);
         ApplyIconFilter();
     }
 
@@ -265,6 +286,72 @@ public partial class HealthViewModel
     public void SetIconCategoryFilter(string category)
     {
         IconCategoryFilter = category;
+    }
+
+    [RelayCommand]
+    public async Task ImportCustomIconAsync(IStorageProvider? storageProvider)
+    {
+        if (storageProvider == null) return;
+        try
+        {
+            var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Select Image for Collection Icon",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("Image Files (*.png, *.jpg, *.jpeg, *.bmp, *.webp)")
+                    {
+                        Patterns = new[] { "*.png", "*.jpg", "*.jpeg", "*.bmp", "*.webp" }
+                    }
+                }
+            });
+
+            if (files.Count > 0)
+            {
+                var file = files[0];
+                await using var stream = await file.OpenReadAsync();
+                var newIconDef = await _collectionService.ImportCustomIconAsync(stream, file.Name);
+
+                InitCollectionIcons();
+                IconCategoryFilter = "Custom";
+
+                var newVm = AllIcons.FirstOrDefault(i => i.Key.Instance == newIconDef.Key.Instance);
+                if (newVm != null)
+                {
+                    SelectedIcon = newVm;
+                }
+
+                ShowCacheToast($"Imported custom icon '{newIconDef.DisplayName}'!", isError: false);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowCacheToast($"Error importing custom icon: {ex.Message}", isError: true);
+        }
+    }
+
+    [RelayCommand]
+    public async Task DeleteCustomIconAsync(CollectionIconItemViewModel? iconVm)
+    {
+        if (iconVm == null || !iconVm.IsCustom) return;
+        try
+        {
+            bool deleted = await _collectionService.DeleteCustomIconAsync(iconVm.Key.Instance);
+            if (deleted)
+            {
+                if (SelectedIcon?.Key.Instance == iconVm.Key.Instance)
+                {
+                    SelectedIcon = AllIcons.FirstOrDefault(i => !i.IsCustom);
+                }
+                InitCollectionIcons();
+                ShowCacheToast($"Deleted custom icon '{iconVm.DisplayName}'.", isError: false);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowCacheToast($"Error deleting custom icon: {ex.Message}", isError: true);
+        }
     }
 
     [RelayCommand]
@@ -299,20 +386,24 @@ public partial class HealthViewModel
         try
         {
             var list = await _collectionService.LoadUserCollectionsAsync();
-            AllCollections.Clear();
+            var collVms = new List<CollectionItemViewModel>(list.Count);
             int totalItems = 0;
 
             foreach (var c in list)
             {
                 totalItems += c.ItemCount;
-                AllCollections.Add(new CollectionItemViewModel(c));
+                collVms.Add(new CollectionItemViewModel(c));
             }
 
+            AllCollections.ReplaceAll(collVms);
             TotalCollectionsCount = AllCollections.Count;
             TotalCollectionItemsCount = totalItems;
             HasLoadedCollections = true;
 
-            InitCollectionIcons();
+            if (AllIcons.Count == 0)
+            {
+                InitCollectionIcons();
+            }
             ApplyCollectionFilter();
         }
         catch (Exception ex)
@@ -340,14 +431,15 @@ public partial class HealthViewModel
         IconCategoryFilter = "All";
         IconSearchQuery = string.Empty;
 
-        await LoadAvailableSetOptionsAsync();
-
         OnPropertyChanged(nameof(IsEditingExistingCollection));
         OnPropertyChanged(nameof(CollectionEditorTitle));
         OnPropertyChanged(nameof(SelectedSetsItemCount));
         OnPropertyChanged(nameof(SelectedSetsCount));
 
+        // Open immediately so the user experiences zero lag
         IsCollectionEditorOpen = true;
+
+        await LoadAvailableSetOptionsAsync();
     }
 
     [RelayCommand]
@@ -364,42 +456,59 @@ public partial class HealthViewModel
         IconCategoryFilter = "All";
         IconSearchQuery = string.Empty;
 
-        await LoadAvailableSetOptionsAsync(item.Model.LinkedSetIds);
-
         OnPropertyChanged(nameof(IsEditingExistingCollection));
         OnPropertyChanged(nameof(CollectionEditorTitle));
         OnPropertyChanged(nameof(SelectedSetsItemCount));
         OnPropertyChanged(nameof(SelectedSetsCount));
 
+        // Open immediately so the user experiences zero lag
         IsCollectionEditorOpen = true;
+
+        await LoadAvailableSetOptionsAsync(item.Model.LinkedSetIds);
     }
 
     private async Task LoadAvailableSetOptionsAsync(List<long>? preSelectedSetIds = null)
     {
+        IsLoadingSetOptions = true;
         AvailableSetOptions.Clear();
         AssignedSets.Clear();
+        AvailableToAddSets.Clear();
         SetSearchQuery = string.Empty;
 
-        var setOptions = await _collectionService.GetAvailableSetOptionsAsync();
-        foreach (var s in setOptions)
+        try
         {
-            if (preSelectedSetIds != null && preSelectedSetIds.Contains(s.SetId))
+            var setOptions = await _collectionService.GetAvailableSetOptionsAsync();
+            var availableList = new List<CollectionSetOptionViewModel>(setOptions.Count);
+            var assignedList = new List<CollectionSetOptionViewModel>();
+
+            foreach (var s in setOptions)
             {
-                s.IsSelected = true;
+                bool isSelected = preSelectedSetIds != null && preSelectedSetIds.Contains(s.SetId);
+                s.IsSelected = isSelected;
+
+                var vm = new CollectionSetOptionViewModel(s, isSelected);
+                availableList.Add(vm);
+                if (vm.IsSelected)
+                {
+                    assignedList.Add(vm);
+                }
             }
 
-            var vm = new CollectionSetOptionViewModel(s);
-            AvailableSetOptions.Add(vm);
-            if (vm.IsSelected)
-            {
-                AssignedSets.Add(vm);
-            }
+            AvailableSetOptions.ReplaceAll(availableList);
+            AssignedSets.ReplaceAll(assignedList);
+            RefreshAvailableToAddSets();
+            OnPropertyChanged(nameof(HasAssignedSets));
+            OnPropertyChanged(nameof(SelectedSetsItemCount));
+            OnPropertyChanged(nameof(SelectedSetsCount));
         }
-
-        RefreshAvailableToAddSets();
-        OnPropertyChanged(nameof(HasAssignedSets));
-        OnPropertyChanged(nameof(SelectedSetsItemCount));
-        OnPropertyChanged(nameof(SelectedSetsCount));
+        catch (Exception ex)
+        {
+            ShowCacheToast($"Error loading sets: {ex.Message}", isError: true);
+        }
+        finally
+        {
+            IsLoadingSetOptions = false;
+        }
     }
 
     [RelayCommand]
@@ -432,12 +541,13 @@ public partial class HealthViewModel
     [RelayCommand]
     public void SelectAllSetsForCollection()
     {
-        AssignedSets.Clear();
+        var assignedList = new List<CollectionSetOptionViewModel>(AvailableSetOptions.Count);
         foreach (var opt in AvailableSetOptions)
         {
             opt.IsSelected = true;
-            AssignedSets.Add(opt);
+            assignedList.Add(opt);
         }
+        AssignedSets.ReplaceAll(assignedList);
         RefreshAvailableToAddSets();
         OnPropertyChanged(nameof(HasAssignedSets));
         OnPropertyChanged(nameof(SelectedSetsItemCount));
@@ -447,11 +557,11 @@ public partial class HealthViewModel
     [RelayCommand]
     public void DeselectAllSetsForCollection()
     {
-        AssignedSets.Clear();
         foreach (var opt in AvailableSetOptions)
         {
             opt.IsSelected = false;
         }
+        AssignedSets.Clear();
         RefreshAvailableToAddSets();
         OnPropertyChanged(nameof(HasAssignedSets));
         OnPropertyChanged(nameof(SelectedSetsItemCount));

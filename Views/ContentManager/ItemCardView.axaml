@@ -35,6 +35,11 @@
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="BorderThickness" Value="2"/>
         </Style>
+        <Style Selector="Border.item-card.jump-highlighted">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BoxShadow" Value="0 0 20 4 #6010b981"/>
+        </Style>
 
         <Style Selector="Button.card-fav-btn">
             <Setter Property="Opacity" Value="0"/>
@@ -55,6 +60,7 @@
     <!-- Package Item Card -->
     <Border Classes="item-card"
             Classes.selected="{Binding IsSelected}"
+            Classes.jump-highlighted="{Binding IsJumpHighlighted}"
             HorizontalAlignment="Stretch"
             Margin="6"
             Background="{DynamicResource BgSidebar}"
@@ -220,6 +226,18 @@
                                     <Separator Background="{DynamicResource BorderSubtle}"/>
 
                                     <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                                        <Button Command="{Binding RefreshCommand}"
+                                                ToolTip.Tip="{loc:Loc 'library.refresh_item'}"
+                                                Background="{DynamicResource BgCardAlt}"
+                                                Foreground="{DynamicResource TextMain}"
+                                                BorderBrush="{DynamicResource BorderSubtle}"
+                                                BorderThickness="1"
+                                                Padding="10,5" FontSize="11.5" CornerRadius="6" Cursor="Hand">
+                                            <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                                                <icon:PackIconBoxIcons Kind="RegularRefreshCw" Width="12" Height="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Loc 'common.refresh'}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
                                         <Button Command="{Binding SearchGoogleCommand}"
                                                 Background="{DynamicResource BgCardAlt}"
                                                 Foreground="{DynamicResource TextMain}"

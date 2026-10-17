@@ -17,7 +17,7 @@ namespace PlumbobForge.Desktop.ViewModels;
 
 public partial class ItemViewModel : ObservableObject
 {
-    private readonly MetaEntity _entity;
+    private MetaEntity _entity;
 
     public long Id => _entity.Id;
     public string FileName => _entity.FileName;
@@ -138,6 +138,7 @@ public partial class ItemViewModel : ObservableObject
     public static ThumbnailService? GlobalThumbnailService { get; set; }
     public static string? GlobalThumbnailDirectory { get; set; }
     private string? _cachedThumbnailPath;
+    private bool _hasNoThumbnail;
 
     public double ThumbnailOpacity => Enabled ? 1.0 : 0.75;
 
@@ -145,6 +146,8 @@ public partial class ItemViewModel : ObservableObject
     {
         get
         {
+            if (_hasNoThumbnail) return null;
+
             var bmp = ThumbnailCache.TryGet(Id, grayscale: !Enabled);
             if (bmp == null && !IsLoadingThumbnail)
             {
@@ -161,6 +164,29 @@ public partial class ItemViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isSelected;
+
+    [ObservableProperty]
+    private bool _isJumpHighlighted;
+
+    private System.Threading.CancellationTokenSource? _jumpHighlightCts;
+
+    public void TriggerJumpHighlight()
+    {
+        _jumpHighlightCts?.Cancel();
+        _jumpHighlightCts = new System.Threading.CancellationTokenSource();
+        var token = _jumpHighlightCts.Token;
+
+        IsJumpHighlighted = true;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(2000, token);
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => IsJumpHighlighted = false);
+            }
+            catch (OperationCanceledException) { }
+        });
+    }
 
     [ObservableProperty]
     private bool _isInfoExpanded;
@@ -200,6 +226,10 @@ public partial class ItemViewModel : ObservableObject
     public static Action<ItemViewModel>? OnToggleEnableRequested { get; set; }
     public static Action<ItemViewModel>? OnToggleFavoriteRequested { get; set; }
     public static Action<ItemViewModel>? OnShowDetailsRequested { get; set; }
+    public static Action<ItemViewModel>? OnRefreshRequested { get; set; }
+
+    [RelayCommand]
+    public void Refresh() => OnRefreshRequested?.Invoke(this);
 
     [RelayCommand]
     public void Rename() => OnRenameRequested?.Invoke(this);
@@ -258,6 +288,8 @@ public partial class ItemViewModel : ObservableObject
         OnPropertyChanged(nameof(EnableIconColor));
         OnPropertyChanged(nameof(FileNameTextDecoration));
         OnPropertyChanged(nameof(ThumbnailOpacity));
+        OnPropertyChanged(nameof(FileSizeFormatted));
+        OnPropertyChanged(nameof(FileSizeText));
         OnPropertyChanged(nameof(DisplayThumbnailBitmap));
         OnPropertyChanged(nameof(ThumbnailBitmap));
         OnPropertyChanged(nameof(IsFavorite));
@@ -266,6 +298,15 @@ public partial class ItemViewModel : ObservableObject
         OnPropertyChanged(nameof(FavoriteStarForeground));
         Note = _entity.Description ?? string.Empty;
         OnPropertyChanged(nameof(Note));
+    }
+
+    public void UpdateFromEntity(MetaEntity entity)
+    {
+        _entity = entity;
+        _cachedTagsList = null;
+        _cachedThumbnailPath = null;
+        _hasNoThumbnail = false;
+        NotifyEntityChanged();
     }
 
     [RelayCommand]
@@ -314,9 +355,23 @@ public partial class ItemViewModel : ObservableObject
         // Persistent cache keeps decoded 140px bitmaps for 0-allocation smooth scrolling
     }
 
+    public async Task ReloadThumbnailAsync(bool forceDiskExtraction = true)
+    {
+        if (forceDiskExtraction)
+        {
+            GlobalThumbnailService?.DeleteThumbnail(Id);
+        }
+        _cachedThumbnailPath = null;
+        _hasNoThumbnail = false;
+        ThumbnailCache.Invalidate(Id);
+        IsLoadingThumbnail = false;
+        await LoadThumbnailAsync();
+    }
+
     public async Task LoadThumbnailAsync(ThumbnailService? thumbnailService = null)
     {
-        if (ThumbnailCache.TryGet(Id, grayscale: !Enabled) != null || IsLoadingThumbnail) return;
+        if (_hasNoThumbnail || IsLoadingThumbnail) return;
+        if (ThumbnailCache.TryGet(Id, grayscale: !Enabled) != null) return;
 
         IsLoadingThumbnail = true;
         try
@@ -326,18 +381,26 @@ public partial class ItemViewModel : ObservableObject
             {
                 if (!string.IsNullOrEmpty(GlobalThumbnailDirectory))
                 {
+                    var noThumbPath = Path.Combine(GlobalThumbnailDirectory, $"{Id}.nothumb");
+                    if (File.Exists(noThumbPath))
+                    {
+                        _hasNoThumbnail = true;
+                        return;
+                    }
+
                     var directPath = Path.Combine(GlobalThumbnailDirectory, $"{Id}.thumb");
                     if (File.Exists(directPath))
                     {
                         path = directPath;
                     }
                 }
+
                 if (string.IsNullOrEmpty(path))
                 {
                     var service = thumbnailService ?? GlobalThumbnailService;
                     if (service != null)
                     {
-                        path = await service.GetThumbnailPathAsync(Id);
+                        path = await service.GetThumbnailPathAsync(Id, Entity.CompleteFileName);
                     }
                 }
             }
@@ -354,6 +417,15 @@ public partial class ItemViewModel : ObservableObject
                         OnPropertyChanged(nameof(ThumbnailBitmap));
                     });
                 }
+                else
+                {
+                    _hasNoThumbnail = true;
+                }
+            }
+            else
+            {
+                _cachedThumbnailPath = null;
+                _hasNoThumbnail = true;
             }
         }
         catch

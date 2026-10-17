@@ -4,13 +4,69 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using PlumbobForge.Desktop.ViewModels;
 
+using Avalonia.Threading;
+
 namespace PlumbobForge.Desktop.Views;
 
 public partial class SettingsView : UserControl
 {
+    private SettingsViewModel? _subscribedVm;
+    private Border? _currentHighlightedCard;
+    private DateTime _highlightAppliedTime = DateTime.MinValue;
+
     public SettingsView()
     {
         InitializeComponent();
+
+        DataContextChanged += OnDataContextChanged;
+
+        AddHandler(InputElement.PointerPressedEvent, (s, e) => DismissHighlight(), RoutingStrategies.Tunnel | RoutingStrategies.Bubble, true);
+        AddHandler(InputElement.KeyDownEvent, (s, e) => DismissHighlight(), RoutingStrategies.Tunnel | RoutingStrategies.Bubble, true);
+    }
+
+    private void OnDataContextChanged(object? sender, EventArgs e)
+    {
+        if (_subscribedVm != null)
+        {
+            _subscribedVm.RequestScrollAndHighlight -= OnRequestScrollAndHighlight;
+            _subscribedVm = null;
+        }
+
+        if (DataContext is SettingsViewModel vm)
+        {
+            _subscribedVm = vm;
+            _subscribedVm.RequestScrollAndHighlight += OnRequestScrollAndHighlight;
+        }
+    }
+
+    private void OnRequestScrollAndHighlight(string sectionName)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            var card = this.FindControl<Border>($"{sectionName}Card") ?? this.FindControl<Border>(sectionName);
+            if (card != null)
+            {
+                if (_currentHighlightedCard != null)
+                {
+                    _currentHighlightedCard.Classes.Remove("highlighted");
+                }
+
+                _currentHighlightedCard = card;
+                _currentHighlightedCard.Classes.Add("highlighted");
+                _highlightAppliedTime = DateTime.UtcNow;
+
+                card.BringIntoView();
+            }
+        }, DispatcherPriority.Loaded);
+    }
+
+    private void DismissHighlight()
+    {
+        if (_currentHighlightedCard == null) return;
+        if ((DateTime.UtcNow - _highlightAppliedTime).TotalMilliseconds < 250) return;
+
+        _currentHighlightedCard.Classes.Remove("highlighted");
+        _currentHighlightedCard = null;
     }
 
     private void OnSetAccentClick(object? sender, RoutedEventArgs e)

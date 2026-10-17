@@ -489,13 +489,7 @@ public partial class ContentManagerViewModel
         }
 
         _allMatchingItems = newMatchingList;
-        FilteredItems.Clear();
-
-        foreach (var item in _allMatchingItems)
-        {
-            FilteredItems.Add(item);
-        }
-
+        FilteredItems.ReplaceAll(_allMatchingItems);
         RebuildRows();
     }
 
@@ -588,5 +582,94 @@ public partial class ContentManagerViewModel
             !type.Equals("Sim", StringComparison.OrdinalIgnoreCase) && !name.EndsWith(".sim") && !type.Equals("Lot", StringComparison.OrdinalIgnoreCase)) return true;
 
         return false;
+    }
+
+    public void EnsureItemVisibleInFilters(ItemViewModel targetItem)
+    {
+        if (!string.IsNullOrWhiteSpace(SearchQuery))
+        {
+            var q = SearchQuery.Trim().ToLowerInvariant();
+            bool matchesSearch = targetItem.FileName.ToLowerInvariant().Contains(q) ||
+                                 (targetItem.UserTags != null && targetItem.UserTags.ToLowerInvariant().Contains(q));
+            if (!matchesSearch)
+            {
+                SearchQuery = string.Empty;
+            }
+        }
+
+        if (targetItem.Enabled && !FilterModeEnabled)
+        {
+            FilterModeEnabled = true;
+        }
+        else if (!targetItem.Enabled && !FilterModeDisabled)
+        {
+            FilterModeDisabled = true;
+        }
+
+        var type = targetItem.PackageType ?? "";
+        var isCas = type.Equals("CAS", StringComparison.OrdinalIgnoreCase);
+        var isBuildBuy = type.Equals("BuildBuy", StringComparison.OrdinalIgnoreCase) ||
+                         type.Equals("Build/Buy", StringComparison.OrdinalIgnoreCase) ||
+                         type.Equals("Object", StringComparison.OrdinalIgnoreCase);
+        var isOther = !isCas && !isBuildBuy;
+
+        if (isCas)
+        {
+            FilterTypeCAS = true;
+            if (!MatchCasCategory(targetItem))
+            {
+                FilterCasHair = true;
+                FilterCasFullBody = true;
+                FilterCasTops = true;
+                FilterCasBottoms = true;
+                FilterCasShoes = true;
+                FilterCasDetails = true;
+                FilterCasSkins = true;
+                FilterCasAccessories = true;
+                FilterCasSliders = true;
+                FilterCasPresets = true;
+                FilterCasOther = true;
+            }
+            if (!MatchCasAge(targetItem))
+            {
+                FilterAgeBaby = true;
+                FilterAgeToddler = true;
+                FilterAgeChild = true;
+                FilterAgeTeen = true;
+                FilterAgeYoungAdult = true;
+                FilterAgeAdult = true;
+                FilterAgeElder = true;
+            }
+            if (!MatchCasGender(targetItem))
+            {
+                FilterGenderMale = true;
+                FilterGenderFemale = true;
+            }
+            if (!MatchCasOutfit(targetItem))
+            {
+                FilterOutfitEveryday = true;
+                FilterOutfitFormal = true;
+                FilterOutfitSleepwear = true;
+                FilterOutfitSwimwear = true;
+                FilterOutfitAthletic = true;
+                FilterOutfitCareer = true;
+                FilterOutfitOuterwear = true;
+            }
+        }
+        else if (isBuildBuy)
+        {
+            FilterTypeBuildBuy = true;
+        }
+        else if (isOther)
+        {
+            FilterTypeOther = true;
+            if (!MatchOtherSubCategory(targetItem))
+            {
+                FilterOtherWorlds = true;
+                FilterOtherSims = true;
+                FilterOtherLots = true;
+                FilterOtherMisc = true;
+            }
+        }
     }
 }

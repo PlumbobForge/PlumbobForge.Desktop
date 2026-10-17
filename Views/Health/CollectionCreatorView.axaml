@@ -170,7 +170,7 @@
                                                     <TextBlock Text="Sims 3" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
                                                 </Border>
 
-                                                <Border Background="{DynamicResource BgMain}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" IsVisible="{Binding IsPlumbobForge}">
+                                                <Border Background="{DynamicResource BgMain}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding ItemCount, StringFormat='{}{0} items'}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
                                                 </Border>
                                             </StackPanel>
@@ -231,7 +231,8 @@
 
                         <Button Classes="btn-action-primary" Command="{Binding SaveCollectionCommand}" IsEnabled="{Binding !IsSavingCollection}" Padding="16,8">
                             <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
-                                <icon:PackIconBoxIcons Kind="RegularSave" Width="15" Height="15" Foreground="White" VerticalAlignment="Center"/>
+                                <icon:PackIconBoxIcons Kind="RegularSave" Width="15" Height="15" Foreground="White" VerticalAlignment="Center" IsVisible="{Binding !IsSavingCollection}"/>
+                                <ProgressBar IsIndeterminate="True" Width="36" Height="3" CornerRadius="1.5" Foreground="White" Background="#40ffffff" VerticalAlignment="Center" IsVisible="{Binding IsSavingCollection}"/>
                                 <TextBlock Text="{loc:Loc 'common.save'}" FontWeight="Bold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -473,6 +474,15 @@
                     <!-- RIGHT COLUMN: Assigned CC Sets & Set Manager -->
                     <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
                         <StackPanel Spacing="20">
+                            <!-- Loading sets indicator -->
+                            <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                                    CornerRadius="8" Padding="16,14" IsVisible="{Binding IsLoadingSetOptions}">
+                                <StackPanel Spacing="10" HorizontalAlignment="Center">
+                                    <ProgressBar IsIndeterminate="True" Width="160" Height="3" CornerRadius="1.5" Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource BorderSubtle}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'tools.collections.loading_sets'}" FontSize="12" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
                             <!-- Sets Overview & Actions Bar -->
                             <Grid ColumnDefinitions="*, Auto" VerticalAlignment="Center">
                                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">

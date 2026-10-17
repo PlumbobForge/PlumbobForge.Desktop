@@ -141,6 +141,11 @@ public partial class ContentManagerViewModel
 
     public void SelectSetById(long setId, long? selectItemId = null)
     {
+        if (selectItemId.HasValue && Items.Count == 0 && (_isDataLoading || IsLoading))
+        {
+            _pendingNavigateToItem = (selectItemId.Value, setId);
+        }
+
         var targetNode = FindNodeById(RootSets, setId);
         if (targetNode != null)
         {
@@ -149,16 +154,55 @@ public partial class ContentManagerViewModel
             targetNode.IsSelected = true;
             SelectedSetNode = targetNode;
         }
+        else
+        {
+            var allItemsNode = RootSets.FirstOrDefault(n => n.IsAllItems);
+            if (allItemsNode != null)
+            {
+                DeselectAllSets();
+                allItemsNode.IsSelected = true;
+                SelectedSetNode = allItemsNode;
+            }
+        }
 
         if (selectItemId.HasValue)
         {
-            DeselectAll();
-            var targetItem = Items.FirstOrDefault(i => i.Entity.Id == selectItemId.Value);
-            if (targetItem != null)
-            {
-                targetItem.IsSelected = true;
-                UpdateSelectionState();
-            }
+            SelectItemAndScroll(selectItemId.Value);
+        }
+    }
+
+    public void SelectAllItemsAndSelectItem(long selectItemId)
+    {
+        if (Items.Count == 0 && (_isDataLoading || IsLoading))
+        {
+            _pendingNavigateToItem = (selectItemId, null);
+        }
+
+        var allItemsNode = RootSets.FirstOrDefault(n => n.IsAllItems);
+        if (allItemsNode != null)
+        {
+            DeselectAllSets();
+            allItemsNode.IsSelected = true;
+            SelectedSetNode = allItemsNode;
+        }
+
+        SelectItemAndScroll(selectItemId);
+    }
+
+    public void SelectItemAndScroll(long selectItemId)
+    {
+        DeselectAll();
+        var targetItem = Items.FirstOrDefault(i => i.Entity.Id == selectItemId);
+        if (targetItem != null)
+        {
+            EnsureItemVisibleInFilters(targetItem);
+            ApplyFilter();
+
+            targetItem.IsSelected = true;
+            UpdateSelectionState();
+            targetItem.TriggerJumpHighlight();
+
+            ScrollToItem(selectItemId);
         }
     }
 

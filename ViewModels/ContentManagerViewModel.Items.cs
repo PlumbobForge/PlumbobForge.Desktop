@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using PlumbobForge.Backend.Database;
 using PlumbobForge.Backend.Services;
 using PlumbobForge.Desktop.Views.Dialogs;
@@ -537,5 +538,77 @@ public partial class ContentManagerViewModel
         DeselectAll();
         ApplyFilter();
         NotifyDirtyStateChanged();
+    }
+
+    [RelayCommand]
+    public async Task RefreshSingleItemAsync(ItemViewModel? item)
+    {
+        if (item == null) return;
+        try
+        {
+            await Task.Run(async () =>
+            {
+                using var scope = App.Services?.CreateScope();
+                var pkgMgr = scope?.ServiceProvider.GetRequiredService<PKGManager>() ?? _pkgManager;
+                if (pkgMgr != null)
+                {
+                    await pkgMgr.RefreshItemAsync(item.Id);
+                }
+            });
+
+            var updatedMeta = await _db.MetaEntities.AsNoTracking().FirstOrDefaultAsync(m => m.Id == item.Id);
+            if (updatedMeta != null)
+            {
+                item.UpdateFromEntity(updatedMeta);
+            }
+            await item.ReloadThumbnailAsync(forceDiskExtraction: false);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError($"Error refreshing item {item.Id}", ex, "ContentManagerViewModel");
+        }
+    }
+
+    [RelayCommand]
+    public async Task RefreshSelectedAsync()
+    {
+        var selected = Items.Where(i => i.IsSelected).ToList();
+        if (selected.Count == 0) return;
+
+        IsLoading = true;
+        try
+        {
+            var selectedIds = selected.Select(i => i.Id).ToList();
+            await Task.Run(async () =>
+            {
+                using var scope = App.Services?.CreateScope();
+                var pkgMgr = scope?.ServiceProvider.GetRequiredService<PKGManager>() ?? _pkgManager;
+                if (pkgMgr != null)
+                {
+                    foreach (var id in selectedIds)
+                    {
+                        await pkgMgr.RefreshItemAsync(id);
+                    }
+                }
+            });
+
+            var updatedMetas = await _db.MetaEntities.AsNoTracking().Where(m => selectedIds.Contains(m.Id)).ToDictionaryAsync(m => m.Id);
+            foreach (var item in selected)
+            {
+                if (updatedMetas.TryGetValue(item.Id, out var meta))
+                {
+                    item.UpdateFromEntity(meta);
+                }
+                await item.ReloadThumbnailAsync(forceDiskExtraction: false);
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError("Error refreshing selected items", ex, "ContentManagerViewModel");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 }

@@ -87,6 +87,8 @@
     "manual_select": "Zaznacz",
     "move_selected": "Przenieś do zestawu",
     "retag_selected": "Edytuj tagi i kategorie",
+    "refresh_selected": "Odśwież zaznaczone / Przeładuj metadane",
+    "refresh_item": "Odśwież obiekt / Przeładuj metadane",
     "delete_selected": "Usuń zaznaczone",
     "retag_item": "Edytuj tagi i kategorię",
     "rename_item": "Zmień nazwę obiektu",
@@ -359,6 +361,7 @@
       "remove_tip": "Usuń zestaw z tej kolekcji",
       "add_cc_sets": "Dodaj zestawy CC",
       "filter_sets": "Filtruj zestawy...",
+      "loading_sets": "Ładowanie zestawów CC...",
       "add_tip": "Dodaj ten zestaw do kolekcji",
       "add": "Dodaj"
     }
@@ -773,6 +776,7 @@
     "tools": "Narzędzia",
     "settings": "Ustawienia",
     "maximize": "Maksymalizuj",
-    "quick_jump": "Szybki skok"
+    "quick_jump": "Szybki skok",
+    "places": "Miejsca"
   }
 }

@@ -42,6 +42,11 @@
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="BorderThickness" Value="2"/>
         </Style>
+        <Style Selector="Border.compact-row.jump-highlighted">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BoxShadow" Value="0 0 20 4 #6010b981"/>
+        </Style>
         <Style Selector="Border.compact-fav-badge">
             <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
@@ -60,6 +65,7 @@
     <!-- Compact List Row Container -->
     <Border Classes="compact-row"
             Classes.selected="{Binding IsSelected}"
+            Classes.jump-highlighted="{Binding IsJumpHighlighted}"
             HorizontalAlignment="Stretch"
             Margin="6, 2"
             Padding="8, 0"
@@ -229,6 +235,18 @@
                                 <Separator Background="{DynamicResource BorderSubtle}"/>
 
                                 <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                                    <Button Command="{Binding RefreshCommand}"
+                                            ToolTip.Tip="{loc:Loc 'library.refresh_item'}"
+                                            Background="{DynamicResource BgCardAlt}"
+                                            Foreground="{DynamicResource TextMain}"
+                                            BorderBrush="{DynamicResource BorderSubtle}"
+                                            BorderThickness="1"
+                                            Padding="10,5" FontSize="11.5" CornerRadius="6" Cursor="Hand">
+                                        <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
+                                            <icon:PackIconBoxIcons Kind="RegularRefreshCw" Width="12" Height="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'common.refresh'}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
                                     <Button Command="{Binding SearchGoogleCommand}"
                                             Background="{DynamicResource BgCardAlt}"
                                             Foreground="{DynamicResource TextMain}"

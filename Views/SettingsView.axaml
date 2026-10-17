@@ -14,6 +14,19 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="20"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.3"/>
+                    <ThicknessTransition Property="BorderThickness" Duration="0:0:0.2"/>
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <!-- Highlighted Card with Accent Color Glow -->
+        <Style Selector="Border.settings-card.highlighted">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BoxShadow" Value="0 0 18 2 #502dd4bf"/>
         </Style>
 
         <!-- Section Title Style -->
@@ -257,7 +270,7 @@
 
     <Grid>
         <!-- Main Settings Scrollable Content -->
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer x:Name="SettingsScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <Grid RowDefinitions="Auto, Auto, Auto" Margin="28,20,28,32" MaxWidth="1100" HorizontalAlignment="Stretch">
 
                 <!-- Toast / Status Alert Popup -->
@@ -275,7 +288,7 @@
                 </Border>
 
                 <!-- Pure Update Hero Header Card -->
-                <Border Grid.Row="1" Classes="settings-card" Margin="0,0,0,20">
+                <Border x:Name="UpdatesCard" Grid.Row="1" Classes="settings-card" Margin="0,0,0,20">
                     <StackPanel Spacing="12">
                         <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
                             <!-- Left: Update Icon Badge -->
@@ -352,7 +365,7 @@
                     <StackPanel Grid.Column="0" Spacing="20">
 
                         <!-- CARD 0: Appearance & Personalization -->
-                        <Border Classes="settings-card">
+                        <Border x:Name="AppearanceCard" Classes="settings-card">
                             <StackPanel Spacing="16">
                                 <!-- Card Header -->
                                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -501,7 +514,7 @@
                         </Border>
 
                         <!-- CARD 1: Storage & Directories -->
-                        <Border Classes="settings-card">
+                        <Border x:Name="StorageCard" Classes="settings-card">
                             <StackPanel Spacing="16">
                                 <!-- Card Header -->
                                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -569,7 +582,7 @@
                         </Border>
 
                         <!-- CARD 2: Monitored Observed Folders & Ingestion -->
-                        <Border Classes="settings-card">
+                        <Border x:Name="ObservedFoldersCard" Classes="settings-card">
                             <StackPanel Spacing="16">
                                 <!-- Card Header -->
                                 <Grid ColumnDefinitions="*, Auto">
@@ -642,7 +655,7 @@
                     <StackPanel Grid.Column="2" Spacing="20">
 
                         <!-- CARD 3: Cache & Engine Optimization -->
-                        <Border Classes="settings-card">
+                        <Border x:Name="EngineCard" Classes="settings-card">
                             <StackPanel Spacing="16">
                                 <!-- Card Header -->
                                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -725,7 +738,7 @@
                         </Border>
 
                         <!-- CARD 4: Maintenance & Diagnostics -->
-                        <Border Classes="settings-card">
+                        <Border x:Name="MaintenanceCard" Classes="settings-card">
                             <StackPanel Spacing="14">
                                 <!-- Card Header -->
                                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -775,7 +788,7 @@
                         </Border>
 
                         <!-- CARD 5: Special Thanks & Acknowledgements (With Red Heart Icon) -->
-                        <Border Classes="settings-card">
+                        <Border x:Name="ThanksCard" Classes="settings-card">
                             <StackPanel Spacing="10">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <icon:PackIconBoxIcons Kind="RegularHeart" Width="16" Height="16" Foreground="#ef4444" VerticalAlignment="Center"/>
