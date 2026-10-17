@@ -25,7 +25,7 @@ public partial class ContentManagerView : UserControl
         InitializeComponent();
         Loaded += async (s, e) =>
         {
-            if (DataContext is ContentManagerViewModel vm && vm.Items.Count == 0)
+            if (DataContext is ContentManagerViewModel vm)
             {
                 await vm.LoadDataAsync();
             }
@@ -36,6 +36,12 @@ public partial class ContentManagerView : UserControl
             Interval = TimeSpan.FromMilliseconds(16)
         };
         _autoscrollTimer.Tick += OnAutoscrollTick;
+
+        _columnRecalcTimer = new Avalonia.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(150)
+        };
+        _columnRecalcTimer.Tick += OnColumnRecalcTimerTick;
 
         // Tunneling handlers on ItemsGridContainer so dragging starts even from gaps/margins between cards
         ItemsGridContainer.AddHandler(PointerPressedEvent, OnGridPointerPressed, RoutingStrategies.Tunnel);
@@ -166,12 +172,35 @@ public partial class ContentManagerView : UserControl
     private ListBox? ActiveListBox => (DataContext is ContentManagerViewModel vm && vm.IsCompactListView) ? ItemsCompactListBox : ItemsListBox;
     private ScrollViewer? ItemsScrollViewer => ActiveListBox?.FindDescendantOfType<ScrollViewer>();
 
+    private readonly Avalonia.Threading.DispatcherTimer _columnRecalcTimer;
+    private double _pendingAvailableWidth;
+
     private void OnItemsListBoxSizeChanged(object? sender, SizeChangedEventArgs e)
     {
         if (DataContext is ContentManagerViewModel vm && e.NewSize.Width > 0)
         {
             double availableWidth = e.NewSize.Width - 32;
-            vm.RecalculateColumns(availableWidth);
+            _pendingAvailableWidth = availableWidth;
+
+            // If rows haven't been calculated yet, calculate immediately
+            if (vm.FilteredRows.Count == 0)
+            {
+                vm.RecalculateColumns(availableWidth);
+                return;
+            }
+
+            // Otherwise debounce to prevent row rebuilding storms during sidebar collapse/expand transitions
+            _columnRecalcTimer.Stop();
+            _columnRecalcTimer.Start();
+        }
+    }
+
+    private void OnColumnRecalcTimerTick(object? sender, EventArgs e)
+    {
+        _columnRecalcTimer.Stop();
+        if (DataContext is ContentManagerViewModel vm && _pendingAvailableWidth > 0)
+        {
+            vm.RecalculateColumns(_pendingAvailableWidth);
         }
     }
 
