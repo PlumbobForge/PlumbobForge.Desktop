@@ -106,9 +106,10 @@ public partial class ItemCompactRowView : UserControl
                     _pendingSelectionNarrow = false;
                     _dragStartPos = null;
 
-                    var data = new DataObject();
-                    data.Set("plumbob-item-drag", "move");
-                    await DragDrop.DoDragDrop(e, data, DragDropEffects.Move);
+                    var cmView = this.FindAncestorOfType<ContentManagerView>();
+                    var cmVm = cmView?.DataContext as ContentManagerViewModel;
+
+                    await ItemDragDropHelper.StartItemDragAsync(this, e, itemVm, cmVm);
                 }
             }
         }
