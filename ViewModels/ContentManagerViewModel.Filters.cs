@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using PlumbobForge.Backend.Services;
 
 namespace PlumbobForge.Desktop.ViewModels;
 
@@ -50,6 +52,49 @@ public partial class ContentManagerViewModel
     [ObservableProperty] private bool _filterOutfitCareer = true;
     [ObservableProperty] private bool _filterOutfitOuterwear = true;
 
+    // Build/Buy Kinds
+    [ObservableProperty] private bool _filterBBObjects = true;
+    [ObservableProperty] private bool _filterBBDoorsWindows = true;
+    [ObservableProperty] private bool _filterBBLandscaping = true;
+    [ObservableProperty] private bool _filterBBWallsFloors = true;
+    [ObservableProperty] private bool _filterBBTerrain = true;
+    [ObservableProperty] private bool _filterBBFencesRailings = true;
+    [ObservableProperty] private bool _filterBBStairs = true;
+    [ObservableProperty] private bool _filterBBRoofs = true;
+    [ObservableProperty] private bool _filterBBOtherBuild = true;
+
+    // Build/Buy Rooms
+    [ObservableProperty] private bool _filterBBRoomLiving = true;
+    [ObservableProperty] private bool _filterBBRoomDining = true;
+    [ObservableProperty] private bool _filterBBRoomKitchen = true;
+    [ObservableProperty] private bool _filterBBRoomNursery = true;
+    [ObservableProperty] private bool _filterBBRoomBathroom = true;
+    [ObservableProperty] private bool _filterBBRoomLaundry = true;
+    [ObservableProperty] private bool _filterBBRoomBedroom = true;
+    [ObservableProperty] private bool _filterBBRoomStudy = true;
+    [ObservableProperty] private bool _filterBBRoomOutdoor = true;
+    [ObservableProperty] private bool _filterBBRoomCommunity = true;
+    [ObservableProperty] private bool _filterBBRoomResort = true;
+
+    // Build/Buy Functions
+    [ObservableProperty] private bool _filterBBFuncAppliances = true;
+    [ObservableProperty] private bool _filterBBFuncElectronics = true;
+    [ObservableProperty] private bool _filterBBFuncEntertainment = true;
+    [ObservableProperty] private bool _filterBBFuncLighting = true;
+    [ObservableProperty] private bool _filterBBFuncPlumbing = true;
+    [ObservableProperty] private bool _filterBBFuncDecor = true;
+    [ObservableProperty] private bool _filterBBFuncKids = true;
+    [ObservableProperty] private bool _filterBBFuncStorage = true;
+    [ObservableProperty] private bool _filterBBFuncComfort = true;
+    [ObservableProperty] private bool _filterBBFuncSurfaces = true;
+    [ObservableProperty] private bool _filterBBFuncVehicles = true;
+    [ObservableProperty] private bool _filterBBFuncPets = true;
+    [ObservableProperty] private bool _filterBBFuncMisc = true;
+
+    // Build/Buy Price range (null = no limit)
+    [ObservableProperty] private decimal? _filterBBPriceMin;
+    [ObservableProperty] private decimal? _filterBBPriceMax;
+
     // Other Sub-Categories
     [ObservableProperty] private bool _filterOtherWorlds = true;
     [ObservableProperty] private bool _filterOtherSims = true;
@@ -67,6 +112,11 @@ public partial class ContentManagerViewModel
     [ObservableProperty] private bool _isCasAgeExpanded = true;
     [ObservableProperty] private bool _isCasGenderExpanded = true;
     [ObservableProperty] private bool _isCasOutfitExpanded = true;
+    [ObservableProperty] private bool _isBBSubFiltersExpanded = true;
+    [ObservableProperty] private bool _isBBKindExpanded = true;
+    [ObservableProperty] private bool _isBBRoomExpanded = true;
+    [ObservableProperty] private bool _isBBFunctionExpanded = true;
+    [ObservableProperty] private bool _isBBPriceExpanded = true;
     [ObservableProperty] private bool _isOtherSubExpanded = true;
     [ObservableProperty] private bool _isModeExpanded = true;
 
@@ -76,6 +126,11 @@ public partial class ContentManagerViewModel
     [RelayCommand] public void ToggleCasAgeExpanded() { IsCasAgeExpanded = !IsCasAgeExpanded; SaveCurrentUiState(); }
     [RelayCommand] public void ToggleCasGenderExpanded() { IsCasGenderExpanded = !IsCasGenderExpanded; SaveCurrentUiState(); }
     [RelayCommand] public void ToggleCasOutfitExpanded() { IsCasOutfitExpanded = !IsCasOutfitExpanded; SaveCurrentUiState(); }
+    [RelayCommand] public void ToggleBBSubFiltersExpanded() { IsBBSubFiltersExpanded = !IsBBSubFiltersExpanded; SaveCurrentUiState(); }
+    [RelayCommand] public void ToggleBBKindExpanded() { IsBBKindExpanded = !IsBBKindExpanded; SaveCurrentUiState(); }
+    [RelayCommand] public void ToggleBBRoomExpanded() { IsBBRoomExpanded = !IsBBRoomExpanded; SaveCurrentUiState(); }
+    [RelayCommand] public void ToggleBBFunctionExpanded() { IsBBFunctionExpanded = !IsBBFunctionExpanded; SaveCurrentUiState(); }
+    [RelayCommand] public void ToggleBBPriceExpanded() { IsBBPriceExpanded = !IsBBPriceExpanded; SaveCurrentUiState(); }
     [RelayCommand] public void ToggleOtherSubExpanded() { IsOtherSubExpanded = !IsOtherSubExpanded; SaveCurrentUiState(); }
     [RelayCommand] public void ToggleModeExpanded() { IsModeExpanded = !IsModeExpanded; SaveCurrentUiState(); }
 
@@ -116,6 +171,12 @@ public partial class ContentManagerViewModel
         FilterOutfitAthletic = true;
         FilterOutfitCareer = true;
         FilterOutfitOuterwear = true;
+
+        SetAllBBKinds(true);
+        SetAllBBRooms(true);
+        SetAllBBFunctions(true);
+        FilterBBPriceMin = null;
+        FilterBBPriceMax = null;
 
         FilterOtherWorlds = true;
         FilterOtherSims = true;
@@ -166,6 +227,12 @@ public partial class ContentManagerViewModel
         FilterOutfitCareer = false;
         FilterOutfitOuterwear = false;
 
+        SetAllBBKinds(false);
+        SetAllBBRooms(false);
+        SetAllBBFunctions(false);
+        FilterBBPriceMin = null;
+        FilterBBPriceMax = null;
+
         FilterOtherWorlds = false;
         FilterOtherSims = false;
         FilterOtherLots = false;
@@ -190,6 +257,18 @@ public partial class ContentManagerViewModel
     public bool IsAllCasOutfitSelected =>
         FilterOutfitEveryday && FilterOutfitFormal && FilterOutfitSleepwear && FilterOutfitSwimwear &&
         FilterOutfitAthletic && FilterOutfitCareer && FilterOutfitOuterwear;
+    public bool IsAllBBKindSelected =>
+        FilterBBObjects && FilterBBDoorsWindows && FilterBBLandscaping && FilterBBWallsFloors &&
+        FilterBBTerrain && FilterBBFencesRailings && FilterBBStairs && FilterBBRoofs && FilterBBOtherBuild;
+    public bool IsAllBBRoomSelected =>
+        FilterBBRoomLiving && FilterBBRoomDining && FilterBBRoomKitchen && FilterBBRoomNursery &&
+        FilterBBRoomBathroom && FilterBBRoomLaundry && FilterBBRoomBedroom && FilterBBRoomStudy && FilterBBRoomOutdoor &&
+        FilterBBRoomCommunity && FilterBBRoomResort;
+    public bool IsAllBBFunctionSelected =>
+        FilterBBFuncAppliances && FilterBBFuncElectronics && FilterBBFuncEntertainment && FilterBBFuncLighting &&
+        FilterBBFuncPlumbing && FilterBBFuncDecor && FilterBBFuncKids && FilterBBFuncStorage &&
+        FilterBBFuncComfort && FilterBBFuncSurfaces && FilterBBFuncVehicles && FilterBBFuncPets && FilterBBFuncMisc;
+    public bool IsBBPriceFiltered => FilterBBPriceMin.HasValue || FilterBBPriceMax.HasValue;
     public bool IsAllOtherCategorySelected =>
         FilterOtherWorlds && FilterOtherSims && FilterOtherLots && FilterOtherMisc;
     public bool IsAllModeSelected => FilterModeEnabled && FilterModeDisabled;
@@ -264,6 +343,83 @@ public partial class ContentManagerViewModel
         RequestFilterUpdate(0);
     }
 
+    private void SetAllBBKinds(bool value)
+    {
+        FilterBBObjects = value;
+        FilterBBDoorsWindows = value;
+        FilterBBLandscaping = value;
+        FilterBBWallsFloors = value;
+        FilterBBTerrain = value;
+        FilterBBFencesRailings = value;
+        FilterBBStairs = value;
+        FilterBBRoofs = value;
+        FilterBBOtherBuild = value;
+    }
+
+    private void SetAllBBRooms(bool value)
+    {
+        FilterBBRoomLiving = value;
+        FilterBBRoomDining = value;
+        FilterBBRoomKitchen = value;
+        FilterBBRoomNursery = value;
+        FilterBBRoomBathroom = value;
+        FilterBBRoomLaundry = value;
+        FilterBBRoomBedroom = value;
+        FilterBBRoomStudy = value;
+        FilterBBRoomOutdoor = value;
+        FilterBBRoomCommunity = value;
+        FilterBBRoomResort = value;
+    }
+
+    private void SetAllBBFunctions(bool value)
+    {
+        FilterBBFuncAppliances = value;
+        FilterBBFuncElectronics = value;
+        FilterBBFuncEntertainment = value;
+        FilterBBFuncLighting = value;
+        FilterBBFuncPlumbing = value;
+        FilterBBFuncDecor = value;
+        FilterBBFuncKids = value;
+        FilterBBFuncStorage = value;
+        FilterBBFuncComfort = value;
+        FilterBBFuncSurfaces = value;
+        FilterBBFuncVehicles = value;
+        FilterBBFuncPets = value;
+        FilterBBFuncMisc = value;
+    }
+
+    [RelayCommand]
+    public void ToggleAllBBKind()
+    {
+        SetAllBBKinds(!IsAllBBKindSelected);
+        OnPropertyChanged(nameof(IsAllBBKindSelected));
+        RequestFilterUpdate(0);
+    }
+
+    [RelayCommand]
+    public void ToggleAllBBRoom()
+    {
+        SetAllBBRooms(!IsAllBBRoomSelected);
+        OnPropertyChanged(nameof(IsAllBBRoomSelected));
+        RequestFilterUpdate(0);
+    }
+
+    [RelayCommand]
+    public void ToggleAllBBFunction()
+    {
+        SetAllBBFunctions(!IsAllBBFunctionSelected);
+        OnPropertyChanged(nameof(IsAllBBFunctionSelected));
+        RequestFilterUpdate(0);
+    }
+
+    [RelayCommand]
+    public void ResetBBPrice()
+    {
+        FilterBBPriceMin = null;
+        FilterBBPriceMax = null;
+        RequestFilterUpdate(0);
+    }
+
     [RelayCommand]
     public void ToggleAllOtherCategory()
     {
@@ -287,6 +443,7 @@ public partial class ContentManagerViewModel
     }
 
     public bool ShowCasSubFilters => FilterTypeCAS && IsCasSubFiltersExpanded;
+    public bool ShowBuildBuySubFilters => FilterTypeBuildBuy && IsBBSubFiltersExpanded;
     public bool ShowOtherSubFilters => FilterTypeOther && IsOtherSubExpanded;
 
     partial void OnFilterTypeCASChanged(bool value)
@@ -300,9 +457,12 @@ public partial class ContentManagerViewModel
 
     partial void OnFilterTypeBuildBuyChanged(bool value)
     {
+        OnPropertyChanged(nameof(ShowBuildBuySubFilters));
         OnPropertyChanged(nameof(IsAllTypesSelected));
         RequestFilterUpdate();
     }
+
+    partial void OnIsBBSubFiltersExpandedChanged(bool value) => OnPropertyChanged(nameof(ShowBuildBuySubFilters));
 
     partial void OnFilterTypeOtherChanged(bool value)
     {
@@ -343,6 +503,90 @@ public partial class ContentManagerViewModel
     partial void OnFilterOutfitAthleticChanged(bool value) { OnPropertyChanged(nameof(IsAllCasOutfitSelected)); RequestFilterUpdate(); }
     partial void OnFilterOutfitCareerChanged(bool value) { OnPropertyChanged(nameof(IsAllCasOutfitSelected)); RequestFilterUpdate(); }
     partial void OnFilterOutfitOuterwearChanged(bool value) { OnPropertyChanged(nameof(IsAllCasOutfitSelected)); RequestFilterUpdate(); }
+
+    partial void OnFilterBBObjectsChanged(bool value) { OnPropertyChanged(nameof(IsAllBBKindSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBDoorsWindowsChanged(bool value) { OnPropertyChanged(nameof(IsAllBBKindSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBLandscapingChanged(bool value) { OnPropertyChanged(nameof(IsAllBBKindSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBWallsFloorsChanged(bool value) { OnPropertyChanged(nameof(IsAllBBKindSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBTerrainChanged(bool value) { OnPropertyChanged(nameof(IsAllBBKindSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBFencesRailingsChanged(bool value) { OnPropertyChanged(nameof(IsAllBBKindSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBStairsChanged(bool value) { OnPropertyChanged(nameof(IsAllBBKindSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBRoofsChanged(bool value) { OnPropertyChanged(nameof(IsAllBBKindSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBOtherBuildChanged(bool value) { OnPropertyChanged(nameof(IsAllBBKindSelected)); RequestFilterUpdate(); }
+
+    partial void OnFilterBBRoomLivingChanged(bool value) { OnPropertyChanged(nameof(IsAllBBRoomSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBRoomDiningChanged(bool value) { OnPropertyChanged(nameof(IsAllBBRoomSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBRoomKitchenChanged(bool value) { OnPropertyChanged(nameof(IsAllBBRoomSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBRoomNurseryChanged(bool value) { OnPropertyChanged(nameof(IsAllBBRoomSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBRoomBathroomChanged(bool value) { OnPropertyChanged(nameof(IsAllBBRoomSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBRoomLaundryChanged(bool value) { OnPropertyChanged(nameof(IsAllBBRoomSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBRoomBedroomChanged(bool value) { OnPropertyChanged(nameof(IsAllBBRoomSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBRoomStudyChanged(bool value) { OnPropertyChanged(nameof(IsAllBBRoomSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBRoomOutdoorChanged(bool value) { OnPropertyChanged(nameof(IsAllBBRoomSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBRoomCommunityChanged(bool value) { OnPropertyChanged(nameof(IsAllBBRoomSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBRoomResortChanged(bool value) { OnPropertyChanged(nameof(IsAllBBRoomSelected)); RequestFilterUpdate(); }
+
+    partial void OnFilterBBFuncAppliancesChanged(bool value) { OnPropertyChanged(nameof(IsAllBBFunctionSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBFuncElectronicsChanged(bool value) { OnPropertyChanged(nameof(IsAllBBFunctionSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBFuncEntertainmentChanged(bool value) { OnPropertyChanged(nameof(IsAllBBFunctionSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBFuncLightingChanged(bool value) { OnPropertyChanged(nameof(IsAllBBFunctionSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBFuncPlumbingChanged(bool value) { OnPropertyChanged(nameof(IsAllBBFunctionSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBFuncDecorChanged(bool value) { OnPropertyChanged(nameof(IsAllBBFunctionSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBFuncKidsChanged(bool value) { OnPropertyChanged(nameof(IsAllBBFunctionSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBFuncStorageChanged(bool value) { OnPropertyChanged(nameof(IsAllBBFunctionSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBFuncComfortChanged(bool value) { OnPropertyChanged(nameof(IsAllBBFunctionSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBFuncSurfacesChanged(bool value) { OnPropertyChanged(nameof(IsAllBBFunctionSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBFuncVehiclesChanged(bool value) { OnPropertyChanged(nameof(IsAllBBFunctionSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBFuncPetsChanged(bool value) { OnPropertyChanged(nameof(IsAllBBFunctionSelected)); RequestFilterUpdate(); }
+    partial void OnFilterBBFuncMiscChanged(bool value) { OnPropertyChanged(nameof(IsAllBBFunctionSelected)); RequestFilterUpdate(); }
+
+    // Text shown in the price boxes. Kept as typed; anything that isn't a non-negative number means "no limit".
+    private string _filterBBPriceMinText = "";
+    private string _filterBBPriceMaxText = "";
+    private bool _isTypingBBPrice;
+
+    public string FilterBBPriceMinText
+    {
+        get => _filterBBPriceMinText;
+        set
+        {
+            if (!SetProperty(ref _filterBBPriceMinText, value)) return;
+            _isTypingBBPrice = true;
+            FilterBBPriceMin = ParseBBPrice(value);
+            _isTypingBBPrice = false;
+        }
+    }
+
+    public string FilterBBPriceMaxText
+    {
+        get => _filterBBPriceMaxText;
+        set
+        {
+            if (!SetProperty(ref _filterBBPriceMaxText, value)) return;
+            _isTypingBBPrice = true;
+            FilterBBPriceMax = ParseBBPrice(value);
+            _isTypingBBPrice = false;
+        }
+    }
+
+    private static decimal? ParseBBPrice(string? text) =>
+        decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, out var price) && price >= 0 ? price : null;
+
+    private static string FormatBBPrice(decimal? price) => price?.ToString("0", CultureInfo.CurrentCulture) ?? "";
+
+    partial void OnFilterBBPriceMinChanged(decimal? value)
+    {
+        if (!_isTypingBBPrice) SetProperty(ref _filterBBPriceMinText, FormatBBPrice(value), nameof(FilterBBPriceMinText));
+        OnPropertyChanged(nameof(IsBBPriceFiltered));
+        RequestFilterUpdate(300);
+    }
+
+    partial void OnFilterBBPriceMaxChanged(decimal? value)
+    {
+        if (!_isTypingBBPrice) SetProperty(ref _filterBBPriceMaxText, FormatBBPrice(value), nameof(FilterBBPriceMaxText));
+        OnPropertyChanged(nameof(IsBBPriceFiltered));
+        RequestFilterUpdate(300);
+    }
 
     partial void OnFilterOtherWorldsChanged(bool value) { OnPropertyChanged(nameof(IsAllOtherCategorySelected)); RequestFilterUpdate(); }
     partial void OnFilterOtherSimsChanged(bool value) { OnPropertyChanged(nameof(IsAllOtherCategorySelected)); RequestFilterUpdate(); }
@@ -436,10 +680,8 @@ public partial class ContentManagerViewModel
         query = query.Where(i =>
         {
             var type = i.PackageType ?? "";
-            var isCas = type.Equals("CAS", StringComparison.OrdinalIgnoreCase);
-            var isBuildBuy = type.Equals("BuildBuy", StringComparison.OrdinalIgnoreCase) ||
-                             type.Equals("Build/Buy", StringComparison.OrdinalIgnoreCase) ||
-                             type.Equals("Object", StringComparison.OrdinalIgnoreCase);
+            var isCas = PackageTypeHelper.IsCas(type);
+            var isBuildBuy = PackageTypeHelper.IsBuildBuy(type);
             var isOther = !isCas && !isBuildBuy;
 
             if (isCas)
@@ -454,7 +696,12 @@ public partial class ContentManagerViewModel
 
             if (isBuildBuy)
             {
-                return FilterTypeBuildBuy;
+                if (!FilterTypeBuildBuy) return false;
+                if (!MatchBBKind(i)) return false;
+                if (!MatchBBRoom(i)) return false;
+                if (!MatchBBFunction(i)) return false;
+                if (!MatchBBPrice(i)) return false;
+                return true;
             }
 
             if (isOther)
@@ -567,6 +814,83 @@ public partial class ContentManagerViewModel
         return false;
     }
 
+    private static bool HasToken(string[] parts, string token) =>
+        parts.Any(p => string.Equals(p, token, StringComparison.OrdinalIgnoreCase));
+
+    private bool MatchBBKind(ItemViewModel item)
+    {
+        if (IsAllBBKindSelected) return true;
+
+        // Items scanned before Build/Buy kinds existed are objects.
+        var kinds = string.IsNullOrEmpty(item.Entity.BBKind) ? BuildBuyCategories.KindObjects : item.Entity.BBKind;
+        var parts = kinds.Split(CasFilterDelimiters, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (FilterBBObjects && HasToken(parts, BuildBuyCategories.KindObjects)) return true;
+        if (FilterBBDoorsWindows && HasToken(parts, BuildBuyCategories.KindDoorsWindows)) return true;
+        if (FilterBBLandscaping && HasToken(parts, BuildBuyCategories.KindLandscaping)) return true;
+        if (FilterBBWallsFloors && HasToken(parts, BuildBuyCategories.KindWallsFloors)) return true;
+        if (FilterBBTerrain && HasToken(parts, BuildBuyCategories.KindTerrain)) return true;
+        if (FilterBBFencesRailings && HasToken(parts, BuildBuyCategories.KindFencesRailings)) return true;
+        if (FilterBBStairs && HasToken(parts, BuildBuyCategories.KindStairs)) return true;
+        if (FilterBBRoofs && HasToken(parts, BuildBuyCategories.KindRoofs)) return true;
+        if (FilterBBOtherBuild && HasToken(parts, BuildBuyCategories.KindOtherBuild)) return true;
+        return false;
+    }
+
+    // Unlike the CAS filters, an item with no room (doors, walls...) is hidden once rooms are narrowed down.
+    private bool MatchBBRoom(ItemViewModel item)
+    {
+        if (IsAllBBRoomSelected) return true;
+
+        var parts = (item.Entity.BBRooms ?? "").Split(CasFilterDelimiters, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (FilterBBRoomLiving && HasToken(parts, "Living")) return true;
+        if (FilterBBRoomDining && HasToken(parts, "Dining")) return true;
+        if (FilterBBRoomKitchen && HasToken(parts, "Kitchen")) return true;
+        if (FilterBBRoomNursery && HasToken(parts, "Nursery")) return true;
+        if (FilterBBRoomBathroom && HasToken(parts, "Bathroom")) return true;
+        if (FilterBBRoomLaundry && HasToken(parts, "Laundry")) return true;
+        if (FilterBBRoomBedroom && HasToken(parts, "Bedroom")) return true;
+        if (FilterBBRoomStudy && HasToken(parts, "Study")) return true;
+        if (FilterBBRoomOutdoor && HasToken(parts, "Outdoor")) return true;
+        if (FilterBBRoomCommunity && HasToken(parts, "Community")) return true;
+        if (FilterBBRoomResort && HasToken(parts, "Resort")) return true;
+        return false;
+    }
+
+    private bool MatchBBFunction(ItemViewModel item)
+    {
+        if (IsAllBBFunctionSelected) return true;
+
+        var parts = (item.Entity.BBFunctions ?? "").Split(CasFilterDelimiters, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (FilterBBFuncAppliances && HasToken(parts, "Appliances")) return true;
+        if (FilterBBFuncElectronics && HasToken(parts, "Electronics")) return true;
+        if (FilterBBFuncEntertainment && HasToken(parts, "Entertainment")) return true;
+        if (FilterBBFuncLighting && HasToken(parts, "Lighting")) return true;
+        if (FilterBBFuncPlumbing && HasToken(parts, "Plumbing")) return true;
+        if (FilterBBFuncDecor && HasToken(parts, "Decor")) return true;
+        if (FilterBBFuncKids && HasToken(parts, "Kids")) return true;
+        if (FilterBBFuncStorage && HasToken(parts, "Storage")) return true;
+        if (FilterBBFuncComfort && HasToken(parts, "Comfort")) return true;
+        if (FilterBBFuncSurfaces && HasToken(parts, "Surfaces")) return true;
+        if (FilterBBFuncVehicles && HasToken(parts, "Vehicles")) return true;
+        if (FilterBBFuncPets && HasToken(parts, "Pets")) return true;
+        if (FilterBBFuncMisc && HasToken(parts, "Misc")) return true;
+        return false;
+    }
+
+    // Matches when any object in the package is priced inside the range.
+    private bool MatchBBPrice(ItemViewModel item)
+    {
+        if (!IsBBPriceFiltered) return true;
+
+        var min = item.Entity.BBPriceMin;
+        var max = item.Entity.BBPriceMax;
+        if (!min.HasValue || !max.HasValue) return false;
+
+        if (FilterBBPriceMin.HasValue && max.Value < (double)FilterBBPriceMin.Value) return false;
+        if (FilterBBPriceMax.HasValue && min.Value > (double)FilterBBPriceMax.Value) return false;
+        return true;
+    }
+
     private bool MatchOtherSubCategory(ItemViewModel item)
     {
         if (FilterOtherWorlds && FilterOtherSims && FilterOtherLots && FilterOtherMisc)
@@ -607,10 +931,8 @@ public partial class ContentManagerViewModel
         }
 
         var type = targetItem.PackageType ?? "";
-        var isCas = type.Equals("CAS", StringComparison.OrdinalIgnoreCase);
-        var isBuildBuy = type.Equals("BuildBuy", StringComparison.OrdinalIgnoreCase) ||
-                         type.Equals("Build/Buy", StringComparison.OrdinalIgnoreCase) ||
-                         type.Equals("Object", StringComparison.OrdinalIgnoreCase);
+        var isCas = PackageTypeHelper.IsCas(type);
+        var isBuildBuy = PackageTypeHelper.IsBuildBuy(type);
         var isOther = !isCas && !isBuildBuy;
 
         if (isCas)
@@ -659,6 +981,14 @@ public partial class ContentManagerViewModel
         else if (isBuildBuy)
         {
             FilterTypeBuildBuy = true;
+            if (!MatchBBKind(targetItem)) SetAllBBKinds(true);
+            if (!MatchBBRoom(targetItem)) SetAllBBRooms(true);
+            if (!MatchBBFunction(targetItem)) SetAllBBFunctions(true);
+            if (!MatchBBPrice(targetItem))
+            {
+                FilterBBPriceMin = null;
+                FilterBBPriceMax = null;
+            }
         }
         else if (isOther)
         {

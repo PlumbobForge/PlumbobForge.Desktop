@@ -57,6 +57,49 @@ public class ContentManagerUiState
     public bool FilterOutfitCareer { get; set; } = true;
     public bool FilterOutfitOuterwear { get; set; } = true;
 
+    // Build/Buy Kinds
+    public bool FilterBBObjects { get; set; } = true;
+    public bool FilterBBDoorsWindows { get; set; } = true;
+    public bool FilterBBLandscaping { get; set; } = true;
+    public bool FilterBBWallsFloors { get; set; } = true;
+    public bool FilterBBTerrain { get; set; } = true;
+    public bool FilterBBFencesRailings { get; set; } = true;
+    public bool FilterBBStairs { get; set; } = true;
+    public bool FilterBBRoofs { get; set; } = true;
+    public bool FilterBBOtherBuild { get; set; } = true;
+
+    // Build/Buy Rooms
+    public bool FilterBBRoomLiving { get; set; } = true;
+    public bool FilterBBRoomDining { get; set; } = true;
+    public bool FilterBBRoomKitchen { get; set; } = true;
+    public bool FilterBBRoomNursery { get; set; } = true;
+    public bool FilterBBRoomBathroom { get; set; } = true;
+    public bool FilterBBRoomLaundry { get; set; } = true;
+    public bool FilterBBRoomBedroom { get; set; } = true;
+    public bool FilterBBRoomStudy { get; set; } = true;
+    public bool FilterBBRoomOutdoor { get; set; } = true;
+    public bool FilterBBRoomCommunity { get; set; } = true;
+    public bool FilterBBRoomResort { get; set; } = true;
+
+    // Build/Buy Functions
+    public bool FilterBBFuncAppliances { get; set; } = true;
+    public bool FilterBBFuncElectronics { get; set; } = true;
+    public bool FilterBBFuncEntertainment { get; set; } = true;
+    public bool FilterBBFuncLighting { get; set; } = true;
+    public bool FilterBBFuncPlumbing { get; set; } = true;
+    public bool FilterBBFuncDecor { get; set; } = true;
+    public bool FilterBBFuncKids { get; set; } = true;
+    public bool FilterBBFuncStorage { get; set; } = true;
+    public bool FilterBBFuncComfort { get; set; } = true;
+    public bool FilterBBFuncSurfaces { get; set; } = true;
+    public bool FilterBBFuncVehicles { get; set; } = true;
+    public bool FilterBBFuncPets { get; set; } = true;
+    public bool FilterBBFuncMisc { get; set; } = true;
+
+    // Build/Buy Price
+    public decimal? FilterBBPriceMin { get; set; }
+    public decimal? FilterBBPriceMax { get; set; }
+
     // Other Sub-Categories
     public bool FilterOtherWorlds { get; set; } = true;
     public bool FilterOtherSims { get; set; } = true;
@@ -74,6 +117,11 @@ public class ContentManagerUiState
     public bool IsCasAgeExpanded { get; set; } = true;
     public bool IsCasGenderExpanded { get; set; } = true;
     public bool IsCasOutfitExpanded { get; set; } = true;
+    public bool IsBBSubFiltersExpanded { get; set; } = true;
+    public bool IsBBKindExpanded { get; set; } = true;
+    public bool IsBBRoomExpanded { get; set; } = true;
+    public bool IsBBFunctionExpanded { get; set; } = true;
+    public bool IsBBPriceExpanded { get; set; } = true;
     public bool IsOtherSubExpanded { get; set; } = true;
     public bool IsModeExpanded { get; set; } = true;
 }
