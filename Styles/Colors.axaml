@@ -10,6 +10,9 @@
     <SolidColorBrush x:Key="AccentPressedBrush" Color="#047857" />
     <SolidColorBrush x:Key="AccentBadgeBgBrush" Color="#093829" />
     <SolidColorBrush x:Key="AccentRubberbandBgBrush" Color="#3310b981" />
+    <SolidColorBrush x:Key="AccentProgressFillRunningBrush" Color="#3810b981" />
+    <SolidColorBrush x:Key="AccentProgressFillCompletedBrush" Color="#2210b981" />
+    <SolidColorBrush x:Key="AccentProgressBorderCompletedBrush" Color="#6010b981" />
 
     <!-- Status Accents (Non-brand indicators) -->
     <SolidColorBrush x:Key="StatusRed" Color="#ef4444" />

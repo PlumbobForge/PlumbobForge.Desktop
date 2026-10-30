@@ -5,12 +5,6 @@ using Avalonia.Media;
 
 namespace PlumbobForge.Desktop.Controls;
 
-/// <summary>
-/// A Border subclass that sets Visual.Clip to a true rounded-rectangle
-/// StreamGeometry matching its CornerRadius, so child content (images,
-/// gradients, etc.) is genuinely clipped to the rounded corners rather
-/// than only to a rectangle.
-/// </summary>
 public class ClippedBorder : Border
 {
     protected override Size ArrangeOverride(Size finalSize)

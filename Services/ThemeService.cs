@@ -37,17 +37,41 @@ public static class ThemeService
     public static string CurrentTheme { get; private set; } = "Dark";
     public static string CurrentAccent { get; private set; } = "Emerald";
 
+    // Custom theme state
+    public static bool IsCustomTheme { get; private set; } = false;
+    public static string CustomBaseHex { get; private set; } = "#1e293b";
+    public static bool CustomIsDark { get; private set; } = true;
+    public static bool UseCustomAccent { get; private set; } = false;
+    public static string? CustomAccentHex { get; private set; } = null;
+    public static double CustomIntensity { get; private set; } = 45.0;
+
     public static event Action? ThemeChanged;
     public static event Action? AccentChanged;
 
-    public static void Initialize(string? theme, string? accent)
+    public static void Initialize(
+        string? theme,
+        string? accent,
+        bool isCustomTheme = false,
+        string? customBaseHex = null,
+        bool customIsDark = true,
+        bool useCustomAccent = false,
+        string? customAccentHex = null,
+        double customIntensity = 45.0)
     {
-        ApplyTheme(theme ?? "Dark");
-        ApplyAccent(accent ?? "Emerald");
+        if (isCustomTheme)
+        {
+            ApplyCustomTheme(customBaseHex ?? "#1e293b", customIsDark, useCustomAccent, customAccentHex, customIntensity);
+        }
+        else
+        {
+            ApplyTheme(theme ?? "Dark");
+            ApplyAccent(accent ?? "Emerald");
+        }
     }
 
     public static void ApplyTheme(string themeName)
     {
+        IsCustomTheme = false;
         CurrentTheme = string.IsNullOrWhiteSpace(themeName) ? "Dark" : themeName;
 
         if (Application.Current != null)
@@ -127,6 +151,102 @@ public static class ThemeService
         ThemeChanged?.Invoke();
     }
 
+    public static void ApplyCustomTheme(string baseHex, bool isDark, bool useCustomAccent = false, string? customAccentHex = null, double intensity = 45.0)
+    {
+        IsCustomTheme = true;
+        CustomBaseHex = string.IsNullOrWhiteSpace(baseHex) ? (isDark ? "#1e293b" : "#f1f5f9") : baseHex;
+        CustomIsDark = isDark;
+        UseCustomAccent = useCustomAccent;
+        CustomAccentHex = customAccentHex;
+        CustomIntensity = Math.Clamp(intensity, 0.0, 100.0);
+        CurrentTheme = isDark ? "Dark" : "Light";
+
+        if (!ColorPaletteGenerator.TryParseHex(CustomBaseHex, out var baseColor))
+        {
+            baseColor = Color.Parse(isDark ? "#1e293b" : "#f1f5f9");
+        }
+
+        Color? customAccentColor = null;
+        if (useCustomAccent && !string.IsNullOrWhiteSpace(customAccentHex) && ColorPaletteGenerator.TryParseHex(customAccentHex, out var parsedAccent))
+        {
+            customAccentColor = parsedAccent;
+        }
+
+        var palette = ColorPaletteGenerator.Generate(baseColor, isDark, customAccentColor, CustomIntensity);
+
+        if (Application.Current != null)
+        {
+            Application.Current.RequestedThemeVariant = isDark ? ThemeVariant.Dark : ThemeVariant.Light;
+            var appRes = Application.Current.Resources;
+
+            appRes["BgDark"] = new SolidColorBrush(palette.BgDark);
+            appRes["BgSidebar"] = new SolidColorBrush(palette.BgSidebar);
+            appRes["BgCard"] = new SolidColorBrush(palette.BgCard);
+            appRes["BgCardAlt"] = new SolidColorBrush(palette.BgCardAlt);
+            appRes["BgSurface"] = new SolidColorBrush(palette.BgSurface);
+            appRes["BgInput"] = new SolidColorBrush(palette.BgInput);
+            appRes["BgDarkest"] = new SolidColorBrush(palette.BgDarkest);
+            appRes["BgPanelDark"] = new SolidColorBrush(palette.BgPanelDark);
+            appRes["BorderMain"] = new SolidColorBrush(palette.BorderMain);
+            appRes["BorderSubtle"] = new SolidColorBrush(palette.BorderSubtle);
+            appRes["BorderActive"] = new SolidColorBrush(palette.BorderActive);
+            appRes["TextMain"] = new SolidColorBrush(palette.TextMain);
+            appRes["TextMuted"] = new SolidColorBrush(palette.TextMuted);
+            appRes["TextSubtle"] = new SolidColorBrush(palette.TextSubtle);
+            appRes["TextDisabled"] = new SolidColorBrush(palette.TextDisabled);
+            appRes["CapsuleBgBrush"] = new SolidColorBrush(palette.CapsuleBg);
+            appRes["CapsuleBorderBrush"] = new SolidColorBrush(palette.CapsuleBorder);
+
+            var topFadeGradient = new LinearGradientBrush
+            {
+                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+                EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
+                GradientStops = new GradientStops
+                {
+                    new(Color.FromArgb(0xF0, palette.BgDark.R, palette.BgDark.G, palette.BgDark.B), 0.0),
+                    new(Color.FromArgb(0xC0, palette.BgDark.R, palette.BgDark.G, palette.BgDark.B), 0.5),
+                    new(Color.FromArgb(0x50, palette.BgDark.R, palette.BgDark.G, palette.BgDark.B), 0.85),
+                    new(Color.FromArgb(0x00, palette.BgDark.R, palette.BgDark.G, palette.BgDark.B), 1.0)
+                }
+            };
+
+            var itemCardGradient = new LinearGradientBrush
+            {
+                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+                EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
+                GradientStops = new GradientStops
+                {
+                    new(Color.FromArgb(0x00, palette.BgSidebar.R, palette.BgSidebar.G, palette.BgSidebar.B), 0.0),
+                    new(Color.FromArgb(0x50, palette.BgSidebar.R, palette.BgSidebar.G, palette.BgSidebar.B), 0.35),
+                    new(Color.FromArgb(0xC0, palette.BgSidebar.R, palette.BgSidebar.G, palette.BgSidebar.B), 0.75),
+                    new(Color.FromArgb(0xFF, palette.BgSidebar.R, palette.BgSidebar.G, palette.BgSidebar.B), 1.0)
+                }
+            };
+
+            appRes["TopFadeGradientBrush"] = topFadeGradient;
+            appRes["ItemCardGradientBrush"] = itemCardGradient;
+
+            // Accent resources
+            appRes["AccentColor"] = palette.Accent;
+            appRes["AccentBrush"] = new SolidColorBrush(palette.Accent);
+            appRes["AccentHoverBrush"] = new SolidColorBrush(palette.AccentHover);
+            appRes["AccentPressedBrush"] = new SolidColorBrush(palette.AccentPressed);
+            appRes["AccentBadgeBgBrush"] = new SolidColorBrush(palette.AccentBadgeBg);
+            appRes["AccentRubberbandBgBrush"] = new SolidColorBrush(palette.AccentRubberband);
+            appRes["AccentProgressFillRunningBrush"] = new SolidColorBrush(Color.FromArgb(0x38, palette.Accent.R, palette.Accent.G, palette.Accent.B));
+            appRes["AccentProgressFillCompletedBrush"] = new SolidColorBrush(Color.FromArgb(0x22, palette.Accent.R, palette.Accent.G, palette.Accent.B));
+            appRes["AccentProgressBorderCompletedBrush"] = new SolidColorBrush(Color.FromArgb(0x60, palette.Accent.R, palette.Accent.G, palette.Accent.B));
+            appRes["SystemHighlightColor"] = palette.Accent;
+            appRes["SystemControlHighlightListAccentLowBrush"] = new SolidColorBrush(palette.Accent);
+            appRes["SystemControlHighlightListAccentMediumBrush"] = new SolidColorBrush(palette.AccentHover);
+            appRes["SystemControlHighlightListAccentHighBrush"] = new SolidColorBrush(palette.AccentPressed);
+        }
+
+        CurrentAccent = ColorPaletteGenerator.ColorToHex(palette.Accent);
+        ThemeChanged?.Invoke();
+        AccentChanged?.Invoke();
+    }
+
     public static void ApplyAccent(string accentName)
     {
         var accent = Accents.FirstOrDefault(a => a.Name.Equals(accentName, StringComparison.OrdinalIgnoreCase))
@@ -151,6 +271,9 @@ public static class ThemeService
             appRes["AccentPressedBrush"] = new SolidColorBrush(pressedColor);
             appRes["AccentBadgeBgBrush"] = new SolidColorBrush(badgeBgColor);
             appRes["AccentRubberbandBgBrush"] = new SolidColorBrush(rubberbandColor);
+            appRes["AccentProgressFillRunningBrush"] = new SolidColorBrush(Color.FromArgb(0x38, accentColor.R, accentColor.G, accentColor.B));
+            appRes["AccentProgressFillCompletedBrush"] = new SolidColorBrush(Color.FromArgb(0x22, accentColor.R, accentColor.G, accentColor.B));
+            appRes["AccentProgressBorderCompletedBrush"] = new SolidColorBrush(Color.FromArgb(0x60, accentColor.R, accentColor.G, accentColor.B));
             appRes["SystemHighlightColor"] = accentColor;
             appRes["SystemControlHighlightListAccentLowBrush"] = new SolidColorBrush(accentColor);
             appRes["SystemControlHighlightListAccentMediumBrush"] = new SolidColorBrush(hoverColor);
@@ -162,6 +285,11 @@ public static class ThemeService
 
     public static string GetCurrentAccentHex()
     {
+        if (IsCustomTheme && Application.Current?.Resources.TryGetResource("AccentColor", null, out var val) == true && val is Color c)
+        {
+            return ColorPaletteGenerator.ColorToHex(c);
+        }
+
         var accent = Accents.FirstOrDefault(a => a.Name.Equals(CurrentAccent, StringComparison.OrdinalIgnoreCase))
                      ?? Accents[0];
         return accent.Hex;
@@ -169,6 +297,11 @@ public static class ThemeService
 
     public static IBrush GetCurrentAccentBrush()
     {
+        if (IsCustomTheme && Application.Current?.Resources.TryGetResource("AccentBrush", null, out var val) == true && val is IBrush b)
+        {
+            return b;
+        }
+
         var accent = Accents.FirstOrDefault(a => a.Name.Equals(CurrentAccent, StringComparison.OrdinalIgnoreCase))
                      ?? Accents[0];
         return new SolidColorBrush(Color.Parse(accent.Hex));
@@ -176,6 +309,11 @@ public static class ThemeService
 
     public static IBrush GetCapsuleBorderBrush()
     {
+        if (IsCustomTheme && Application.Current?.Resources.TryGetResource("CapsuleBorderBrush", null, out var val) == true && val is IBrush b)
+        {
+            return b;
+        }
+
         var isLight = CurrentTheme.Equals("Light", StringComparison.OrdinalIgnoreCase);
         return new SolidColorBrush(Color.Parse(isLight ? "#e2e8f0" : "#40475569"));
     }

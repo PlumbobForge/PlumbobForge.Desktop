@@ -1,0 +1,139 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:primitives="using:Avalonia.Controls.Primitives"
+             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             x:Class="PlumbobForge.Desktop.Views.Controls.PlumbobColorPicker"
+             Width="210">
+
+    <StackPanel Spacing="9">
+        <!-- Tab Segment Buttons: [ Simple | Advanced ] -->
+        <Border Background="{DynamicResource BgCard}" CornerRadius="6" Padding="2">
+            <Grid ColumnDefinitions="*, *">
+                <Button x:Name="SimpleTabButton"
+                        Grid.Column="0"
+                        Classes="segment-btn active"
+                        Padding="6,4"
+                        FontSize="11"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Click="OnSimpleTabClick">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <icon:PackIconBoxIcons Kind="RegularPalette" Width="12" Height="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="{loc:Loc 'common.simple'}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="AdvancedTabButton"
+                        Grid.Column="1"
+                        Classes="segment-btn"
+                        Padding="6,4"
+                        FontSize="11"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Click="OnAdvancedTabClick">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                        <icon:PackIconBoxIcons Kind="RegularSlider" Width="12" Height="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="{loc:Loc 'common.advanced'}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Mode Content (Fixed 232px height to avoid layout shift between tabs) -->
+        <Panel Height="232">
+            <!-- Simple Mode: 1:1 Flush Square 2D Spectrum + Hue Slider (0 gaps!) -->
+            <StackPanel x:Name="SimplePanel" Spacing="8" IsVisible="True" VerticalAlignment="Center">
+                <Border Width="210" Height="210"
+                        CornerRadius="8"
+                        ClipToBounds="True"
+                        BorderBrush="{DynamicResource BorderSubtle}"
+                        BorderThickness="1">
+                    <primitives:ColorSpectrum x:Name="SpectrumControl"
+                                              Width="210"
+                                              Height="210"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Shape="Box"
+                                              Components="SaturationValue"
+                                              HsvColor="{Binding #HueSlider.HsvColor, Mode=TwoWay}"/>
+                </Border>
+                <Border CornerRadius="4" ClipToBounds="True" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1">
+                    <primitives:ColorSlider x:Name="HueSlider"
+                                            Height="14"
+                                            HorizontalAlignment="Stretch"/>
+                </Border>
+            </StackPanel>
+
+            <!-- Advanced Mode: Numeric Sliders for R, G, B -->
+            <StackPanel x:Name="AdvancedPanel" Height="232" Spacing="16" IsVisible="False" VerticalAlignment="Center">
+                <!-- Red Slider -->
+                <Grid ColumnDefinitions="16, *, 32" VerticalAlignment="Center">
+                    <TextBlock Grid.Column="0" Text="R" FontWeight="Bold" FontSize="11" Foreground="#f87171" VerticalAlignment="Center"/>
+                    <Border Grid.Column="1" Margin="6,0" CornerRadius="4" ClipToBounds="True" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1">
+                        <primitives:ColorSlider x:Name="RedSlider"
+                                                Height="16"
+                                                HorizontalAlignment="Stretch"/>
+                    </Border>
+                    <TextBlock x:Name="RedValueText" Grid.Column="2" Text="255" FontSize="11" TextAlignment="Right" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- Green Slider -->
+                <Grid ColumnDefinitions="16, *, 32" VerticalAlignment="Center">
+                    <TextBlock Grid.Column="0" Text="G" FontWeight="Bold" FontSize="11" Foreground="#4ade80" VerticalAlignment="Center"/>
+                    <Border Grid.Column="1" Margin="6,0" CornerRadius="4" ClipToBounds="True" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1">
+                        <primitives:ColorSlider x:Name="GreenSlider"
+                                                Height="16"
+                                                HorizontalAlignment="Stretch"/>
+                    </Border>
+                    <TextBlock x:Name="GreenValueText" Grid.Column="2" Text="255" FontSize="11" TextAlignment="Right" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- Blue Slider -->
+                <Grid ColumnDefinitions="16, *, 32" VerticalAlignment="Center">
+                    <TextBlock Grid.Column="0" Text="B" FontWeight="Bold" FontSize="11" Foreground="#60a5fa" VerticalAlignment="Center"/>
+                    <Border Grid.Column="1" Margin="6,0" CornerRadius="4" ClipToBounds="True" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1">
+                        <primitives:ColorSlider x:Name="BlueSlider"
+                                                Height="16"
+                                                HorizontalAlignment="Stretch"/>
+                    </Border>
+                    <TextBlock x:Name="BlueValueText" Grid.Column="2" Text="255" FontSize="11" TextAlignment="Right" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                </Grid>
+            </StackPanel>
+        </Panel>
+
+        <!-- Footer: Color Preview + Hex Input -->
+        <Grid ColumnDefinitions="30, 8, *">
+            <Border Grid.Column="0"
+                    Width="30" Height="28"
+                    CornerRadius="6"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource BorderSubtle}"
+                    x:Name="PreviewSwatch"/>
+
+            <TextBox x:Name="HexTextBox"
+                     Grid.Column="2"
+                     Classes="settings-input"
+                     MaxLength="9"
+                     FontSize="11.5"
+                     Height="28"
+                     Watermark="#10b981"
+                     VerticalContentAlignment="Center"
+                     TextChanged="OnHexTextBoxChanged"/>
+        </Grid>
+
+        <!-- Optional Save As Preset Button -->
+        <Button x:Name="SavePresetButton"
+                Classes="btn-action-primary"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Center"
+                Height="30"
+                Padding="0"
+                IsVisible="False"
+                Click="OnSavePresetClick">
+            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                <icon:PackIconBoxIcons Kind="SolidStar" Width="12" Height="12" VerticalAlignment="Center"/>
+                <TextBlock Text="{loc:Loc 'dialogs.customize_set.save_as_preset'}" FontSize="11.5" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Button>
+    </StackPanel>
+</UserControl>
