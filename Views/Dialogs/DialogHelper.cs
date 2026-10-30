@@ -60,6 +60,29 @@ public static class DialogHelper
         return parent != null ? await dialog.ShowDialog<RetagDialogResult?>(parent) : null;
     }
 
+    public static async Task<bool> ShowLookInsideAsync(long itemId, string fileName, Window? owner = null)
+    {
+        var parent = owner ?? GetMainWindow();
+        var viewModel = new LookInsideViewModel(itemId, fileName);
+        var dialog = new LookInsideWindow(viewModel);
+        if (parent != null)
+        {
+            await dialog.ShowDialog(parent);
+        }
+        return viewModel.ChangesSaved;
+    }
+
+    public static async Task<bool> ShowCasFlagsAsync(IReadOnlyList<long> itemIds, bool isVault, Window? owner = null)
+    {
+        var parent = owner ?? GetMainWindow();
+        var viewModel = new CasFlagsBatchViewModel(itemIds, isVault);
+        if (parent != null)
+        {
+            await new CasFlagsDialogWindow(viewModel).ShowDialog(parent);
+        }
+        return viewModel.ChangesSaved;
+    }
+
     public static async Task<DeleteDialogResult> ShowDeleteConfirmAsync(string message, Window? owner = null)
     {
         var parent = owner ?? GetMainWindow();

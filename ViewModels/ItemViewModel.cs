@@ -11,6 +11,7 @@ using CommunityToolkit.Mvvm.Input;
 using PlumbobForge.Backend.Database;
 using PlumbobForge.Backend.Services;
 using PlumbobForge.Desktop.Services;
+using PlumbobForge.Desktop.Services.Localization;
 using SkiaSharp;
 
 namespace PlumbobForge.Desktop.ViewModels;
@@ -36,6 +37,12 @@ public partial class ItemViewModel : ObservableObject
     public IBrush FavoriteStarForeground => IsFavorite ? BrushFavoriteGold : BrushWhite;
     public string? UserTags => _entity.UserTags;
     public MetaEntity Entity => _entity;
+
+    public static bool TextureOptimizationActive { get; set; }
+    public bool ShowsOriginalTexturesBadge => TextureOptimizationActive && _entity.SkipTextureOptimization;
+    public bool HasDisabledObjects => _entity.DisabledObjectCount > 0;
+    public int DisabledObjectCount => _entity.DisabledObjectCount;
+    public string DisabledObjectsTooltip => LocalizationManager.Instance.GetString("library.objects_off_badge", _entity.DisabledObjectCount);
 
     private static IBrush BrushGreen => ThemeService.GetCurrentAccentBrush();
     private static readonly IBrush BrushRed = new SolidColorBrush(Color.Parse("#ef4444"));
@@ -296,7 +303,11 @@ public partial class ItemViewModel : ObservableObject
         OnPropertyChanged(nameof(FavoriteBadgeBackground));
         OnPropertyChanged(nameof(FavoriteBadgeBorder));
         OnPropertyChanged(nameof(FavoriteStarForeground));
-        Note = _entity.Description ?? string.Empty;
+        OnPropertyChanged(nameof(ShowsOriginalTexturesBadge));
+        OnPropertyChanged(nameof(HasDisabledObjects));
+        OnPropertyChanged(nameof(DisabledObjectCount));
+        OnPropertyChanged(nameof(DisabledObjectsTooltip));
+        Note =_entity.Description ?? string.Empty;
         OnPropertyChanged(nameof(Note));
     }
 
