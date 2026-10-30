@@ -413,6 +413,11 @@ public partial class ConfigurationsViewModel : ObservableObject
         var name = await DialogHelper.ShowInputAsync("New Configuration", "Enter name for new configuration:", "New Configuration");
         if (string.IsNullOrWhiteSpace(name)) return;
 
+        await CreateConfigurationNamedAsync(name);
+    }
+
+    public async Task CreateConfigurationNamedAsync(string name)
+    {
         if (!PlumbobForge.Desktop.Utils.NameValidator.IsValidName(name, out var createError))
         {
             ShowStatusToast(createError ?? "Invalid configuration name.", isError: true);
@@ -602,12 +607,21 @@ public partial class ConfigurationsViewModel : ObservableObject
         }
     }
 
+
+    private bool IsStaticLibraryCache()
+    {
+        // The monitor is the copy the vault toggle and migration/revert keep current.
+        bool vaultMode = _serviceProvider.GetService<IOptionsMonitor<PlumbobForgeOptions>>()?.CurrentValue.EnableSingleSourceVault
+            ?? _options.EnableSingleSourceVault;
+        return !vaultMode && string.Equals(_options.CacheMethod, "Static", StringComparison.OrdinalIgnoreCase);
+    }
+
     [RelayCommand]
     public async Task ActivateConfigurationAsync(ConfigItemViewModel? config)
     {
         if (config == null || config.Active) return;
 
-        bool isStatic = string.Equals(_options.CacheMethod, "Static", StringComparison.OrdinalIgnoreCase);
+        bool isStatic = IsStaticLibraryCache();
         bool shouldAutoRebuild = isStatic ? _options.AutoRebuildStaticCache : true;
 
         if (isStatic && !shouldAutoRebuild)
@@ -827,7 +841,7 @@ public partial class ConfigurationsViewModel : ObservableObject
 
                 if (config.Active)
                 {
-                    bool isStatic = string.Equals(_options.CacheMethod, "Static", StringComparison.OrdinalIgnoreCase);
+                    bool isStatic = IsStaticLibraryCache();
                     if (isStatic)
                     {
                         var allSets = await _db.SetsEntities.ToListAsync();
@@ -887,7 +901,7 @@ public partial class ConfigurationsViewModel : ObservableObject
 
                 if (SelectedConfiguration.Active)
                 {
-                    bool isStatic = string.Equals(_options.CacheMethod, "Static", StringComparison.OrdinalIgnoreCase);
+                    bool isStatic = IsStaticLibraryCache();
                     if (isStatic)
                     {
                         var allSets = await _db.SetsEntities.ToListAsync();

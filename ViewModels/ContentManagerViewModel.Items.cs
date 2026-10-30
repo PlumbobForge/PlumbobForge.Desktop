@@ -2,11 +2,15 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PlumbobForge.Backend.Database;
 using PlumbobForge.Backend.Services;
+using PlumbobForge.Desktop.Services.Localization;
 using PlumbobForge.Desktop.Views.Dialogs;
 
 namespace PlumbobForge.Desktop.ViewModels;
@@ -35,28 +39,88 @@ public partial class ContentManagerViewModel
         }
     }
 
+
+    private static async Task RecycleVaultItemsAsync(VaultService vaultService, IEnumerable<(long Id, string FileName)> items)
+    {
+        string dir = Path.Combine(Path.GetTempPath(), "PlumbobForge", "VaultRecycle", Guid.NewGuid().ToString("N"));
+        foreach (var (id, fileName) in items)
+        {
+            try
+            {
+                Directory.CreateDirectory(dir);
+                string target = Path.Combine(dir, Path.ChangeExtension(fileName, ".package"));
+                if (await vaultService.ExportModAsync(id, target))
+                {
+                    foreach (var exported in Directory.GetFiles(dir))
+                    {
+                        RecycleBinHelper.SendToRecycleBin(exported);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError($"Could not send vault item {fileName} to the Recycle Bin", ex, "ContentManagerViewModel");
+            }
+        }
+        try { if (Directory.Exists(dir)) Directory.Delete(dir, true); } catch { }
+    }
+
+
+    private async Task DeployLibraryItemsInVaultModeAsync()
+    {
+        if (!IsVaultActive) return;
+        try
+        {
+            await _pkgManager.SyncToSims3Async();
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError("Failed to update lots, Sims and worlds in the game folders", ex, "ContentManagerViewModel");
+        }
+    }
+
     [RelayCommand]
     public async Task ToggleEnableItemAsync(ItemViewModel? item)
     {
         if (item == null) return;
         item.Entity.Enabled = !item.Entity.Enabled;
-        
-        var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
-        if (meta != null)
+
+        if (item.Entity.IsVaultManaged)
         {
-            meta.Enabled = item.Entity.Enabled;
-            if (meta.SetsEntityId.HasValue)
+            var vaultService = App.Services?.GetService<VaultService>();
+            if (vaultService != null)
             {
-                var set = await _db.SetsEntities.Include(s => s.MetaEntities).FirstOrDefaultAsync(s => s.Id == meta.SetsEntityId.Value);
-                if (set != null)
+                try
                 {
-                    PlumbobForge.Backend.Services.SetDirtyTracker.UpdateDirtyState(set);
+                    await vaultService.ToggleModAsync(item.Entity.Id, item.Entity.Enabled);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError($"Failed to toggle vault item {item.Entity.Id}", ex, "ContentManagerViewModel");
+                    item.Entity.Enabled = !item.Entity.Enabled;
                 }
             }
         }
+        else
+        {
+            var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
+            if (meta != null)
+            {
+                meta.Enabled = item.Entity.Enabled;
+                if (meta.SetsEntityId.HasValue)
+                {
+                    var set = await _db.SetsEntities.Include(s => s.MetaEntities).FirstOrDefaultAsync(s => s.Id == meta.SetsEntityId.Value);
+                    if (set != null)
+                    {
+                        PlumbobForge.Backend.Services.SetDirtyTracker.UpdateDirtyState(set);
+                    }
+                }
+            }
+            await _db.SaveChangesAsync();
+            await DeployLibraryItemsInVaultModeAsync();
+        }
 
         item.NotifyEntityChanged();
-        await _db.SaveChangesAsync();
         NotifyDirtyStateChanged();
     }
 
@@ -109,6 +173,59 @@ public partial class ContentManagerViewModel
         ApplyFilter();
     }
 
+    public bool IsTextureOptimizationActive => _optionsMonitor?.CurrentValue?.OptimizeTextures ?? false;
+
+    public void NotifyTextureOptimizationChanged()
+    {
+        ItemViewModel.TextureOptimizationActive = IsTextureOptimizationActive;
+        OnPropertyChanged(nameof(IsTextureOptimizationActive));
+        foreach (var item in Items) item.NotifyEntityChanged();
+    }
+
+
+    [RelayCommand]
+    public async Task ToggleOriginalTexturesSelectedAsync()
+    {
+        var selected = Items.Where(i => i.IsSelected).ToList();
+        if (selected.Count == 0) return;
+
+        bool skip = selected.Any(i => !i.Entity.SkipTextureOptimization);
+        var ids = selected.Select(i => i.Entity.Id).ToList();
+
+        try
+        {
+            var vaultIds = selected.Where(i => i.Entity.IsVaultManaged).Select(i => i.Entity.Id).ToList();
+            if (vaultIds.Count > 0)
+            {
+                await Task.Run(async () =>
+                {
+                    using var scope = App.Services!.CreateScope();
+                    await scope.ServiceProvider.GetRequiredService<VaultService>().SetSkipTextureOptimizationAsync(vaultIds, skip);
+                });
+            }
+
+            var libraryIds = ids.Except(vaultIds).ToList();
+            if (libraryIds.Count > 0)
+            {
+                var metas = await _db.MetaEntities.Where(m => libraryIds.Contains(m.Id)).ToListAsync();
+                foreach (var meta in metas) meta.SkipTextureOptimization = skip;
+                await SetDirtyTracker.UpdateDirtyStatesForSetsAsync(_db, metas.Where(m => m.SetsEntityId.HasValue).Select(m => m.SetsEntityId!.Value));
+                await _db.SaveChangesAsync();
+            }
+
+            foreach (var item in selected)
+            {
+                item.Entity.SkipTextureOptimization = skip;
+                item.NotifyEntityChanged();
+            }
+            NotifyDirtyStateChanged();
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError("Failed to change texture optimisation for selected items", ex, "ContentManagerViewModel");
+        }
+    }
+
     [RelayCommand]
     public async Task RenameItemAsync(ItemViewModel? item)
     {
@@ -132,7 +249,18 @@ public partial class ContentManagerViewModel
             safeName += extension;
         }
 
-        if (directory != null)
+        if (item.Entity.IsVaultManaged)
+        {
+            // A vault item's CompleteFileName is its shard, which other mods share: only the name in the database changes.
+            if (!safeName.Equals(item.Entity.FileName, StringComparison.OrdinalIgnoreCase) &&
+                await _db.MetaEntities.AnyAsync(m => m.Id != item.Entity.Id && m.FileName == safeName))
+            {
+                await DialogHelper.ShowErrorAsync("Rename Error", "An item with this name already exists.");
+                return;
+            }
+            item.Entity.FileName = safeName;
+        }
+        else if (directory != null)
         {
             var newCompleteFileName = Path.Combine(directory, safeName);
             if (item.Entity.CompleteFileName != newCompleteFileName)
@@ -239,31 +367,62 @@ public partial class ContentManagerViewModel
         }
         catch { }
 
-        if (File.Exists(item.Entity.CompleteFileName))
+        if (item.Entity.IsVaultManaged)
         {
-            if (result.Permanent)
+            var vaultService = App.Services?.GetService<VaultService>(); if (vaultService == null) return;
+            if (!result.Permanent)
             {
-                try { File.Delete(item.Entity.CompleteFileName); } catch { }
+                await RecycleVaultItemsAsync(vaultService, new[] { (item.Entity.Id, item.Entity.FileName) });
             }
-            else
+            try
             {
-                RecycleBinHelper.SendToRecycleBin(item.Entity.CompleteFileName);
+                await vaultService.DeleteModsBatchAsync(new[] { item.Entity.Id },
+                    result.Permanent ? null : path => RecycleBinHelper.SendToRecycleBin(path));
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError($"Failed to delete vault item {item.Entity.Id}", ex, "ContentManagerViewModel");
+                await DialogHelper.ShowErrorAsync("Delete Error", $"'{item.FileName}' could not be deleted: {ex.Message}");
+                return;
+            }
+        }
+        else
+        {
+            if (File.Exists(item.Entity.CompleteFileName))
+            {
+                if (result.Permanent)
+                {
+                    try { File.Delete(item.Entity.CompleteFileName); } catch { }
+                }
+                else
+                {
+                    RecycleBinHelper.SendToRecycleBin(item.Entity.CompleteFileName);
+                }
+            }
+
+            var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
+            if (meta != null)
+            {
+                _db.MetaEntities.Remove(meta);
             }
         }
 
-        var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
-        if (meta != null)
+        // The merged cache still holds a deleted library item until its set is rebuilt.
+        if (!item.Entity.IsVaultManaged && item.Entity.SetsEntityId.HasValue)
         {
-            _db.MetaEntities.Remove(meta);
+            var set = await _db.SetsEntities.FindAsync(item.Entity.SetsEntityId.Value);
+            if (set != null) set.Dirty = true;
         }
 
         Items.Remove(item);
         FilteredItems.Remove(item);
 
         await _db.SaveChangesAsync();
+        if (!item.Entity.IsVaultManaged) await DeployLibraryItemsInVaultModeAsync();
         RecalculateSetCounts();
         UpdateSelectionState();
         ApplyFilter();
+        NotifyDirtyStateChanged();
     }
 
     [RelayCommand]
@@ -360,23 +519,56 @@ public partial class ContentManagerViewModel
         // If all selected are enabled, disable them; otherwise enable them
         bool targetState = !selected.All(i => i.Enabled);
 
-        foreach (var item in selected)
+        var vaultItems = selected.Where(i => i.Entity.IsVaultManaged).ToList();
+        var defaultItems = selected.Where(i => !i.Entity.IsVaultManaged).ToList();
+
+        if (vaultItems.Count > 0)
         {
-            item.Entity.Enabled = targetState;
-            var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
-            if (meta != null)
+            var vaultService = App.Services?.GetService<VaultService>();
+            bool toggled = false;
+            if (vaultService != null)
             {
-                meta.Enabled = targetState;
-                if (meta.SetsEntityId.HasValue)
+                try
                 {
-                    var set = await _db.SetsEntities.FindAsync(meta.SetsEntityId.Value);
-                    if (set != null) set.Dirty = true;
+                    toggled = await vaultService.ToggleModsBatchAsync(vaultItems.Select(i => i.Entity.Id), targetState);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError("Failed to toggle vault items", ex, "ContentManagerViewModel");
                 }
             }
-            item.NotifyEntityChanged();
+            if (toggled)
+            {
+                foreach (var item in vaultItems)
+                {
+                    item.Entity.Enabled = targetState;
+                    item.NotifyEntityChanged();
+                }
+            }
         }
 
-        await _db.SaveChangesAsync();
+        if (defaultItems.Count > 0)
+        {
+            foreach (var item in defaultItems)
+            {
+                item.Entity.Enabled = targetState;
+                var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
+                if (meta != null)
+                {
+                    meta.Enabled = targetState;
+                    if (meta.SetsEntityId.HasValue)
+                    {
+                        var set = await _db.SetsEntities.FindAsync(meta.SetsEntityId.Value);
+                        if (set != null) set.Dirty = true;
+                    }
+                }
+                item.NotifyEntityChanged();
+            }
+
+            await _db.SaveChangesAsync();
+            await DeployLibraryItemsInVaultModeAsync();
+        }
+
         DeselectAll();
     }
 
@@ -386,6 +578,8 @@ public partial class ContentManagerViewModel
         var selected = Items.Where(i => i.IsSelected).ToList();
         if (selected.Count == 0) return;
 
+        // Items always live in a set; "no set" means the Default set (an item without a set is in no cache or shard).
+        targetSet ??= await _db.SetsEntities.FirstOrDefaultAsync(s => s.Name == "Default" || s.IsDefault) ?? await _db.SetsEntities.FirstOrDefaultAsync();
         long? targetSetId = targetSet?.Id;
         var setIdsToDirty = new HashSet<long>();
         if (targetSetId.HasValue)
@@ -393,27 +587,68 @@ public partial class ContentManagerViewModel
             setIdsToDirty.Add(targetSetId.Value);
         }
 
-        foreach (var item in selected)
+        var vaultItems = selected.Where(i => i.Entity.IsVaultManaged).ToList();
+        var defaultItems = selected.Where(i => !i.Entity.IsVaultManaged).ToList();
+
+        if (vaultItems.Count > 0)
         {
-            if (item.Entity.SetsEntityId.HasValue && item.Entity.SetsEntityId.Value != targetSetId)
+            var vaultService = App.Services?.GetService<VaultService>();
+            if (vaultService != null)
             {
-                setIdsToDirty.Add(item.Entity.SetsEntityId.Value);
+                try
+                {
+                    if (targetSet == null || !await vaultService.MoveModsBatchAsync(vaultItems.Select(i => i.Entity.Id), targetSet))
+                    {
+                        AppLogger.LogError("Some vault items could not be moved (missing shard files)", null, "ContentManagerViewModel");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError("Failed to move vault items", ex, "ContentManagerViewModel");
+                }
             }
-
-            item.Entity.SetsEntityId = targetSetId;
-
-            var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
-            if (meta != null)
+            foreach (var item in vaultItems)
             {
-                meta.SetsEntityId = targetSetId;
+                if (item.Entity.SetsEntityId.HasValue && item.Entity.SetsEntityId.Value != targetSetId)
+                {
+                    setIdsToDirty.Add(item.Entity.SetsEntityId.Value);
+                }
+                var updatedMeta = await _db.MetaEntities.AsNoTracking().FirstOrDefaultAsync(m => m.Id == item.Entity.Id);
+                if (updatedMeta != null)
+                {
+                    item.Entity.SetsEntityId = updatedMeta.SetsEntityId;
+                    item.Entity.CompleteFileName = updatedMeta.CompleteFileName;
+                }
+                item.NotifyEntityChanged();
             }
-
-            item.NotifyEntityChanged();
         }
 
-        await _db.SaveChangesAsync();
+        if (defaultItems.Count > 0)
+        {
+            foreach (var item in defaultItems)
+            {
+                if (item.Entity.SetsEntityId.HasValue && item.Entity.SetsEntityId.Value != targetSetId)
+                {
+                    setIdsToDirty.Add(item.Entity.SetsEntityId.Value);
+                }
+
+                item.Entity.SetsEntityId = targetSetId;
+
+                var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
+                if (meta != null)
+                {
+                    meta.SetsEntityId = targetSetId;
+                }
+
+                item.NotifyEntityChanged();
+            }
+
+            await _db.SaveChangesAsync();
+        }
+
         await PlumbobForge.Backend.Services.SetDirtyTracker.UpdateDirtyStatesForSetsAsync(_db, setIdsToDirty);
         await _db.SaveChangesAsync();
+        if (defaultItems.Count > 0) await DeployLibraryItemsInVaultModeAsync();
         RecalculateSetCounts();
         DeselectAll();
         ApplyFilter();
@@ -508,32 +743,70 @@ public partial class ContentManagerViewModel
                 }
             }
             catch { }
+        }
 
-            if (File.Exists(item.Entity.CompleteFileName))
+        var vaultItems = selected.Where(i => i.Entity.IsVaultManaged).ToList();
+        var defaultItems = selected.Where(i => !i.Entity.IsVaultManaged).ToList();
+
+        if (vaultItems.Count > 0)
+        {
+            var vaultService = App.Services?.GetService<VaultService>();
+            if (vaultService != null)
             {
-                if (result.Permanent)
+                if (!result.Permanent)
                 {
-                    try { File.Delete(item.Entity.CompleteFileName); } catch { }
+                    await RecycleVaultItemsAsync(vaultService, vaultItems.Select(i => (i.Entity.Id, i.Entity.FileName)));
                 }
-                else
+                try
                 {
-                    RecycleBinHelper.SendToRecycleBin(item.Entity.CompleteFileName);
+                    await vaultService.DeleteModsBatchAsync(vaultItems.Select(i => i.Entity.Id),
+                        result.Permanent ? null : path => RecycleBinHelper.SendToRecycleBin(path));
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError("Failed to delete vault items", ex, "ContentManagerViewModel");
+                    await DialogHelper.ShowErrorAsync("Delete Error", $"The selected vault items could not be deleted: {ex.Message}");
+                    return;
                 }
             }
-
-            var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
-            if (meta != null)
+            foreach (var item in vaultItems)
             {
-                _db.MetaEntities.Remove(meta);
+                Items.Remove(item);
+                FilteredItems.Remove(item);
             }
+        }
 
-            Items.Remove(item);
-            FilteredItems.Remove(item);
+        if (defaultItems.Count > 0)
+        {
+            foreach (var item in defaultItems)
+            {
+                if (File.Exists(item.Entity.CompleteFileName))
+                {
+                    if (result.Permanent)
+                    {
+                        try { File.Delete(item.Entity.CompleteFileName); } catch { }
+                    }
+                    else
+                    {
+                        RecycleBinHelper.SendToRecycleBin(item.Entity.CompleteFileName);
+                    }
+                }
+
+                var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
+                if (meta != null)
+                {
+                    _db.MetaEntities.Remove(meta);
+                }
+
+                Items.Remove(item);
+                FilteredItems.Remove(item);
+            }
         }
 
         await _db.SaveChangesAsync();
         await PlumbobForge.Backend.Services.SetDirtyTracker.UpdateDirtyStatesForSetsAsync(_db, setIdsToDirty);
         await _db.SaveChangesAsync();
+        if (defaultItems.Count > 0) await DeployLibraryItemsInVaultModeAsync();
         RecalculateSetCounts();
         DeselectAll();
         ApplyFilter();
@@ -605,6 +878,191 @@ public partial class ContentManagerViewModel
         catch (Exception ex)
         {
             AppLogger.LogError("Error refreshing selected items", ex, "ContentManagerViewModel");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task ExportSelectedAsync()
+    {
+        var selected = Items.Where(i => i.IsSelected).ToList();
+        if (selected.Count == 0) return;
+
+        var topLevel = TopLevel.GetTopLevel(App.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null);
+        if (topLevel?.StorageProvider == null) return;
+
+        using var scope = App.Services?.CreateScope();
+        var vaultService = scope?.ServiceProvider.GetRequiredService<VaultService>();
+        if (vaultService == null) return;
+
+        if (selected.Count == 1)
+        {
+            var single = selected[0];
+            string defaultName = Path.ChangeExtension(single.FileName, ".package");
+            var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+            {
+                Title = LocalizationManager.Instance.GetString("library.export_item") ?? "Export Item",
+                DefaultExtension = "package",
+                SuggestedFileName = defaultName,
+                FileTypeChoices = new[]
+                {
+                    new FilePickerFileType("Package Files (*.package)") { Patterns = new[] { "*.package" } },
+                    new FilePickerFileType("All Files (*.*)") { Patterns = new[] { "*.*" } }
+                }
+            });
+
+            if (file != null)
+            {
+                string targetPath = file.Path.LocalPath;
+                bool ok = await vaultService.ExportModAsync(single.Id, targetPath);
+                if (ok)
+                {
+                    _ = _notificationService.BroadcastAsync("mod_exported", single.FileName);
+                }
+            }
+        }
+        else
+        {
+            var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = LocalizationManager.Instance.GetString("library.export_selected") ?? "Select destination folder for exported packages",
+                AllowMultiple = false
+            });
+
+            if (folders.Count > 0)
+            {
+                string targetDir = folders[0].Path.LocalPath;
+                int exported = 0;
+                var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var item in selected)
+                {
+                    // Two selected mods can share a file name (different sets); never overwrite one with the other.
+                    string baseName = Path.GetFileNameWithoutExtension(item.FileName);
+                    string fileName = $"{baseName}.package";
+                    for (int n = 2; usedNames.Contains(fileName) || File.Exists(Path.Combine(targetDir, fileName)); n++)
+                    {
+                        fileName = $"{baseName} ({n}).package";
+                    }
+                    usedNames.Add(fileName);
+
+                    try
+                    {
+                        if (await vaultService.ExportModAsync(item.Id, Path.Combine(targetDir, fileName)))
+                        {
+                            exported++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        AppLogger.LogError($"Failed to export item {item.Id}", ex, "ContentManagerViewModel");
+                    }
+                }
+                if (exported > 0)
+                {
+                    _ = _notificationService.BroadcastAsync("mods_exported", targetDir);
+                }
+            }
+        }
+    }
+
+    [RelayCommand]
+    public async Task LookInsideSelectedAsync()
+    {
+        var selected = Items.Where(i => i.IsSelected).ToList();
+        if (selected.Count != 1) return;
+
+        var item = selected[0];
+        if (await DialogHelper.ShowLookInsideAsync(item.Id, item.FileName))
+        {
+            await RefreshEditedItemsAsync(new[] { item.Id });
+        }
+    }
+
+
+    public async Task RefreshEditedItemsAsync(IEnumerable<long> itemIds)
+    {
+        foreach (var id in itemIds)
+        {
+            var item = Items.FirstOrDefault(i => i.Id == id);
+            if (item == null) continue;
+            var updatedMeta = await _db.MetaEntities.AsNoTracking().FirstOrDefaultAsync(m => m.Id == id);
+            if (updatedMeta != null) item.UpdateFromEntity(updatedMeta);
+            await item.ReloadThumbnailAsync(forceDiskExtraction: false);
+        }
+        ApplyFilter();
+        NotifyDirtyStateChanged();
+    }
+
+    [RelayCommand]
+    public async Task EditCasFlagsSelectedAsync()
+    {
+        var selected = Items.Where(i => i.IsSelected).ToList();
+        if (selected.Count == 0) return;
+        var ids = selected.Select(i => i.Id).ToList();
+        if (await DialogHelper.ShowCasFlagsAsync(ids, IsVaultActive))
+        {
+            await RefreshEditedItemsAsync(ids);
+        }
+    }
+
+    [RelayCommand]
+    public async Task ReplaceSelectedAsync()
+    {
+        var selected = Items.Where(i => i.IsSelected).ToList();
+        if (selected.Count != 1) return;
+
+        var targetItem = selected[0];
+        var topLevel = TopLevel.GetTopLevel(App.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null);
+        if (topLevel?.StorageProvider == null) return;
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = LocalizationManager.Instance.GetString("library.replace_item") ?? "Select Replacement File",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Sims 3 Content (*.package, *.sims3pack)") { Patterns = new[] { "*.package", "*.sims3pack" } },
+                new FilePickerFileType("All Files (*.*)") { Patterns = new[] { "*.*" } }
+            }
+        });
+
+        if (files.Count == 0) return;
+
+        string replacementPath = files[0].Path.LocalPath;
+        if (!File.Exists(replacementPath)) return;
+
+        using var scope = App.Services?.CreateScope();
+        var vaultService = scope?.ServiceProvider.GetRequiredService<VaultService>();
+        if (vaultService == null) return;
+
+        IsLoading = true;
+        try
+        {
+            bool success = await vaultService.ReplaceModAsync(targetItem.Id, replacementPath);
+            if (success)
+            {
+                var updatedMeta = await _db.MetaEntities.AsNoTracking().FirstOrDefaultAsync(m => m.Id == targetItem.Id);
+                if (updatedMeta != null)
+                {
+                    targetItem.UpdateFromEntity(updatedMeta);
+                }
+                await targetItem.ReloadThumbnailAsync(forceDiskExtraction: true);
+                ApplyFilter();
+                _ = _notificationService.BroadcastAsync("mod_replaced", targetItem.FileName);
+            }
+            else
+            {
+                AppLogger.LogError($"Could not replace item {targetItem.Id} with {replacementPath} (not a vault item, or the file could not be read)", null, "ContentManagerViewModel");
+                _ = _notificationService.BroadcastAsync("mod_replace_failed", targetItem.FileName);
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError($"Failed to replace item {targetItem.Id}", ex, "ContentManagerViewModel");
+            _ = _notificationService.BroadcastAsync("mod_replace_failed", targetItem.FileName);
         }
         finally
         {

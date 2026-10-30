@@ -307,6 +307,14 @@
                             <icon:PackIconBoxIcons Kind="RegularStar" Width="16" Height="16" Foreground="{DynamicResource TextMuted}"/>
                         </Button>
 
+                        <!-- Original vs optimised textures for the selection (only while texture optimisation is on) -->
+                        <Button Classes="action-btn"
+                                Command="{Binding ToggleOriginalTexturesSelectedCommand}"
+                                IsVisible="{Binding IsTextureOptimizationActive}"
+                                ToolTip.Tip="{loc:Loc 'library.toggle_original_textures'}">
+                            <icon:PackIconBoxIcons Kind="RegularImage" Width="16" Height="16" Foreground="{DynamicResource TextMuted}"/>
+                        </Button>
+
                         <!-- 2. Move to Set Dropdown -->
                         <Button Classes="action-btn"
                                 ToolTip.Tip="{loc:Loc 'library.move_selected'}">

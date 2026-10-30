@@ -173,4 +173,18 @@ public static class DialogHelper
             await dialog.ShowDialog(parent);
         }
     }
+
+    public static async Task<PlumbobForge.Backend.Services.VaultMigrationBackupMode?> ShowVaultMigrationChoiceDialogAsync(Window? owner = null)
+    {
+        var parent = owner ?? GetMainWindow();
+        var dialog = new VaultMigrationChoiceDialogWindow();
+        return parent != null ? await dialog.ShowDialog<PlumbobForge.Backend.Services.VaultMigrationBackupMode?>(parent) : null;
+    }
+
+    public static async Task<PlumbobForge.Backend.Services.VaultRevertChoice?> ShowVaultRevertChoiceDialogAsync(string libraryPath, Window? owner = null)
+    {
+        var parent = owner ?? GetMainWindow();
+        var dialog = new VaultRevertChoiceDialogWindow(libraryPath);
+        return parent != null ? await dialog.ShowDialog<PlumbobForge.Backend.Services.VaultRevertChoice?>(parent) : null;
+    }
 }

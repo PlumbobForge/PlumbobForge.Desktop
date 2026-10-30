@@ -24,6 +24,7 @@ public partial class ContentManagerViewModel : ObservableObject
     private readonly ThumbnailService _thumbnailService;
     private readonly UiStateService _uiStateService;
     private readonly NotificationService _notificationService;
+    private readonly Microsoft.Extensions.Options.IOptionsMonitor<PlumbobForge.Backend.Configuration.PlumbobForgeOptions>? _optionsMonitor;
     private readonly Guid _notificationSubscriptionId;
     private bool _isInitializingState = false;
     private long? _savedSetId = null;
@@ -62,12 +63,21 @@ public partial class ContentManagerViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DeleteItemsMenuHeader))]
     [NotifyPropertyChangedFor(nameof(RefreshItemsMenuHeader))]
+    [NotifyPropertyChangedFor(nameof(ExportItemsMenuHeader))]
+    [NotifyPropertyChangedFor(nameof(IsSingleItemSelected))]
     private int _selectedCount = 0;
 
     public string DeleteItemsMenuHeader => SelectedCount > 1 ? "Delete Items" : "Delete Item";
     public string RefreshItemsMenuHeader => SelectedCount > 1
         ? LocalizationManager.Instance.GetString("library.refresh_selected")
         : LocalizationManager.Instance.GetString("library.refresh_item");
+
+    public bool IsSingleItemSelected => SelectedCount == 1;
+    public bool IsVaultActive => _optionsMonitor?.CurrentValue?.EnableSingleSourceVault ?? false;
+
+    public string ExportItemsMenuHeader => SelectedCount > 1
+        ? string.Format(LocalizationManager.Instance.GetString("library.export_selected_count") ?? "Export {0} Items", SelectedCount)
+        : (LocalizationManager.Instance.GetString("library.export_item") ?? "Export Item");
 
     [ObservableProperty]
     private bool _hasSelectedItems = false;
@@ -215,13 +225,21 @@ public partial class ContentManagerViewModel : ObservableObject
         InspectedItem = null;
     }
 
-    public ContentManagerViewModel(AppDbContext db, PKGManager pkgManager, ThumbnailService thumbnailService, UiStateService uiStateService, NotificationService notificationService)
+    public ContentManagerViewModel(
+        AppDbContext db,
+        PKGManager pkgManager,
+        ThumbnailService thumbnailService,
+        UiStateService uiStateService,
+        NotificationService notificationService,
+        Microsoft.Extensions.Options.IOptionsMonitor<PlumbobForge.Backend.Configuration.PlumbobForgeOptions>? optionsMonitor = null)
     {
         _db = db;
         _pkgManager = pkgManager;
         _thumbnailService = thumbnailService;
         _uiStateService = uiStateService;
         _notificationService = notificationService;
+        _optionsMonitor = optionsMonitor ?? App.Services?.GetService<Microsoft.Extensions.Options.IOptionsMonitor<PlumbobForge.Backend.Configuration.PlumbobForgeOptions>>();
+        _optionsMonitor?.OnChange((_, _) => Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => OnPropertyChanged(nameof(IsVaultActive))));
         ItemViewModel.GlobalThumbnailService = thumbnailService;
         ItemViewModel.GlobalThumbnailDirectory = thumbnailService.GetThumbnailDirectory();
         ItemViewModel.OnRenameRequested = item => _ = RenameItemAsync(item);
@@ -240,8 +258,9 @@ public partial class ContentManagerViewModel : ObservableObject
             if (favNode != null) favNode.Name = LocalizationManager.Instance.GetString("library.favorites");
             OnPropertyChanged(nameof(RefreshItemsMenuHeader));
             OnPropertyChanged(nameof(DeleteItemsMenuHeader));
+            OnPropertyChanged(nameof(ExportItemsMenuHeader));
         };
-        
+
         _notificationSubscriptionId = _notificationService.Subscribe(async payload =>
         {
             if (payload.Contains("library_changed") || payload.Contains("items_imported"))
@@ -312,6 +331,49 @@ public partial class ContentManagerViewModel : ObservableObject
             FilterOutfitCareer = state.FilterOutfitCareer;
             FilterOutfitOuterwear = state.FilterOutfitOuterwear;
 
+            // Build/Buy Kinds
+            FilterBBObjects = state.FilterBBObjects;
+            FilterBBDoorsWindows = state.FilterBBDoorsWindows;
+            FilterBBLandscaping = state.FilterBBLandscaping;
+            FilterBBWallsFloors = state.FilterBBWallsFloors;
+            FilterBBTerrain = state.FilterBBTerrain;
+            FilterBBFencesRailings = state.FilterBBFencesRailings;
+            FilterBBStairs = state.FilterBBStairs;
+            FilterBBRoofs = state.FilterBBRoofs;
+            FilterBBOtherBuild = state.FilterBBOtherBuild;
+
+            // Build/Buy Rooms
+            FilterBBRoomLiving = state.FilterBBRoomLiving;
+            FilterBBRoomDining = state.FilterBBRoomDining;
+            FilterBBRoomKitchen = state.FilterBBRoomKitchen;
+            FilterBBRoomNursery = state.FilterBBRoomNursery;
+            FilterBBRoomBathroom = state.FilterBBRoomBathroom;
+            FilterBBRoomLaundry = state.FilterBBRoomLaundry;
+            FilterBBRoomBedroom = state.FilterBBRoomBedroom;
+            FilterBBRoomStudy = state.FilterBBRoomStudy;
+            FilterBBRoomOutdoor = state.FilterBBRoomOutdoor;
+            FilterBBRoomCommunity = state.FilterBBRoomCommunity;
+            FilterBBRoomResort = state.FilterBBRoomResort;
+
+            // Build/Buy Functions
+            FilterBBFuncAppliances = state.FilterBBFuncAppliances;
+            FilterBBFuncElectronics = state.FilterBBFuncElectronics;
+            FilterBBFuncEntertainment = state.FilterBBFuncEntertainment;
+            FilterBBFuncLighting = state.FilterBBFuncLighting;
+            FilterBBFuncPlumbing = state.FilterBBFuncPlumbing;
+            FilterBBFuncDecor = state.FilterBBFuncDecor;
+            FilterBBFuncKids = state.FilterBBFuncKids;
+            FilterBBFuncStorage = state.FilterBBFuncStorage;
+            FilterBBFuncComfort = state.FilterBBFuncComfort;
+            FilterBBFuncSurfaces = state.FilterBBFuncSurfaces;
+            FilterBBFuncVehicles = state.FilterBBFuncVehicles;
+            FilterBBFuncPets = state.FilterBBFuncPets;
+            FilterBBFuncMisc = state.FilterBBFuncMisc;
+
+            // Build/Buy Price
+            FilterBBPriceMin = state.FilterBBPriceMin;
+            FilterBBPriceMax = state.FilterBBPriceMax;
+
             // Other Sub-Categories
             FilterOtherWorlds = state.FilterOtherWorlds;
             FilterOtherSims = state.FilterOtherSims;
@@ -329,6 +391,11 @@ public partial class ContentManagerViewModel : ObservableObject
             IsCasAgeExpanded = state.IsCasAgeExpanded;
             IsCasGenderExpanded = state.IsCasGenderExpanded;
             IsCasOutfitExpanded = state.IsCasOutfitExpanded;
+            IsBBSubFiltersExpanded = state.IsBBSubFiltersExpanded;
+            IsBBKindExpanded = state.IsBBKindExpanded;
+            IsBBRoomExpanded = state.IsBBRoomExpanded;
+            IsBBFunctionExpanded = state.IsBBFunctionExpanded;
+            IsBBPriceExpanded = state.IsBBPriceExpanded;
             IsOtherSubExpanded = state.IsOtherSubExpanded;
             IsModeExpanded = state.IsModeExpanded;
 
@@ -390,6 +457,45 @@ public partial class ContentManagerViewModel : ObservableObject
             FilterOutfitCareer = FilterOutfitCareer,
             FilterOutfitOuterwear = FilterOutfitOuterwear,
 
+            FilterBBObjects = FilterBBObjects,
+            FilterBBDoorsWindows = FilterBBDoorsWindows,
+            FilterBBLandscaping = FilterBBLandscaping,
+            FilterBBWallsFloors = FilterBBWallsFloors,
+            FilterBBTerrain = FilterBBTerrain,
+            FilterBBFencesRailings = FilterBBFencesRailings,
+            FilterBBStairs = FilterBBStairs,
+            FilterBBRoofs = FilterBBRoofs,
+            FilterBBOtherBuild = FilterBBOtherBuild,
+
+            FilterBBRoomLiving = FilterBBRoomLiving,
+            FilterBBRoomDining = FilterBBRoomDining,
+            FilterBBRoomKitchen = FilterBBRoomKitchen,
+            FilterBBRoomNursery = FilterBBRoomNursery,
+            FilterBBRoomBathroom = FilterBBRoomBathroom,
+            FilterBBRoomLaundry = FilterBBRoomLaundry,
+            FilterBBRoomBedroom = FilterBBRoomBedroom,
+            FilterBBRoomStudy = FilterBBRoomStudy,
+            FilterBBRoomOutdoor = FilterBBRoomOutdoor,
+            FilterBBRoomCommunity = FilterBBRoomCommunity,
+            FilterBBRoomResort = FilterBBRoomResort,
+
+            FilterBBFuncAppliances = FilterBBFuncAppliances,
+            FilterBBFuncElectronics = FilterBBFuncElectronics,
+            FilterBBFuncEntertainment = FilterBBFuncEntertainment,
+            FilterBBFuncLighting = FilterBBFuncLighting,
+            FilterBBFuncPlumbing = FilterBBFuncPlumbing,
+            FilterBBFuncDecor = FilterBBFuncDecor,
+            FilterBBFuncKids = FilterBBFuncKids,
+            FilterBBFuncStorage = FilterBBFuncStorage,
+            FilterBBFuncComfort = FilterBBFuncComfort,
+            FilterBBFuncSurfaces = FilterBBFuncSurfaces,
+            FilterBBFuncVehicles = FilterBBFuncVehicles,
+            FilterBBFuncPets = FilterBBFuncPets,
+            FilterBBFuncMisc = FilterBBFuncMisc,
+
+            FilterBBPriceMin = FilterBBPriceMin,
+            FilterBBPriceMax = FilterBBPriceMax,
+
             FilterOtherWorlds = FilterOtherWorlds,
             FilterOtherSims = FilterOtherSims,
             FilterOtherLots = FilterOtherLots,
@@ -404,6 +510,11 @@ public partial class ContentManagerViewModel : ObservableObject
             IsCasAgeExpanded = IsCasAgeExpanded,
             IsCasGenderExpanded = IsCasGenderExpanded,
             IsCasOutfitExpanded = IsCasOutfitExpanded,
+            IsBBSubFiltersExpanded = IsBBSubFiltersExpanded,
+            IsBBKindExpanded = IsBBKindExpanded,
+            IsBBRoomExpanded = IsBBRoomExpanded,
+            IsBBFunctionExpanded = IsBBFunctionExpanded,
+            IsBBPriceExpanded = IsBBPriceExpanded,
             IsOtherSubExpanded = IsOtherSubExpanded,
             IsModeExpanded = IsModeExpanded
         };
@@ -513,6 +624,7 @@ public partial class ContentManagerViewModel : ObservableObject
                 using var scope = App.Services?.CreateScope();
                 var db = scope != null ? scope.ServiceProvider.GetRequiredService<AppDbContext>() : _db;
                 var itemsList = await db.MetaEntities.AsNoTracking().ToListAsync();
+                _thumbnailService.RefreshStalePreviews(itemsList);
 
                 var itemVms = new List<ItemViewModel>(itemsList.Count);
                 var itemCounts = new Dictionary<long, int>();
@@ -695,6 +807,15 @@ public partial class ContentManagerViewModel : ObservableObject
     [RelayCommand]
     public async Task RebuildCacheAsync(bool forceRebuild = false)
     {
+        await RunRebuildAsync(forceRebuild, repairLegacyCompression: false);
+    }
+
+
+    public Task<bool> RepairCompressionAndRebuildAsync(Func<Task>? onSucceeded = null)
+        => RunRebuildAsync(forceRebuild: true, repairLegacyCompression: true, onSucceeded);
+
+    private async Task<bool> RunRebuildAsync(bool forceRebuild, bool repairLegacyCompression, Func<Task>? onSucceeded = null)
+    {
         var mainVm = App.Services?.GetService<MainViewModel>();
         var modal = new TaskProgressModalViewModel();
         modal.Start(LocalizationManager.Instance.GetString(forceRebuild ? "progress.force_rebuilding_cache" : "progress.rebuilding_cache"));
@@ -717,10 +838,15 @@ public partial class ContentManagerViewModel : ObservableObject
         {
             await Task.Run(async () =>
             {
+                if (repairLegacyCompression)
+                {
+                    await _pkgManager.RepairLegacyCompressionAsync(onProgress: null, progress: modal);
+                }
                 await _pkgManager.RunAsync(isRefresh: true, onProgress: null, progress: modal, forceRebuild: forceRebuild);
             });
             success = true;
             modal.Finish(success: true);
+            if (onSucceeded != null) await onSucceeded();
 
             if (modal.CloseAppOnFinish && success)
             {
@@ -728,7 +854,7 @@ public partial class ContentManagerViewModel : ObservableObject
                 if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
                 {
                     desktop.Shutdown();
-                    return;
+                    return success;
                 }
             }
 
@@ -739,5 +865,6 @@ public partial class ContentManagerViewModel : ObservableObject
             AppLogger.LogError("Error rebuilding cache", ex, "ContentManagerViewModel");
             modal.Finish(success: false);
         }
+        return success;
     }
 }

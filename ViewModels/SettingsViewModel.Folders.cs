@@ -185,7 +185,8 @@ public partial class SettingsViewModel
                 modal.CompleteStep("move_files", finalBadge: "Files moved");
 
                 // Update DB records
-                var allItems = await _db.MetaEntities.ToListAsync();
+                // Vault items point at their shard under Mods/PF_Vault, which does not move with the library.
+                var allItems = await _db.MetaEntities.Where(m => !m.IsVaultManaged).ToListAsync();
                 foreach (var item in allItems)
                 {
                     item.CompleteFileName = Path.Combine(newLib, item.FileName);

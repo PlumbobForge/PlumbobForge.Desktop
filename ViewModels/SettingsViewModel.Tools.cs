@@ -222,6 +222,139 @@ public partial class SettingsViewModel
     }
 
     [RelayCommand]
+    public async Task MigrateToVaultAsync()
+    {
+        var choice = await DialogHelper.ShowVaultMigrationChoiceDialogAsync();
+        if (choice == null) return;
+
+        var mainVm = _serviceProvider.GetService<MainViewModel>();
+        var modal = new TaskProgressModalViewModel { ShowCloseAppCheckbox = false };
+        modal.Start(LocalizationManager.Instance.GetString("progress.vault_migrating_title"));
+
+        if (mainVm != null) mainVm.ActiveProgressModal = modal;
+        modal.Closed += () => { if (mainVm != null) mainVm.ActiveProgressModal = null; };
+
+        try
+        {
+            // Own scope (own DbContext): the shared UI context must not be used from a background thread.
+            var (migrated, reclaimed) = await Task.Run(async () =>
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var migrationService = scope.ServiceProvider.GetRequiredService<MigrationService>();
+                return await migrationService.MigrateToVaultAsync(backupMode: choice.Value, progress: modal);
+            });
+
+            // Entities cached by the UI context still look like library items.
+            _db.ChangeTracker.Clear();
+
+            modal.Finish(success: true);
+            double mb = reclaimed / (1024.0 * 1024.0);
+            ShowStatus($"Vault migration complete: {migrated} items migrated ({mb:F1} MB staging space reclaimed).", isError: false);
+
+            SetVaultEnabledWithoutPrompt(true);
+            await SaveSettingsInternalAsync(silent: true);
+
+            if (mainVm != null) await mainVm.RefreshDirtyStateAsync();
+
+            var contentVm = _serviceProvider.GetService<ContentManagerViewModel>();
+            if (contentVm != null) await contentVm.LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            _db.ChangeTracker.Clear();
+            AppLogger.LogError("Vault migration failed", ex, "SettingsViewModel");
+            modal.Finish(success: false);
+            ShowStatus($"Vault migration failed: {ex.Message}", isError: true);
+        }
+    }
+
+    [RelayCommand]
+    public async Task CompactVaultAsync()
+    {
+        var mainVm = _serviceProvider.GetService<MainViewModel>();
+        var modal = new TaskProgressModalViewModel { ShowCloseAppCheckbox = false };
+        modal.Start("Compacting Vault Shards...");
+
+        if (mainVm != null) mainVm.ActiveProgressModal = modal;
+        modal.Closed += () => { if (mainVm != null) mainVm.ActiveProgressModal = null; };
+
+        try
+        {
+            const string stepId = "compact_vault";
+            modal.StartStep(stepId, "Compacting shards with unused space...", progress: 0.0);
+
+            var (count, reclaimed) = await Task.Run(async () =>
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var vaultService = scope.ServiceProvider.GetRequiredService<VaultService>();
+                return await vaultService.CompactVaultAsync((shardName, done, total) =>
+                {
+                    double pct = total > 0 ? (double)done / total : 1.0;
+                    modal.UpdateStep(stepId, title: string.IsNullOrEmpty(shardName) ? null : $"Compacting {shardName}...", badge: $"{done}/{total}", progress: pct);
+                });
+            });
+
+            _db.ChangeTracker.Clear();
+            modal.CompleteStep(stepId, finalBadge: count > 0 ? $"{count} shards" : "Nothing to compact");
+            modal.Finish(success: true);
+            double mb = reclaimed / (1024.0 * 1024.0);
+            ShowStatus(count > 0
+                ? $"Vault compaction complete: {count} shards compacted, {mb:F1} MB reclaimed."
+                : "Vault compaction: no shard had enough unused space to be worth compacting.", isError: false);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError("Vault compaction failed", ex, "SettingsViewModel");
+            modal.Finish(success: false);
+            ShowStatus($"Vault compaction failed: {ex.Message}", isError: true);
+        }
+    }
+
+    [RelayCommand]
+    public async Task RevertVaultAsync()
+    {
+        var choice = await DialogHelper.ShowVaultRevertChoiceDialogAsync(_options.ManagedPackageFolderPath);
+        if (choice == null) return;
+
+        var mainVm = _serviceProvider.GetService<MainViewModel>();
+        var modal = new TaskProgressModalViewModel { ShowCloseAppCheckbox = false };
+        modal.Start("Reverting to Default Storage Mode...");
+
+        if (mainVm != null) mainVm.ActiveProgressModal = modal;
+        modal.Closed += () => { if (mainVm != null) mainVm.ActiveProgressModal = null; };
+
+        try
+        {
+            int restoredCount = await Task.Run(async () =>
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var migrationService = scope.ServiceProvider.GetRequiredService<MigrationService>();
+                return await migrationService.RevertFromVaultAsync(choice, progress: modal);
+            });
+
+            // The revert cleared vault flags with raw SQL; drop every entity the UI context still caches.
+            _db.ChangeTracker.Clear();
+
+            modal.Finish(success: true);
+            ShowStatus($"Reversion complete: {restoredCount} items restored to Library.", isError: false);
+
+            SetVaultEnabledWithoutPrompt(false);
+            await SaveSettingsInternalAsync(silent: true);
+
+            if (mainVm != null) await mainVm.RefreshDirtyStateAsync();
+
+            var contentVm = _serviceProvider.GetService<ContentManagerViewModel>();
+            if (contentVm != null) await contentVm.LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError("Vault reversion failed", ex, "SettingsViewModel");
+            modal.Finish(success: false);
+            ShowStatus($"Vault reversion failed: {ex.Message}", isError: true);
+        }
+    }
+
+    [RelayCommand]
     public void OpenGithub()
     {
         try

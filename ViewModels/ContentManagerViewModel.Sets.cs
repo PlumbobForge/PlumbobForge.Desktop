@@ -432,6 +432,22 @@ public partial class ContentManagerViewModel
                         {
                             // Merge all items from entity into existingCollisionSet
                             var itemMetas = await _db.MetaEntities.Where(m => m.SetsEntityId == entity.Id).ToListAsync();
+
+                            // Vault items must have their chunks copied into the other set's shards: deleting this set
+                            // deletes its shards, and with them every chunk record still pointing there.
+                            var vaultIds = itemMetas.Where(m => m.IsVaultManaged).Select(m => m.Id).ToList();
+                            if (vaultIds.Count > 0)
+                            {
+                                var vaultService = App.Services?.GetService<VaultService>();
+                                bool moved = vaultService != null && await vaultService.MoveModsBatchAsync(vaultIds, existingCollisionSet);
+                                if (!moved || await _db.MetaEntities.AnyAsync(m => m.SetsEntityId == entity.Id && m.IsVaultManaged))
+                                {
+                                    await DialogHelper.ShowErrorAsync("Merge Error", $"Some items in '{entity.Name}' could not be moved, so the set was kept.");
+                                    continue;
+                                }
+                                await vaultService!.DeleteEmptyShardsForSetAsync(entity.Id);
+                            }
+
                             foreach (var meta in itemMetas)
                             {
                                 meta.SetsEntityId = existingCollisionSet.Id;
@@ -527,29 +543,7 @@ public partial class ContentManagerViewModel
         var name = await DialogHelper.ShowInputAsync("Create New Set", "Enter set folder name:", "");
         if (string.IsNullOrWhiteSpace(name)) return;
 
-        if (!PlumbobForge.Desktop.Utils.NameValidator.IsValidName(name, out _)) return;
-
-        var trimmed = name.Trim();
-        bool duplicate = await _db.SetsEntities.AnyAsync(s => s.ParentSetsEntityId == null && s.Name.ToLower() == trimmed.ToLower());
-        if (duplicate)
-        {
-            string suggested = GetNextAvailableSetName(trimmed, null, _db);
-            var chosen = await DialogHelper.ShowDuplicateSetNameDialogAsync($"A top-level set named '{trimmed}' already exists.", suggested);
-            if (string.IsNullOrWhiteSpace(chosen)) return;
-            trimmed = chosen;
-        }
-
-        var newSet = new SetsEntity
-        {
-            Name = trimmed,
-            FolderName = trimmed,
-            LongName = trimmed,
-            Dirty = true
-        };
-        _db.SetsEntities.Add(newSet);
-        await _db.SaveChangesAsync();
-        await ReloadSetsTreeAsync(newSet.Id);
-        NotifyDirtyStateChanged();
+        await CreateSetNamedAsync(name, null);
     }
 
     [RelayCommand]
@@ -557,19 +551,26 @@ public partial class ContentManagerViewModel
     {
         if (parentNode == null || !parentNode.Id.HasValue) return;
 
-        string parentName = parentNode.Name;
-        var name = await DialogHelper.ShowInputAsync("Create Sub-Set", $"Enter sub-folder name under '{parentName}':", "");
+        var name = await DialogHelper.ShowInputAsync("Create Sub-Set", $"Enter sub-folder name under '{parentNode.Name}':", "");
         if (string.IsNullOrWhiteSpace(name)) return;
 
+        await CreateSetNamedAsync(name, parentNode);
+    }
+
+    public async Task CreateSetNamedAsync(string name, SetNodeViewModel? parentNode)
+    {
         if (!PlumbobForge.Desktop.Utils.NameValidator.IsValidName(name, out _)) return;
 
         var trimmed = name.Trim();
-        long? parentId = parentNode.Id;
+        long? parentId = parentNode?.Id;
         bool duplicate = await _db.SetsEntities.AnyAsync(s => s.ParentSetsEntityId == parentId && s.Name.ToLower() == trimmed.ToLower());
         if (duplicate)
         {
             string suggested = GetNextAvailableSetName(trimmed, parentId, _db);
-            var chosen = await DialogHelper.ShowDuplicateSetNameDialogAsync($"A sub-set named '{trimmed}' already exists under '{parentName}'.", suggested);
+            string message = parentNode == null
+                ? $"A top-level set named '{trimmed}' already exists."
+                : $"A sub-set named '{trimmed}' already exists under '{parentNode.Name}'.";
+            var chosen = await DialogHelper.ShowDuplicateSetNameDialogAsync(message, suggested);
             if (string.IsNullOrWhiteSpace(chosen)) return;
             trimmed = chosen;
         }
@@ -600,6 +601,7 @@ public partial class ContentManagerViewModel
         if (result == null || !result.Confirmed) return;
 
         bool hasChanged = false;
+        bool nameChanged = false;
 
         if (!string.IsNullOrWhiteSpace(result.Name) && !result.Name.Trim().Equals(setEntity.Name, StringComparison.OrdinalIgnoreCase))
         {
@@ -614,9 +616,21 @@ public partial class ContentManagerViewModel
                 newName = chosen;
             }
 
+            // Vault shards live in Set_{id} folders that do not depend on the name. Shards still in an old
+            // name-based folder are resolved by the current name, so move them before the name changes.
+            var vaultService = App.Services?.GetService<VaultService>();
+            if (vaultService != null && await _db.VaultShards.AnyAsync(s => s.SetsEntityId == setEntity.Id))
+            {
+                if (await vaultService.MigrateLegacyShardsAsync(setEntity.Id) > 0)
+                {
+                    await _pkgManager.SyncToSims3Async();
+                }
+            }
+
             setEntity.Name = newName;
             setEntity.FolderName = newName;
             setEntity.LongName = newName;
+            nameChanged = true;
             hasChanged = true;
         }
 
@@ -634,11 +648,18 @@ public partial class ContentManagerViewModel
 
         if (hasChanged)
         {
-            PlumbobForge.Backend.Services.SetDirtyTracker.UpdateDirtyState(setEntity);
+            if (nameChanged)
+            {
+                await _db.Entry(setEntity).Collection(s => s.MetaEntities).LoadAsync();
+                PlumbobForge.Backend.Services.SetDirtyTracker.UpdateDirtyState(setEntity);
+            }
             await _db.SaveChangesAsync();
             await ReloadSetsTreeAsync(setEntity.Id);
             ApplyFilter();
-            NotifyDirtyStateChanged();
+            if (nameChanged)
+            {
+                NotifyDirtyStateChanged();
+            }
         }
     }
 
@@ -658,6 +679,33 @@ public partial class ContentManagerViewModel
             var setEntity = await _db.SetsEntities.FindAsync(setNode.Id.Value);
             if (setEntity != null)
             {
+                var defaultSet = await _db.SetsEntities.FirstOrDefaultAsync(s => s.Id != setEntity.Id && (s.Name == "Default" || s.IsDefault))
+                                 ?? await _db.SetsEntities.FirstOrDefaultAsync(s => s.Id != setEntity.Id);
+
+                // Vault items kept in the app move first, before anything else changes: deleting the set deletes its
+                // shards and every chunk record in them, so the set must stay if any of them could not be moved.
+                if (!result.DeleteFiles && defaultSet != null)
+                {
+                    var vaultIds = await _db.MetaEntities.Where(m => m.SetsEntityId == setEntity.Id && m.IsVaultManaged).Select(m => m.Id).ToListAsync();
+                    if (vaultIds.Count > 0)
+                    {
+                        var vaultService = App.Services?.GetService<VaultService>();
+                        bool moved = vaultService != null && await vaultService.MoveModsBatchAsync(vaultIds, defaultSet);
+                        if (!moved || await _db.MetaEntities.AnyAsync(m => m.SetsEntityId == setEntity.Id && m.IsVaultManaged))
+                        {
+                            await DialogHelper.ShowErrorAsync("Delete Error", $"Some items in '{setEntity.Name}' could not be moved to the Default set, so the set was kept.");
+                            return;
+                        }
+                        foreach (var id in vaultIds)
+                        {
+                            var inMemoryItem = Items.FirstOrDefault(i => i.Entity.Id == id);
+                            if (inMemoryItem != null) inMemoryItem.Entity.SetsEntityId = defaultSet.Id;
+                        }
+                        // Every chunk was copied out, so the old shard files are pure dead space now.
+                        await vaultService!.DeleteEmptyShardsForSetAsync(setEntity.Id);
+                    }
+                }
+
                 // Un-subset direct child sets so they move to the top level
                 var childSets = await _db.SetsEntities.Where(s => s.ParentSetsEntityId == setEntity.Id).ToListAsync();
                 foreach (var child in childSets)
@@ -675,41 +723,77 @@ public partial class ContentManagerViewModel
 
                 var setItemMetas = await _db.MetaEntities.Where(m => m.SetsEntityId == setEntity.Id).ToListAsync();
 
+                foreach (var meta in setItemMetas)
+                {
+                    try
+                    {
+                        var existingTomb = await _db.Tombstones.FirstOrDefaultAsync(t => t.FileName == meta.FileName);
+                        if (existingTomb != null)
+                        {
+                            existingTomb.PackageType = meta.PackageType;
+                            existingTomb.UserTags = meta.UserTags;
+                            existingTomb.IsUserTagged = meta.IsUserTagged;
+                            existingTomb.Description = meta.Description;
+                            existingTomb.SetsEntityId = meta.SetsEntityId;
+                            existingTomb.IsFavorite = meta.IsFavorite;
+                            existingTomb.DeletedAt = DateTime.UtcNow;
+                        }
+                        else
+                        {
+                            _db.Tombstones.Add(new TombstoneEntity
+                            {
+                                FileName = meta.FileName,
+                                PackageType = meta.PackageType,
+                                UserTags = meta.UserTags,
+                                IsUserTagged = meta.IsUserTagged,
+                                Description = meta.Description,
+                                IsFavorite = meta.IsFavorite,
+                                SetsEntityId = meta.SetsEntityId,
+                                DeletedAt = DateTime.UtcNow
+                            });
+                        }
+                    }
+                    catch { }
+                }
+
                 if (result.DeleteFiles)
                 {
-                    // Delete files inside this set
-                    foreach (var meta in setItemMetas)
+                    var vaultMetas = setItemMetas.Where(m => m.IsVaultManaged).ToList();
+                    var defaultMetas = setItemMetas.Where(m => !m.IsVaultManaged).ToList();
+
+                    if (vaultMetas.Count > 0)
                     {
-                        try
+                        var vaultService = App.Services?.GetService<VaultService>();
+                        if (vaultService != null)
                         {
-                            var existingTomb = await _db.Tombstones.FirstOrDefaultAsync(t => t.FileName == meta.FileName);
-                            if (existingTomb != null)
+                            var topLevel = vaultMetas.Where(m => m.ParentMetaEntityId == null).ToList();
+                            if (!result.Permanent)
                             {
-                                existingTomb.PackageType = meta.PackageType;
-                                existingTomb.UserTags = meta.UserTags;
-                                existingTomb.IsUserTagged = meta.IsUserTagged;
-                                existingTomb.Description = meta.Description;
-                                existingTomb.SetsEntityId = meta.SetsEntityId;
-                                existingTomb.IsFavorite = meta.IsFavorite;
-                                existingTomb.DeletedAt = DateTime.UtcNow;
+                                await RecycleVaultItemsAsync(vaultService, topLevel.Select(m => (m.Id, m.FileName)));
                             }
-                            else
+                            await vaultService.DeleteModsBatchAsync(vaultMetas.Select(m => m.Id),
+                                result.Permanent ? null : path => RecycleBinHelper.SendToRecycleBin(path));
+                        }
+                        foreach (var meta in vaultMetas)
+                        {
+                            var inMemoryItem = Items.FirstOrDefault(i => i.Entity.Id == meta.Id);
+                            if (inMemoryItem != null)
                             {
-                                _db.Tombstones.Add(new TombstoneEntity
-                                {
-                                    FileName = meta.FileName,
-                                    PackageType = meta.PackageType,
-                                    UserTags = meta.UserTags,
-                                    IsUserTagged = meta.IsUserTagged,
-                                    Description = meta.Description,
-                                    IsFavorite = meta.IsFavorite,
-                                    SetsEntityId = meta.SetsEntityId,
-                                    DeletedAt = DateTime.UtcNow
-                                });
+                                Items.Remove(inMemoryItem);
+                                FilteredItems.Remove(inMemoryItem);
                             }
                         }
-                        catch { }
+                    }
 
+                    // Only this set's own (now empty) shard files; never a whole folder that another set might share.
+                    var vaultServiceDir = App.Services?.GetService<VaultService>();
+                    if (vaultServiceDir != null)
+                    {
+                        await vaultServiceDir.DeleteEmptyShardsForSetAsync(setEntity.Id);
+                    }
+
+                    foreach (var meta in defaultMetas)
+                    {
                         if (File.Exists(meta.CompleteFileName))
                         {
                             if (result.Permanent)
@@ -734,11 +818,10 @@ public partial class ContentManagerViewModel
                 }
                 else
                 {
-                    // Move items to Default set
-                    var defaultSet = await _db.SetsEntities.FirstOrDefaultAsync(s => s.Name == "Default" || s.IsDefault)
-                                     ?? await _db.SetsEntities.FirstOrDefaultAsync();
+                    // Move the remaining library items to the Default set (vault items were moved above)
+                    var defaultMetas = setItemMetas.Where(m => !m.IsVaultManaged).ToList();
 
-                    foreach (var meta in setItemMetas)
+                    foreach (var meta in defaultMetas)
                     {
                         meta.SetsEntityId = defaultSet?.Id;
                         var inMemoryItem = Items.FirstOrDefault(i => i.Entity.Id == meta.Id);
@@ -755,7 +838,20 @@ public partial class ContentManagerViewModel
                 }
 
                 _db.SetsEntities.Remove(setEntity);
+
+                // A static bundle still holds the deleted set's mods until it is rebuilt.
+                var options = _optionsMonitor?.CurrentValue;
+                bool staticLibraryCache = options != null && !options.EnableSingleSourceVault &&
+                    string.Equals(options.CacheMethod, "Static", StringComparison.OrdinalIgnoreCase);
+                if (staticLibraryCache && setItemMetas.Any(m => m.Enabled))
+                {
+                    foreach (var s in await _db.SetsEntities.Where(s => s.Id != setEntity.Id).ToListAsync()) s.Dirty = true;
+                }
                 await _db.SaveChangesAsync();
+
+                // Resource.cfg still lists the deleted set's cache or shard folder; rewrite it so the game stops loading it.
+                try { await _pkgManager.SyncToSims3Async(); }
+                catch (Exception syncEx) { AppLogger.LogError("Failed to update game files after deleting a set", syncEx, "ContentManagerViewModel"); }
 
                 RecalculateSetCounts();
                 await ReloadSetsTreeAsync();

@@ -58,9 +58,19 @@
                                     <icon:PackIconBoxIcons Kind="RegularTag" Width="16" Height="16"/>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="{Binding RefreshItemsMenuHeader}" Command="{Binding RefreshSelectedCommand}" IsEnabled="{Binding HasSelectedItems}">
+                            <MenuItem Header="{Binding RefreshItemsMenuHeader}" Command="{Binding RefreshSelectedCommand}" IsEnabled="{Binding HasSelectedItems}" IsVisible="{Binding !IsVaultActive}">
                                 <MenuItem.Icon>
                                     <icon:PackIconBoxIcons Kind="RegularRefreshCw" Width="16" Height="16"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="{Binding ExportItemsMenuHeader}" Command="{Binding ExportSelectedCommand}" IsEnabled="{Binding HasSelectedItems}" IsVisible="{Binding IsVaultActive}">
+                                <MenuItem.Icon>
+                                    <icon:PackIconBoxIcons Kind="RegularArchive" Width="16" Height="16"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="{loc:Loc 'library.replace_item'}" Command="{Binding ReplaceSelectedCommand}" IsEnabled="{Binding IsSingleItemSelected}" IsVisible="{Binding IsVaultActive}">
+                                <MenuItem.Icon>
+                                    <icon:PackIconBoxIcons Kind="RegularSwapHorizontal" Width="16" Height="16"/>
                                 </MenuItem.Icon>
                             </MenuItem>
                             <Separator/>

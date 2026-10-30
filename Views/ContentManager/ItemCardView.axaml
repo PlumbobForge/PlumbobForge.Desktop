@@ -98,6 +98,25 @@
 
                         <!-- Top Right Actions: Favorite & Selection Checkbox -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top" Margin="0,0,2,0">
+                            <!-- Keeps original textures (texture optimisation opt-out) -->
+                            <Border Width="20" Height="20" CornerRadius="10"
+                                    Background="#60000000"
+                                    IsVisible="{Binding ShowsOriginalTexturesBadge}"
+                                    ToolTip.Tip="{loc:Loc 'library.original_textures_badge'}">
+                                <icon:PackIconBoxIcons Kind="RegularImage" Width="12" Height="12" Foreground="White" Opacity="0.85" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+
+                            <!-- Some objects turned off in Look Inside -->
+                            <Border Height="20" CornerRadius="10" Padding="6,0"
+                                    Background="#60000000"
+                                    IsVisible="{Binding HasDisabledObjects}"
+                                    ToolTip.Tip="{Binding DisabledObjectsTooltip}">
+                                <StackPanel Orientation="Horizontal" Spacing="3" VerticalAlignment="Center">
+                                    <icon:PackIconBoxIcons Kind="RegularBlock" Width="11" Height="11" Foreground="White" Opacity="0.85" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding DisabledObjectCount}" FontSize="10.5" FontWeight="SemiBold" Foreground="White" Opacity="0.9" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
                             <!-- Favorite Star Button -->
                             <Button Classes="card-fav-btn"
                                     Classes.is-fav="{Binding IsFavorite}"

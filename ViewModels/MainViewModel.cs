@@ -12,13 +12,15 @@ using Microsoft.Extensions.DependencyInjection;
 using PlumbobForge.Backend.Database;
 using PlumbobForge.Installer.Shared;
 using PlumbobForge.Desktop.Services;
+using PlumbobForge.Desktop.Services.Localization;
 
 namespace PlumbobForge.Desktop.ViewModels;
 
 public partial class MainViewModel : ObservableObject
 {
     private readonly IServiceProvider _serviceProvider;
-    public const int CurrentCacheOptimizationMilestone = 1;
+    // 2: compression removed; libraries compressed by older versions need a one-time repair + rebuild.
+    public const int CurrentCacheOptimizationMilestone = 2;
 
     [ObservableProperty]
     private ObservableObject? _currentView;
@@ -36,6 +38,22 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _hasDirtySets;
+
+    [ObservableProperty]
+    private bool _isVaultActive;
+
+    [ObservableProperty]
+    private string _vaultStatusText = "Vault is up-to-date";
+
+    public void SetVaultUpdating(bool isUpdating, string? customText = null)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            VaultStatusText = isUpdating
+                ? (customText ?? LocalizationManager.Instance.GetString("progress.vault_status_updating"))
+                : LocalizationManager.Instance.GetString("progress.vault_status_uptodate");
+        });
+    }
 
     [ObservableProperty]
     private TaskProgressModalViewModel? _activeProgressModal;
@@ -72,6 +90,12 @@ public partial class MainViewModel : ObservableObject
         ConfigurationsVm = serviceProvider.GetRequiredService<ConfigurationsViewModel>();
         HealthVm = serviceProvider.GetRequiredService<HealthViewModel>();
         SettingsVm = serviceProvider.GetRequiredService<SettingsViewModel>();
+
+        VaultStatusText = LocalizationManager.Instance.GetString("progress.vault_status_uptodate");
+        LocalizationManager.Instance.LanguageChanged += _ =>
+        {
+            VaultStatusText = LocalizationManager.Instance.GetString("progress.vault_status_uptodate");
+        };
 
         // Defer heavy content loading until after MainWindow renders its initial frame
         Dispatcher.UIThread.Post(() =>
@@ -164,12 +188,21 @@ public partial class MainViewModel : ObservableObject
         await MarkCacheOptimizedVersionAsync();
     }
 
+    // "Later" only hides the toast for this session so the repair is offered again next launch.
+    [RelayCommand]
+    public void HideCacheOptimizationToast()
+    {
+        IsCacheOptimizationToastVisible = false;
+    }
+
     [RelayCommand]
     public async Task ForceRebuildFromToastAsync()
     {
         IsCacheOptimizationToastVisible = false;
-        await MarkCacheOptimizedVersionAsync();
-        await ForceRebuildCacheAsync();
+        // Only record the milestone once repair and rebuild succeed, so a failed run is offered again.
+        await _serviceProvider.GetRequiredService<ContentManagerViewModel>()
+            .RepairCompressionAndRebuildAsync(onSucceeded: MarkCacheOptimizedVersionAsync);
+        await RefreshDirtyStateAsync();
     }
 
     private async Task CheckForUpdatesOnStartupAsync()
@@ -222,10 +255,23 @@ public partial class MainViewModel : ObservableObject
         try
         {
             using IServiceScope scope = _serviceProvider.CreateScope();
-            bool dirty = await scope.ServiceProvider.GetRequiredService<AppDbContext>().SetsEntities.AsNoTracking().AnyAsync((SetsEntity s) => s.Dirty);
+            var options = scope.ServiceProvider.GetService<Microsoft.Extensions.Options.IOptionsMonitor<PlumbobForge.Backend.Configuration.PlumbobForgeOptions>>();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            bool hasVaultShards = await db.VaultShards.AnyAsync();
+            bool vaultActive = (options?.CurrentValue?.EnableSingleSourceVault ?? false) || hasVaultShards;
+
+            if (hasVaultShards && options?.CurrentValue != null && !options.CurrentValue.EnableSingleSourceVault)
+            {
+                options.CurrentValue.EnableSingleSourceVault = true;
+                _ = AppSettingsService.SaveOptionsAsync(options.CurrentValue);
+            }
+
+            // Dirty flags only mean "rebuild pending" in library mode; the vault never rebuilds.
+            bool dirty = !vaultActive && await db.SetsEntities.AsNoTracking().AnyAsync((SetsEntity s) => s.Dirty);
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 HasDirtySets = dirty;
+                IsVaultActive = vaultActive;
             });
         }
         catch
