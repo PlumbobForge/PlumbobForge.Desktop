@@ -44,9 +44,11 @@ public partial class MigrationDialogWindow : Window
         ValidateInputs();
     }
 
-    public MigrationDialogWindow(IStorageProvider? storageProvider) : this()
+    public MigrationDialogWindow(IStorageProvider? storageProvider, MigrationSource? preselect = null) : this()
     {
         _storageProvider = storageProvider;
+        if (preselect == MigrationSource.S3mo && S3moRadio != null) S3moRadio.IsChecked = true;
+        else if (preselect == MigrationSource.CcMagic && CcMagicRadio != null) CcMagicRadio.IsChecked = true;
     }
 
     private void OnHeaderPointerPressed(object? sender, PointerPressedEventArgs e)

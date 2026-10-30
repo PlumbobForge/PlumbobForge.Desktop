@@ -123,11 +123,11 @@ public static class DialogHelper
         return parent != null ? await dialog.ShowDialog<RecheckPackageTypesDialogResult?>(parent) : null;
     }
 
-    public static async Task<MigrationDialogResult?> ShowMigrationAsync(Avalonia.Platform.Storage.IStorageProvider? storageProvider = null, Window? owner = null)
+    public static async Task<MigrationDialogResult?> ShowMigrationAsync(Avalonia.Platform.Storage.IStorageProvider? storageProvider = null, Window? owner = null, MigrationSource? preselect = null)
     {
         var parent = owner ?? GetMainWindow();
         var sp = storageProvider ?? parent?.StorageProvider;
-        var dialog = new MigrationDialogWindow(sp);
+        var dialog = new MigrationDialogWindow(sp, preselect);
         return parent != null ? await dialog.ShowDialog<MigrationDialogResult?>(parent) : null;
     }
 
