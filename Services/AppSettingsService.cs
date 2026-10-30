@@ -74,13 +74,35 @@ public static class AppSettingsService
             plumbobNode["SetCacheFolderName"] = string.IsNullOrWhiteSpace(options.SetCacheFolderName) ? "Builds" : options.SetCacheFolderName;
             plumbobNode["LegacyPackageFolderName"] = string.IsNullOrWhiteSpace(options.LegacyPackageFolderName) ? "Legacy" : options.LegacyPackageFolderName;
             plumbobNode["TS3PackStoreFolderName"] = string.IsNullOrWhiteSpace(options.TS3PackStoreFolderName) ? "Store" : options.TS3PackStoreFolderName;
-            plumbobNode["CompressionLevel"] = options.CompressionLevel;
+            plumbobNode.Remove("CompressionLevel"); // Compression was removed; drop the stale setting
             plumbobNode["CacheMethod"] = options.CacheMethod ?? "Dynamic";
             plumbobNode["AutoRebuildStaticCache"] = options.AutoRebuildStaticCache;
+            plumbobNode["EnableSingleSourceVault"] = options.EnableSingleSourceVault;
             plumbobNode["EnableAutoScan"] = options.EnableAutoScan;
+            plumbobNode["AutoClearGameCaches"] = options.AutoClearGameCaches;
+            plumbobNode["OptimizeTextures"] = options.OptimizeTextures;
+            plumbobNode["TextureMaxDimension"] = options.TextureMaxDimension;
             plumbobNode["Theme"] = options.Theme ?? "Dark";
             plumbobNode["AccentColor"] = options.AccentColor ?? "Emerald";
+            plumbobNode["IsCustomTheme"] = options.IsCustomTheme;
+            plumbobNode["CustomThemeBaseColor"] = options.CustomThemeBaseColor ?? "#1e293b";
+            plumbobNode["CustomThemeIsDark"] = options.CustomThemeIsDark;
+            plumbobNode["UseCustomAccent"] = options.UseCustomAccent;
+            plumbobNode["CustomThemeAccentColor"] = options.CustomThemeAccentColor ?? "#10b981";
             plumbobNode["ObservedFolders"] = jsonArray;
+
+            JsonArray customPresetsArray = new JsonArray((JsonNodeOptions?)null);
+            if (options.CustomColorPresets != null)
+            {
+                foreach (string preset in options.CustomColorPresets)
+                {
+                    if (!string.IsNullOrWhiteSpace(preset))
+                    {
+                        customPresetsArray.Add(preset.Trim());
+                    }
+                }
+            }
+            plumbobNode["CustomColorPresets"] = customPresetsArray;
             plumbobNode["HasSeenWalkthrough"] = options.HasSeenWalkthrough;
             plumbobNode["HasCompletedUpgradeWizard"] = options.HasCompletedUpgradeWizard;
 
