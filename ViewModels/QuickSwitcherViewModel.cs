@@ -20,6 +20,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
 {
     private readonly IServiceProvider _serviceProvider;
     private CancellationTokenSource? _searchCts;
+    private Task _pendingSearch = Task.CompletedTask;
 
     [ObservableProperty]
     private bool _isOpen;
@@ -80,7 +81,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
         _searchCts = new CancellationTokenSource();
         var token = _searchCts.Token;
 
-        _ = Task.Run(async () =>
+        _pendingSearch = Task.Run(async () =>
         {
             await Task.Delay(80, token); // Debounce
             if (!token.IsCancellationRequested)
@@ -91,6 +92,12 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 });
             }
         }, token);
+    }
+
+    public async Task WaitForPendingSearchAsync()
+    {
+        try { await _pendingSearch; }
+        catch (OperationCanceledException) { }
     }
 
     [RelayCommand]
@@ -111,123 +118,15 @@ public partial class QuickSwitcherViewModel : ObservableObject
             using var scope = _serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            bool includePlaces = SelectedCategory == "All" || SelectedCategory == "Places";
-            bool includeConfigs = SelectedCategory == "All" || SelectedCategory == "Configurations";
-            bool includeSets = SelectedCategory == "All" || SelectedCategory == "Sets";
-            bool includeItems = SelectedCategory == "All" || SelectedCategory == "Items";
-
-            // 0. PLACES
-            if (includePlaces)
+            var commandRows = await BuildCommandResultsAsync(query ?? string.Empty, db, ct);
+            IsCommandMode = commandRows != null;
+            if (commandRows != null)
             {
-                var places = GetPlaces();
-                if (!string.IsNullOrEmpty(trimmed))
-                {
-                    places = places.Where(p =>
-                        p.Title.Contains(trimmed, StringComparison.OrdinalIgnoreCase) ||
-                        (p.Subtitle != null && p.Subtitle.Contains(trimmed, StringComparison.OrdinalIgnoreCase)) ||
-                        (p.Keywords != null && p.Keywords.Contains(trimmed, StringComparison.OrdinalIgnoreCase))
-                    ).ToList();
-                }
-                list.AddRange(places);
+                list.AddRange(commandRows);
             }
-
-            // 1. CONFIGURATIONS
-            if (includeConfigs)
+            else
             {
-                var configQuery = db.ConfigEntities.AsNoTracking().AsQueryable();
-                if (!string.IsNullOrEmpty(trimmed))
-                {
-                    configQuery = configQuery.Where(c => EF.Functions.Like(c.Name, $"%{trimmed}%") || (c.Description != null && EF.Functions.Like(c.Description, $"%{trimmed}%")));
-                }
-                var configs = await configQuery.Take(10).ToListAsync(ct);
-                foreach (var c in configs)
-                {
-                    var iconKind = Enum.TryParse<PackIconBoxIconsKind>(c.Icon, out var k) ? k : PackIconBoxIconsKind.RegularSlider;
-                    var brush = !string.IsNullOrEmpty(c.Color)
-                        ? Brush.Parse(c.Color)
-                        : (c.Active ? ThemeService.GetCurrentAccentBrush() : Brush.Parse("#60a5fa"));
-
-                    list.Add(new QuickSwitcherItemViewModel
-                    {
-                        Type = QuickSwitcherItemType.Configuration,
-                        TargetId = c.Id,
-                        Title = c.Name,
-                        Subtitle = !string.IsNullOrWhiteSpace(c.Description) ? c.Description : (c.Default ? "Default configuration profile" : "Configuration profile"),
-                        DetailBadge = c.Active ? "ACTIVE" : (c.Default ? "DEFAULT" : null),
-                        IconKind = iconKind,
-                        IconBrush = brush
-                    });
-                }
-            }
-
-            // 2. SETS
-            if (includeSets)
-            {
-                var setsList = await db.SetsEntities.AsNoTracking().ToListAsync(ct);
-                var setMap = setsList.ToDictionary(s => s.Id);
-
-                var matchedSets = string.IsNullOrEmpty(trimmed)
-                    ? setsList.Take(15).ToList()
-                    : setsList.Where(s => s.Name.Contains(trimmed, StringComparison.OrdinalIgnoreCase)).Take(20).ToList();
-
-                foreach (var s in matchedSets)
-                {
-                    // Build path / breadcrumb
-                    var pathParts = new List<string> { s.Name };
-                    var curr = s;
-                    while (curr.ParentSetsEntityId.HasValue && setMap.TryGetValue(curr.ParentSetsEntityId.Value, out var parent))
-                    {
-                        pathParts.Insert(0, parent.Name);
-                        curr = parent;
-                    }
-
-                    var iconKind = Enum.TryParse<PackIconBoxIconsKind>(s.Icon, out var k) ? k : PackIconBoxIconsKind.RegularFolder;
-                    var brush = !string.IsNullOrEmpty(s.Color)
-                        ? Brush.Parse(s.Color)
-                        : ThemeService.GetCurrentAccentBrush();
-
-                    list.Add(new QuickSwitcherItemViewModel
-                    {
-                        Type = QuickSwitcherItemType.Set,
-                        TargetId = s.Id,
-                        Title = s.Name,
-                        Subtitle = pathParts.Count > 1 ? string.Join("  /  ", pathParts) : "Top-level set folder",
-                        IconKind = iconKind,
-                        IconBrush = brush
-                    });
-                }
-            }
-
-            // 3. ITEMS
-            if (includeItems && !string.IsNullOrEmpty(trimmed))
-            {
-                var items = await db.MetaEntities
-                    .AsNoTracking()
-                    .Include(i => i.SetsEntity)
-                    .Where(i => EF.Functions.Like(i.FileName, $"%{trimmed}%")
-                             || (i.Description != null && EF.Functions.Like(i.Description, $"%{trimmed}%"))
-                             || (i.UserTags != null && EF.Functions.Like(i.UserTags, $"%{trimmed}%")))
-                    .Take(25)
-                    .ToListAsync(ct);
-
-                foreach (var item in items)
-                {
-                    var setName = item.SetsEntity?.Name ?? "Unassigned";
-                    var subtitle = !string.IsNullOrWhiteSpace(item.UserTags)
-                        ? $"In set: {setName}  •  Tags: {item.UserTags}"
-                        : $"In set: {setName}";
-
-                    list.Add(new QuickSwitcherItemViewModel
-                    {
-                        Type = QuickSwitcherItemType.Item,
-                        TargetId = item.Id,
-                        SecondaryId = item.SetsEntityId,
-                        Title = item.FileName,
-                        Subtitle = subtitle,
-                        IconKind = PackIconBoxIconsKind.RegularPackage,
-                        IconBrush = Brush.Parse("#c084fc")
-                    });
-                }
+                await AddSearchResultsAsync(list, db, trimmed, ct);
             }
         }
         catch (OperationCanceledException) { return; }
@@ -249,7 +148,141 @@ public partial class QuickSwitcherViewModel : ObservableObject
         else
         {
             SelectedIndex = -1;
-            EmptyStateMessage = string.IsNullOrEmpty(trimmed) ? "Type to search..." : $"No results matching \"{trimmed}\"";
+            EmptyStateMessage = IsCommandMode
+                ? "No matches for this command"
+                : string.IsNullOrEmpty(trimmed) ? "Type to search..." : $"No results matching \"{trimmed}\"";
+        }
+    }
+
+    private async Task AddSearchResultsAsync(List<QuickSwitcherItemViewModel> list, AppDbContext db, string trimmed, CancellationToken ct)
+    {
+        // Point at command mode: a hint while the box is empty, the verb itself when its name is typed.
+        if (SelectedCategory == "All")
+        {
+            var hint = string.IsNullOrEmpty(trimmed) ? CreateCommandHintRow() : CreateExactVerbRow(trimmed);
+            if (hint != null) list.Add(hint);
+        }
+
+        bool includePlaces = SelectedCategory == "All" || SelectedCategory == "Places";
+        bool includeConfigs = SelectedCategory == "All" || SelectedCategory == "Configurations";
+        bool includeSets = SelectedCategory == "All" || SelectedCategory == "Sets";
+        bool includeItems = SelectedCategory == "All" || SelectedCategory == "Items";
+
+        // 0. PLACES
+        if (includePlaces)
+        {
+            var places = GetPlaces();
+            // The cache engine settings are library-mode only and hidden in vault mode.
+            bool vaultMode = App.Services?.GetService<Microsoft.Extensions.Options.IOptionsMonitor<PlumbobForge.Backend.Configuration.PlumbobForgeOptions>>()?.CurrentValue.EnableSingleSourceVault ?? false;
+            if (vaultMode) places = places.Where(p => p.PlaceTarget != "Settings:Engine").ToList();
+            if (!string.IsNullOrEmpty(trimmed))
+            {
+                places = places.Where(p =>
+                    p.Title.Contains(trimmed, StringComparison.OrdinalIgnoreCase) ||
+                    (p.Subtitle != null && p.Subtitle.Contains(trimmed, StringComparison.OrdinalIgnoreCase)) ||
+                    (p.Keywords != null && p.Keywords.Contains(trimmed, StringComparison.OrdinalIgnoreCase))
+                ).ToList();
+            }
+            list.AddRange(places);
+        }
+
+        // 1. CONFIGURATIONS
+        if (includeConfigs)
+        {
+            var configQuery = db.ConfigEntities.AsNoTracking().AsQueryable();
+            if (!string.IsNullOrEmpty(trimmed))
+            {
+                configQuery = configQuery.Where(c => EF.Functions.Like(c.Name, $"%{trimmed}%") || (c.Description != null && EF.Functions.Like(c.Description, $"%{trimmed}%")));
+            }
+            var configs = await configQuery.Take(10).ToListAsync(ct);
+            foreach (var c in configs)
+            {
+                var iconKind = Enum.TryParse<PackIconBoxIconsKind>(c.Icon, out var k) ? k : PackIconBoxIconsKind.RegularSlider;
+                var brush = !string.IsNullOrEmpty(c.Color)
+                    ? Brush.Parse(c.Color)
+                    : (c.Active ? ThemeService.GetCurrentAccentBrush() : Brush.Parse("#60a5fa"));
+
+                list.Add(new QuickSwitcherItemViewModel
+                {
+                    Type = QuickSwitcherItemType.Configuration,
+                    TargetId = c.Id,
+                    Title = c.Name,
+                    Subtitle = !string.IsNullOrWhiteSpace(c.Description) ? c.Description : (c.Default ? "Default configuration profile" : "Configuration profile"),
+                    DetailBadge = c.Active ? "ACTIVE" : (c.Default ? "DEFAULT" : null),
+                    IconKind = iconKind,
+                    IconBrush = brush
+                });
+            }
+        }
+
+        // 2. SETS
+        if (includeSets)
+        {
+            var setsList = await db.SetsEntities.AsNoTracking().ToListAsync(ct);
+            var setMap = setsList.ToDictionary(s => s.Id);
+
+            var matchedSets = string.IsNullOrEmpty(trimmed)
+                ? setsList.Take(15).ToList()
+                : setsList.Where(s => s.Name.Contains(trimmed, StringComparison.OrdinalIgnoreCase)).Take(20).ToList();
+
+            foreach (var s in matchedSets)
+            {
+                // Build path / breadcrumb
+                var pathParts = new List<string> { s.Name };
+                var curr = s;
+                while (curr.ParentSetsEntityId.HasValue && setMap.TryGetValue(curr.ParentSetsEntityId.Value, out var parent))
+                {
+                    pathParts.Insert(0, parent.Name);
+                    curr = parent;
+                }
+
+                var iconKind = Enum.TryParse<PackIconBoxIconsKind>(s.Icon, out var k) ? k : PackIconBoxIconsKind.RegularFolder;
+                var brush = !string.IsNullOrEmpty(s.Color)
+                    ? Brush.Parse(s.Color)
+                    : ThemeService.GetCurrentAccentBrush();
+
+                list.Add(new QuickSwitcherItemViewModel
+                {
+                    Type = QuickSwitcherItemType.Set,
+                    TargetId = s.Id,
+                    Title = s.Name,
+                    Subtitle = pathParts.Count > 1 ? string.Join("  /  ", pathParts) : "Top-level set folder",
+                    IconKind = iconKind,
+                    IconBrush = brush
+                });
+            }
+        }
+
+        // 3. ITEMS
+        if (includeItems && !string.IsNullOrEmpty(trimmed))
+        {
+            var items = await db.MetaEntities
+                .AsNoTracking()
+                .Include(i => i.SetsEntity)
+                .Where(i => EF.Functions.Like(i.FileName, $"%{trimmed}%")
+                         || (i.Description != null && EF.Functions.Like(i.Description, $"%{trimmed}%"))
+                         || (i.UserTags != null && EF.Functions.Like(i.UserTags, $"%{trimmed}%")))
+                .Take(25)
+                .ToListAsync(ct);
+
+            foreach (var item in items)
+            {
+                var setName = item.SetsEntity?.Name ?? "Unassigned";
+                var subtitle = !string.IsNullOrWhiteSpace(item.UserTags)
+                    ? $"In set: {setName}  •  Tags: {item.UserTags}"
+                    : $"In set: {setName}";
+
+                list.Add(new QuickSwitcherItemViewModel
+                {
+                    Type = QuickSwitcherItemType.Item,
+                    TargetId = item.Id,
+                    SecondaryId = item.SetsEntityId,
+                    Title = item.FileName,
+                    Subtitle = subtitle,
+                    IconKind = PackIconBoxIconsKind.RegularPackage,
+                    IconBrush = Brush.Parse("#c084fc")
+                });
+            }
         }
     }
 
@@ -281,7 +314,20 @@ public partial class QuickSwitcherViewModel : ObservableObject
         var target = item ?? (SelectedIndex >= 0 && SelectedIndex < Results.Count ? Results[SelectedIndex] : null);
         if (target == null) return;
 
+        // Command rows that only autocomplete keep the switcher open.
+        if (target.CommandAction == null && target.CompletionText != null)
+        {
+            ApplyCompletion(target.CompletionText);
+            return;
+        }
+
         Close();
+
+        if (target.CommandAction != null)
+        {
+            await RunCommandAsync(target.CommandAction);
+            return;
+        }
 
         var mainVm = _serviceProvider.GetRequiredService<MainViewModel>();
 
@@ -342,7 +388,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
     private List<QuickSwitcherItemViewModel> GetPlaces()
     {
         var loc = LocalizationManager.Instance;
-        var tealBrush = Brush.Parse("#2dd4bf");
+        var accentBrush = ThemeService.GetCurrentAccentBrush();
 
         return new List<QuickSwitcherItemViewModel>
         {
@@ -355,7 +401,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 Subtitle = "Main content library and package explorer",
                 Keywords = "library packages mods cc content manager explore catalog items",
                 IconKind = PackIconBoxIconsKind.RegularFolder,
-                IconBrush = tealBrush
+                IconBrush = accentBrush
             },
             new()
             {
@@ -365,7 +411,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 Subtitle = "Game profiles, presets, and active mod sets",
                 Keywords = "configurations profiles presets setups configs active loadouts",
                 IconKind = PackIconBoxIconsKind.RegularSliderAlt,
-                IconBrush = tealBrush
+                IconBrush = accentBrush
             },
             new()
             {
@@ -375,7 +421,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 Subtitle = "Sims 3 utilities, cleaner, scanner, and creator tools",
                 Keywords = "tools utilities maintenance health diagnostics scanner fixer cleaner",
                 IconKind = PackIconBoxIconsKind.RegularSpanner,
-                IconBrush = tealBrush
+                IconBrush = accentBrush
             },
             new()
             {
@@ -385,7 +431,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 Subtitle = "Preferences, appearance, directories, and options",
                 Keywords = "settings preferences options configuration app setup storage engine",
                 IconKind = PackIconBoxIconsKind.RegularCog,
-                IconBrush = tealBrush
+                IconBrush = accentBrush
             },
 
             // Tools Tab Sub-sections
@@ -397,7 +443,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 Subtitle = (loc.GetString("nav.tools") ?? "Tools") + "  •  " + (loc.GetString("tools.cache.subtitle") ?? "Purge temporary and corrupted cache files"),
                 Keywords = "tools cache cleaner temp garbage compositor simcompositor cleanup delete purge thumbnails",
                 IconKind = PackIconBoxIconsKind.RegularTrash,
-                IconBrush = tealBrush
+                IconBrush = accentBrush
             },
             new()
             {
@@ -407,7 +453,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 Subtitle = (loc.GetString("nav.tools") ?? "Tools") + "  •  " + (loc.GetString("tools.conflicts.subtitle") ?? "Scan for duplicate GUIDs and resource conflicts"),
                 Keywords = "tools conflict scanner duplicate conflicts collision overrides scan check corrupt",
                 IconKind = PackIconBoxIconsKind.RegularShield,
-                IconBrush = tealBrush
+                IconBrush = accentBrush
             },
             new()
             {
@@ -417,7 +463,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 Subtitle = (loc.GetString("nav.tools") ?? "Tools") + "  •  " + (loc.GetString("tools.patterns.subtitle") ?? "Detect and repair corrupted CAP patterns in packages"),
                 Keywords = "tools pattern fixer corrupted cap patterns materials repair fix create a style",
                 IconKind = PackIconBoxIconsKind.RegularPalette,
-                IconBrush = tealBrush
+                IconBrush = accentBrush
             },
             new()
             {
@@ -427,7 +473,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 Subtitle = (loc.GetString("nav.tools") ?? "Tools") + "  •  " + (loc.GetString("tools.collections.subtitle") ?? "Build custom in-game collections for Buy/Build mode"),
                 Keywords = "tools collection creator in-game collections sets categories buy build catalog",
                 IconKind = PackIconBoxIconsKind.RegularFolder,
-                IconBrush = tealBrush
+                IconBrush = accentBrush
             },
 
             // Settings Tab Sub-sections
@@ -439,7 +485,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 Subtitle = (loc.GetString("nav.settings") ?? "Settings") + "  •  " + (loc.GetString("settings.update_available") ?? "Check for app updates, changelog, and new releases"),
                 Keywords = "settings updates releases version changelog download upgrade new",
                 IconKind = PackIconBoxIconsKind.RegularRocket,
-                IconBrush = tealBrush
+                IconBrush = accentBrush
             },
             new()
             {
@@ -449,7 +495,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 Subtitle = (loc.GetString("nav.settings") ?? "Settings") + "  •  " + (loc.GetString("settings.appearance.accent_color_help") ?? "Theme mode, accent colors, and display language"),
                 Keywords = "settings appearance language colors accent theme personalization style ui dark light mode",
                 IconKind = PackIconBoxIconsKind.RegularPalette,
-                IconBrush = tealBrush
+                IconBrush = accentBrush
             },
             new()
             {
@@ -459,7 +505,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 Subtitle = (loc.GetString("nav.settings") ?? "Settings") + "  •  " + (loc.GetString("settings.storage.library_dir_help") ?? "Library directory, Sims 3 game path, documents path"),
                 Keywords = "settings storage directories paths library game documents electronic arts folder base",
                 IconKind = PackIconBoxIconsKind.RegularFolder,
-                IconBrush = tealBrush
+                IconBrush = accentBrush
             },
             new()
             {
@@ -469,7 +515,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 Subtitle = (loc.GetString("nav.settings") ?? "Settings") + "  •  " + (loc.GetString("settings.observed.auto_scan_help") ?? "Watched directories and automatic launch ingestion"),
                 Keywords = "settings observed folders watch downloads monitoring auto import ingestion directory",
                 IconKind = PackIconBoxIconsKind.RegularFolderOpen,
-                IconBrush = tealBrush
+                IconBrush = accentBrush
             },
             new()
             {
@@ -479,7 +525,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 Subtitle = (loc.GetString("nav.settings") ?? "Settings") + "  •  " + (loc.GetString("settings.engine.cache_mode") ?? "Dynamic cache, static bundle, and compression level"),
                 Keywords = "settings engine cache mode static bundle dynamic compression performance build speed",
                 IconKind = PackIconBoxIconsKind.RegularCog,
-                IconBrush = tealBrush
+                IconBrush = accentBrush
             },
             new()
             {
@@ -489,7 +535,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 Subtitle = (loc.GetString("nav.settings") ?? "Settings") + "  •  " + (loc.GetString("settings.maintenance.help") ?? "Recheck types, database auto-fix, CC Magic migration"),
                 Keywords = "settings maintenance diagnostics database repair fix cc magic migration recheck types s3mo",
                 IconKind = PackIconBoxIconsKind.RegularSpanner,
-                IconBrush = tealBrush
+                IconBrush = accentBrush
             },
             new()
             {
@@ -499,7 +545,7 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 Subtitle = (loc.GetString("nav.settings") ?? "Settings") + "  •  " + "Special thanks, open-source acknowledgements, and GitHub",
                 Keywords = "settings thanks acknowledgements credits granthes peter inge jones github about license",
                 IconKind = PackIconBoxIconsKind.RegularHeart,
-                IconBrush = tealBrush
+                IconBrush = accentBrush
             }
         };
     }
