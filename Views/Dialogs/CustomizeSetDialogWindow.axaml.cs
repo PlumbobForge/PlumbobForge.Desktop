@@ -1,12 +1,16 @@
 using System;
 using System.Collections.Generic;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
 using IconPacks.Avalonia.BoxIcons;
 using PlumbobForge.Desktop.Services;
+using PlumbobForge.Desktop.Services.Localization;
+using PlumbobForge.Desktop.Views.Controls;
 
 namespace PlumbobForge.Desktop.Views.Dialogs;
 
@@ -18,6 +22,8 @@ public partial class CustomizeSetDialogWindow : Window
 
     private readonly List<Button> _allIconButtons = new();
     private readonly List<Button> _colorButtons = new();
+    private Button? _rainbowWheelButton;
+    private PlumbobColorPicker? _flyoutColorPicker;
 
     public string ResultSetName => SetNameTextBox.Text?.Trim() ?? _setName;
     public string? ResultColorHex => _selectedColorHex;
@@ -215,7 +221,7 @@ public partial class CustomizeSetDialogWindow : Window
         [PackIconBoxIconsKind.RegularSlider] = "slider settings tune adjust sliders config"
     };
 
-    // Color Palette
+    // Built-in Curated Color Palette
     private static readonly (string Name, string? Hex)[] AvailableColors = new[]
     {
         ("Default", (string?)null),
@@ -235,7 +241,10 @@ public partial class CustomizeSetDialogWindow : Window
     {
         InitializeComponent();
         _setName = string.Empty;
-        PopulateVisualPickers();
+        PopulateIcons();
+        PopulateColorPickers();
+        CustomColorPresetsService.PresetsChanged += OnPresetsChanged;
+        Closed += (s, e) => CustomColorPresetsService.PresetsChanged -= OnPresetsChanged;
     }
 
     public CustomizeSetDialogWindow(string currentName, string? currentIconName, string? currentColorHex)
@@ -247,14 +256,23 @@ public partial class CustomizeSetDialogWindow : Window
         _selectedIconName = currentIconName;
 
         SetNameTextBox.Text = _setName;
-        PopulateVisualPickers();
+        PopulateIcons();
+        PopulateColorPickers();
+        CustomColorPresetsService.PresetsChanged += OnPresetsChanged;
+        Closed += (s, e) => CustomColorPresetsService.PresetsChanged -= OnPresetsChanged;
+
         UpdateActiveSelections();
         UpdatePreview();
     }
 
-    private void PopulateVisualPickers()
+    private void OnPresetsChanged()
     {
-        // 1. Populate Icons
+        PopulateColorPickers();
+        UpdatePreview();
+    }
+
+    private void PopulateIcons()
+    {
         IconsGrid.Children.Clear();
         _allIconButtons.Clear();
 
@@ -270,8 +288,8 @@ public partial class CustomizeSetDialogWindow : Window
                     Kind = iconKind,
                     Width = 16,
                     Height = 16,
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
                 }
             };
             ToolTip.SetTip(btn, kindName);
@@ -286,11 +304,14 @@ public partial class CustomizeSetDialogWindow : Window
             _allIconButtons.Add(btn);
             IconsGrid.Children.Add(btn);
         }
+    }
 
-        // 2. Populate Colors
+    private void PopulateColorPickers()
+    {
         ColorsWrapPanel.Children.Clear();
         _colorButtons.Clear();
 
+        // 1. Built-in Preset Swatches
         foreach (var (colorName, hex) in AvailableColors)
         {
             var brush = hex != null ? Brush.Parse(hex) : ThemeService.GetCurrentAccentBrush();
@@ -312,6 +333,116 @@ public partial class CustomizeSetDialogWindow : Window
             _colorButtons.Add(btn);
             ColorsWrapPanel.Children.Add(btn);
         }
+
+        // 2. Saved Custom Presets (with SolidStar indicator & Right-Click ContextMenu)
+        foreach (var presetHex in CustomColorPresetsService.Presets)
+        {
+            var hexCopy = presetHex;
+            var btn = new Button
+            {
+                Classes = { "color-pick-btn" },
+                Tag = hexCopy,
+                Background = Brush.Parse(hexCopy),
+                Content = new PackIconBoxIcons
+                {
+                    Kind = PackIconBoxIconsKind.SolidStar,
+                    Width = 9,
+                    Height = 9,
+                    Foreground = Brushes.White,
+                    Opacity = 0.85,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            };
+            ToolTip.SetTip(btn, $"{hexCopy} ({LocalizationManager.Instance.GetString("dialogs.customize_set.custom_preset_tip")})");
+
+            var menu = new ContextMenu();
+            var deleteItem = new MenuItem
+            {
+                Header = LocalizationManager.Instance.GetString("dialogs.customize_set.delete_preset"),
+                Icon = new PackIconBoxIcons { Kind = PackIconBoxIconsKind.RegularTrash, Width = 14, Height = 14 }
+            };
+            deleteItem.Click += (s, e) =>
+            {
+                CustomColorPresetsService.RemovePreset(hexCopy);
+            };
+            menu.Items.Add(deleteItem);
+            btn.ContextMenu = menu;
+
+            btn.Click += (s, e) =>
+            {
+                _selectedColorHex = hexCopy;
+                UpdateActiveSelections();
+                UpdatePreview();
+            };
+
+            _colorButtons.Add(btn);
+            ColorsWrapPanel.Children.Add(btn);
+        }
+
+        // 3. Rainbow Color Wheel / Sphere Button with Spectrum Picker Flyout
+        _rainbowWheelButton = new Button
+        {
+            Classes = { "color-pick-btn" },
+            Tag = "__CUSTOM_WHEEL__",
+            Background = CustomColorPresetsService.RainbowWheelBrush
+        };
+        ToolTip.SetTip(_rainbowWheelButton, LocalizationManager.Instance.GetString("dialogs.customize_set.pick_custom_color"));
+
+        var flyout = new Flyout
+        {
+            Placement = PlacementMode.BottomEdgeAlignedRight
+        };
+
+        var initialColor = ColorPaletteGenerator.TryParseHex(_selectedColorHex, out var parsedCol)
+            ? parsedCol
+            : Color.Parse("#10b981");
+
+        _flyoutColorPicker = new PlumbobColorPicker
+        {
+            Color = initialColor,
+            IsSavePresetVisible = true
+        };
+
+        _flyoutColorPicker.ColorChanged += (s, e) =>
+        {
+            var hex = ColorPaletteGenerator.ColorToHex(e.NewColor);
+            _selectedColorHex = hex;
+            _rainbowWheelButton.Background = new SolidColorBrush(e.NewColor);
+            UpdateActiveSelections();
+            UpdatePreview();
+        };
+
+        _flyoutColorPicker.SavePresetRequested += (s, col) =>
+        {
+            var hex = ColorPaletteGenerator.ColorToHex(col);
+            CustomColorPresetsService.AddPreset(hex);
+            flyout.Hide();
+        };
+
+        flyout.Content = new Border
+        {
+            Background = (IBrush)this.FindResource("BgSurface")!,
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(10),
+            Child = _flyoutColorPicker
+        };
+
+        _rainbowWheelButton.Flyout = flyout;
+
+        _rainbowWheelButton.Click += (s, e) =>
+        {
+            if (ColorPaletteGenerator.TryParseHex(_selectedColorHex, out var activeCol) && _flyoutColorPicker != null)
+            {
+                _flyoutColorPicker.Color = activeCol;
+            }
+        };
+
+        _colorButtons.Add(_rainbowWheelButton);
+        ColorsWrapPanel.Children.Add(_rainbowWheelButton);
+
+        UpdateActiveSelections();
     }
 
     private void OnIconSearchChanged(object? sender, TextChangedEventArgs e)
@@ -376,16 +507,35 @@ public partial class CustomizeSetDialogWindow : Window
             }
         }
 
+        bool matchedBuiltInOrPreset = false;
         foreach (var btn in _colorButtons)
         {
-            bool isSel = (string?)btn.Tag == _selectedColorHex;
+            if (ReferenceEquals(btn, _rainbowWheelButton)) continue;
+
+            bool isSel = string.Equals((string?)btn.Tag, _selectedColorHex, StringComparison.OrdinalIgnoreCase);
             if (isSel)
             {
+                matchedBuiltInOrPreset = true;
                 if (!btn.Classes.Contains("selected")) btn.Classes.Add("selected");
             }
             else
             {
                 btn.Classes.Remove("selected");
+            }
+        }
+
+        if (_rainbowWheelButton != null)
+        {
+            bool isCustomActive = !string.IsNullOrEmpty(_selectedColorHex) && !matchedBuiltInOrPreset;
+            if (isCustomActive && ColorPaletteGenerator.TryParseHex(_selectedColorHex, out var customColor))
+            {
+                _rainbowWheelButton.Background = new SolidColorBrush(customColor);
+                if (!_rainbowWheelButton.Classes.Contains("selected")) _rainbowWheelButton.Classes.Add("selected");
+            }
+            else
+            {
+                _rainbowWheelButton.Background = CustomColorPresetsService.RainbowWheelBrush;
+                _rainbowWheelButton.Classes.Remove("selected");
             }
         }
     }

@@ -1,12 +1,16 @@
 using System;
 using System.Collections.Generic;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
 using IconPacks.Avalonia.BoxIcons;
 using PlumbobForge.Desktop.Services;
+using PlumbobForge.Desktop.Services.Localization;
+using PlumbobForge.Desktop.Views.Controls;
 
 namespace PlumbobForge.Desktop.Views.Dialogs;
 
@@ -16,29 +20,33 @@ public partial class CustomizeConfigDialogWindow : Window
     private string? _description;
     private string? _selectedColorHex;
     private string? _selectedIconName;
-    private readonly bool _isActive;
+    private bool _isActive;
 
     private readonly List<Button> _allIconButtons = new();
     private readonly List<Button> _colorButtons = new();
+    private Button? _rainbowWheelButton;
+    private PlumbobColorPicker? _flyoutColorPicker;
 
     public string ResultConfigName => ConfigNameTextBox.Text?.Trim() ?? _configName;
-    public string? ResultDescription => string.IsNullOrWhiteSpace(DescriptionTextBox.Text) ? null : DescriptionTextBox.Text.Trim();
+    public string? ResultDescription => DescriptionTextBox.Text?.Trim();
     public string? ResultColorHex => _selectedColorHex;
     public string? ResultIconName => _selectedIconName;
 
-    // Curated Configuration / Preset Profile Icons
+    // Curated Sims 3 CC / Set Icons
     private static readonly List<PackIconBoxIconsKind> AvailableIcons = new()
     {
-        // Core Config & System
-        PackIconBoxIconsKind.RegularSlider,
-                PackIconBoxIconsKind.RegularCog,
-                PackIconBoxIconsKind.RegularLayers,
+        // Sets, Folders, System
         PackIconBoxIconsKind.RegularFolder,
         PackIconBoxIconsKind.RegularFolderOpen,
+        PackIconBoxIconsKind.RegularFolderHeart,
         PackIconBoxIconsKind.RegularFolderStar,
+        PackIconBoxIconsKind.RegularFolderCheck,
         PackIconBoxIconsKind.RegularPackage,
         PackIconBoxIconsKind.RegularBox,
+        PackIconBoxIconsKind.RegularLayers,
         PackIconBoxIconsKind.RegularGrid,
+        PackIconBoxIconsKind.RegularTag,
+        PackIconBoxIconsKind.RegularBookmark,
         PackIconBoxIconsKind.RegularBookmarks,
 
         // Pets & Animals
@@ -66,11 +74,15 @@ public partial class CustomizeConfigDialogWindow : Window
         PackIconBoxIconsKind.RegularSparkles,
         PackIconBoxIconsKind.RegularPlanet,
 
-        // CAS & Sims
+        // CAS, Sims, Clothing & Accessories
         PackIconBoxIconsKind.RegularUser,
         PackIconBoxIconsKind.RegularFace,
+        PackIconBoxIconsKind.RegularFaceAlt,
+        PackIconBoxIconsKind.RegularBody,
         PackIconBoxIconsKind.RegularHanger,
         PackIconBoxIconsKind.RegularTShirt,
+        PackIconBoxIconsKind.RegularPant,
+        PackIconBoxIconsKind.RegularSneaker,
         PackIconBoxIconsKind.RegularGlasses,
         PackIconBoxIconsKind.RegularMask,
         PackIconBoxIconsKind.RegularDiamond,
@@ -115,20 +127,23 @@ public partial class CustomizeConfigDialogWindow : Window
         PackIconBoxIconsKind.RegularMedal,
         PackIconBoxIconsKind.RegularHeart,
         PackIconBoxIconsKind.RegularStar,
-        PackIconBoxIconsKind.RegularShield
+        PackIconBoxIconsKind.RegularShoppingBag,
+        PackIconBoxIconsKind.RegularSlider
     };
 
     private static readonly Dictionary<PackIconBoxIconsKind, string> IconKeywords = new()
     {
-        [PackIconBoxIconsKind.RegularSlider] = "slider settings tune adjust sliders config preset",
-                [PackIconBoxIconsKind.RegularCog] = "cog gear settings options system preference",
-                [PackIconBoxIconsKind.RegularLayers] = "layers stack set config settings build preset",
         [PackIconBoxIconsKind.RegularFolder] = "folder directory set container",
         [PackIconBoxIconsKind.RegularFolderOpen] = "folder open directory set",
+        [PackIconBoxIconsKind.RegularFolderHeart] = "folder heart love favorite set",
         [PackIconBoxIconsKind.RegularFolderStar] = "folder star bookmark favorite set",
+        [PackIconBoxIconsKind.RegularFolderCheck] = "folder check done ready set",
         [PackIconBoxIconsKind.RegularPackage] = "package box cc mod archive item",
         [PackIconBoxIconsKind.RegularBox] = "box package storage archive",
+        [PackIconBoxIconsKind.RegularLayers] = "layers stack set config settings build",
         [PackIconBoxIconsKind.RegularGrid] = "grid gallery layout view items",
+        [PackIconBoxIconsKind.RegularTag] = "tag label price category",
+        [PackIconBoxIconsKind.RegularBookmark] = "bookmark favorite saved ribbon",
         [PackIconBoxIconsKind.RegularBookmarks] = "bookmarks favorites saved",
 
         // Pets
@@ -157,8 +172,12 @@ public partial class CustomizeConfigDialogWindow : Window
         // CAS
         [PackIconBoxIconsKind.RegularUser] = "user sim person avatar profile cas",
         [PackIconBoxIconsKind.RegularFace] = "face sim cas head makeup skin beauty",
+        [PackIconBoxIconsKind.RegularFaceAlt] = "face sim cas head expression",
+        [PackIconBoxIconsKind.RegularBody] = "body sim cas figure outfit clothes skin",
         [PackIconBoxIconsKind.RegularHanger] = "hanger closet wardrobe clothes cas fashion outfit",
         [PackIconBoxIconsKind.RegularTShirt] = "shirt tshirt clothes cas top outfit apparel",
+        [PackIconBoxIconsKind.RegularPant] = "pants jeans trousers bottom clothes cas bottoms",
+        [PackIconBoxIconsKind.RegularSneaker] = "sneaker shoes footwear boots cas kicks",
         [PackIconBoxIconsKind.RegularGlasses] = "glasses accessories eyewear cas shades sunglasses",
         [PackIconBoxIconsKind.RegularMask] = "mask masquerade cas makeup costume facial skin",
         [PackIconBoxIconsKind.RegularSmile] = "smile happy emotion mood traits personality",
@@ -201,18 +220,19 @@ public partial class CustomizeConfigDialogWindow : Window
         [PackIconBoxIconsKind.RegularMedal] = "medal award win achievement prize honor sport badge",
         [PackIconBoxIconsKind.RegularHeart] = "heart love favorite romantic like romance wedding",
         [PackIconBoxIconsKind.RegularStar] = "star rating favorite sparkle highlight review celebrity",
-        [PackIconBoxIconsKind.RegularShield] = "shield security protection safe verified protect"
+        [PackIconBoxIconsKind.RegularShoppingBag] = "shop shopping bag store buy cart clothes retail",
+        [PackIconBoxIconsKind.RegularSlider] = "slider settings tune adjust sliders config"
     };
 
-    // Preset Accent Palette
+    // Color Palette
     private static readonly (string Name, string? Hex)[] AvailableColors = new[]
     {
         ("Default", (string?)null),
+        ("Emerald Green", "#10b981"),
+        ("Teal", "#14b8a6"),
         ("Sky Blue", "#0ea5e9"),
         ("Indigo", "#6366f1"),
         ("Purple", "#8b5cf6"),
-        ("Emerald Green", "#10b981"),
-        ("Teal", "#14b8a6"),
         ("Pink", "#ec4899"),
         ("Rose", "#f43f5e"),
         ("Amber Orange", "#f59e0b"),
@@ -224,7 +244,10 @@ public partial class CustomizeConfigDialogWindow : Window
     {
         InitializeComponent();
         _configName = string.Empty;
-        PopulateVisualPickers();
+        PopulateIcons();
+        PopulateColorPickers();
+        CustomColorPresetsService.PresetsChanged += OnPresetsChanged;
+        Closed += (s, e) => CustomColorPresetsService.PresetsChanged -= OnPresetsChanged;
     }
 
     public CustomizeConfigDialogWindow(string currentName, string? currentDesc, string? currentIconName, string? currentColorHex, bool isDefault = false, bool isActive = false)
@@ -241,14 +264,23 @@ public partial class CustomizeConfigDialogWindow : Window
         DescriptionTextBox.Text = _description ?? string.Empty;
         PreviewBadge.IsVisible = _isActive;
 
-        PopulateVisualPickers();
+        PopulateIcons();
+        PopulateColorPickers();
+        CustomColorPresetsService.PresetsChanged += OnPresetsChanged;
+        Closed += (s, e) => CustomColorPresetsService.PresetsChanged -= OnPresetsChanged;
+
         UpdateActiveSelections();
         UpdatePreview();
     }
 
-    private void PopulateVisualPickers()
+    private void OnPresetsChanged()
     {
-        // 1. Populate Icons
+        PopulateColorPickers();
+        UpdatePreview();
+    }
+
+    private void PopulateIcons()
+    {
         IconsGrid.Children.Clear();
         _allIconButtons.Clear();
 
@@ -264,8 +296,8 @@ public partial class CustomizeConfigDialogWindow : Window
                     Kind = iconKind,
                     Width = 16,
                     Height = 16,
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
                 }
             };
             ToolTip.SetTip(btn, kindName);
@@ -280,11 +312,14 @@ public partial class CustomizeConfigDialogWindow : Window
             _allIconButtons.Add(btn);
             IconsGrid.Children.Add(btn);
         }
+    }
 
-        // 2. Populate Colors
+    private void PopulateColorPickers()
+    {
         ColorsWrapPanel.Children.Clear();
         _colorButtons.Clear();
 
+        // 1. Built-in Preset Swatches
         foreach (var (colorName, hex) in AvailableColors)
         {
             var brush = hex != null ? Brush.Parse(hex) : ThemeService.GetCurrentAccentBrush();
@@ -306,6 +341,116 @@ public partial class CustomizeConfigDialogWindow : Window
             _colorButtons.Add(btn);
             ColorsWrapPanel.Children.Add(btn);
         }
+
+        // 2. Saved Custom Presets (with SolidStar indicator & Right-Click ContextMenu)
+        foreach (var presetHex in CustomColorPresetsService.Presets)
+        {
+            var hexCopy = presetHex;
+            var btn = new Button
+            {
+                Classes = { "color-pick-btn" },
+                Tag = hexCopy,
+                Background = Brush.Parse(hexCopy),
+                Content = new PackIconBoxIcons
+                {
+                    Kind = PackIconBoxIconsKind.SolidStar,
+                    Width = 9,
+                    Height = 9,
+                    Foreground = Brushes.White,
+                    Opacity = 0.85,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            };
+            ToolTip.SetTip(btn, $"{hexCopy} ({LocalizationManager.Instance.GetString("dialogs.customize_config.custom_preset_tip")})");
+
+            var menu = new ContextMenu();
+            var deleteItem = new MenuItem
+            {
+                Header = LocalizationManager.Instance.GetString("dialogs.customize_config.delete_preset"),
+                Icon = new PackIconBoxIcons { Kind = PackIconBoxIconsKind.RegularTrash, Width = 14, Height = 14 }
+            };
+            deleteItem.Click += (s, e) =>
+            {
+                CustomColorPresetsService.RemovePreset(hexCopy);
+            };
+            menu.Items.Add(deleteItem);
+            btn.ContextMenu = menu;
+
+            btn.Click += (s, e) =>
+            {
+                _selectedColorHex = hexCopy;
+                UpdateActiveSelections();
+                UpdatePreview();
+            };
+
+            _colorButtons.Add(btn);
+            ColorsWrapPanel.Children.Add(btn);
+        }
+
+        // 3. Rainbow Color Wheel / Sphere Button with Spectrum Picker Flyout
+        _rainbowWheelButton = new Button
+        {
+            Classes = { "color-pick-btn" },
+            Tag = "__CUSTOM_WHEEL__",
+            Background = CustomColorPresetsService.RainbowWheelBrush
+        };
+        ToolTip.SetTip(_rainbowWheelButton, LocalizationManager.Instance.GetString("dialogs.customize_config.pick_custom_color"));
+
+        var flyout = new Flyout
+        {
+            Placement = PlacementMode.BottomEdgeAlignedRight
+        };
+
+        var initialColor = ColorPaletteGenerator.TryParseHex(_selectedColorHex, out var parsedCol)
+            ? parsedCol
+            : Color.Parse("#10b981");
+
+        _flyoutColorPicker = new PlumbobColorPicker
+        {
+            Color = initialColor,
+            IsSavePresetVisible = true
+        };
+
+        _flyoutColorPicker.ColorChanged += (s, e) =>
+        {
+            var hex = ColorPaletteGenerator.ColorToHex(e.NewColor);
+            _selectedColorHex = hex;
+            _rainbowWheelButton.Background = new SolidColorBrush(e.NewColor);
+            UpdateActiveSelections();
+            UpdatePreview();
+        };
+
+        _flyoutColorPicker.SavePresetRequested += (s, col) =>
+        {
+            var hex = ColorPaletteGenerator.ColorToHex(col);
+            CustomColorPresetsService.AddPreset(hex);
+            flyout.Hide();
+        };
+
+        flyout.Content = new Border
+        {
+            Background = (IBrush)this.FindResource("BgSurface")!,
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(10),
+            Child = _flyoutColorPicker
+        };
+
+        _rainbowWheelButton.Flyout = flyout;
+
+        _rainbowWheelButton.Click += (s, e) =>
+        {
+            if (ColorPaletteGenerator.TryParseHex(_selectedColorHex, out var activeCol) && _flyoutColorPicker != null)
+            {
+                _flyoutColorPicker.Color = activeCol;
+            }
+        };
+
+        _colorButtons.Add(_rainbowWheelButton);
+        ColorsWrapPanel.Children.Add(_rainbowWheelButton);
+
+        UpdateActiveSelections();
     }
 
     private void OnIconSearchChanged(object? sender, TextChangedEventArgs e)
@@ -370,16 +515,35 @@ public partial class CustomizeConfigDialogWindow : Window
             }
         }
 
+        bool matchedBuiltInOrPreset = false;
         foreach (var btn in _colorButtons)
         {
-            bool isSel = (string?)btn.Tag == _selectedColorHex;
+            if (ReferenceEquals(btn, _rainbowWheelButton)) continue;
+
+            bool isSel = string.Equals((string?)btn.Tag, _selectedColorHex, StringComparison.OrdinalIgnoreCase);
             if (isSel)
             {
+                matchedBuiltInOrPreset = true;
                 if (!btn.Classes.Contains("selected")) btn.Classes.Add("selected");
             }
             else
             {
                 btn.Classes.Remove("selected");
+            }
+        }
+
+        if (_rainbowWheelButton != null)
+        {
+            bool isCustomActive = !string.IsNullOrEmpty(_selectedColorHex) && !matchedBuiltInOrPreset;
+            if (isCustomActive && ColorPaletteGenerator.TryParseHex(_selectedColorHex, out var customColor))
+            {
+                _rainbowWheelButton.Background = new SolidColorBrush(customColor);
+                if (!_rainbowWheelButton.Classes.Contains("selected")) _rainbowWheelButton.Classes.Add("selected");
+            }
+            else
+            {
+                _rainbowWheelButton.Background = CustomColorPresetsService.RainbowWheelBrush;
+                _rainbowWheelButton.Classes.Remove("selected");
             }
         }
     }
@@ -389,9 +553,6 @@ public partial class CustomizeConfigDialogWindow : Window
         var displayName = string.IsNullOrWhiteSpace(ConfigNameTextBox.Text) ? "Configuration Name" : ConfigNameTextBox.Text.Trim();
         PreviewName.Text = displayName;
 
-        var desc = string.IsNullOrWhiteSpace(DescriptionTextBox.Text) ? "No description provided." : DescriptionTextBox.Text.Trim();
-        PreviewDescription.Text = desc;
-
         // Update Icon
         if (!string.IsNullOrEmpty(_selectedIconName) && Enum.TryParse<PackIconBoxIconsKind>(_selectedIconName, out var kind))
         {
@@ -399,7 +560,7 @@ public partial class CustomizeConfigDialogWindow : Window
         }
         else
         {
-            PreviewIcon.Kind = PackIconBoxIconsKind.RegularSlider;
+            PreviewIcon.Kind = PackIconBoxIconsKind.RegularFolder;
         }
 
         // Update Icon Color (clean, without background box)
@@ -407,7 +568,7 @@ public partial class CustomizeConfigDialogWindow : Window
         PreviewIcon.Foreground = iconBrush;
     }
 
-    private void OnNameChanged(object? sender, TextChangedEventArgs e)
+    private void OnConfigNameChanged(object? sender, TextChangedEventArgs e)
     {
         UpdatePreview();
         ValidateName();
@@ -415,7 +576,6 @@ public partial class CustomizeConfigDialogWindow : Window
 
     private void OnDescriptionChanged(object? sender, TextChangedEventArgs e)
     {
-        UpdatePreview();
     }
 
     private bool ValidateName()

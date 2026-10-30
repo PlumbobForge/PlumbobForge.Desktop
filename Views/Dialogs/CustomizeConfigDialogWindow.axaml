@@ -4,7 +4,7 @@
         xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
         x:Class="PlumbobForge.Desktop.Views.Dialogs.CustomizeConfigDialogWindow"
         Title="{loc:Loc 'dialogs.customize_config.title'}"
-        Width="680" Height="480"
+        Width="680" Height="505"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         SystemDecorations="Full"
@@ -79,6 +79,21 @@
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="RootBorder"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            ClipToBounds="True">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
             <Setter Property="Transitions">
                 <Transitions>
                     <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12"/>
@@ -142,7 +157,7 @@
                     <!-- Configuration Name Input -->
                     <StackPanel Spacing="5">
                         <TextBlock Text="{loc:Loc 'dialogs.customize_config.name_label'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="0.5"/>
-                        <TextBox x:Name="ConfigNameTextBox" Classes="settings-input" Watermark="{loc:Loc 'dialogs.customize_config.name_watermark'}" FontSize="12.5" TextChanged="OnNameChanged"/>
+                        <TextBox x:Name="ConfigNameTextBox" Classes="settings-input" Watermark="{loc:Loc 'dialogs.customize_config.name_watermark'}" FontSize="12.5" TextChanged="OnConfigNameChanged"/>
                         <TextBlock x:Name="ErrorTextBlock" Foreground="#ef4444" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap" IsVisible="False"/>
                     </StackPanel>
 
