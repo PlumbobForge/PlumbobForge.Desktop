@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using PlumbobForge.Desktop.ViewModels;
-
 using Avalonia.Threading;
 
 namespace PlumbobForge.Desktop.Views;
