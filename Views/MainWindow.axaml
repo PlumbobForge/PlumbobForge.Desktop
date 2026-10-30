@@ -241,11 +241,21 @@
                             </StackPanel>
                         </Button>
 
-                        <!-- Rebuild Cache Button -->
+                        <!-- Vault Status Regular Text (When Vault is active) -->
+                        <TextBlock Text="{Binding VaultStatusText}"
+                                   FontSize="11.5"
+                                   FontWeight="Medium"
+                                   Foreground="{DynamicResource TextMuted}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,10,0"
+                                   IsVisible="{Binding IsVaultActive}"/>
+
+                        <!-- Rebuild Cache Button (Only when Vault is NOT active) -->
                         <Button Classes="nav-action-btn rebuild-btn"
                                 Classes.dirty="{Binding HasDirtySets}"
                                 Command="{Binding RebuildCacheCommand}"
-                                ToolTip.Tip="{loc:Loc common.rebuild_cache}">
+                                ToolTip.Tip="{loc:Loc common.rebuild_cache}"
+                                IsVisible="{Binding !IsVaultActive}">
                             <Button.ContextMenu>
                                 <ContextMenu>
                                     <MenuItem Header="{loc:Loc common.force_rebuild}"
@@ -410,10 +420,10 @@
                                 Cursor="Hand">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <bx:PackIconBoxIcons Kind="RegularRefreshCwDot" Width="13" Height="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                <TextBlock Text="{loc:Loc app.rebuild_now}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc app.repair_and_rebuild}" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
-                        <Button Command="{Binding DismissCacheOptimizationToastCommand}"
+                        <Button Command="{Binding HideCacheOptimizationToastCommand}"
                                 Background="{DynamicResource BgCardAlt}"
                                 Foreground="{DynamicResource TextMain}"
                                 FontWeight="DemiBold"

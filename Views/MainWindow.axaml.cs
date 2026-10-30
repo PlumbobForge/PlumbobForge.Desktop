@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Microsoft.Extensions.DependencyInjection;
 using PlumbobForge.Desktop.Views.Dialogs;
 
 namespace PlumbobForge.Desktop.Views;
@@ -67,6 +68,8 @@ public partial class MainWindow : Window
         }
 
         if (!_isClosingForced && DataContext is ViewModels.MainViewModel mainVm && mainVm.HasDirtySets)
+        bool vaultMode = App.Services?.GetService<Microsoft.Extensions.Options.IOptionsMonitor<PlumbobForge.Backend.Configuration.PlumbobForgeOptions>>()?.CurrentValue.EnableSingleSourceVault ?? false;
+        if (!_isClosingForced && !vaultMode && DataContext is ViewModels.MainViewModel mainVm && mainVm.HasDirtySets)
         {
             e.Cancel = true;
             var closeAnyway = await DialogHelper.ShowPendingCacheWarningAsync(this);
