@@ -77,6 +77,46 @@ public partial class SettingsView : UserControl
         }
     }
 
+    private void OnSetBasePresetClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string hex } && DataContext is SettingsViewModel vm)
+        {
+            vm.SetCustomBaseColorCommand.Execute(hex);
+        }
+    }
+
+    private void OnSetCustomAccentPresetClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string hex } && DataContext is SettingsViewModel vm)
+        {
+            vm.SetCustomAccentColorCommand.Execute(hex);
+        }
+    }
+
+    private void OnCustomBaseHexChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (sender is TextBox tb && DataContext is SettingsViewModel vm)
+        {
+            var text = tb.Text?.Trim();
+            if (!string.IsNullOrEmpty(text) && (text.Length == 7 || text.Length == 4 || text.Length == 9))
+            {
+                vm.SetCustomBaseColor(text);
+            }
+        }
+    }
+
+    private void OnCustomAccentHexChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (sender is TextBox tb && DataContext is SettingsViewModel vm)
+        {
+            var text = tb.Text?.Trim();
+            if (!string.IsNullOrEmpty(text) && (text.Length == 7 || text.Length == 4 || text.Length == 9))
+            {
+                vm.SetCustomAccentColor(text);
+            }
+        }
+    }
+
     private void OnRemoveObservedFolderClick(object? sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: string folder } && DataContext is SettingsViewModel vm)

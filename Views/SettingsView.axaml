@@ -3,10 +3,36 @@
              xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
              xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
              xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             xmlns:controls="using:PlumbobForge.Desktop.Views.Controls"
              x:Class="PlumbobForge.Desktop.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
 
     <UserControl.Styles>
+        <Style Selector="Button.swatch-picker-btn">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            ClipToBounds="True">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.swatch-picker-btn:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.1)"/>
+        </Style>
+
         <!-- Card Style: Dynamic Theme Aware -->
         <Style Selector="Border.settings-card">
             <Setter Property="Background" Value="{DynamicResource BgSidebar}"/>
@@ -421,7 +447,7 @@
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="{loc:Loc 'settings.appearance.theme'}" Classes="form-label"/>
                                     <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="3">
-                                        <Grid ColumnDefinitions="*, *, *">
+                                        <Grid ColumnDefinitions="*, *, *, *">
                                             <Button Grid.Column="0"
                                                     Classes="segment-btn"
                                                     Classes.active="{Binding IsDarkTheme}"
@@ -460,13 +486,26 @@
                                                     <TextBlock Text="{loc:Loc 'settings.appearance.system'}" VerticalAlignment="Center"/>
                                                 </StackPanel>
                                             </Button>
+
+                                            <Button Grid.Column="3"
+                                                    Classes="segment-btn"
+                                                    Classes.active="{Binding IsCustomTheme}"
+                                                    Command="{Binding SetThemeCommand}"
+                                                    CommandParameter="Custom"
+                                                    HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <icon:PackIconBoxIcons Kind="RegularMagicWand" Width="13" Height="13" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{loc:Loc 'settings.appearance.custom'}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
                                         </Grid>
                                     </Border>
                                     <TextBlock Text="{loc:Loc 'settings.appearance.theme_help'}" Classes="form-helper"/>
                                 </StackPanel>
 
                                 <!-- Accent Color Picker -->
-                                <StackPanel Spacing="8">
+                                <StackPanel Spacing="8" IsVisible="{Binding IsPresetTheme}">
                                     <TextBlock Text="{loc:Loc 'settings.appearance.accent_color'}" Classes="form-label"/>
                                     <ItemsControl ItemsSource="{Binding AccentOptions}">
                                         <ItemsControl.ItemsPanel>
@@ -485,12 +524,10 @@
                                                         Cursor="Hand"
                                                         ToolTip.Tip="{Binding DisplayName}">
                                                     <Grid Width="34" Height="34">
-                                                        <!-- Outer ring for selected swatch -->
                                                         <Border CornerRadius="17"
                                                                 BorderBrush="{Binding SwatchBrush}"
                                                                 BorderThickness="2"
                                                                 IsVisible="{Binding IsSelected}"/>
-                                                        <!-- Inner Color Circle -->
                                                         <Border Background="{Binding SwatchBrush}"
                                                                 CornerRadius="13"
                                                                 Width="26" Height="26"
@@ -509,6 +546,201 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
                                     <TextBlock Text="{loc:Loc 'settings.appearance.accent_color_help'}" Classes="form-helper"/>
+                                </StackPanel>
+
+                                <!-- CUSTOM THEME SECTION (Shown when Custom) -->
+                                <StackPanel Spacing="16" IsVisible="{Binding IsCustomTheme}">
+                                    <TextBlock Text="{loc:Loc 'settings.appearance.custom_theme_desc'}" Classes="form-helper" TextWrapping="Wrap"/>
+
+                                    <!-- Theme Variant Toggle (Dark vs Light) -->
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="{loc:Loc 'settings.appearance.custom_mode'}" Classes="form-label"/>
+                                        <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="3">
+                                            <Grid ColumnDefinitions="*, *">
+                                                <Button Grid.Column="0"
+                                                        Classes="segment-btn"
+                                                        Classes.active="{Binding CustomIsDark}"
+                                                        Command="{Binding SetCustomThemeDarkCommand}"
+                                                        CommandParameter="True"
+                                                        HorizontalAlignment="Stretch"
+                                                        HorizontalContentAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <icon:PackIconBoxIcons Kind="RegularMoon" Width="13" Height="13" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Loc 'settings.appearance.dark'}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button Grid.Column="1"
+                                                        Classes="segment-btn"
+                                                        Classes.active="{Binding IsCustomLight}"
+                                                        Command="{Binding SetCustomThemeDarkCommand}"
+                                                        CommandParameter="False"
+                                                        HorizontalAlignment="Stretch"
+                                                        HorizontalContentAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <icon:PackIconBoxIcons Kind="RegularSun" Width="13" Height="13" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Loc 'settings.appearance.light'}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- Base Palette Color Input & Swatches with Spectrum Flyout Picker -->
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="{loc:Loc 'settings.appearance.base_color'}" Classes="form-label"/>
+                                        <Grid ColumnDefinitions="Auto, 110, *" VerticalAlignment="Center">
+                                            <!-- Color Swatch Button with Flyout ColorView -->
+                                            <Button Grid.Column="0"
+                                                    Classes="swatch-picker-btn"
+                                                    Width="30" Height="30"
+                                                    CornerRadius="15"
+                                                    Background="{Binding CustomBaseBrush}"
+                                                    BorderBrush="{DynamicResource BorderActive}"
+                                                    BorderThickness="1.5"
+                                                    Padding="0"
+                                                    Margin="0,0,10,0"
+                                                    VerticalAlignment="Center"
+                                                    Cursor="Hand"
+                                                    ToolTip.Tip="{loc:Loc 'dialogs.customize_set.pick_custom_color'}">
+                                                <Button.Flyout>
+                                                    <Flyout Placement="BottomEdgeAlignedLeft">
+                                                        <Border Background="{DynamicResource BgSurface}" BorderThickness="0" CornerRadius="10" Padding="10">
+                                                            <controls:PlumbobColorPicker Color="{Binding CustomBaseColorValue, Mode=TwoWay}"
+                                                                                        IsSavePresetVisible="False"/>
+                                                        </Border>
+                                                    </Flyout>
+                                                </Button.Flyout>
+                                            </Button>
+
+                                            <!-- Hex Input TextBox -->
+                                            <TextBox Grid.Column="1"
+                                                     Classes="settings-input"
+                                                     Text="{Binding CustomBaseHex}"
+                                                     TextChanged="OnCustomBaseHexChanged"
+                                                     VerticalAlignment="Center"
+                                                     MaxLength="9"
+                                                     Watermark="#1e293b"/>
+
+                                            <!-- Quick Base Tone Swatches -->
+                                            <ItemsControl Grid.Column="2" Margin="14,0,0,0" ItemsSource="{Binding BaseColorPresets}" VerticalAlignment="Center">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel Orientation="Horizontal"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate DataType="vm:BaseColorPresetItem">
+                                                        <Button Click="OnSetBasePresetClick"
+                                                                Tag="{Binding Hex}"
+                                                                Background="Transparent"
+                                                                BorderThickness="0"
+                                                                Padding="0"
+                                                                Margin="0,0,6,4"
+                                                                Cursor="Hand"
+                                                                ToolTip.Tip="{Binding Name}">
+                                                            <Border Width="22" Height="22"
+                                                                    CornerRadius="11"
+                                                                    Background="{Binding Brush}"
+                                                                    BorderBrush="{DynamicResource BorderSubtle}"
+                                                                    BorderThickness="1"/>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Grid>
+                                        <TextBlock Text="{loc:Loc 'settings.appearance.base_color_help'}" Classes="form-helper"/>
+                                    </StackPanel>
+
+                                    <!-- Tint Strength / Intensity Slider -->
+                                    <StackPanel Spacing="4">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <TextBlock Text="{loc:Loc 'settings.appearance.tint_strength'}" Classes="form-label"/>
+                                            <Border Grid.Column="1" Background="{DynamicResource BgSurface}" CornerRadius="6" Padding="8,2">
+                                                <TextBlock Text="{Binding CustomIntensityDisplay}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
+                                            </Border>
+                                        </Grid>
+
+                                        <Slider Classes="compression-slider"
+                                                Minimum="0" Maximum="100" Value="{Binding CustomThemeIntensity}"
+                                                TickFrequency="1" IsSnapToTickEnabled="True"
+                                                Margin="0,4,0,2"/>
+
+                                        <TextBlock Text="{loc:Loc 'settings.appearance.tint_strength_help'}" Classes="form-helper"/>
+                                    </StackPanel>
+
+                                    <!-- Custom Accent CheckBox (Clean CheckBox instead of huge toggle!) -->
+                                    <StackPanel Spacing="6">
+                                        <CheckBox IsChecked="{Binding UseCustomAccent, Mode=TwoWay}"
+                                                  Content="{loc:Loc 'settings.appearance.use_custom_accent'}"
+                                                  FontWeight="Medium"
+                                                  FontSize="12.5"
+                                                  Cursor="Hand"/>
+                                        <TextBlock Text="{loc:Loc 'settings.appearance.use_custom_accent_help'}" Classes="form-helper" Margin="28,-2,0,0"/>
+
+                                        <!-- Custom Accent Picker row when UseCustomAccent is active -->
+                                        <StackPanel Spacing="6" Margin="0,8,0,0" IsVisible="{Binding UseCustomAccent}">
+                                            <Grid ColumnDefinitions="Auto, 110, *">
+                                                <!-- Color Swatch Button with Flyout ColorView -->
+                                                <Button Grid.Column="0"
+                                                        Classes="swatch-picker-btn"
+                                                        Width="30" Height="30"
+                                                        CornerRadius="15"
+                                                        Background="{Binding CustomAccentBrush}"
+                                                        BorderBrush="{DynamicResource BorderActive}"
+                                                        BorderThickness="1.5"
+                                                        Padding="0"
+                                                        Margin="0,0,10,0"
+                                                        VerticalAlignment="Center"
+                                                        Cursor="Hand"
+                                                        ToolTip.Tip="{loc:Loc 'dialogs.customize_set.pick_custom_color'}">
+                                                    <Button.Flyout>
+                                                        <Flyout Placement="BottomEdgeAlignedLeft">
+                                                            <Border Background="{DynamicResource BgSurface}" BorderThickness="0" CornerRadius="10" Padding="10">
+                                                                <controls:PlumbobColorPicker Color="{Binding CustomAccentColorValue, Mode=TwoWay}"
+                                                                                            IsSavePresetVisible="False"/>
+                                                            </Border>
+                                                        </Flyout>
+                                                    </Button.Flyout>
+                                                </Button>
+
+                                                <TextBox Grid.Column="1"
+                                                         Classes="settings-input"
+                                                         Text="{Binding CustomAccentHex}"
+                                                         TextChanged="OnCustomAccentHexChanged"
+                                                         VerticalAlignment="Center"
+                                                         MaxLength="9"
+                                                         Watermark="#10b981"/>
+
+                                                <!-- Quick accent swatches -->
+                                                <ItemsControl Grid.Column="2" Margin="14,0,0,0" ItemsSource="{Binding AccentOptions}" VerticalAlignment="Center">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel Orientation="Horizontal"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="vm:AccentColorItemViewModel">
+                                                            <Button Click="OnSetCustomAccentPresetClick"
+                                                                    Tag="{Binding Accent.Hex}"
+                                                                    Background="Transparent"
+                                                                    BorderThickness="0"
+                                                                    Padding="0"
+                                                                    Margin="0,0,6,4"
+                                                                    Cursor="Hand"
+                                                                    ToolTip.Tip="{Binding DisplayName}">
+                                                                <Border Width="22" Height="22"
+                                                                        CornerRadius="11"
+                                                                        Background="{Binding SwatchBrush}"
+                                                                        BorderBrush="{DynamicResource BorderSubtle}"
+                                                                        BorderThickness="1"/>
+                                                            </Button>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Grid>
+                                        </StackPanel>
+                                    </StackPanel>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
