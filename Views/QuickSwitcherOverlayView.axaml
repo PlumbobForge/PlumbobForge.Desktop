@@ -117,18 +117,33 @@
 
                 <!-- 2. Category Filter Pills -->
                 <Border Grid.Row="1" Background="{DynamicResource BgSidebar}" BorderBrush="{DynamicResource BorderMain}" BorderThickness="0,0,0,1" Padding="12,6">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <Button Content="{loc:Loc 'common.all'}" Classes="category-pill" Classes.selected="{Binding IsAllSelected}"
-                                Command="{Binding SetCategoryCommand}" CommandParameter="All"/>
-                        <Button Content="{loc:Loc 'nav.places'}" Classes="category-pill" Classes.selected="{Binding IsPlacesSelected}"
-                                Command="{Binding SetCategoryCommand}" CommandParameter="Places"/>
-                        <Button Content="{loc:Loc 'library.sets'}" Classes="category-pill" Classes.selected="{Binding IsSetsSelected}"
-                                Command="{Binding SetCategoryCommand}" CommandParameter="Sets"/>
-                        <Button Content="{loc:Loc 'nav.configurations'}" Classes="category-pill" Classes.selected="{Binding IsConfigsSelected}"
-                                Command="{Binding SetCategoryCommand}" CommandParameter="Configurations"/>
-                        <Button Content="{loc:Loc 'common.items'}" Classes="category-pill" Classes.selected="{Binding IsItemsSelected}"
-                                Command="{Binding SetCategoryCommand}" CommandParameter="Items"/>
-                    </StackPanel>
+                    <Grid>
+                        <!-- Command mode replaces the filters with key hints -->
+                        <StackPanel Orientation="Horizontal" Spacing="6" Height="26" IsVisible="{Binding IsCommandMode}">
+                            <icon:PackIconBoxIcons Kind="RegularCommand" Width="13" Height="13" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="4,0,2,0"/>
+                            <TextBlock Text="Command" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                            <Border Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="5,1" VerticalAlignment="Center" Margin="10,0,0,0">
+                                <TextBlock Text="TAB" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/>
+                            </Border>
+                            <TextBlock Text="autocomplete" FontSize="11.5" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            <Border Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="5,1" VerticalAlignment="Center" Margin="8,0,0,0">
+                                <TextBlock Text="ENTER" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/>
+                            </Border>
+                            <TextBlock Text="run" FontSize="11.5" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding !IsCommandMode}">
+                            <Button Content="{loc:Loc 'common.all'}" Classes="category-pill" Classes.selected="{Binding IsAllSelected}"
+                                    Command="{Binding SetCategoryCommand}" CommandParameter="All"/>
+                            <Button Content="{loc:Loc 'nav.places'}" Classes="category-pill" Classes.selected="{Binding IsPlacesSelected}"
+                                    Command="{Binding SetCategoryCommand}" CommandParameter="Places"/>
+                            <Button Content="{loc:Loc 'library.sets'}" Classes="category-pill" Classes.selected="{Binding IsSetsSelected}"
+                                    Command="{Binding SetCategoryCommand}" CommandParameter="Sets"/>
+                            <Button Content="{loc:Loc 'nav.configurations'}" Classes="category-pill" Classes.selected="{Binding IsConfigsSelected}"
+                                    Command="{Binding SetCategoryCommand}" CommandParameter="Configurations"/>
+                            <Button Content="{loc:Loc 'common.items'}" Classes="category-pill" Classes.selected="{Binding IsItemsSelected}"
+                                    Command="{Binding SetCategoryCommand}" CommandParameter="Items"/>
+                        </StackPanel>
+                    </Grid>
                 </Border>
 
                 <!-- 3. Search Results List -->
@@ -165,8 +180,13 @@
                                             </StackPanel>
 
                                             <!-- Category Badge -->
-                                            <Border Grid.Column="2" Background="{Binding BadgeBackground}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                            <Border Grid.Column="2" Background="{Binding BadgeBackground}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center"
+                                                    IsVisible="{Binding !UsesAccentBadge}">
                                                 <TextBlock Text="{Binding BadgeText}" FontSize="9.5" FontWeight="Bold" Foreground="{Binding BadgeForeground}"/>
+                                            </Border>
+                                            <Border Grid.Column="2" Background="{DynamicResource AccentBadgeBgBrush}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center"
+                                                    IsVisible="{Binding UsesAccentBadge}">
+                                                <TextBlock Text="{Binding BadgeText}" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
                                             </Border>
                                         </Grid>
                                     </Border>

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -10,10 +11,31 @@ namespace PlumbobForge.Desktop.Views;
 
 public partial class QuickSwitcherOverlayView : UserControl
 {
+    private QuickSwitcherViewModel? _subscribedVm;
+
     public QuickSwitcherOverlayView()
     {
         InitializeComponent();
         PropertyChanged += OnControlPropertyChanged;
+        DataContextChanged += OnDataContextChanged;
+    }
+
+    private void OnDataContextChanged(object? sender, EventArgs e)
+    {
+        if (_subscribedVm != null) _subscribedVm.CompletionApplied -= OnCompletionApplied;
+        _subscribedVm = DataContext as QuickSwitcherViewModel;
+        if (_subscribedVm != null) _subscribedVm.CompletionApplied += OnCompletionApplied;
+    }
+
+    private void OnCompletionApplied()
+    {
+        // The binding rewrites the text first; move the caret after it so typing continues at the end.
+        Dispatcher.UIThread.Post(() =>
+        {
+            SearchBox.Focus();
+            SearchBox.ClearSelection();
+            SearchBox.CaretIndex = SearchBox.Text?.Length ?? 0;
+        }, DispatcherPriority.Input);
     }
 
     private void OnControlPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -68,9 +90,15 @@ public partial class QuickSwitcherOverlayView : UserControl
             ScrollSelectedItemIntoView();
             e.Handled = true;
         }
+        else if (e.Key == Key.Tab && e.KeyModifiers == KeyModifiers.None)
+        {
+            // Tab autocompletes instead of moving focus out of the search box.
+            _ = CompleteAfterSearchAsync(vm);
+            e.Handled = true;
+        }
         else if (e.Key == Key.Enter)
         {
-            _ = vm.ExecuteSelectionAsync();
+            _ = ExecuteAfterSearchAsync(vm);
             e.Handled = true;
         }
         else if (e.Key == Key.Escape)
@@ -78,6 +106,18 @@ public partial class QuickSwitcherOverlayView : UserControl
             vm.Close();
             e.Handled = true;
         }
+    }
+
+    private static async Task CompleteAfterSearchAsync(QuickSwitcherViewModel vm)
+    {
+        await vm.WaitForPendingSearchAsync();
+        vm.CompleteSelection();
+    }
+
+    private static async Task ExecuteAfterSearchAsync(QuickSwitcherViewModel vm)
+    {
+        await vm.WaitForPendingSearchAsync();
+        await vm.ExecuteSelectionAsync();
     }
 
     private void ScrollSelectedItemIntoView()
