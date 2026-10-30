@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.2.5" />
+    <PackageReference Include="Avalonia.Controls.ColorPicker" Version="11.2.5" />
     <PackageReference Include="Avalonia.Desktop" Version="11.2.5" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.5" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.5" />
@@ -81,6 +82,10 @@
     </Reference>
     <Reference Include="s3pi.ObjKeyResource">
       <HintPath>..\libs\s3pi.ObjKeyResource.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="System.Custom">
+      <HintPath>..\libs\System.Custom.dll</HintPath>
       <Private>true</Private>
     </Reference>
   </ItemGroup>
