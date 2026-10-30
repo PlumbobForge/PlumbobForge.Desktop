@@ -1,0 +1,186 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+        xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+        x:Class="PlumbobForge.Desktop.Views.Dialogs.VaultMigrationChoiceDialogWindow"
+        Title="{loc:Loc 'dialogs.vault_migration.title'}"
+        Width="540"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        SystemDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        Background="{DynamicResource BgDark}">
+
+    <Window.Styles>
+        <Style Selector="RadioButton">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="RadioButton /template/ Ellipse#OuterEllipse">
+            <Setter Property="Stroke" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="Fill" Value="Transparent"/>
+        </Style>
+        <Style Selector="RadioButton:checked /template/ Ellipse#CheckOuterEllipse">
+            <Setter Property="Fill" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Stroke" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="RadioButton:checked /template/ Ellipse#CheckGlyph">
+            <Setter Property="Fill" Value="#ffffff"/>
+            <Setter Property="Stroke" Value="#ffffff"/>
+        </Style>
+        <Style Selector="Border.optionCard">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.15"/>
+                    <BrushTransition Property="Background" Duration="0:0:0.15"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.optionCard:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+    </Window.Styles>
+
+    <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" ClipToBounds="True" Background="{DynamicResource BgDark}">
+        <Grid RowDefinitions="Auto, *, Auto">
+            <!-- Modal Title Bar Header -->
+            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="44" Padding="18,0,0,0" PointerPressed="OnHeaderPointerPressed">
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularRocket" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}"/>
+                        <TextBlock Text="{loc:Loc 'dialogs.vault_migration.title'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Width="44" Height="44" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCancelClick" ToolTip.Tip="{loc:Loc 'common.cancel'}">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#ef4444"/>
+                            </Style>
+                            <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                <Setter Property="Foreground" Value="White"/>
+                            </Style>
+                        </Button.Styles>
+                        <icon:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Body Content -->
+            <StackPanel Grid.Row="1" Margin="20,16" Spacing="12">
+                <TextBlock Text="{loc:Loc 'dialogs.vault_migration.subtitle'}"
+                           FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="17"/>
+
+                <!-- Option 1: Compressed Zip Archive (Recommended) -->
+                <Border Classes="optionCard" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="14,12" Cursor="Hand" PointerPressed="OnZipCardPressed">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <RadioButton x:Name="ZipOptionRadio"
+                                     Grid.Column="0"
+                                     GroupName="BackupOption"
+                                     IsChecked="True"
+                                     VerticalAlignment="Top"
+                                     Margin="0,2,0,0"/>
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0" Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <icon:PackIconBoxIcons Kind="RegularArchive" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'dialogs.vault_migration.option_zip_title'}"
+                                           FontWeight="SemiBold"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource TextMain}"/>
+                            </StackPanel>
+                            <TextBlock Text="{loc:Loc 'dialogs.vault_migration.option_zip_desc'}"
+                                       FontSize="11.5"
+                                       Foreground="{DynamicResource TextMuted}"
+                                       TextWrapping="Wrap"
+                                       LineHeight="16"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Option 2: Keep Loose Folder -->
+                <Border Classes="optionCard" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="14,12" Cursor="Hand" PointerPressed="OnKeepCardPressed">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <RadioButton x:Name="KeepOptionRadio"
+                                     Grid.Column="0"
+                                     GroupName="BackupOption"
+                                     IsChecked="False"
+                                     VerticalAlignment="Top"
+                                     Margin="0,2,0,0"/>
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0" Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <icon:PackIconBoxIcons Kind="RegularFolder" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'dialogs.vault_migration.option_keep_title'}"
+                                           FontWeight="SemiBold"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource TextMain}"/>
+                            </StackPanel>
+                            <TextBlock Text="{loc:Loc 'dialogs.vault_migration.option_keep_desc'}"
+                                       FontSize="11.5"
+                                       Foreground="{DynamicResource TextMuted}"
+                                       TextWrapping="Wrap"
+                                       LineHeight="16"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Option 3: Reclaim Immediately -->
+                <Border Classes="optionCard" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="14,12" Cursor="Hand" PointerPressed="OnDeleteCardPressed">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <RadioButton x:Name="DeleteOptionRadio"
+                                     Grid.Column="0"
+                                     GroupName="BackupOption"
+                                     IsChecked="False"
+                                     VerticalAlignment="Top"
+                                     Margin="0,2,0,0"/>
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0" Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <icon:PackIconBoxIcons Kind="RegularTrash" Width="14" Height="14" Foreground="#ef4444" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'dialogs.vault_migration.option_delete_title'}"
+                                           FontWeight="SemiBold"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource TextMain}"/>
+                            </StackPanel>
+                            <TextBlock Text="{loc:Loc 'dialogs.vault_migration.option_delete_desc'}"
+                                       FontSize="11.5"
+                                       Foreground="{DynamicResource TextMuted}"
+                                       TextWrapping="Wrap"
+                                       LineHeight="16"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </StackPanel>
+
+            <!-- Footer Action Buttons -->
+            <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0" Padding="18,12">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                    <Button Content="{loc:Loc 'common.cancel'}"
+                            Click="OnCancelClick"
+                            Background="Transparent"
+                            Foreground="{DynamicResource TextMain}"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource BorderSubtle}"
+                            CornerRadius="7"
+                            Padding="16,8"
+                            FontSize="12.5"
+                            Cursor="Hand"/>
+                    <Button Click="OnConfirmClick"
+                            Background="{DynamicResource AccentBrush}"
+                            Foreground="White"
+                            FontWeight="SemiBold"
+                            BorderThickness="0"
+                            CornerRadius="7"
+                            Padding="18,8"
+                            FontSize="12.5"
+                            Cursor="Hand">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <icon:PackIconBoxIcons Kind="RegularRocket" Width="14" Height="14" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'dialogs.vault_migration.confirm_btn'}" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>
