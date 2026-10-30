@@ -23,7 +23,7 @@
 
         <!-- Close Button Styling -->
         <Style Selector="Button.modal-close-btn">
-            <Setter Property="Background" Value="#10b981"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="13"/>
@@ -38,30 +38,30 @@
             </Setter>
         </Style>
         <Style Selector="Button.modal-close-btn:pointerover">
-            <Setter Property="Background" Value="#059669"/>
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
         </Style>
         <Style Selector="Button.modal-close-btn:disabled">
-            <Setter Property="Background" Value="#1e293b"/>
-            <Setter Property="Foreground" Value="#64748b"/>
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextDisabled}"/>
             <Setter Property="Opacity" Value="0.5"/>
         </Style>
 
         <!-- Checkbox Styling -->
         <Style Selector="CheckBox.modal-chk">
-            <Setter Property="Foreground" Value="#94a3b8"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="CheckBox.modal-chk:pointerover">
-            <Setter Property="Foreground" Value="#f1f5f9"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
         </Style>
         <Style Selector="CheckBox.modal-chk:checked /template/ Border#NormalRectangle">
-            <Setter Property="Background" Value="#10b981"/>
-            <Setter Property="BorderBrush" Value="#10b981"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
         </Style>
         <Style Selector="CheckBox.modal-chk:checked:pointerover /template/ Border#NormalRectangle">
-            <Setter Property="Background" Value="#059669"/>
-            <Setter Property="BorderBrush" Value="#059669"/>
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
         </Style>
         <Style Selector="CheckBox.modal-chk:checked /template/ Path#CheckGlyph">
             <Setter Property="Fill" Value="#ffffff"/>
@@ -70,23 +70,30 @@
 
         <!-- Step Container Dynamic Border Styling via Classes -->
         <Style Selector="Border.step-card">
-            <Setter Property="Background" Value="#131d2e"/>
-            <Setter Property="BorderBrush" Value="#25354e"/>
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+                    <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                </Transitions>
+            </Setter>
         </Style>
         <Style Selector="Border.step-card.step-running">
-            <Setter Property="BorderBrush" Value="#22674e"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
         </Style>
         <Style Selector="Border.step-card.step-completed">
-            <Setter Property="BorderBrush" Value="#164e3b"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentProgressBorderCompletedBrush}"/>
         </Style>
         <Style Selector="Border.step-card.step-warning">
-            <Setter Property="BorderBrush" Value="#784f18"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource StatusAmber}"/>
         </Style>
         <Style Selector="Border.step-card.step-error">
-            <Setter Property="BorderBrush" Value="#7f1d1d"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource StatusRed}"/>
         </Style>
         <Style Selector="Border.step-card.step-pending">
-            <Setter Property="BorderBrush" Value="#25354e"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="Opacity" Value="0.7"/>
         </Style>
 
         <!-- Filling Progress Bar Style -->
@@ -94,7 +101,7 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="MinHeight" Value="0"/>
-            <Setter Property="Foreground" Value="#143e2e"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentProgressFillRunningBrush}"/>
             <Setter Property="Template">
                 <ControlTemplate>
                     <Border Background="Transparent" CornerRadius="7" ClipToBounds="True">
@@ -107,27 +114,29 @@
             </Setter>
         </Style>
         <Style Selector="ProgressBar.bar-running">
-            <Setter Property="Foreground" Value="#143e2e"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentProgressFillRunningBrush}"/>
         </Style>
         <Style Selector="ProgressBar.bar-completed">
-            <Setter Property="Foreground" Value="#0e291f"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentProgressFillCompletedBrush}"/>
         </Style>
         <Style Selector="ProgressBar.bar-warning">
-            <Setter Property="Foreground" Value="#38260e"/>
+            <Setter Property="Foreground" Value="{DynamicResource StatusAmberBg}"/>
         </Style>
         <Style Selector="ProgressBar.bar-error">
-            <Setter Property="Foreground" Value="#3b1419"/>
+            <Setter Property="Foreground" Value="{DynamicResource StatusRedBg}"/>
         </Style>
         <Style Selector="ProgressBar.bar-pending">
             <Setter Property="Foreground" Value="Transparent"/>
         </Style>
+
+
     </UserControl.Styles>
 
-    <!-- Modal Box Container (Fixed size, non-jumping) -->
+    <!-- Modal Box Container (Fixed size, non-jumping, themed) -->
     <Border Width="580"
             Height="500"
-            Background="#161f30"
-            BorderBrush="#40475569"
+            Background="{DynamicResource BgDark}"
+            BorderBrush="{DynamicResource BorderSubtle}"
             BorderThickness="1"
             CornerRadius="14"
             BoxShadow="0 20 50 #99000000, 0 4 16 #50000000"
@@ -136,22 +145,22 @@
         <Grid RowDefinitions="Auto, *, Auto">
             <!-- Modal Header -->
             <Border Grid.Row="0"
-                    Background="#1a253a"
-                    BorderBrush="#2d3b55"
+                    Background="{DynamicResource BgSidebar}"
+                    BorderBrush="{DynamicResource BorderMain}"
                     BorderThickness="0,0,0,1"
                     Padding="20,16">
                 <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
-                    <!-- Static Header Icon (Not green, not moving) -->
+                    <!-- Static Header Icon -->
                     <Panel Grid.Column="0" Margin="0,0,12,0" VerticalAlignment="Center">
                         <icon:PackIconBoxIcons Kind="RegularRefreshCw"
                                                Width="20"
                                                Height="20"
-                                               Foreground="#94a3b8"
+                                               Foreground="{DynamicResource AccentBrush}"
                                                IsVisible="{Binding !HasError}"/>
                         <icon:PackIconBoxIcons Kind="RegularX"
                                                Width="20"
                                                Height="20"
-                                               Foreground="#ef4444"
+                                               Foreground="{DynamicResource StatusRed}"
                                                IsVisible="{Binding HasError}"/>
                     </Panel>
 
@@ -160,13 +169,13 @@
                                Text="{Binding Title}"
                                FontSize="16"
                                FontWeight="Bold"
-                               Foreground="#f8fafc"
+                               Foreground="{DynamicResource TextMain}"
                                VerticalAlignment="Center"/>
 
                     <!-- Elapsed Time Pill -->
                     <Border Grid.Column="2"
-                            Background="#111827"
-                            BorderBrush="#374151"
+                            Background="{DynamicResource BgCardAlt}"
+                            BorderBrush="{DynamicResource BorderSubtle}"
                             BorderThickness="1"
                             CornerRadius="6"
                             Padding="8,3"
@@ -174,7 +183,7 @@
                         <TextBlock Text="{Binding ElapsedTimeText}"
                                    FontSize="11"
                                    FontWeight="Medium"
-                                   Foreground="#94a3b8"/>
+                                   Foreground="{DynamicResource TextMuted}"/>
                     </Border>
                 </Grid>
             </Border>
@@ -225,27 +234,27 @@
                                                                            Kind="RegularRefreshCw"
                                                                            Width="16"
                                                                            Height="16"
-                                                                           Foreground="#10b981"
+                                                                           Foreground="{DynamicResource AccentBrush}"
                                                                            IsVisible="{Binding IsRunning}"/>
                                                     <icon:PackIconBoxIcons Kind="RegularCheck"
                                                                            Width="16"
                                                                            Height="16"
-                                                                           Foreground="#10b981"
+                                                                           Foreground="{DynamicResource AccentBrush}"
                                                                            IsVisible="{Binding IsCompleted}"/>
                                                     <icon:PackIconBoxIcons Kind="RegularInfoCircle"
                                                                            Width="16"
                                                                            Height="16"
-                                                                           Foreground="#f59e0b"
+                                                                           Foreground="{DynamicResource StatusAmber}"
                                                                            IsVisible="{Binding IsWarning}"/>
                                                     <icon:PackIconBoxIcons Kind="RegularX"
                                                                            Width="16"
                                                                            Height="16"
-                                                                           Foreground="#ef4444"
+                                                                           Foreground="{DynamicResource StatusRed}"
                                                                            IsVisible="{Binding IsError}"/>
                                                     <icon:PackIconBoxIcons Kind="RegularCircle"
                                                                            Width="16"
                                                                            Height="16"
-                                                                           Foreground="#64748b"
+                                                                           Foreground="{DynamicResource TextDisabled}"
                                                                            IsVisible="{Binding IsPending}"/>
                                                 </Panel>
 
@@ -254,14 +263,14 @@
                                                            Text="{Binding Title}"
                                                            FontSize="13"
                                                            FontWeight="Medium"
-                                                           Foreground="#f1f5f9"
+                                                           Foreground="{DynamicResource TextMain}"
                                                            TextTrimming="CharacterEllipsis"
                                                            VerticalAlignment="Center"/>
 
-                                                <!-- Step Badge (e.g. 1/4, 2/4, 1343/1343) -->
+                                                <!-- Step Badge (e.g. 1/4, 2/4, 45/1464 (3%)) -->
                                                 <Border Grid.Column="2"
-                                                        Background="#22324b"
-                                                        BorderBrush="#334155"
+                                                        Background="{DynamicResource BgCardAlt}"
+                                                        BorderBrush="{DynamicResource BorderSubtle}"
                                                         BorderThickness="1"
                                                         CornerRadius="10"
                                                         Padding="8,2"
@@ -270,7 +279,7 @@
                                                     <TextBlock Text="{Binding Badge}"
                                                                FontSize="11"
                                                                FontWeight="SemiBold"
-                                                               Foreground="#94a3b8"/>
+                                                               Foreground="{DynamicResource TextMuted}"/>
                                                 </Border>
                                             </Grid>
 
@@ -284,7 +293,7 @@
                                                         <DataTemplate>
                                                             <TextBlock Text="{Binding}"
                                                                        FontSize="11"
-                                                                       Foreground="#fbbf24"
+                                                                       Foreground="{DynamicResource StatusAmber}"
                                                                        TextWrapping="Wrap"/>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
@@ -301,8 +310,8 @@
 
             <!-- Modal Footer -->
             <Border Grid.Row="2"
-                    Background="#141d2d"
-                    BorderBrush="#2d3b55"
+                    Background="{DynamicResource BgSidebar}"
+                    BorderBrush="{DynamicResource BorderMain}"
                     BorderThickness="0,1,0,0"
                     Padding="20,14">
                 <Grid ColumnDefinitions="*, Auto" VerticalAlignment="Center">
