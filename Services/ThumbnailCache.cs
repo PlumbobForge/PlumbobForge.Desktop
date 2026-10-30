@@ -10,11 +10,6 @@ using SkiaSharp;
 
 namespace PlumbobForge.Desktop.Services;
 
-/// <summary>
-/// Thread-safe bounded LRU memory cache for package thumbnails.
-/// Decodes each thumbnail to display resolution (~180px) lazily on-demand.
-/// Caps memory usage to ~35-45 MB regardless of library size.
-/// </summary>
 public static class ThumbnailCache
 {
     private const int MaxCacheCapacity = 300;
@@ -24,6 +19,11 @@ public static class ThumbnailCache
 
     private static readonly LruCache<CacheKey, Bitmap> _cache = new(MaxCacheCapacity);
     private static readonly ConcurrentDictionary<CacheKey, Task<Bitmap?>> _inFlight = new();
+
+    static ThumbnailCache()
+    {
+        PlumbobForge.Backend.Services.ThumbnailService.ThumbnailDeleted += Invalidate;
+    }
 
     public static Bitmap? TryGet(long itemId, bool grayscale = false)
     {
