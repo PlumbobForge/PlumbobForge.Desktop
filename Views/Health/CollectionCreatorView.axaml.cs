@@ -43,6 +43,14 @@ public partial class CollectionCreatorView : UserControl
         }
     }
 
+    private void OnRemoveIncludedItemClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.DataContext is CollectionIncludedItemViewModel item && DataContext is HealthViewModel vm)
+        {
+            vm.RemoveIncludedItemCommand.Execute(item);
+        }
+    }
+
     private void OnAddSetToCollectionClick(object? sender, RoutedEventArgs e)
     {
         if (sender is Button btn && btn.DataContext is CollectionSetOptionViewModel item && DataContext is HealthViewModel vm)

@@ -569,6 +569,79 @@
                                 </Border>
                             </StackPanel>
 
+                            <!-- Items included on their own, without their whole set -->
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="*, Auto" VerticalAlignment="Center">
+                                    <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                        <TextBlock Text="{loc:Loc 'tools.collections.included_items'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{loc:Loc 'tools.collections.included_items_desc'}" FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Opacity="0.8"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Classes="btn-action-sec" Command="{Binding IncludeItemsInCollectionCommand}" Padding="8,5" VerticalAlignment="Center" Margin="10,0,0,0">
+                                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                            <icon:PackIconBoxIcons Kind="RegularPlus" Width="12" Height="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'tools.collections.include_items'}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+
+                                <Border Background="{DynamicResource BgMain}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                                        CornerRadius="8" Padding="6" MaxHeight="220" IsVisible="{Binding HasIncludedItems}">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding IncludedItems}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:CollectionIncludedItemViewModel">
+                                                    <Border Padding="8,6" Margin="0,1.5" CornerRadius="6" Background="{DynamicResource BgSurface}">
+                                                        <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                                                            <!-- Thumbnail -->
+                                                            <Border Grid.Column="0" Width="32" Height="32" CornerRadius="5" ClipToBounds="True"
+                                                                    Background="{DynamicResource BgMain}" Margin="0,0,10,0" VerticalAlignment="Center">
+                                                                <Panel>
+                                                                    <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"/>
+                                                                    <icon:PackIconBoxIcons Kind="RegularPackage" Width="15" Height="15" Foreground="{DynamicResource TextMuted}"
+                                                                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                                           IsVisible="{Binding Thumbnail, Converter={x:Static ObjectConverters.IsNull}}"/>
+                                                                </Panel>
+                                                            </Border>
+
+                                                            <!-- Text: Location + File Name -->
+                                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                                <TextBlock Text="{Binding Location}"
+                                                                           FontSize="10"
+                                                                           Foreground="{DynamicResource TextMuted}"
+                                                                           IsVisible="{Binding HasLocation}"
+                                                                           TextTrimming="CharacterEllipsis"/>
+                                                                <TextBlock Text="{Binding FileName}"
+                                                                           FontSize="12.5"
+                                                                           FontWeight="SemiBold"
+                                                                           Foreground="{DynamicResource TextMain}"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           ToolTip.Tip="{Binding FileName}"/>
+                                                            </StackPanel>
+
+                                                            <!-- Action Button -->
+                                                            <Button Grid.Column="2" Classes="btn-action-sec"
+                                                                    Click="OnRemoveIncludedItemClick"
+                                                                    Padding="8,4" Margin="10,0,0,0"
+                                                                    ToolTip.Tip="{loc:Loc 'tools.collections.remove_item_tip'}">
+                                                                <Button.Styles>
+                                                                    <Style Selector="Button:pointerover">
+                                                                        <Setter Property="Background" Value="#331518"/>
+                                                                    </Style>
+                                                                </Button.Styles>
+                                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                    <icon:PackIconBoxIcons Kind="RegularTrash" Width="12" Height="12" Foreground="#ef4444" VerticalAlignment="Center"/>
+                                                                    <TextBlock Text="{loc:Loc 'common.remove'}" FontSize="11" Foreground="#ef4444" VerticalAlignment="Center"/>
+                                                                </StackPanel>
+                                                            </Button>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Border>
+                            </StackPanel>
+
                             <!-- Add More Sets Section -->
                             <StackPanel Spacing="8" IsVisible="{Binding HasAvailableToAddSets}">
                                 <Grid ColumnDefinitions="*, Auto" VerticalAlignment="Center">
