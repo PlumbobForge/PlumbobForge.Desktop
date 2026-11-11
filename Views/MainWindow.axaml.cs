@@ -67,7 +67,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (!_isClosingForced && DataContext is ViewModels.MainViewModel mainVm && mainVm.HasDirtySets)
+        // Read the live flag: HasDirtySets can be stale right after switching to vault mode.
         bool vaultMode = App.Services?.GetService<Microsoft.Extensions.Options.IOptionsMonitor<PlumbobForge.Backend.Configuration.PlumbobForgeOptions>>()?.CurrentValue.EnableSingleSourceVault ?? false;
         if (!_isClosingForced && !vaultMode && DataContext is ViewModels.MainViewModel mainVm && mainVm.HasDirtySets)
         {
