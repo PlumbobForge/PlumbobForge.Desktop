@@ -172,9 +172,6 @@ public partial class QuickSwitcherViewModel : ObservableObject
         if (includePlaces)
         {
             var places = GetPlaces();
-            // The cache engine settings are library-mode only and hidden in vault mode.
-            bool vaultMode = App.Services?.GetService<Microsoft.Extensions.Options.IOptionsMonitor<PlumbobForge.Backend.Configuration.PlumbobForgeOptions>>()?.CurrentValue.EnableSingleSourceVault ?? false;
-            if (vaultMode) places = places.Where(p => p.PlaceTarget != "Settings:Engine").ToList();
             if (!string.IsNullOrEmpty(trimmed))
             {
                 places = places.Where(p =>
@@ -521,9 +518,9 @@ public partial class QuickSwitcherViewModel : ObservableObject
             {
                 Type = QuickSwitcherItemType.Place,
                 PlaceTarget = "Settings:Engine",
-                Title = loc.GetString("settings.engine.title") ?? "Cache Compilation Engine",
-                Subtitle = (loc.GetString("nav.settings") ?? "Settings") + "  •  " + (loc.GetString("settings.engine.cache_mode") ?? "Dynamic cache, static bundle, and compression level"),
-                Keywords = "settings engine cache mode static bundle dynamic compression performance build speed",
+                Title = loc.GetString("settings.mode.title") ?? "Storage Mode",
+                Subtitle = (loc.GetString("nav.settings") ?? "Settings") + "  •  " + (loc.GetString("settings.mode.subtitle") ?? "Library or vault mode, cache options"),
+                Keywords = "settings engine cache mode static bundle dynamic vault library storage switch revert cleanup compact performance build speed",
                 IconKind = PackIconBoxIconsKind.RegularCog,
                 IconBrush = accentBrush
             },
