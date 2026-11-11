@@ -1,10 +1,12 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -26,7 +28,10 @@ public record UpdateCheckResult(
     string? AssetName,
     long? FileSize,
     bool IsDeltaUpdate = false,
-    string? ErrorMessage = null
+    string? ErrorMessage = null,
+    string? FullDownloadUrl = null,
+    string? FullAssetName = null,
+    long? FullFileSize = null
 );
 
 public class UpdateService
@@ -85,10 +90,26 @@ public class UpdateService
             string? assetName = null;
             long? fileSize = null;
             bool isDelta = false;
+            JsonObject? fullAsset = null;
 
             if (node["assets"] is JsonArray assets && assets.Count > 0)
             {
                 JsonObject? chosenAsset = null;
+
+                // Standalone .exe Installer, also kept as the fallback when a delta can't be applied
+                foreach (var a in assets)
+                {
+                    if (a is JsonObject obj)
+                    {
+                        var name = obj["name"]?.GetValue<string>() ?? string.Empty;
+                        if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
+                            !name.Contains("updater", StringComparison.OrdinalIgnoreCase))
+                        {
+                            fullAsset = obj;
+                            break;
+                        }
+                    }
+                }
 
                 // Priority 1: High-speed Differential / Delta Patch zip (if local updater is available)
                 if (canApplyDelta)
@@ -111,23 +132,7 @@ public class UpdateService
                 }
 
                 // Priority 2: Standalone .exe Installer
-                if (chosenAsset == null)
-                {
-                    foreach (var a in assets)
-                    {
-                        if (a is JsonObject obj)
-                        {
-                            var name = obj["name"]?.GetValue<string>() ?? string.Empty;
-                            if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
-                                !name.Contains("updater", StringComparison.OrdinalIgnoreCase))
-                            {
-                                chosenAsset = obj;
-                                isDelta = false;
-                                break;
-                            }
-                        }
-                    }
-                }
+                chosenAsset ??= fullAsset;
 
                 if (chosenAsset != null)
                 {
@@ -150,7 +155,10 @@ public class UpdateService
                 DownloadUrl: downloadUrl,
                 AssetName: assetName,
                 FileSize: fileSize,
-                IsDeltaUpdate: isDelta
+                IsDeltaUpdate: isDelta,
+                FullDownloadUrl: fullAsset?["browser_download_url"]?.GetValue<string>(),
+                FullAssetName: fullAsset?["name"]?.GetValue<string>(),
+                FullFileSize: fullAsset?["size"]?.GetValue<long>()
             );
         }
         catch (Exception ex)
@@ -192,6 +200,55 @@ public class UpdateService
 
         return targetFile;
     }
+
+    public Task<bool> IsDeltaApplicableAsync(string deltaZipPath, CancellationToken ct = default) => Task.Run(() =>
+    {
+        try
+        {
+            using var archive = ZipFile.OpenRead(deltaZipPath);
+            var manifestEntry = archive.GetEntry("delta-manifest.json");
+            if (manifestEntry == null) return true;
+
+            JsonNode? manifest;
+            using (var stream = manifestEntry.Open())
+            {
+                manifest = JsonNode.Parse(stream);
+            }
+            if (manifest?["files"] is not JsonObject files) return true;
+
+            var shipped = new HashSet<string>(
+                archive.Entries.Select(e => e.FullName.Replace('\\', '/')),
+                StringComparer.OrdinalIgnoreCase);
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+
+            foreach (var (relPath, hashNode) in files)
+            {
+                ct.ThrowIfCancellationRequested();
+                if (shipped.Contains(relPath)) continue;
+
+                var localPath = Path.Combine(baseDir, relPath.Replace('/', Path.DirectorySeparatorChar));
+                if (!File.Exists(localPath)) return false;
+
+                using var fs = File.OpenRead(localPath);
+                var localHash = Convert.ToHexString(SHA256.HashData(fs));
+                if (!string.Equals(localHash, hashNode?.GetValue<string>(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            // Unreadable patch or manifest: the full setup is the safe choice
+            return false;
+        }
+    }, ct);
 
     public void ApplyUpdateAndExit(string downloadedFilePath)
     {
