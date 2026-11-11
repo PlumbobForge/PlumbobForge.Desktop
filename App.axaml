@@ -111,7 +111,7 @@
 
         <!-- Global Custom PopupRoot, FlyoutPresenter, ContextMenu, MenuFlyoutPresenter with Acrylic Frosted Glass -->
         <Style Selector="PopupRoot">
-            <Setter Property="TransparencyLevelHint" Value="AcrylicBlur, Transparent"/>
+            <Setter Property="TransparencyLevelHint" Value="Transparent"/>
             <Setter Property="Background" Value="Transparent"/>
         </Style>
 
