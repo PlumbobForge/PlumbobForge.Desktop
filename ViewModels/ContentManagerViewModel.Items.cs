@@ -39,7 +39,7 @@ public partial class ContentManagerViewModel
         }
     }
 
-
+    // Vault mods have no file of their own, so a non-permanent delete exports them first and recycles the export.
     private static async Task RecycleVaultItemsAsync(VaultService vaultService, IEnumerable<(long Id, string FileName)> items)
     {
         string dir = Path.Combine(Path.GetTempPath(), "PlumbobForge", "VaultRecycle", Guid.NewGuid().ToString("N"));
@@ -64,7 +64,6 @@ public partial class ContentManagerViewModel
         }
         try { if (Directory.Exists(dir)) Directory.Delete(dir, true); } catch { }
     }
-
 
     private async Task DeployLibraryItemsInVaultModeAsync()
     {
@@ -181,7 +180,6 @@ public partial class ContentManagerViewModel
         OnPropertyChanged(nameof(IsTextureOptimizationActive));
         foreach (var item in Items) item.NotifyEntityChanged();
     }
-
 
     [RelayCommand]
     public async Task ToggleOriginalTexturesSelectedAsync()
@@ -307,26 +305,45 @@ public partial class ContentManagerViewModel
     {
         if (item == null) return;
 
-        var dialogResult = await DialogHelper.ShowRetagAsync(item.PackageType, item.UserTags, item.Entity.CASCategories);
+        var dialogResult = await DialogHelper.ShowRetagAsync(ToRetagInput(item, item.PackageType, item.UserTags));
         if (dialogResult == null) return;
 
-        item.Entity.PackageType = dialogResult.PackageType;
-        item.Entity.UserTags = dialogResult.UserTags;
-        item.Entity.CASCategories = dialogResult.CasCategories;
-        item.Entity.IsUserTagged = true;
-
-        var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
-        if (meta != null)
-        {
-            meta.PackageType = dialogResult.PackageType;
-            meta.UserTags = dialogResult.UserTags;
-            meta.CASCategories = dialogResult.CasCategories;
-            meta.IsUserTagged = true;
-        }
-
-        item.NotifyEntityChanged();
+        await ApplyRetagAsync(item, dialogResult);
         await _db.SaveChangesAsync();
         ApplyFilter();
+    }
+
+    private static RetagDialogInput ToRetagInput(ItemViewModel? item, string packageType, string? userTags) => new(
+        packageType,
+        userTags,
+        item?.Entity.CASCategories,
+        item?.Entity.CASAge,
+        item?.Entity.CASGender,
+        item?.Entity.CASOutfitCategory,
+        item?.Entity.BBKind,
+        item?.Entity.BBRooms,
+        item?.Entity.BBFunctions);
+
+    private async Task ApplyRetagAsync(ItemViewModel item, RetagDialogResult result)
+    {
+        static void Apply(MetaEntity m, RetagDialogResult r)
+        {
+            m.PackageType = r.PackageType;
+            m.UserTags = r.UserTags;
+            m.CASCategories = r.CasCategories;
+            if (r.CasAge != null) m.CASAge = r.CasAge;
+            if (r.CasGender != null) m.CASGender = r.CasGender;
+            if (r.CasOutfit != null) m.CASOutfitCategory = r.CasOutfit;
+            if (r.BBKind != null) m.BBKind = r.BBKind;
+            if (r.BBRooms != null) m.BBRooms = r.BBRooms;
+            if (r.BBFunctions != null) m.BBFunctions = r.BBFunctions;
+            m.IsUserTagged = true;
+        }
+
+        Apply(item.Entity, result);
+        var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
+        if (meta != null && !ReferenceEquals(meta, item.Entity)) Apply(meta, result);
+        item.NotifyEntityChanged();
     }
 
     [RelayCommand]
@@ -662,30 +679,16 @@ public partial class ContentManagerViewModel
         if (selected.Count == 0) return;
 
         var firstItem = selected.FirstOrDefault();
-        var dialogResult = await DialogHelper.ShowRetagAsync(
+        var dialogResult = await DialogHelper.ShowRetagAsync(ToRetagInput(
+            firstItem,
             firstItem?.PackageType ?? BatchPackageType,
-            firstItem?.UserTags ?? BatchTagInput,
-            firstItem?.Entity.CASCategories);
+            firstItem?.UserTags ?? BatchTagInput));
 
         if (dialogResult == null) return;
 
         foreach (var item in selected)
         {
-            item.Entity.PackageType = dialogResult.PackageType;
-            item.Entity.UserTags = dialogResult.UserTags;
-            item.Entity.CASCategories = dialogResult.CasCategories;
-            item.Entity.IsUserTagged = true;
-
-            var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
-            if (meta != null)
-            {
-                meta.PackageType = dialogResult.PackageType;
-                meta.UserTags = dialogResult.UserTags;
-                meta.CASCategories = dialogResult.CasCategories;
-                meta.IsUserTagged = true;
-            }
-
-            item.NotifyEntityChanged();
+            await ApplyRetagAsync(item, dialogResult);
         }
 
         await _db.SaveChangesAsync();
@@ -843,49 +846,6 @@ public partial class ContentManagerViewModel
     }
 
     [RelayCommand]
-    public async Task RefreshSelectedAsync()
-    {
-        var selected = Items.Where(i => i.IsSelected).ToList();
-        if (selected.Count == 0) return;
-
-        IsLoading = true;
-        try
-        {
-            var selectedIds = selected.Select(i => i.Id).ToList();
-            await Task.Run(async () =>
-            {
-                using var scope = App.Services?.CreateScope();
-                var pkgMgr = scope?.ServiceProvider.GetRequiredService<PKGManager>() ?? _pkgManager;
-                if (pkgMgr != null)
-                {
-                    foreach (var id in selectedIds)
-                    {
-                        await pkgMgr.RefreshItemAsync(id);
-                    }
-                }
-            });
-
-            var updatedMetas = await _db.MetaEntities.AsNoTracking().Where(m => selectedIds.Contains(m.Id)).ToDictionaryAsync(m => m.Id);
-            foreach (var item in selected)
-            {
-                if (updatedMetas.TryGetValue(item.Id, out var meta))
-                {
-                    item.UpdateFromEntity(meta);
-                }
-                await item.ReloadThumbnailAsync(forceDiskExtraction: false);
-            }
-        }
-        catch (Exception ex)
-        {
-            AppLogger.LogError("Error refreshing selected items", ex, "ContentManagerViewModel");
-        }
-        finally
-        {
-            IsLoading = false;
-        }
-    }
-
-    [RelayCommand]
     public async Task ExportSelectedAsync()
     {
         var selected = Items.Where(i => i.IsSelected).ToList();
@@ -972,15 +932,14 @@ public partial class ContentManagerViewModel
     public async Task LookInsideSelectedAsync()
     {
         var selected = Items.Where(i => i.IsSelected).ToList();
-        if (selected.Count != 1) return;
+        if (selected.Count == 0) return;
 
-        var item = selected[0];
-        if (await DialogHelper.ShowLookInsideAsync(item.Id, item.FileName))
+        var saved = await DialogHelper.ShowLookInsideAsync(selected.Select(i => (i.Id, i.FileName)).ToList());
+        if (saved.Count > 0)
         {
-            await RefreshEditedItemsAsync(new[] { item.Id });
+            await RefreshEditedItemsAsync(saved);
         }
     }
-
 
     public async Task RefreshEditedItemsAsync(IEnumerable<long> itemIds)
     {
@@ -994,18 +953,6 @@ public partial class ContentManagerViewModel
         }
         ApplyFilter();
         NotifyDirtyStateChanged();
-    }
-
-    [RelayCommand]
-    public async Task EditCasFlagsSelectedAsync()
-    {
-        var selected = Items.Where(i => i.IsSelected).ToList();
-        if (selected.Count == 0) return;
-        var ids = selected.Select(i => i.Id).ToList();
-        if (await DialogHelper.ShowCasFlagsAsync(ids, IsVaultActive))
-        {
-            await RefreshEditedItemsAsync(ids);
-        }
     }
 
     [RelayCommand]

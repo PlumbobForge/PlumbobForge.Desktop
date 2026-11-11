@@ -62,15 +62,11 @@ public partial class ContentManagerViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DeleteItemsMenuHeader))]
-    [NotifyPropertyChangedFor(nameof(RefreshItemsMenuHeader))]
     [NotifyPropertyChangedFor(nameof(ExportItemsMenuHeader))]
     [NotifyPropertyChangedFor(nameof(IsSingleItemSelected))]
     private int _selectedCount = 0;
 
     public string DeleteItemsMenuHeader => SelectedCount > 1 ? "Delete Items" : "Delete Item";
-    public string RefreshItemsMenuHeader => SelectedCount > 1
-        ? LocalizationManager.Instance.GetString("library.refresh_selected")
-        : LocalizationManager.Instance.GetString("library.refresh_item");
 
     public bool IsSingleItemSelected => SelectedCount == 1;
     public bool IsVaultActive => _optionsMonitor?.CurrentValue?.EnableSingleSourceVault ?? false;
@@ -256,11 +252,10 @@ public partial class ContentManagerViewModel : ObservableObject
             if (allNode != null) allNode.Name = LocalizationManager.Instance.GetString("library.all_items");
             var favNode = RootSets.FirstOrDefault(n => n.IsFavorites);
             if (favNode != null) favNode.Name = LocalizationManager.Instance.GetString("library.favorites");
-            OnPropertyChanged(nameof(RefreshItemsMenuHeader));
             OnPropertyChanged(nameof(DeleteItemsMenuHeader));
             OnPropertyChanged(nameof(ExportItemsMenuHeader));
         };
-
+        
         _notificationSubscriptionId = _notificationService.Subscribe(async payload =>
         {
             if (payload.Contains("library_changed") || payload.Contains("items_imported"))
@@ -809,7 +804,6 @@ public partial class ContentManagerViewModel : ObservableObject
     {
         await RunRebuildAsync(forceRebuild, repairLegacyCompression: false);
     }
-
 
     public Task<bool> RepairCompressionAndRebuildAsync(Func<Task>? onSucceeded = null)
         => RunRebuildAsync(forceRebuild: true, repairLegacyCompression: true, onSucceeded);
