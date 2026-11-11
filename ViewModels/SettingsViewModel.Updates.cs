@@ -53,6 +53,10 @@ public partial class SettingsViewModel
     [ObservableProperty]
     private long? _fileSize = null;
 
+    // Full setup used when the delta patch turns out not to cover this install
+    private string? _fullDownloadUrl;
+    private string? _fullAssetName;
+
     [ObservableProperty]
     private bool _isDownloadingUpdate = false;
 
@@ -104,6 +108,8 @@ public partial class SettingsViewModel
             DownloadUrl = result.DownloadUrl;
             AssetName = result.AssetName;
             FileSize = result.FileSize;
+            _fullDownloadUrl = result.FullDownloadUrl;
+            _fullAssetName = result.FullAssetName;
 
             if (result.IsUpdateAvailable)
             {
@@ -160,6 +166,25 @@ public partial class SettingsViewModel
         try
         {
             var downloadedPath = await _updateService.DownloadUpdateAsync(DownloadUrl, AssetName, progress);
+
+            if (IsDeltaUpdate && !await _updateService.IsDeltaApplicableAsync(downloadedPath))
+            {
+                if (string.IsNullOrEmpty(_fullDownloadUrl) || string.IsNullOrEmpty(_fullAssetName))
+                {
+                    UpdateStatusText = "This update needs the full installer. Opening the release page...";
+                    ShowStatus("This update needs the full installer.", isError: true);
+                    OpenChangelog();
+                    return;
+                }
+
+                // The patch doesn't cover this install (new dependencies or skipped versions)
+                UpdateStatusText = "This update needs the full package, downloading it...";
+                UpdateDownloadProgress = 0.0;
+                IsDeltaUpdate = false;
+                AssetName = _fullAssetName;
+                downloadedPath = await _updateService.DownloadUpdateAsync(_fullDownloadUrl, _fullAssetName, progress);
+            }
+
             DownloadedInstallerPath = downloadedPath;
             IsUpdateDownloaded = true;
 
