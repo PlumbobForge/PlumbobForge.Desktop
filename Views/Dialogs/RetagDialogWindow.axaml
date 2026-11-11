@@ -4,7 +4,7 @@
         xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
         x:Class="PlumbobForge.Desktop.Views.Dialogs.RetagDialogWindow"
         Title="{loc:Loc 'dialogs.retag.title'}"
-        Width="540" Height="480"
+        Width="560" Height="560"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         SystemDecorations="Full"
@@ -48,6 +48,17 @@
         </Style>
         <Style Selector="ToggleButton.filter-pill:pointerover icon|PackIconBoxIcons">
             <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!-- "Advanced" header: text only, the label brightens on hover -->
+        <Style Selector="Button.accordion-header:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.accordion-header:pointerover TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <Style Selector="Button.accordion-header:pointerover icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
         </Style>
     </Window.Styles>
 
@@ -129,9 +140,24 @@
                     <StackPanel Spacing="6">
                         <TextBlock Text="{loc:Loc 'library.type'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
                         <WrapPanel>
-                            <ToggleButton x:Name="TypeCasButton" Classes="filter-pill" Content="{loc:Loc 'filters.type_cas'}" Click="OnTypeCasClick"/>
-                            <ToggleButton x:Name="TypeBuildBuyButton" Classes="filter-pill" Content="{loc:Loc 'filters.type_build_buy'}" Click="OnTypeBuildBuyClick"/>
-                            <ToggleButton x:Name="TypeOtherButton" Classes="filter-pill" Content="{loc:Loc 'filters.type_other'}" Click="OnTypeOtherClick"/>
+                            <ToggleButton x:Name="TypeCasButton" Classes="filter-pill" Click="OnTypeCasClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularHanger" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.cas_items'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <ToggleButton x:Name="TypeBuildBuyButton" Classes="filter-pill" Click="OnTypeBuildBuyClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularChair" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.build_buy_items'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <ToggleButton x:Name="TypeOtherButton" Classes="filter-pill" Click="OnTypeOtherClick">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <icon:PackIconBoxIcons Kind="RegularCube" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'filters.other_items'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ToggleButton>
                         </WrapPanel>
                     </StackPanel>
 
@@ -220,6 +246,9 @@
                             </ToggleButton>
                         </WrapPanel>
 
+                        <!-- Build/Buy Categories Panel (several can be on; filled in code) -->
+                        <WrapPanel x:Name="BuildBuyCategoriesPanel" Margin="0,4,0,0" IsVisible="False"/>
+
                         <!-- Other Categories Panel -->
                         <WrapPanel x:Name="OtherCategoriesPanel" Margin="0,4,0,0" IsVisible="False">
                             <!-- Worlds -->
@@ -251,6 +280,42 @@
                                 </StackPanel>
                             </ToggleButton>
                         </WrapPanel>
+                    </StackPanel>
+
+                    <!-- 4. Advanced (CAS: age group, gender, outfit category; Build/Buy: room, function) -->
+                    <StackPanel x:Name="AdvancedSection" Spacing="10">
+                        <Button Classes="accordion-header" Click="OnAdvancedToggleClick" HorizontalAlignment="Left" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <icon:PackIconBoxIcons x:Name="AdvancedChevron" Kind="RegularChevronRight" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'dialogs.retag.advanced'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <StackPanel x:Name="AdvancedCasPanel" Spacing="12" IsVisible="False">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="{loc:Loc 'dialogs.retag.age_group'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                                <WrapPanel x:Name="AgePanel"/>
+                            </StackPanel>
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="{loc:Loc 'dialogs.retag.gender'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                                <WrapPanel x:Name="GenderPanel"/>
+                            </StackPanel>
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="{loc:Loc 'dialogs.retag.outfit_category'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                                <WrapPanel x:Name="OutfitPanel"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel x:Name="AdvancedBuildBuyPanel" Spacing="12" IsVisible="False">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="{loc:Loc 'dialogs.retag.room'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                                <WrapPanel x:Name="RoomPanel"/>
+                            </StackPanel>
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="{loc:Loc 'dialogs.retag.function'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                                <WrapPanel x:Name="FunctionPanel"/>
+                            </StackPanel>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>
