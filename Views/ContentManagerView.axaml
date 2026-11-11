@@ -43,24 +43,14 @@
                                     <icon:PackIconBoxIcons Kind="RegularToggleLeft" Width="16" Height="16"/>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="{loc:Loc 'library.look_inside'}" Command="{Binding LookInsideSelectedCommand}" IsEnabled="{Binding IsSingleItemSelected}">
+                            <MenuItem Header="{loc:Loc 'library.look_inside'}" Command="{Binding LookInsideSelectedCommand}" IsEnabled="{Binding HasSelectedItems}">
                                 <MenuItem.Icon>
                                     <icon:PackIconBoxIcons Kind="RegularSearch" Width="16" Height="16"/>
-                                </MenuItem.Icon>
-                            </MenuItem>
-                            <MenuItem Header="{loc:Loc 'library.cas_flags'}" Command="{Binding EditCasFlagsSelectedCommand}" IsEnabled="{Binding HasSelectedItems}">
-                                <MenuItem.Icon>
-                                    <icon:PackIconBoxIcons Kind="RegularHanger" Width="16" Height="16"/>
                                 </MenuItem.Icon>
                             </MenuItem>
                             <MenuItem Header="{loc:Loc 'library.retag_selected'}" Command="{Binding EditTagsSelectedCommand}" IsEnabled="{Binding HasSelectedItems}">
                                 <MenuItem.Icon>
                                     <icon:PackIconBoxIcons Kind="RegularTag" Width="16" Height="16"/>
-                                </MenuItem.Icon>
-                            </MenuItem>
-                            <MenuItem Header="{Binding RefreshItemsMenuHeader}" Command="{Binding RefreshSelectedCommand}" IsEnabled="{Binding HasSelectedItems}" IsVisible="{Binding !IsVaultActive}">
-                                <MenuItem.Icon>
-                                    <icon:PackIconBoxIcons Kind="RegularRefreshCw" Width="16" Height="16"/>
                                 </MenuItem.Icon>
                             </MenuItem>
                             <MenuItem Header="{Binding ExportItemsMenuHeader}" Command="{Binding ExportSelectedCommand}" IsEnabled="{Binding HasSelectedItems}" IsVisible="{Binding IsVaultActive}">
