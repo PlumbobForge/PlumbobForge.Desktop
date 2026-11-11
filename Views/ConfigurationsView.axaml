@@ -70,6 +70,28 @@
             <Setter Property="BorderThickness" Value="1.5"/>
         </Style>
 
+        <!-- X on item cards: removes the item from the configuration -->
+        <Style Selector="Button.config-card-remove">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="8,0,0,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.config-card-remove:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#33ef4444"/>
+        </Style>
+        <Style Selector="Button.config-card-remove:pointerover icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="#ef4444"/>
+        </Style>
+
         <!-- Center Control Icon Buttons -->
         <Style Selector="Button.config-ctrl-btn">
             <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
@@ -410,6 +432,24 @@
                                                     <TextBlock Text="{loc:Loc 'library.sort_subsets_count'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
                                                 </StackPanel>
                                             </Button>
+
+                                            <Separator Height="1" Background="{DynamicResource BorderSubtle}" Margin="2,4"/>
+
+                                            <!-- Items First Sticky Toggle -->
+                                            <Button Command="{Binding ToggleSortItemsFirstCommand}" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4">
+                                                <Button.Styles>
+                                                    <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                    </Style>
+                                                </Button.Styles>
+                                                <Grid ColumnDefinitions="*, Auto">
+                                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                                                        <icon:PackIconBoxIcons Kind="RegularPackage" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{loc:Loc 'configurations.items_first'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                    <icon:PackIconBoxIcons Grid.Column="1" Kind="RegularCheck" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" IsVisible="{Binding SortItemsFirst}"/>
+                                                </Grid>
+                                            </Button>
                                         </StackPanel>
                                     </Border>
                                 </Flyout>
@@ -434,9 +474,17 @@
                         DragDrop.AllowDrop="True">
                     <Grid RowDefinitions="Auto, Auto, *">
                         <!-- Clean Header (No icon, background, color, badge) -->
-                        <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
+                        <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto" Margin="0,0,0,12">
                             <TextBlock Grid.Column="0" Text="{loc:Loc 'configurations.enabled_sets'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="1" Text="{loc:Loc 'configurations.drag_to_disable'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{loc:Loc 'configurations.drag_to_move'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            <Button Grid.Column="2" Classes="btn-action-sec" Margin="10,0,0,0" VerticalAlignment="Center"
+                                    Command="{Binding IncludeItemsCommand}"
+                                    ToolTip.Tip="{loc:Loc 'configurations.include_items_tip'}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <icon:PackIconBoxIcons Kind="RegularPlus" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'configurations.include_items'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
                         </Grid>
 
                         <!-- Sets Search Input -->
@@ -474,7 +522,37 @@
                                     </LinearGradientBrush>
                                 </ScrollViewer.OpacityMask>
                                 <ItemsControl x:Name="EnabledItemsControl" ItemsSource="{Binding EnabledSets}" Margin="0,0,4,48">
-                                    <ItemsControl.ItemTemplate>
+                                    <ItemsControl.DataTemplates>
+                                        <!-- An item the configuration includes on its own -->
+                                        <DataTemplate DataType="{x:Type vm:ConfigItemCardViewModel}">
+                                            <Border Classes="config-set-card"
+                                                    Classes.selected="{Binding IsSelected}"
+                                                    ToolTip.Tip="{Binding RuleTooltip}"
+                                                    DoubleTapped="OnSetCardDoubleTapped"
+                                                    PointerPressed="OnSetCardPointerPressed"
+                                                    PointerMoved="OnSetCardPointerMoved"
+                                                    PointerReleased="OnSetCardPointerReleased"
+                                                    PointerCaptureLost="OnSetCardPointerCaptureLost">
+                                                <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                                                    <Border Grid.Column="0" Width="26" Height="26" CornerRadius="5" ClipToBounds="True" Background="{DynamicResource BgCardAlt}" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                        <Panel>
+                                                            <icon:PackIconBoxIcons Kind="RegularPackage" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"/>
+                                                        </Panel>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="{Binding Location}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding HasLocation}" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding FileName}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"/>
+                                                    </StackPanel>
+                                                    <Button Grid.Column="2" Classes="config-card-remove"
+                                                            Command="{Binding $parent[UserControl].((vm:ConfigurationsViewModel)DataContext).RemoveItemRuleCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip.Tip="{loc:Loc 'configurations.item_remove'}">
+                                                        <icon:PackIconBoxIcons Kind="RegularX" Width="13" Height="13"/>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
                                         <DataTemplate DataType="{x:Type vm:ConfigSetItemViewModel}">
                                             <Border Classes="config-set-card"
                                                     Classes.selected="{Binding IsSelected}"
@@ -511,7 +589,7 @@
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
+                                    </ItemsControl.DataTemplates>
                                 </ItemsControl>
                             </ScrollViewer>
 
@@ -569,9 +647,17 @@
                         DragDrop.AllowDrop="True">
                     <Grid RowDefinitions="Auto, Auto, *">
                         <!-- Clean Header (No icon, background, color, badge) -->
-                        <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
+                        <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto" Margin="0,0,0,12">
                             <TextBlock Grid.Column="0" Text="{loc:Loc 'configurations.disabled_sets'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="1" Text="{loc:Loc 'configurations.drag_to_enable'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{loc:Loc 'configurations.drag_to_move'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            <Button Grid.Column="2" Classes="btn-action-sec" Margin="10,0,0,0" VerticalAlignment="Center"
+                                    Command="{Binding ExcludeItemsCommand}"
+                                    ToolTip.Tip="{loc:Loc 'configurations.exclude_items_tip'}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <icon:PackIconBoxIcons Kind="RegularMinus" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'configurations.exclude_items'}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
                         </Grid>
 
                         <!-- Sets Search Input -->
@@ -609,7 +695,37 @@
                                     </LinearGradientBrush>
                                 </ScrollViewer.OpacityMask>
                                 <ItemsControl x:Name="DisabledItemsControl" ItemsSource="{Binding DisabledSets}" Margin="0,0,4,48">
-                                    <ItemsControl.ItemTemplate>
+                                    <ItemsControl.DataTemplates>
+                                        <!-- An item the configuration excludes on its own -->
+                                        <DataTemplate DataType="{x:Type vm:ConfigItemCardViewModel}">
+                                            <Border Classes="config-set-card"
+                                                    Classes.selected="{Binding IsSelected}"
+                                                    ToolTip.Tip="{Binding RuleTooltip}"
+                                                    DoubleTapped="OnSetCardDoubleTapped"
+                                                    PointerPressed="OnSetCardPointerPressed"
+                                                    PointerMoved="OnSetCardPointerMoved"
+                                                    PointerReleased="OnSetCardPointerReleased"
+                                                    PointerCaptureLost="OnSetCardPointerCaptureLost">
+                                                <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                                                    <Border Grid.Column="0" Width="26" Height="26" CornerRadius="5" ClipToBounds="True" Background="{DynamicResource BgCardAlt}" VerticalAlignment="Center" Margin="0,0,10,0" Opacity="0.6">
+                                                        <Panel>
+                                                            <icon:PackIconBoxIcons Kind="RegularPackage" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"/>
+                                                        </Panel>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="{Binding Location}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding HasLocation}" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding FileName}" FontSize="12.5" FontWeight="Medium" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis"/>
+                                                    </StackPanel>
+                                                    <Button Grid.Column="2" Classes="config-card-remove"
+                                                            Command="{Binding $parent[UserControl].((vm:ConfigurationsViewModel)DataContext).RemoveItemRuleCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip.Tip="{loc:Loc 'configurations.item_remove'}">
+                                                        <icon:PackIconBoxIcons Kind="RegularX" Width="13" Height="13"/>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
                                         <DataTemplate DataType="{x:Type vm:ConfigSetItemViewModel}">
                                             <Border Classes="config-set-card"
                                                     Classes.selected="{Binding IsSelected}"
@@ -646,7 +762,7 @@
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
+                                    </ItemsControl.DataTemplates>
                                 </ItemsControl>
                             </ScrollViewer>
 

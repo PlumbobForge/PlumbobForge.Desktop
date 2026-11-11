@@ -1,0 +1,257 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+        xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+        xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+        x:Class="PlumbobForge.Desktop.Views.Dialogs.ConfigItemPickerWindow"
+        x:DataType="vm:ConfigItemPickerViewModel"
+        Title="{Binding Title}"
+        Width="900" Height="620"
+        MinWidth="640" MinHeight="420"
+        WindowStartupLocation="CenterOwner"
+        SystemDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        Background="{DynamicResource BgDark}">
+
+    <Window.Styles>
+        <Style Selector="ListBox.picker">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+        <Style Selector="ListBox.picker ListBoxItem">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="ListBox.picker ListBoxItem:disabled">
+            <Setter Property="Opacity" Value="0.5"/>
+            <Setter Property="Cursor" Value="Arrow"/>
+        </Style>
+        <!-- Sets tree: copied from the library's sets sidebar so both look the same -->
+        <Style Selector="TreeView#SetsTree TreeViewItem" x:DataType="vm:PickerSetRow">
+            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,1"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <StackPanel HorizontalAlignment="Stretch">
+                        <Border Background="Transparent" CornerRadius="8" Cursor="Hand" HorizontalAlignment="Stretch">
+                            <ContentPresenter x:Name="HeaderPresenter"
+                                              Background="Transparent"
+                                              Content="{TemplateBinding Header}"
+                                              ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                              HorizontalAlignment="Stretch"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ItemsPresenter x:Name="PART_ItemsPresenter"
+                                        IsVisible="{TemplateBinding IsExpanded}"
+                                        ItemsPanel="{TemplateBinding ItemsPanel}"
+                                        Margin="16,0,0,0"/>
+                    </StackPanel>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Border.set-node-row">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Border.set-node-row:pointerover">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+        <Style Selector="Border.set-node-row.set-node-selected">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="icon|PackIconBoxIcons.set-icon">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        </Style>
+        <Style Selector="Border.set-node-row.set-node-selected icon|PackIconBoxIcons.set-icon">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="TextBlock.set-title">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <Style Selector="Border.set-node-row.set-node-selected TextBlock.set-title">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="Button.accordion-header">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.accordion-header:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="ListBox.picker-items ListBoxItem">
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="ListBox.picker-items ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="ListBox.picker-items ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="ListBox.picker-items ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
+        <!-- Item rows: a click toggles the item's check box -->
+        <Style Selector="Border.picker-row">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Border.picker-row:pointerover">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+        <Style Selector="Border.picker-row.checked">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="Border.picker-row.locked">
+            <Setter Property="Opacity" Value="0.5"/>
+            <Setter Property="Cursor" Value="Arrow"/>
+        </Style>
+    </Window.Styles>
+
+    <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" ClipToBounds="True" Background="{DynamicResource BgDark}">
+        <Grid RowDefinitions="Auto, *, Auto">
+            <!-- Title bar -->
+            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="44" Padding="18,0,0,0" PointerPressed="OnHeaderPointerPressed">
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding Subtitle}" FontSize="12" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Width="44" Height="44" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCancelClick" ToolTip.Tip="{loc:Loc 'common.close'}">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#ef4444"/>
+                            </Style>
+                            <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                <Setter Property="Foreground" Value="White"/>
+                            </Style>
+                        </Button.Styles>
+                        <icon:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Body: sets | search + items -->
+            <Grid Grid.Row="1" ColumnDefinitions="240, *" Margin="12">
+                <!-- Sets -->
+                <Border Grid.Column="0" Background="{DynamicResource BgSidebar}" CornerRadius="12" Padding="10" Margin="0,0,12,0">
+                    <!-- Same tree, rows and icons as the library's sets sidebar -->
+                    <TreeView x:Name="SetsTree"
+                              ItemsSource="{Binding Sets}"
+                              SelectedItem="{Binding SelectedSet, Mode=TwoWay}"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              Background="Transparent" Padding="0" Margin="0">
+                        <TreeView.ItemTemplate>
+                            <TreeDataTemplate DataType="{x:Type vm:PickerSetRow}" ItemsSource="{Binding Children}">
+                                <Border Classes="set-node-row"
+                                        Classes.set-node-selected="{Binding IsSelected}"
+                                        CornerRadius="8" Padding="10,6,8,6" Margin="0,1"
+                                        HorizontalAlignment="Stretch">
+                                    <Grid ColumnDefinitions="Auto, *, Auto, Auto" VerticalAlignment="Center">
+                                        <Panel Grid.Column="0" Margin="0,0,8,0" VerticalAlignment="Center">
+                                            <icon:PackIconBoxIcons Classes="set-icon" Kind="RegularLayers" Width="16" Height="16" IsVisible="{Binding IsAllItems}"/>
+                                            <icon:PackIconBoxIcons Kind="SolidStar" Foreground="#f59e0b" Width="16" Height="16" IsVisible="{Binding IsFavorites}"/>
+                                            <icon:PackIconBoxIcons Kind="{Binding IconKind}" Foreground="{Binding IconBrush}" Width="16" Height="16" IsVisible="{Binding !IsSpecialNode}"/>
+                                        </Panel>
+                                        <TextBlock Grid.Column="1" Classes="set-title" Text="{Binding Name}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <Border Grid.Column="2" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" Padding="7,2" Margin="6,0,4,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding ItemCount}" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
+                                        </Border>
+                                        <Button Grid.Column="3" Classes="accordion-header" Command="{Binding ToggleExpandCommand}" Width="20" Height="20" Padding="0" Margin="4,0,0,0"
+                                                VerticalAlignment="Center" HorizontalAlignment="Center" IsVisible="{Binding HasChildren}">
+                                            <Panel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding IsExpanded}"/>
+                                                <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding !IsExpanded}"/>
+                                            </Panel>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </TreeDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                </Border>
+
+                <!-- Search + items -->
+                <Border Grid.Column="1" Background="{DynamicResource BgSidebar}" CornerRadius="12" Padding="12">
+                    <Grid RowDefinitions="Auto, *">
+                        <TextBox Grid.Row="0" x:Name="SearchBox" Classes="capsule-search" Margin="0,0,0,10"
+                                 Text="{Binding SearchQuery, Mode=TwoWay}"
+                                 Watermark="{loc:Loc 'dialogs.item_picker.search'}">
+                            <TextBox.InnerLeftContent>
+                                <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="10,0,4,0" VerticalAlignment="Center"/>
+                            </TextBox.InnerLeftContent>
+                            <TextBox.InnerRightContent>
+                                <Button Click="OnClearSearchClick" IsVisible="{Binding HasSearchQuery}"
+                                        Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,6,0" Width="24" Height="24" CornerRadius="12" Cursor="Hand">
+                                    <icon:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Button>
+                            </TextBox.InnerRightContent>
+                        </TextBox>
+
+                        <ProgressBar Grid.Row="1" IsVisible="{Binding IsLoading}" IsIndeterminate="True" VerticalAlignment="Top" Foreground="{DynamicResource AccentBrush}"/>
+                        <TextBlock Grid.Row="1" IsVisible="{Binding IsEmpty}" Text="{loc:Loc 'dialogs.item_picker.empty'}" FontSize="12.5" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" Margin="0,24,0,0"/>
+
+                        <!-- ListBox for its built-in virtualization; its own selection is hidden, the check boxes are the selection -->
+                        <ListBox Grid.Row="1" Classes="picker picker-items" ItemsSource="{Binding VisibleItems}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="vm:PickerItemRow">
+                                    <Border Classes="picker-row" Classes.checked="{Binding IsChecked}" Classes.locked="{Binding !CanPick}" Tapped="OnItemRowTapped">
+                                    <Grid ColumnDefinitions="Auto, Auto, *, Auto">
+                                        <CheckBox Grid.Column="0" IsChecked="{Binding IsChecked}" IsHitTestVisible="False" Focusable="False" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                        <Border Grid.Column="1" Width="36" Height="36" CornerRadius="6" ClipToBounds="True" Background="{DynamicResource BgSurface}" Margin="0,0,10,0" VerticalAlignment="Center">
+                                            <Panel>
+                                                <icon:PackIconBoxIcons Kind="RegularPackage" Width="16" Height="16" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"/>
+                                            </Panel>
+                                        </Border>
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
+                                            <TextBlock Text="{Binding Location}" IsVisible="{Binding HasLocation}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding FileName}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <Border Grid.Column="3" IsVisible="{Binding HasRuleNote}" Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                                                CornerRadius="6" Padding="7,2.5" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding RuleNote}" FontSize="10.5" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
+                                        </Border>
+                                    </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Footer -->
+            <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0" Padding="18,12">
+                <Grid ColumnDefinitions="*, Auto">
+                    <TextBlock Grid.Column="0" Text="{Binding SelectedText}" IsVisible="{Binding HasPicked}" FontSize="12.5" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                        <Button Content="{loc:Loc 'common.cancel'}" Click="OnCancelClick" Background="Transparent" Foreground="{DynamicResource TextMain}" BorderThickness="1" BorderBrush="{DynamicResource BorderSubtle}" CornerRadius="7" Padding="16,7" FontSize="12.5" Cursor="Hand"/>
+                        <Button Classes="btn-action-primary" Content="{Binding ConfirmText}" Click="OnConfirmClick" IsEnabled="{Binding HasPicked}" Padding="16,7"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

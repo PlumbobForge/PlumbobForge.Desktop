@@ -16,7 +16,7 @@ namespace PlumbobForge.Desktop.Views;
 public partial class ConfigurationsView : UserControl
 {
     private Point? _dragStartPos;
-    private ConfigSetItemViewModel? _dragCandidate;
+    private ConfigColumnEntry? _dragCandidate;
     private bool _pendingSelectionNarrow = false;
 
     // Rubberband Drag Selection State
@@ -27,7 +27,7 @@ public partial class ConfigurationsView : UserControl
     private ItemsControl? _activeItemsControl;
     private bool _isRubberbandForEnabled = false;
     private KeyModifiers _rubberbandModifiers;
-    private readonly HashSet<long> _initialSelectedIdsBeforeDrag = new();
+    private readonly HashSet<ConfigColumnEntry> _initialSelectedBeforeDrag = new();
 
     public ConfigurationsView()
     {
@@ -146,12 +146,12 @@ public partial class ConfigurationsView : UserControl
     }
     #endregion
 
-    #region Set Card Pointer & Drag-Drop Handling
+    #region Set & Item Card Pointer & Drag-Drop Handling
     private void OnSetCardPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (IsInteractiveControl(e.Source)) return;
 
-        if (sender is Border border && border.DataContext is ConfigSetItemViewModel set && DataContext is ConfigurationsViewModel vm)
+        if (sender is Border border && border.DataContext is ConfigColumnEntry set && DataContext is ConfigurationsViewModel vm)
         {
             var point = e.GetCurrentPoint(border);
             if (point.Properties.IsLeftButtonPressed)
@@ -171,7 +171,7 @@ public partial class ConfigurationsView : UserControl
                 {
                     if (set.IsSelected)
                     {
-                        var col = set.IsEnabledInConfig ? vm.EnabledSets : vm.DisabledSets;
+                        var col = set.IsInEnabledColumn ? vm.EnabledSets : vm.DisabledSets;
                         if (col.Count(s => s.IsSelected) > 1)
                         {
                             // Defer narrowing selection until release if no drag happens
@@ -198,7 +198,7 @@ public partial class ConfigurationsView : UserControl
     {
         if (IsInteractiveControl(e.Source)) return;
 
-        if (_dragStartPos.HasValue && _dragCandidate != null && sender is Border border && border.DataContext is ConfigSetItemViewModel set)
+        if (_dragStartPos.HasValue && _dragCandidate != null && sender is Border border && border.DataContext is ConfigColumnEntry)
         {
             var point = e.GetCurrentPoint(border);
             if (point.Properties.IsLeftButtonPressed)
@@ -213,18 +213,16 @@ public partial class ConfigurationsView : UserControl
 
                     if (DataContext is ConfigurationsViewModel vm)
                     {
-                        var collection = candidate.IsEnabledInConfig ? vm.EnabledSets : vm.DisabledSets;
-                        var selectedInCol = collection.Where(s => s.IsSelected).Select(s => s.Id).ToList();
-
-                        if (!selectedInCol.Contains(candidate.Id))
-                        {
-                            selectedInCol = new List<long> { candidate.Id };
-                        }
+                        var collection = candidate.IsInEnabledColumn ? vm.EnabledSets : vm.DisabledSets;
+                        var dragged = candidate.IsSelected
+                            ? collection.Where(s => s.IsSelected).ToList()
+                            : new List<ConfigColumnEntry> { candidate };
 
                         var dragPayload = new ConfigDragPayload
                         {
-                            SourceIsEnabled = candidate.IsEnabledInConfig,
-                            SetIds = selectedInCol
+                            SourceIsEnabled = candidate.IsInEnabledColumn,
+                            SetIds = dragged.OfType<ConfigSetItemViewModel>().Select(s => s.Id).ToList(),
+                            ItemIds = dragged.OfType<ConfigItemCardViewModel>().Select(i => i.ItemId).ToList()
                         };
 
                         var data = new DataObject();
@@ -239,7 +237,7 @@ public partial class ConfigurationsView : UserControl
 
     private void OnSetCardPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
-        if (sender is Border border && border.DataContext is ConfigSetItemViewModel set && DataContext is ConfigurationsViewModel vm)
+        if (sender is Border border && border.DataContext is ConfigColumnEntry set && DataContext is ConfigurationsViewModel vm)
         {
             if (_pendingSelectionNarrow)
             {
@@ -263,9 +261,11 @@ public partial class ConfigurationsView : UserControl
 
     private void OnSetCardDoubleTapped(object? sender, TappedEventArgs e)
     {
-        if (sender is Border border && border.DataContext is ConfigSetItemViewModel set && DataContext is ConfigurationsViewModel vm)
+        if (IsInteractiveControl(e.Source)) return;
+        if (sender is Border border && DataContext is ConfigurationsViewModel vm)
         {
-            _ = vm.ToggleSetEnabled(set);
+            if (border.DataContext is ConfigSetItemViewModel set) _ = vm.ToggleSetEnabled(set);
+            else if (border.DataContext is ConfigItemCardViewModel item) _ = vm.ToggleItemCardAsync(item);
             e.Handled = true;
         }
     }
@@ -314,22 +314,20 @@ public partial class ConfigurationsView : UserControl
         {
             var payload = ConfigDragPayload.Deserialize(e.Data.Get("plumbobforge-config-sets")?.ToString());
 
-            if (payload != null && payload.SetIds.Count > 0)
+            if (payload != null && (payload.SetIds.Count > 0 || payload.ItemIds.Count > 0))
             {
                 bool isOverEnabled = IsPointerOverControl(EnabledColumnBorder, e.GetPosition(this));
                 bool isOverDisabled = IsPointerOverControl(DisabledColumnBorder, e.GetPosition(this));
 
-                if (isOverEnabled && !payload.SourceIsEnabled)
+                bool? toEnabled = isOverEnabled && !payload.SourceIsEnabled ? true
+                    : isOverDisabled && payload.SourceIsEnabled ? false
+                    : null;
+                if (toEnabled.HasValue)
                 {
-                    // Dragged from Disabled -> Enabled
                     e.Handled = true;
-                    await vm.RequestMoveSetsAsync(payload.SetIds, targetToEnabled: true);
-                }
-                else if (isOverDisabled && payload.SourceIsEnabled)
-                {
-                    // Dragged from Enabled -> Disabled
-                    e.Handled = true;
-                    await vm.RequestMoveSetsAsync(payload.SetIds, targetToEnabled: false);
+                    // Items flip between included and excluded; sets move as before (may ask about sub-sets).
+                    if (payload.ItemIds.Count > 0) await vm.MoveItemsAsync(payload.ItemIds, toEnabled.Value);
+                    if (payload.SetIds.Count > 0) await vm.RequestMoveSetsAsync(payload.SetIds, targetToEnabled: toEnabled.Value);
                 }
             }
         }
@@ -372,7 +370,7 @@ public partial class ConfigurationsView : UserControl
         _activeItemsControl = isEnabled ? EnabledItemsControl : DisabledItemsControl;
         _rubberbandModifiers = e.KeyModifiers;
 
-        _initialSelectedIdsBeforeDrag.Clear();
+        _initialSelectedBeforeDrag.Clear();
         bool isCtrlOrShift = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift | KeyModifiers.Meta)) != 0;
 
         if (isCtrlOrShift)
@@ -380,7 +378,7 @@ public partial class ConfigurationsView : UserControl
             var activeCol = isEnabled ? vm.EnabledSets : vm.DisabledSets;
             foreach (var set in activeCol.Where(s => s.IsSelected))
             {
-                _initialSelectedIdsBeforeDrag.Add(set.Id);
+                _initialSelectedBeforeDrag.Add(set);
             }
         }
         else
@@ -420,12 +418,11 @@ public partial class ConfigurationsView : UserControl
         _activeRubberbandBorder.Height = height;
 
         var selectionRect = new Rect(minX, minY, width, height);
-        var targetCol = _isRubberbandForEnabled ? vm.EnabledSets : vm.DisabledSets;
         bool isCtrl = (_rubberbandModifiers & (KeyModifiers.Control | KeyModifiers.Meta)) != 0;
 
         foreach (var card in _activeItemsControl.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("config-set-card")))
         {
-            if (card.DataContext is ConfigSetItemViewModel setVm)
+            if (card.DataContext is ConfigColumnEntry setVm)
             {
                 var cardPos = card.TranslatePoint(new Point(0, 0), _activeRubberbandHost);
                 if (cardPos.HasValue)
@@ -435,7 +432,7 @@ public partial class ConfigurationsView : UserControl
 
                     if (isCtrl)
                     {
-                        if (_initialSelectedIdsBeforeDrag.Contains(setVm.Id))
+                        if (_initialSelectedBeforeDrag.Contains(setVm))
                         {
                             setVm.IsSelected = !intersects;
                         }
@@ -446,7 +443,7 @@ public partial class ConfigurationsView : UserControl
                     }
                     else
                     {
-                        if (_initialSelectedIdsBeforeDrag.Contains(setVm.Id))
+                        if (_initialSelectedBeforeDrag.Contains(setVm))
                         {
                             setVm.IsSelected = true;
                         }
@@ -474,7 +471,7 @@ public partial class ConfigurationsView : UserControl
             _activeRubberbandHost = null;
             _activeRubberbandBorder = null;
             _activeItemsControl = null;
-            _initialSelectedIdsBeforeDrag.Clear();
+            _initialSelectedBeforeDrag.Clear();
 
             e.Pointer.Capture(null);
             e.Handled = true;
@@ -486,10 +483,11 @@ public partial class ConfigurationsView : UserControl
     {
         public bool SourceIsEnabled { get; set; }
         public List<long> SetIds { get; set; } = new();
+        public List<long> ItemIds { get; set; } = new();
 
         public string Serialize()
         {
-            return $"{(SourceIsEnabled ? "1" : "0")}:{string.Join(',', SetIds)}";
+            return $"{(SourceIsEnabled ? "1" : "0")}:{string.Join(',', SetIds)};{string.Join(',', ItemIds)}";
         }
 
         public static ConfigDragPayload? Deserialize(string? text)
@@ -498,19 +496,23 @@ public partial class ConfigurationsView : UserControl
             var colonIdx = text.IndexOf(':');
             if (colonIdx <= 0) return null;
 
-            var isEnabled = text.Substring(0, colonIdx) == "1";
-            var idsStr = text.Substring(colonIdx + 1);
+            var parts = text.Substring(colonIdx + 1).Split(';');
+            return new ConfigDragPayload
+            {
+                SourceIsEnabled = text.Substring(0, colonIdx) == "1",
+                SetIds = ParseIds(parts[0]),
+                ItemIds = parts.Length > 1 ? ParseIds(parts[1]) : new List<long>()
+            };
+        }
+
+        private static List<long> ParseIds(string text)
+        {
             var ids = new List<long>();
-            foreach (var part in idsStr.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            foreach (var part in text.Split(',', StringSplitOptions.RemoveEmptyEntries))
             {
                 if (long.TryParse(part, out var id)) ids.Add(id);
             }
-
-            return new ConfigDragPayload
-            {
-                SourceIsEnabled = isEnabled,
-                SetIds = ids
-            };
+            return ids;
         }
     }
 }
