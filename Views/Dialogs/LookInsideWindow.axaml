@@ -97,9 +97,72 @@
             <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="42" Padding="16,0,0,0" PointerPressed="OnHeaderPointerPressed">
                 <Grid ColumnDefinitions="Auto, *, Auto">
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <icon:PackIconBoxIcons Kind="RegularSearch" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}"/>
-                        <TextBlock Text="{loc:Loc 'look_inside.title'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
-                        <TextBlock Text="{Binding FileName}" FontSize="13" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis" MaxWidth="560" VerticalAlignment="Center"/>
+                        <icon:PackIconBoxIcons Kind="RegularSearch" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{loc:Loc 'look_inside.title'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding FileName}" FontSize="13" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis" MaxWidth="560" VerticalAlignment="Center"
+                                   IsVisible="{Binding HasSingleItem}"/>
+                        <!-- Several items: pick which one to look inside; a dot marks items with unsaved changes -->
+                        <!-- Same flyout dropdown as the sort buttons in the library and Configurations -->
+                        <Button x:Name="ItemPickerButton" IsVisible="{Binding HasMultipleItems}"
+                                Background="{DynamicResource BgSurface}" Foreground="{DynamicResource TextMuted}" CornerRadius="7" Padding="10,6" Margin="4,0,0,0"
+                                VerticalAlignment="Center" MaxWidth="460" ToolTip.Tip="{loc:Loc 'look_inside.switch_item'}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <icon:PackIconBoxIcons Kind="RegularLayers" Width="14" Height="14" VerticalAlignment="Center" IsVisible="{Binding SelectedItemOption.IsAll, FallbackValue=False}"/>
+                                <Border Width="18" Height="18" CornerRadius="4" ClipToBounds="True" Background="{DynamicResource BgMain}" VerticalAlignment="Center"
+                                        IsVisible="{Binding !SelectedItemOption.IsAll, FallbackValue=False}">
+                                    <Panel>
+                                        <Image Source="{Binding SelectedItemOption.Thumbnail, FallbackValue={x:Null}}" Stretch="UniformToFill"/>
+                                        <icon:PackIconBoxIcons Kind="RegularPackage" Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                               IsVisible="{Binding SelectedItemOption.ShowPackageIcon, FallbackValue=False}"/>
+                                    </Panel>
+                                </Border>
+                                <TextBlock Text="{Binding SelectedItemOption.Label, FallbackValue=''}" FontSize="12" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis" MaxWidth="380" VerticalAlignment="Center"/>
+                                <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="14" Height="14" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Button.Flyout>
+                                <Flyout Placement="BottomEdgeAlignedLeft">
+                                    <Border Padding="6" MinWidth="240" MaxWidth="460">
+                                        <StackPanel Spacing="4">
+                                            <ScrollViewer MaxHeight="360" HorizontalScrollBarVisibility="Disabled">
+                                                <ItemsControl ItemsSource="{Binding ItemOptions}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Spacing="4"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="vm:LookInsideItemOption">
+                                                            <Button Click="OnItemOptionClick" Background="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="8,6" CornerRadius="4">
+                                                                <Button.Styles>
+                                                                    <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                                                                    </Style>
+                                                                </Button.Styles>
+                                                                <Grid ColumnDefinitions="*, Auto">
+                                                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                                                                        <icon:PackIconBoxIcons Kind="RegularLayers" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" IsVisible="{Binding IsAll}"/>
+                                                                        <Border Width="22" Height="22" CornerRadius="4" ClipToBounds="True" Background="{DynamicResource BgMain}" VerticalAlignment="Center"
+                                                                                IsVisible="{Binding !IsAll}">
+                                                                            <Panel>
+                                                                                <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"/>
+                                                                                <icon:PackIconBoxIcons Kind="RegularPackage" Width="13" Height="13" Foreground="{DynamicResource TextMuted}"
+                                                                                                       HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowPackageIcon}"/>
+                                                                            </Panel>
+                                                                        </Border>
+                                                                        <TextBlock Text="{Binding Label}" FontSize="12" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                                                    </StackPanel>
+                                                                    <icon:PackIconBoxIcons Grid.Column="1" Kind="RegularCheck" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="8,0,0,0" IsVisible="{Binding IsSelected}"/>
+                                                                </Grid>
+                                                            </Button>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </ScrollViewer>
+                                        </StackPanel>
+                                    </Border>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
                     </StackPanel>
                     <Button Grid.Column="2" Width="42" Height="42" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCloseClick" ToolTip.Tip="{loc:Loc 'common.close'}">
                         <Button.Styles>
@@ -193,9 +256,23 @@
                                                         Opacity="{Binding IsOff, Converter={x:Static vm:LookInsideConverters.OffOpacity}}">
                                                     <Panel>
                                                         <Image Source="{Binding Preview.Bitmap}" Stretch="Uniform" IsVisible="{Binding HasThumbnails}"/>
+                                                        <!-- All items: the first objects' thumbnails -->
+                                                        <ItemsControl IsVisible="{Binding IsAllItems}" ItemsSource="{Binding MosaicImages}">
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate>
+                                                                    <UniformGrid Columns="2" Rows="2"/>
+                                                                </ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate x:DataType="vm:LookInsideImage">
+                                                                    <Image Source="{Binding Bitmap}" Stretch="UniformToFill"/>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
                                                         <Panel IsVisible="{Binding HasNoThumbnails}">
                                                             <icon:PackIconBoxIcons Kind="RegularHanger" Width="18" Height="18" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsCas}"/>
                                                             <icon:PackIconBoxIcons Kind="RegularChair" Width="18" Height="18" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsBuildBuy}"/>
+                                                            <icon:PackIconBoxIcons Kind="RegularLayers" Width="18" Height="18" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowAllItemsIcon}"/>
                                                         </Panel>
                                                     </Panel>
                                                 </Border>
@@ -285,6 +362,87 @@
                         <!-- Details -->
                         <Grid Grid.Row="2">
                             <TextBlock IsVisible="{Binding ShowSelectPrompt}" Text="{loc:Loc 'look_inside.select_object'}" FontSize="12.5" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                            <!-- All items: changes for every object at once -->
+                            <Panel IsVisible="{Binding IsAllItemsSelected}">
+                            <ScrollViewer DataContext="{Binding AllItems}" x:DataType="vm:LookInsideAllItems">
+                                <StackPanel Spacing="16" Margin="0,0,10,0">
+                                    <Grid ColumnDefinitions="Auto, 16, *">
+                                        <Border Width="140" Height="140" CornerRadius="10" ClipToBounds="True" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderMain}" BorderThickness="1" VerticalAlignment="Top">
+                                            <ItemsControl ItemsSource="{Binding MosaicImages}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <UniformGrid Columns="2" Rows="2"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:LookInsideImage">
+                                                        <Image Source="{Binding Bitmap}" Stretch="UniformToFill"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Border>
+                                        <StackPanel Grid.Column="2" Spacing="6" VerticalAlignment="Top">
+                                            <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                                            <TextBlock Text="{Binding Subtitle}" FontSize="12.5" Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{loc:Loc 'look_inside.all_items_desc'}" FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Border Classes="card" Padding="16,10">
+                                        <Grid ColumnDefinitions="140, *" RowDefinitions="Auto, Auto, Auto, Auto">
+                                            <!-- In game -->
+                                            <TextBlock Grid.Row="0" Classes="fact-label" Text="{loc:Loc 'look_inside.in_game'}" Margin="0,8" VerticalAlignment="Top"/>
+                                            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="6" Margin="0,4">
+                                                <TextBlock Classes="value" Text="{Binding InGameText}"/>
+                                                <WrapPanel>
+                                                    <Button Classes="btn-action-sec" Margin="0,0,8,0" Command="{Binding TurnAllOnCommand}" IsVisible="{Binding CanTurnAllOn}"
+                                                            IsEnabled="{Binding $parent[Window].((vm:LookInsideViewModel)DataContext).CanEdit}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <icon:PackIconBoxIcons Kind="RegularToggleRight"/>
+                                                            <TextBlock Text="{loc:Loc 'look_inside.turn_all_on'}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button Classes="btn-action-sec" Command="{Binding TurnAllOffCommand}" IsVisible="{Binding CanTurnAllOff}"
+                                                            IsEnabled="{Binding $parent[Window].((vm:LookInsideViewModel)DataContext).CanEdit}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <icon:PackIconBoxIcons Kind="RegularToggleLeft"/>
+                                                            <TextBlock Text="{loc:Loc 'look_inside.turn_all_off'}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Button>
+                                                </WrapPanel>
+                                            </StackPanel>
+
+                                            <!-- Outfit categories of every editable CAS part -->
+                                            <TextBlock Grid.Row="1" Classes="fact-label" Text="{loc:Loc 'look_inside.outfits'}" IsVisible="{Binding HasEditableCas}" Margin="0,6" VerticalAlignment="Top"/>
+                                            <ItemsControl Grid.Row="1" Grid.Column="1" ItemsSource="{Binding OutfitOptions}" IsVisible="{Binding HasEditableCas}" Margin="0,2"
+                                                          IsEnabled="{Binding $parent[Window].((vm:LookInsideViewModel)DataContext).CanEdit}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:AllItemsFlagOption">
+                                                        <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}" FontSize="12.5" Foreground="{DynamicResource TextMain}" Margin="0,0,14,0" MinHeight="28"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
+                                            <TextBlock Grid.Row="2" Classes="fact-label" Text="{loc:Loc 'look_inside.random'}" IsVisible="{Binding HasEditableCas}" Margin="0,6" VerticalAlignment="Center"/>
+                                            <CheckBox Grid.Row="2" Grid.Column="1" IsVisible="{Binding HasEditableCas}" IsChecked="{Binding ValidForRandom}" Content="{loc:Loc 'look_inside.valid_for_random'}"
+                                                      ToolTip.Tip="{loc:Loc 'look_inside.valid_for_random_tip'}" FontSize="12.5" Foreground="{DynamicResource TextMain}" MinHeight="28" Margin="0,2"
+                                                      IsEnabled="{Binding $parent[Window].((vm:LookInsideViewModel)DataContext).CanEdit}"/>
+
+                                            <StackPanel Grid.Row="3" Grid.Column="1" Spacing="4" Margin="0,4">
+                                                <TextBlock IsVisible="{Binding HasMixed}" Text="{loc:Loc 'look_inside.all_items_mixed'}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                                <TextBlock IsVisible="{Binding HasSkippedCas}" Text="{Binding SkippedCasText}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                            </Panel>
                             <Panel IsVisible="{Binding HasSelection}">
                             <ScrollViewer DataContext="{Binding SelectedObject}" x:DataType="vm:LookInsideObjectItem">
                                 <StackPanel Spacing="16" Margin="0,0,10,0">

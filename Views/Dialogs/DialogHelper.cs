@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -53,34 +54,42 @@ public static class DialogHelper
         return parent != null ? await dialog.ShowDialog<string?>(parent) : null;
     }
 
-    public static async Task<RetagDialogResult?> ShowRetagAsync(string currentPackageType, string? currentUserTags, string? currentCasCategories, Window? owner = null)
+    public static async Task<RetagDialogResult?> ShowRetagAsync(RetagDialogInput input, Window? owner = null)
     {
         var parent = owner ?? GetMainWindow();
-        var dialog = new RetagDialogWindow(currentPackageType, currentUserTags, currentCasCategories);
+        var dialog = new RetagDialogWindow(input);
         return parent != null ? await dialog.ShowDialog<RetagDialogResult?>(parent) : null;
     }
 
     public static async Task<bool> ShowLookInsideAsync(long itemId, string fileName, Window? owner = null)
     {
+        return (await ShowLookInsideAsync(new[] { (itemId, fileName) }, owner)).Count > 0;
+    }
+
+    public static async Task<IReadOnlyList<long>> ShowLookInsideAsync(IReadOnlyList<(long Id, string FileName)> items, Window? owner = null)
+    {
         var parent = owner ?? GetMainWindow();
-        var viewModel = new LookInsideViewModel(itemId, fileName);
+        if (items.Count == 0) return Array.Empty<long>();
+        var viewModel = new LookInsideViewModel(items);
         var dialog = new LookInsideWindow(viewModel);
         if (parent != null)
         {
             await dialog.ShowDialog(parent);
         }
-        return viewModel.ChangesSaved;
+        return viewModel.SavedItemIds.ToList();
     }
 
-    public static async Task<bool> ShowCasFlagsAsync(IReadOnlyList<long> itemIds, bool isVault, Window? owner = null)
+    public static async Task<IReadOnlyList<long>> ShowConfigItemPickerAsync(bool include, string configName,
+        IReadOnlyList<PlumbobForge.Backend.Database.SetsEntity> sets, IReadOnlyDictionary<long, bool> existingRules, Window? owner = null,
+        bool forCollection = false)
     {
         var parent = owner ?? GetMainWindow();
-        var viewModel = new CasFlagsBatchViewModel(itemIds, isVault);
+        var viewModel = new ConfigItemPickerViewModel(include, configName, sets, existingRules, forCollection);
         if (parent != null)
         {
-            await new CasFlagsDialogWindow(viewModel).ShowDialog(parent);
+            await new ConfigItemPickerWindow(viewModel).ShowDialog(parent);
         }
-        return viewModel.ChangesSaved;
+        return viewModel.Result;
     }
 
     public static async Task<DeleteDialogResult> ShowDeleteConfirmAsync(string message, Window? owner = null)

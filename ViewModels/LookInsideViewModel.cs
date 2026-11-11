@@ -16,21 +16,77 @@ using S3ForgeTools.GameFiles.Package;
 
 namespace PlumbobForge.Desktop.ViewModels;
 
+public sealed class LookInsideSource
+{
+    public long ItemId { get; }
+    public string FileName { get; }
+    public PackageInspection Inspection { get; }
+    /// <summary>Encrypted, damaged or partly missing items can be looked at but not rewritten.</summary>
+    public bool EditBlocked { get; }
+
+    public LookInsideSource(long itemId, string fileName, PackageInspection inspection)
+    {
+        ItemId = itemId;
+        FileName = fileName;
+        Inspection = inspection;
+        EditBlocked = inspection.Warnings.Any(w => w.Key is "look_inside.warning_encrypted" or "look_inside.warning_corrupt" or "look_inside.warning_missing_shard");
+    }
+}
+
+public sealed partial class LookInsideItemOption : ObservableObject
+{
+    public long? ItemId { get; }
+    public string Label { get; }
+    public bool IsAll => ItemId == null;
+
+    private readonly ItemThumbnail? _thumbnail;
+    public Bitmap? Thumbnail => _thumbnail?.Get();
+    public bool ShowPackageIcon => !IsAll && Thumbnail == null;
+
+    [ObservableProperty]
+    private bool _isSelected;
+
+    public LookInsideItemOption(long? itemId, string label)
+    {
+        ItemId = itemId;
+        Label = label;
+        if (itemId is long id)
+        {
+            _thumbnail = new ItemThumbnail(id, () =>
+            {
+                OnPropertyChanged(nameof(Thumbnail));
+                OnPropertyChanged(nameof(ShowPackageIcon));
+            });
+        }
+    }
+
+    public override string ToString() => Label;
+}
+
 public partial class LookInsideViewModel : ObservableObject, IDisposable
 {
     public const string FilterAll = "All";
     public const string FilterCas = "Cas";
     public const string FilterBuildBuy = "BuildBuy";
 
-    private readonly long _itemId;
+    private readonly IReadOnlyList<(long Id, string FileName)> _items;
     private readonly CancellationTokenSource _cts = new();
-    private PackageInspection? _inspection;
+    private List<LookInsideSource> _sources = new();
     private List<LookInsideObjectItem> _allObjects = new();
 
     private static string L(string key) => LocalizationManager.Instance.GetString(key);
     private static string L(string key, params object[] args) => LocalizationManager.Instance.GetString(key, args);
 
     public string FileName { get; }
+
+    public bool HasMultipleItems => _items.Count > 1;
+    public bool HasSingleItem => !HasMultipleItems;
+    public List<LookInsideItemOption> ItemOptions { get; }
+
+    [ObservableProperty]
+    private LookInsideItemOption _selectedItemOption;
+
+    public HashSet<long> SavedItemIds { get; } = new();
 
     [ObservableProperty]
     private bool _isLoading = true;
@@ -61,7 +117,11 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
     public bool HasMultipleParts => PartOptions.Count > 2;
     public bool HasPackPreviews => PackPreviews.Count > 0;
     public bool HasNoObjects => IsReady && _allObjects.Count == 0;
-    public bool HasSelection => SelectedObject != null;
+    public bool HasSelection => SelectedObject != null && !SelectedObject.IsAllItems;
+    public bool IsAllItemsSelected => SelectedObject?.IsAllItems == true;
+
+    private LookInsideObjectItem? _allItemsEntry;
+    public LookInsideAllItems? AllItems { get; private set; }
     public bool ShowSelectPrompt => IsReady && SelectedObject == null && _allObjects.Count > 0;
 
     public bool HasMultipleKinds { get; private set; }
@@ -81,13 +141,18 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _showCacheNote;
 
-    public bool ChangesSaved { get; private set; }
+    public bool ChangesSaved => SavedItemIds.Count > 0;
 
-    // Encrypted, damaged or partly missing items can be looked at but not rewritten.
-    private bool _editBlocked;
+    private IEnumerable<LookInsideSource> SelectionSources =>
+        SelectedObject == null ? Enumerable.Empty<LookInsideSource>()
+        : SelectedObject.IsAllItems ? _sources
+        : SelectedObject.Source != null ? new[] { SelectedObject.Source } : Enumerable.Empty<LookInsideSource>();
 
-    public bool CanEdit => _inspection != null && !_editBlocked && !IsSaving && !IsExporting;
-    public bool CanSave => CanEdit && HasPendingChanges;
+    // Editing is blocked for items that are encrypted, damaged or partly missing.
+    private bool SelectionEditBlocked => _sources.Count == 1 ? _sources[0].EditBlocked : SelectionSources.Any(s => s.EditBlocked);
+
+    public bool CanEdit => _sources.Count > 0 && !SelectionEditBlocked && !IsSaving && !IsExporting;
+    public bool CanSave => _sources.Count > 0 && !IsSaving && !IsExporting && HasPendingChanges;
     public int PendingCount => _allObjects.Sum(o => o.Thumbnails.Count(t => t.IsChanged) + (o.HasToggleChange ? 1 : 0) + (o.HasCasFlagChange ? 1 : 0));
 
     [ObservableProperty]
@@ -96,7 +161,7 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
     public int OffCount => _allObjects.Count(o => o.IsOff);
     public bool HasOffObjects => OffCount > 0;
     public string OffFilterText => L("look_inside.filter_off", OffCount);
-    public bool AllObjectsOff => _allObjects.Any(o => o.Object != null) && _allObjects.Where(o => o.Object != null).All(o => o.IsOff);
+    public bool AllObjectsOff => HasSingleItem && _allObjects.Any(o => o.Object != null) && _allObjects.Where(o => o.Object != null).All(o => o.IsOff);
 
     [RelayCommand]
     private void ToggleOffFilter() => ShowOnlyOff = !ShowOnlyOff;
@@ -130,42 +195,75 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void ClearSearch() => SearchText = string.Empty;
 
-    public LookInsideViewModel(long itemId, string fileName)
+    public LookInsideViewModel(long itemId, string fileName) : this(new[] { (itemId, fileName) })
     {
-        _itemId = itemId;
-        FileName = fileName;
+    }
+
+    public LookInsideViewModel(IReadOnlyList<(long Id, string FileName)> items)
+    {
+        if (items.Count == 0) throw new ArgumentException("Look Inside needs at least one item", nameof(items));
+        _items = items;
+        FileName = items[0].FileName;
+        ItemOptions = new List<LookInsideItemOption> { new(null, L("look_inside.all_selected_items", items.Count)) };
+        ItemOptions.AddRange(items.Select(i => new LookInsideItemOption(i.Id, i.FileName)));
+        _selectedItemOption = ItemOptions[0];
+        _selectedItemOption.IsSelected = true;
     }
 
     public async Task LoadAsync()
     {
         IsLoading = true;
         ErrorMessage = null;
+        var sources = new List<LookInsideSource>();
+        var failures = new List<string>();
         try
         {
             using var scope = App.Services?.CreateScope();
             var inspector = scope?.ServiceProvider.GetRequiredService<PackageInspectorService>()
                 ?? throw new InvalidOperationException("Services are not available");
-            _inspection = await inspector.InspectAsync(_itemId, _cts.Token);
+            foreach (var (id, fileName) in _items)
+            {
+                try
+                {
+                    var inspection = await inspector.InspectAsync(id, _cts.Token);
+                    if (_cts.IsCancellationRequested)
+                    {
+                        inspection.Dispose();
+                        break;
+                    }
+                    sources.Add(new LookInsideSource(id, fileName, inspection));
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError($"Look Inside failed for item {id}", ex, "LookInsideViewModel");
+                    failures.Add(ErrorText(ex));
+                    if (_items.Count > 1) failures[^1] = $"{fileName}: {failures[^1]}";
+                }
+            }
+
             if (_cts.IsCancellationRequested)
             {
-                _inspection.Dispose();
+                foreach (var s in sources) s.Inspection.Dispose();
                 return;
             }
-            Populate(_inspection);
-        }
-        catch (OperationCanceledException)
-        {
+            _sources = sources;
+            if (sources.Count == 0)
+            {
+                // Nothing could be read: show the (first) reason.
+                ErrorMessage = failures.FirstOrDefault() ?? L("look_inside.error_read", string.Empty);
+                return;
+            }
+            Populate(failures);
         }
         catch (Exception ex)
         {
-            AppLogger.LogError($"Look Inside failed for item {_itemId}", ex, "LookInsideViewModel");
-            ErrorMessage = ex switch
-            {
-                FileNotFoundException => L("look_inside.error_missing_file"),
-                // Truncated or empty packages fail while reading the header or index
-                EndOfStreamException or InvalidDataException => L("look_inside.error_damaged"),
-                _ => L("look_inside.error_read", ex.Message)
-            };
+            foreach (var s in sources) s.Inspection.Dispose();
+            AppLogger.LogError("Look Inside failed", ex, "LookInsideViewModel");
+            ErrorMessage = ErrorText(ex);
         }
         finally
         {
@@ -174,45 +272,111 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void Populate(PackageInspection inspection)
+    private static string ErrorText(Exception ex) => ex switch
     {
-        Func<InspectedResource, byte[]> reader = inspection.Read;
-        bool multiPart = inspection.Parts.Count > 1;
-        var partLabels = inspection.Parts.ToDictionary(p => p.Index, p => p.Label);
+        FileNotFoundException => L("look_inside.error_missing_file"),
+        // Truncated or empty packages fail while reading the header or index
+        EndOfStreamException or InvalidDataException => L("look_inside.error_damaged"),
+        _ => L("look_inside.error_read", ex.Message)
+    };
 
-        _allObjects = inspection.Objects
-            .Select(o => new LookInsideObjectItem(o, reader, multiPart && partLabels.TryGetValue(o.Resource.PartIndex, out var label) ? label : null))
+    private void Populate(List<string> failures)
+    {
+        bool multiItem = HasMultipleItems;
+        _allObjects = new List<LookInsideObjectItem>();
+        var unlinked = new List<LookInsideObjectItem>();
+        foreach (var source in _sources)
+        {
+            var inspection = source.Inspection;
+            Func<InspectedResource, byte[]> reader = inspection.Read;
+            bool multiPart = inspection.Parts.Count > 1;
+            var partLabels = inspection.Parts.ToDictionary(p => p.Index, p => p.Label);
+
+            foreach (var o in inspection.Objects)
+            {
+                string? partLabel = multiPart && partLabels.TryGetValue(o.Resource.PartIndex, out var label) ? label : null;
+                // With several items, say which item each object comes from.
+                string? origin = multiItem ? (partLabel != null ? $"{source.FileName} · {partLabel}" : source.FileName) : partLabel;
+                _allObjects.Add(new LookInsideObjectItem(o, reader, origin) { Source = source });
+            }
+            if (inspection.UnlinkedThumbnails.Count > 0)
+            {
+                unlinked.Add(LookInsideObjectItem.ForUnlinked(inspection.UnlinkedThumbnails, reader, source, multiItem ? source.FileName : null));
+            }
+        }
+        _allObjects = _allObjects
             .OrderBy(o => o.Object!.Kind)
             .ThenBy(o => o.Title, StringComparer.CurrentCultureIgnoreCase)
+            .Concat(unlinked)
             .ToList();
-        if (inspection.UnlinkedThumbnails.Count > 0)
-        {
-            _allObjects.Add(LookInsideObjectItem.ForUnlinked(inspection.UnlinkedThumbnails, reader));
-        }
         foreach (var obj in _allObjects) obj.Changed += NotifyPendingChanged;
-        _editBlocked = inspection.Warnings.Any(w => w.Key is "look_inside.warning_encrypted" or "look_inside.warning_corrupt" or "look_inside.warning_missing_shard");
+        RebuildAllItemsEntry();
 
-        PartOptions = new List<LookInsidePartOption> { new(-1, L("look_inside.all_packages")) };
-        PartOptions.AddRange(inspection.Parts.Select(p => new LookInsidePartOption(p.Index, p.Label)));
-        SelectedPart = PartOptions[0];
+        Warnings = _sources
+            .SelectMany(s => s.Inspection.Warnings.Select(w => multiItem ? $"{s.FileName}: {L(w.Key, w.Args)}" : L(w.Key, w.Args)))
+            .Concat(failures.Select(f => L("look_inside.item_not_read", f)))
+            .ToList();
+        PackPreviews = _sources.SelectMany(s => s.Inspection.PackPreviews).Select(bytes => new LookInsideImage(() => bytes)).ToList();
 
-        Warnings = inspection.Warnings.Select(w => L(w.Key, w.Args)).ToList();
-        PackPreviews = inspection.PackPreviews.Select(bytes => new LookInsideImage(() => bytes)).ToList();
-
-        int cas = inspection.Objects.Count(o => o.Kind == InspectedObjectKind.Cas);
-        int bb = inspection.Objects.Count(o => o.Kind == InspectedObjectKind.BuildBuy);
+        int cas = _sources.Sum(s => s.Inspection.Objects.Count(o => o.Kind == InspectedObjectKind.Cas));
+        int bb = _sources.Sum(s => s.Inspection.Objects.Count(o => o.Kind == InspectedObjectKind.BuildBuy));
         var parts = new List<string>();
-        if (inspection.Parts.Count > 1) parts.Add(L("look_inside.summary_parts", inspection.Parts.Count));
+        if (multiItem) parts.Add(L("look_inside.summary_items", _sources.Count));
+        else if (_sources[0].Inspection.Parts.Count > 1) parts.Add(L("look_inside.summary_parts", _sources[0].Inspection.Parts.Count));
         if (cas > 0) parts.Add(L("look_inside.summary_cas", cas));
         if (bb > 0) parts.Add(L("look_inside.summary_bb", bb));
-        parts.Add(CacheGroupInfo.FormatBytes(inspection.TotalBytes));
+        parts.Add(CacheGroupInfo.FormatBytes(_sources.Sum(s => s.Inspection.TotalBytes)));
         SummaryText = string.Join("  ·  ", parts);
         HasMultipleKinds = cas > 0 && bb > 0;
         if (!HasMultipleKinds) KindFilter = FilterAll;
-        ThumbnailCount = inspection.Objects.Sum(o => o.Thumbnails.Count) + inspection.UnlinkedThumbnails.Count + inspection.PackPreviews.Count;
+        ThumbnailCount = _sources.Sum(s => s.Inspection.Objects.Sum(o => o.Thumbnails.Count) + s.Inspection.UnlinkedThumbnails.Count + s.Inspection.PackPreviews.Count);
 
+        RebuildPartOptions();
         ApplyFilter();
-        SelectedObject = VisibleObjects.FirstOrDefault();
+        SelectedObject = VisibleObjects.FirstOrDefault(o => !o.IsAllItems);
+    }
+
+    private IEnumerable<LookInsideObjectItem> ObjectsOfChosenItem =>
+        SelectedItemOption?.ItemId is long id ? _allObjects.Where(o => o.Source?.ItemId == id) : _allObjects;
+
+    private void RebuildAllItemsEntry()
+    {
+        var realObjects = ObjectsOfChosenItem.Where(o => o.Object != null).ToList();
+        if (realObjects.Count > 1)
+        {
+            AllItems = new LookInsideAllItems(realObjects);
+            _allItemsEntry = LookInsideObjectItem.ForAll(realObjects);
+        }
+        else
+        {
+            AllItems = null;
+            _allItemsEntry = null;
+        }
+        OnPropertyChanged(nameof(AllItems));
+    }
+
+    private void RebuildPartOptions()
+    {
+        var source = SelectedItemOption?.ItemId is long id ? _sources.FirstOrDefault(s => s.ItemId == id)
+            : _sources.Count == 1 ? _sources[0] : null;
+        PartOptions = new List<LookInsidePartOption> { new(-1, L("look_inside.all_packages")) };
+        if (source != null) PartOptions.AddRange(source.Inspection.Parts.Select(p => new LookInsidePartOption(p.Index, p.Label)));
+        SelectedPart = PartOptions[0];
+        OnPropertyChanged(nameof(PartOptions));
+        OnPropertyChanged(nameof(HasMultipleParts));
+    }
+
+    partial void OnSelectedItemOptionChanged(LookInsideItemOption value)
+    {
+        foreach (var option in ItemOptions) option.IsSelected = ReferenceEquals(option, value);
+        if (_sources.Count == 0) return;
+        RebuildAllItemsEntry();
+        RebuildPartOptions();
+        ApplyFilter();
+        if (SelectedObject == null || !VisibleObjects.Contains(SelectedObject))
+        {
+            SelectedObject = VisibleObjects.FirstOrDefault(o => !o.IsAllItems);
+        }
     }
 
     partial void OnSearchTextChanged(string value)
@@ -234,14 +398,17 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
     partial void OnSelectedObjectChanged(LookInsideObjectItem? value)
     {
         OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(IsAllItemsSelected));
         OnPropertyChanged(nameof(ShowSelectPrompt));
+        OnPropertyChanged(nameof(CanEdit));
+        OnPropertyChanged(nameof(IsEditBlocked));
     }
 
     private void ApplyFilter()
     {
         string query = SearchText.Trim();
         int part = SelectedPart?.Index ?? -1;
-        var filtered = _allObjects.Where(o =>
+        var filtered = ObjectsOfChosenItem.Where(o =>
         {
             if (o.Object == null)
             {
@@ -253,6 +420,10 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
             if (part >= 0 && o.Object.Resource.PartIndex != part) return false;
             return query.Length == 0 || o.Matches(query);
         });
+        if (_allItemsEntry != null && KindFilter == FilterAll && part < 0 && query.Length == 0 && !ShowOnlyOff)
+        {
+            filtered = filtered.Prepend(_allItemsEntry);
+        }
         VisibleObjects.ReplaceAll(filtered);
         if (SelectedObject != null && !VisibleObjects.Contains(SelectedObject))
         {
@@ -282,7 +453,7 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
         NotifyPendingChanged();
     }
 
-    public bool IsEditBlocked => IsReady && _editBlocked;
+    public bool IsEditBlocked => IsReady && SelectionEditBlocked;
 
     private void NotifyPendingChanged()
     {
@@ -294,12 +465,16 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(HasOffObjects));
         OnPropertyChanged(nameof(OffFilterText));
         OnPropertyChanged(nameof(AllObjectsOff));
+        AllItems?.Refresh();
         if (!HasPendingChanges) ShowUnsavedPrompt = false;
         // Nothing is off any more: the "turned off" list would be empty.
         if (ShowOnlyOff && !HasOffObjects) ShowOnlyOff = false;
     }
 
     #region Editing
+
+    private LookInsideSource? SourceOf(LookInsideThumbnailItem item) =>
+        _allObjects.FirstOrDefault(o => o.Thumbnails.Contains(item))?.Source;
 
     public async Task StageReplaceAsync(LookInsideThumbnailItem item, string imagePath)
     {
@@ -339,19 +514,19 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
 
     private async Task<bool> StageImageAsync(IReadOnlyList<LookInsideThumbnailItem> targets, string imagePath)
     {
-        var inspection = _inspection;
-        if (inspection == null || !CanEdit || targets.Count == 0) return false;
+        if (_sources.Count == 0 || !CanEdit || targets.Count == 0) return false;
+        var readers = targets.Select(t => t.IsNewSlot ? null : SourceOf(t)?.Inspection).ToList();
         try
         {
             var images = await Task.Run(() =>
             {
                 byte[] source = File.ReadAllBytes(imagePath);
                 if (ThumbnailImageTools.ReadSize(source) == null) throw new InvalidDataException("Not an image");
-                return targets.Select(t =>
+                return targets.Select((t, i) =>
                 {
                     var (width, height) = t.IsNewSlot
                         ? (t.NewSlotSize, t.NewSlotSize)
-                        : ThumbnailImageTools.ReadSize(inspection.Read(t.Thumbnail.Resource)) ?? (256, 256);
+                        : (readers[i] != null ? ThumbnailImageTools.ReadSize(readers[i]!.Read(t.Thumbnail.Resource)) : null) ?? (256, 256);
                     return ThumbnailImageTools.CreateThumbnail(source, width, height);
                 }).ToList();
             });
@@ -371,11 +546,11 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
         return false;
     }
 
+    private sealed record ItemSave(LookInsideSource Source, List<PartEdits> Parts, List<ObjectToggle> Toggles, int ThumbnailCount, int CasCount);
 
     public async Task SaveAsync()
     {
-        var inspection = _inspection;
-        if (inspection == null || !CanSave) return;
+        if (_sources.Count == 0 || !CanSave) return;
 
         if (Sims3GameProcess.IsGameRunning())
         {
@@ -383,81 +558,103 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
             return;
         }
 
-        var byPart = new Dictionary<int, List<ResourceEdit>>();
-        foreach (var t in _allObjects.SelectMany(o => o.Thumbnails).Where(t => t.IsChanged))
+        // Group the staged changes by item; CAS flag edits patch the CASP, so they are read now, while the items are open.
+        var saves = new List<ItemSave>();
+        foreach (var source in _sources)
         {
-            if (t.Change != ThumbnailChange.Remove && t.NewData == null) continue;
-            int part = t.Thumbnail.Resource.PartIndex;
-            if (!byPart.TryGetValue(part, out var list)) byPart[part] = list = new List<ResourceEdit>();
-            list.Add(new ResourceEdit(t.Thumbnail.Resource.Key, t.Change == ThumbnailChange.Remove ? null : t.NewData));
-        }
-        int thumbnailCount = byPart.Values.Sum(l => l.Count);
+            var inspection = source.Inspection;
+            var objects = _allObjects.Where(o => o.Source == source).ToList();
 
-        // CAS flag edits patch the CASP, so they are read now, while the inspection is still open.
-        int casCount = 0;
-        try
-        {
-            foreach (var casPart in CasFlagsService.BuildEdits(inspection, _allObjects.Where(o => o.HasCasFlagChange).Select(o => (o.Object!, o.StagedCasCategory))))
+            var byPart = new Dictionary<int, List<ResourceEdit>>();
+            foreach (var t in objects.SelectMany(o => o.Thumbnails).Where(t => t.IsChanged))
             {
-                if (!byPart.TryGetValue(casPart.PartIndex, out var list)) byPart[casPart.PartIndex] = list = new List<ResourceEdit>();
-                list.AddRange(casPart.Edits);
-                casCount += casPart.Edits.Count;
+                if (t.Change != ThumbnailChange.Remove && t.NewData == null) continue;
+                int part = t.Thumbnail.Resource.PartIndex;
+                if (!byPart.TryGetValue(part, out var list)) byPart[part] = list = new List<ResourceEdit>();
+                list.Add(new ResourceEdit(t.Thumbnail.Resource.Key, t.Change == ThumbnailChange.Remove ? null : t.NewData));
+            }
+            int thumbnailCount = byPart.Values.Sum(l => l.Count);
+
+            int casCount = 0;
+            try
+            {
+                foreach (var casPart in CasFlagsService.BuildEdits(inspection, objects.Where(o => o.HasCasFlagChange).Select(o => (o.Object!, o.StagedCasCategory))))
+                {
+                    if (!byPart.TryGetValue(casPart.PartIndex, out var list)) byPart[casPart.PartIndex] = list = new List<ResourceEdit>();
+                    list.AddRange(casPart.Edits);
+                    casCount += casPart.Edits.Count;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError($"Could not prepare CAS flag changes for item {source.ItemId}", ex, "LookInsideViewModel");
+                StatusMessage = L("look_inside.save_failed", HasMultipleItems ? $"{source.FileName}: {ex.Message}" : ex.Message);
+                return;
+            }
+
+            var parts = byPart
+                .Select(p => new PartEdits(p.Key, inspection.Parts.FirstOrDefault(x => x.Index == p.Key)?.MetaEntityId, p.Value))
+                .ToList();
+            var toggles = objects
+                .Where(o => o.HasToggleChange)
+                .Select(o => new ObjectToggle(o.Object!.Resource.Key, o.IsEnabledInGame))
+                .ToList();
+            if (parts.Count > 0 || toggles.Count > 0)
+            {
+                saves.Add(new ItemSave(source, parts, toggles, thumbnailCount, casCount));
             }
         }
-        catch (Exception ex)
-        {
-            AppLogger.LogError($"Could not prepare CAS flag changes for item {_itemId}", ex, "LookInsideViewModel");
-            StatusMessage = L("look_inside.save_failed", ex.Message);
-            return;
-        }
 
-        var parts = byPart
-            .Select(p => new PartEdits(p.Key, inspection.Parts.FirstOrDefault(x => x.Index == p.Key)?.MetaEntityId, p.Value))
-            .ToList();
-        var toggles = _allObjects
-            .Where(o => o.HasToggleChange)
-            .Select(o => new ObjectToggle(o.Object!.Resource.Key, o.IsEnabledInGame))
-            .ToList();
-        int count = thumbnailCount + casCount + toggles.Count;
-        bool isVault = inspection.IsVault;
+        int count = saves.Sum(s => s.ThumbnailCount + s.CasCount + s.Toggles.Count);
+        bool needsRebuild = saves.Any(s => (s.Toggles.Count > 0 || s.CasCount > 0) && !s.Source.Inspection.IsVault);
+        bool thumbnailsSaved = false;
         string? selectedKey = SelectedObject?.KeyText;
 
         IsSaving = true;
         ShowUnsavedPrompt = false;
         StatusMessage = L("look_inside.saving");
-        bool saved = false;
-        bool contentSaved = false;
         string? failure = null;
 
-        // The library file must not be held open while it is replaced.
-        _inspection = null;
-        inspection.Dispose();
-        try
+        // The library files must not be held open while they are replaced.
+        var sources = _sources;
+        _sources = new List<LookInsideSource>();
+        foreach (var s in sources) s.Inspection.Dispose();
+
+        using (var scope = App.Services?.CreateScope())
         {
-            using var scope = App.Services?.CreateScope();
-            var editor = scope?.ServiceProvider.GetRequiredService<PackageEditService>()
-                ?? throw new InvalidOperationException("Services are not available");
-            // Thumbnails and CAS flags first: if their rewrite fails, nothing at all has changed.
-            if (parts.Count > 0)
+            foreach (var save in saves)
             {
-                if (casCount > 0) await scope!.ServiceProvider.GetRequiredService<CasFlagsService>().ApplyEditsAsync(_itemId, parts);
-                else await editor.ApplyAsync(_itemId, parts);
-                ChangesSaved = contentSaved = true;
+                long itemId = save.Source.ItemId;
+                bool contentSaved = false;
+                try
+                {
+                    var editor = scope?.ServiceProvider.GetRequiredService<PackageEditService>()
+                        ?? throw new InvalidOperationException("Services are not available");
+                    // Thumbnails and CAS flags first: if their rewrite fails, nothing at all has changed.
+                    if (save.Parts.Count > 0)
+                    {
+                        if (save.CasCount > 0) await scope!.ServiceProvider.GetRequiredService<CasFlagsService>().ApplyEditsAsync(itemId, save.Parts);
+                        else await editor.ApplyAsync(itemId, save.Parts);
+                        contentSaved = true;
+                        SavedItemIds.Add(itemId);
+                        if (save.ThumbnailCount > 0) thumbnailsSaved = true;
+                    }
+                    if (save.Toggles.Count > 0) await editor.SetObjectsEnabledAsync(itemId, save.Toggles);
+                    SavedItemIds.Add(itemId);
+                }
+                catch (GameRunningException)
+                {
+                    failure ??= L("look_inside.game_running_unsaved");
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError($"Could not save Look Inside changes for item {itemId}", ex, "LookInsideViewModel");
+                    string message = HasMultipleItems ? $"{save.Source.FileName}: {ex.Message}" : ex.Message;
+                    failure ??= contentSaved
+                        ? L("look_inside.save_toggles_failed", message)
+                        : L("look_inside.save_failed", message);
+                }
             }
-            if (toggles.Count > 0) await editor.SetObjectsEnabledAsync(_itemId, toggles);
-            saved = true;
-            ChangesSaved = true;
-        }
-        catch (GameRunningException)
-        {
-            failure = L("look_inside.game_running_unsaved");
-        }
-        catch (Exception ex)
-        {
-            AppLogger.LogError($"Could not save Look Inside changes for item {_itemId}", ex, "LookInsideViewModel");
-            failure = contentSaved
-                ? L("look_inside.save_toggles_failed", ex.Message)
-                : L("look_inside.save_failed", ex.Message);
         }
 
         await LoadAsync();
@@ -466,32 +663,32 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
         {
             SelectedObject = VisibleObjects.FirstOrDefault(o => o.KeyText == selectedKey) ?? SelectedObject;
         }
-        StatusMessage = !saved ? failure
-            : (toggles.Count > 0 || casCount > 0) && !isVault ? L("look_inside.saved_rebuild", count)
-            : L("look_inside.saved", count);
-        ShowCacheNote = contentSaved && thumbnailCount > 0;
+        StatusMessage = failure
+            ?? (needsRebuild ? L("look_inside.saved_rebuild", count) : L("look_inside.saved", count));
+        ShowCacheNote = thumbnailsSaved;
     }
 
     #endregion
 
     public string GetSuggestedFileName(LookInsideThumbnailItem item) =>
-        _inspection != null ? ThumbnailExporter.GetSuggestedFileName(_inspection, item.Owner, item.Thumbnail) : "thumbnail.png";
+        SourceOf(item) is { } source ? ThumbnailExporter.GetSuggestedFileName(source.Inspection, item.Owner, item.Thumbnail) : "thumbnail.png";
 
+    /// <summary>Saves one thumbnail, as stored in the package, to <paramref name="destinationPath"/>.</summary>
     public async Task ExportThumbnailAsync(LookInsideThumbnailItem item, string destinationPath)
     {
-        var inspection = _inspection;
-        if (inspection == null || IsExporting) return;
+        var source = SourceOf(item);
+        if (source == null || IsExporting) return;
 
         IsExporting = true;
         try
         {
-            await Task.Run(() => ThumbnailExporter.ExportOne(inspection, item.Thumbnail, destinationPath), _cts.Token);
+            await Task.Run(() => ThumbnailExporter.ExportOne(source.Inspection, item.Thumbnail, destinationPath), _cts.Token);
             StatusMessage = L("look_inside.export_done_one", Path.GetFileName(destinationPath));
             LastExportFolder = Path.GetDirectoryName(destinationPath);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            AppLogger.LogError($"Could not export a thumbnail of item {_itemId} to {destinationPath}", ex, "LookInsideViewModel");
+            AppLogger.LogError($"Could not export a thumbnail of item {source.ItemId} to {destinationPath}", ex, "LookInsideViewModel");
             StatusMessage = L("look_inside.export_failed", ex.Message);
         }
         finally
@@ -504,8 +701,12 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
 
     public async Task ExportManyAsync(string folder, LookInsideObjectItem? onlyObject = null)
     {
-        var inspection = _inspection;
-        if (inspection == null || IsExporting) return;
+        if (_sources.Count == 0 || IsExporting) return;
+
+        var targets = onlyObject != null
+            ? (onlyObject.Source != null ? new List<LookInsideSource> { onlyObject.Source } : new List<LookInsideSource>())
+            : SelectedItemOption?.ItemId is long id ? _sources.Where(s => s.ItemId == id).ToList() : _sources.ToList();
+        if (targets.Count == 0) return;
 
         IsExporting = true;
         StatusMessage = null;
@@ -513,23 +714,33 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
         try
         {
             var only = onlyObject?.Thumbnails.Where(t => !t.IsNewSlot).Select(t => (t.Owner, t.Thumbnail)).ToList();
-            var result = await Task.Run(() =>
+            var (exported, failed, lastFolder) = await Task.Run(() =>
             {
-                string target = only == null ? ThumbnailExporter.CreateExportFolder(folder, FileName) : folder;
-                return ThumbnailExporter.ExportMany(inspection, target, only, progress, _cts.Token);
+                int done = 0, bad = 0;
+                string? last = null;
+                foreach (var source in targets)
+                {
+                    string target = only == null ? ThumbnailExporter.CreateExportFolder(folder, source.FileName) : folder;
+                    var result = ThumbnailExporter.ExportMany(source.Inspection, target, only, progress, _cts.Token);
+                    done += result.Exported;
+                    bad += result.Failed;
+                    last = result.Folder;
+                }
+                return (done, bad, last);
             }, _cts.Token);
 
-            LastExportFolder = result.Folder;
-            StatusMessage = result.Failed == 0
-                ? L("look_inside.export_done", result.Exported, result.Folder)
-                : L("look_inside.export_done_with_failures", result.Exported, result.Failed);
+            // Several items each get their own folder: open the folder that holds them.
+            LastExportFolder = targets.Count > 1 ? folder : lastFolder;
+            StatusMessage = failed == 0
+                ? L("look_inside.export_done", exported, LastExportFolder ?? folder)
+                : L("look_inside.export_done_with_failures", exported, failed);
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception ex)
         {
-            AppLogger.LogError($"Could not export thumbnails of item {_itemId} to {folder}", ex, "LookInsideViewModel");
+            AppLogger.LogError($"Could not export thumbnails to {folder}", ex, "LookInsideViewModel");
             StatusMessage = L("look_inside.export_failed", ex.Message);
         }
         finally
@@ -557,8 +768,8 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         _cts.Cancel();
-        _inspection?.Dispose();
-        _inspection = null;
+        foreach (var s in _sources) s.Inspection.Dispose();
+        _sources = new List<LookInsideSource>();
     }
 }
 
@@ -806,11 +1017,15 @@ public sealed class LookInsideObjectItem : ObservableObject
     public string OffNoteText => LocalizationManager.Instance.GetString(IsCas ? "look_inside.off_note_cas" : "look_inside.off_note_bb");
 
     public InspectedObject? Object { get; }
+    public LookInsideSource? Source { get; init; }
     public string Title { get; }
     public string Subtitle { get; }
     public bool IsCas => Object?.Kind == InspectedObjectKind.Cas;
     public bool IsBuildBuy => Object?.Kind == InspectedObjectKind.BuildBuy;
-    public bool IsUnlinkedGroup => Object == null;
+    public bool IsUnlinkedGroup => Object == null && !IsAllItems;
+    public bool IsAllItems { get; }
+    public IReadOnlyList<LookInsideImage> MosaicImages { get; } = Array.Empty<LookInsideImage>();
+    public bool ShowAllItemsIcon => IsAllItems && MosaicImages.Count == 0;
 
     public System.Collections.ObjectModel.ObservableCollection<LookInsideThumbnailItem> Thumbnails { get; }
     public bool HasThumbnails => Thumbnails.Count > 0;
@@ -995,11 +1210,12 @@ public sealed class LookInsideObjectItem : ObservableObject
         _searchBlob = string.Join(" ", Title, CategoryText, InternalName, Description, KeyText, partLabel).ToLowerInvariant();
     }
 
-    private LookInsideObjectItem(IReadOnlyList<InspectedThumbnail> unlinked, Func<InspectedResource, byte[]> reader)
+    private LookInsideObjectItem(IReadOnlyList<InspectedThumbnail> unlinked, Func<InspectedResource, byte[]> reader, string? origin)
     {
         var loc = LocalizationManager.Instance;
         Title = loc.GetString("look_inside.other_thumbnails");
         Subtitle = loc.GetString("look_inside.other_thumbnails_count", unlinked.Count);
+        if (origin != null) Subtitle = $"{Subtitle} · {origin}";
         Description = loc.GetString("look_inside.other_thumbnails_desc");
         KeyText = string.Empty;
         Thumbnails = new(unlinked.Select(t => new LookInsideThumbnailItem(t, reader, variant: 0)));
@@ -1007,7 +1223,22 @@ public sealed class LookInsideObjectItem : ObservableObject
         _searchBlob = string.Empty;
     }
 
-    public static LookInsideObjectItem ForUnlinked(IReadOnlyList<InspectedThumbnail> unlinked, Func<InspectedResource, byte[]> reader) => new(unlinked, reader);
+    public static LookInsideObjectItem ForUnlinked(IReadOnlyList<InspectedThumbnail> unlinked, Func<InspectedResource, byte[]> reader, LookInsideSource source, string? origin) =>
+        new(unlinked, reader, origin) { Source = source };
+
+    private LookInsideObjectItem(IReadOnlyList<LookInsideObjectItem> objects)
+    {
+        var loc = LocalizationManager.Instance;
+        IsAllItems = true;
+        Title = loc.GetString("look_inside.all_items");
+        Subtitle = loc.GetString("look_inside.all_items_count", objects.Count);
+        KeyText = "*all*";
+        Thumbnails = new();
+        MosaicImages = LookInsideAllItems.PickMosaic(objects);
+        _searchBlob = string.Empty;
+    }
+
+    public static LookInsideObjectItem ForAll(IReadOnlyList<LookInsideObjectItem> objects) => new(objects);
 
     public bool Matches(string query) => _searchBlob.Contains(query.ToLowerInvariant(), StringComparison.Ordinal);
 

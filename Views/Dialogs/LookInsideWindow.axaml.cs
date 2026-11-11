@@ -42,6 +42,15 @@ public partial class LookInsideWindow : Window
         }
     }
 
+    private void OnItemOptionClick(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel != null && sender is Button { DataContext: LookInsideItemOption option })
+        {
+            ViewModel.SelectedItemOption = option;
+        }
+        ItemPickerButton.Flyout?.Hide();
+    }
+
     private void OnKeepEditingClick(object? sender, RoutedEventArgs e)
     {
         if (ViewModel != null) ViewModel.ShowUnsavedPrompt = false;
@@ -108,6 +117,11 @@ public partial class LookInsideWindow : Window
 
     private void OnHeaderPointerPressed(object? sender, PointerPressedEventArgs e)
     {
+        // The item dropdown and buttons in the title bar must get their own clicks.
+        for (var v = e.Source as Avalonia.Visual; v != null && v != sender; v = Avalonia.VisualTree.VisualExtensions.GetVisualParent(v))
+        {
+            if (v is ComboBox or Button) return;
+        }
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
             BeginMoveDrag(e);
