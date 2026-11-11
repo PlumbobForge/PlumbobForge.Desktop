@@ -888,16 +888,51 @@
 
                         <!-- CARD 3: Cache & Engine Optimization -->
                         <Border x:Name="EngineCard" Classes="settings-card">
-                        <Border x:Name="EngineCard" Classes="settings-card" IsVisible="{Binding !EnableSingleSourceVault}">
                             <StackPanel Spacing="16">
                                 <!-- Card Header -->
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <icon:PackIconBoxIcons Kind="RegularCog" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
-                                    <TextBlock Text="{loc:Loc 'settings.engine.title'}" Classes="card-title" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'settings.mode.title'}" Classes="card-title" VerticalAlignment="Center"/>
                                 </StackPanel>
 
-                                <!-- Cache Building Strategy Toggle -->
-                                <StackPanel Spacing="6">
+                                <!-- Current mode -->
+                                <StackPanel Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="5">
+                                        <TextBlock Text="{loc:Loc 'settings.mode.current'}" FontSize="12.5" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{loc:Loc 'settings.mode.library'}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" IsVisible="{Binding !EnableSingleSourceVault}"/>
+                                        <TextBlock Text="{loc:Loc 'settings.mode.vault'}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" IsVisible="{Binding EnableSingleSourceVault}"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{loc:Loc 'settings.mode.library_desc'}" Classes="form-helper" Margin="0" IsVisible="{Binding !EnableSingleSourceVault}"/>
+                                    <TextBlock Text="{loc:Loc 'settings.mode.vault_desc'}" Classes="form-helper" Margin="0" IsVisible="{Binding EnableSingleSourceVault}"/>
+                                </StackPanel>
+
+                                <!-- VAULT MODE: its options, then the way back to library mode -->
+                                <StackPanel Spacing="10" IsVisible="{Binding EnableSingleSourceVault}">
+                                    <Button Classes="tool-btn" Command="{Binding CompactVaultCommand}" HorizontalAlignment="Stretch">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <icon:PackIconBoxIcons Kind="RegularArchive" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock Text="{loc:Loc 'settings.vault.cleanup_btn'}" FontWeight="SemiBold" FontSize="12.5"/>
+                                                <TextBlock Text="{loc:Loc 'settings.vault.cleanup_desc'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+
+                                    <Separator Background="{DynamicResource BorderMain}" Margin="0,4"/>
+
+                                    <Button Classes="tool-btn" Command="{Binding RevertVaultCommand}" HorizontalAlignment="Stretch">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <icon:PackIconBoxIcons Kind="RegularUndo" Width="18" Height="18" Foreground="#ef4444" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock Text="{loc:Loc 'settings.vault.revert_btn'}" FontWeight="SemiBold" FontSize="12.5"/>
+                                                <TextBlock Text="{loc:Loc 'settings.vault.revert_desc'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+                                </StackPanel>
+
+                                <!-- LIBRARY MODE: cache options -->
+                                <StackPanel Spacing="6" IsVisible="{Binding !EnableSingleSourceVault}">
                                     <TextBlock Text="{loc:Loc 'settings.engine.cache_mode'}" Classes="form-label"/>
 
                                     <!-- Dual Segmented Pill Toggle -->
@@ -944,6 +979,27 @@
                                                       VerticalAlignment="Center"/>
                                     </Grid>
                                 </StackPanel>
+
+                                <!-- LIBRARY MODE: the switch to vault mode -->
+                                <StackPanel Spacing="12" IsVisible="{Binding !EnableSingleSourceVault}">
+                                    <Separator Background="{DynamicResource BorderMain}" Margin="0,0,0,4"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{loc:Loc 'settings.mode.vault'}" Classes="form-label" Margin="0" VerticalAlignment="Center"/>
+                                        <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                            <TextBlock Text="{loc:Loc 'settings.vault.beta_badge'}" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="{loc:Loc 'settings.vault.desc_inactive'}" Classes="form-helper" Margin="0"/>
+
+                                    <Button Classes="btn-action-primary" Command="{Binding MigrateToVaultCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="14,10">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <icon:PackIconBoxIcons Kind="RegularRocket" Width="16" Height="16" Foreground="White" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'settings.vault.upgrade_btn'}" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <TextBlock Text="{loc:Loc 'settings.vault.upgrade_safety'}" FontSize="11" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
 
@@ -967,118 +1023,15 @@
                                 </Grid>
 
                                 <!-- Texture optimisation (opt-in, lossy) -->
-                                <StackPanel Spacing="8">
-                                    <Grid ColumnDefinitions="*, Auto">
-                                        <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,16,0">
-                                            <TextBlock Text="{loc:Loc 'settings.textures.optimize'}" Classes="form-label" Margin="0"/>
-                                            <TextBlock Text="{loc:Loc 'settings.textures.optimize_desc'}" Classes="form-helper" Margin="0"/>
-                                        </StackPanel>
-                                        <ToggleSwitch Grid.Column="1"
-                                                      IsChecked="{Binding OptimizeTextures, Mode=TwoWay}"
-                                                      VerticalAlignment="Center"/>
-                                    </Grid>
-
-                                    <StackPanel Spacing="6" IsVisible="{Binding OptimizeTextures}">
-                                        <TextBlock Text="{loc:Loc 'settings.textures.max_size'}" Classes="form-label"/>
-                                        <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="3">
-                                            <Grid ColumnDefinitions="*, *, *">
-                                                <Button Grid.Column="0"
-                                                        Classes="segment-btn"
-                                                        Classes.active="{Binding IsTextureCapNone}"
-                                                        Command="{Binding SetTextureCapCommand}"
-                                                        CommandParameter="0"
-                                                        HorizontalAlignment="Stretch"
-                                                        HorizontalContentAlignment="Center">
-                                                    <TextBlock Text="{loc:Loc 'settings.textures.max_size_none'}" VerticalAlignment="Center"/>
-                                                </Button>
-                                                <Button Grid.Column="1"
-                                                        Classes="segment-btn"
-                                                        Classes.active="{Binding IsTextureCap2048}"
-                                                        Command="{Binding SetTextureCapCommand}"
-                                                        CommandParameter="2048"
-                                                        HorizontalAlignment="Stretch"
-                                                        HorizontalContentAlignment="Center">
-                                                    <TextBlock Text="2048 px" VerticalAlignment="Center"/>
-                                                </Button>
-                                                <Button Grid.Column="2"
-                                                        Classes="segment-btn"
-                                                        Classes.active="{Binding IsTextureCap1024}"
-                                                        Command="{Binding SetTextureCapCommand}"
-                                                        CommandParameter="1024"
-                                                        HorizontalAlignment="Stretch"
-                                                        HorizontalContentAlignment="Center">
-                                                    <TextBlock Text="1024 px" VerticalAlignment="Center"/>
-                                                </Button>
-                                            </Grid>
-                                        </Border>
-                                        <TextBlock Text="{loc:Loc 'settings.textures.max_size_desc'}" Classes="form-helper"/>
-                                    </StackPanel>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- CARD: Instant Engine & Storage Saver -->
-                        <Border x:Name="VaultCard" Classes="settings-card">
-                            <StackPanel Spacing="14">
-                                <!-- Card Header -->
                                 <Grid ColumnDefinitions="*, Auto">
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                                        <icon:PackIconBoxIcons Kind="RegularRocket" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
-                                        <TextBlock Text="{loc:Loc 'settings.vault.title'}" Classes="card-title" VerticalAlignment="Center"/>
+                                    <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,16,0">
+                                        <TextBlock Text="{loc:Loc 'settings.textures.optimize'}" Classes="form-label" Margin="0"/>
+                                        <TextBlock Text="{loc:Loc 'settings.textures.optimize_desc'}" Classes="form-helper" Margin="0"/>
                                     </StackPanel>
-                                    
-                                    <!-- Inactive Badge (BETA) -->
-                                    <Border Grid.Column="1" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" IsVisible="{Binding !EnableSingleSourceVault}">
-                                        <TextBlock Text="{loc:Loc 'settings.vault.beta_badge'}" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
-                                    </Border>
-
-                                    <!-- Active Badge (ACTIVE) -->
-                                    <Border Grid.Column="1" Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" IsVisible="{Binding EnableSingleSourceVault}">
-                                        <StackPanel Orientation="Horizontal" Spacing="4">
-                                            <icon:PackIconBoxIcons Kind="RegularCheck" Width="10" Height="10" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
-                                            <TextBlock Text="{loc:Loc 'settings.vault.active_badge'}" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Border>
+                                    <ToggleSwitch Grid.Column="1"
+                                                  IsChecked="{Binding OptimizeTextures, Mode=TwoWay}"
+                                                  VerticalAlignment="Center"/>
                                 </Grid>
-
-                                <!-- STATE 1: Vault NOT enabled yet -->
-                                <StackPanel Spacing="12" IsVisible="{Binding !EnableSingleSourceVault}">
-                                    <TextBlock Text="{loc:Loc 'settings.vault.desc_inactive'}" Classes="form-helper"/>
-
-                                    <Button Classes="btn-action-primary" Command="{Binding MigrateToVaultCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="14,10">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <icon:PackIconBoxIcons Kind="RegularRocket" Width="16" Height="16" Foreground="White" VerticalAlignment="Center"/>
-                                            <TextBlock Text="{loc:Loc 'settings.vault.upgrade_btn'}" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
-
-                                    <TextBlock Text="{loc:Loc 'settings.vault.upgrade_safety'}" FontSize="11" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
-                                </StackPanel>
-
-                                <!-- STATE 2: Vault IS enabled and active -->
-                                <StackPanel Spacing="12" IsVisible="{Binding EnableSingleSourceVault}">
-                                    <TextBlock Text="{loc:Loc 'settings.vault.desc_active'}" Classes="form-helper"/>
-
-                                    <Button Classes="tool-btn" Command="{Binding CompactVaultCommand}" HorizontalAlignment="Stretch">
-                                        <Grid ColumnDefinitions="Auto, *">
-                                            <icon:PackIconBoxIcons Kind="RegularArchive" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                            <StackPanel Grid.Column="1" Spacing="2">
-                                                <TextBlock Text="{loc:Loc 'settings.vault.cleanup_btn'}" FontWeight="SemiBold" FontSize="12.5"/>
-                                                <TextBlock Text="{loc:Loc 'settings.vault.cleanup_desc'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Button>
-
-                                    <Button Classes="tool-btn" Command="{Binding RevertVaultCommand}" HorizontalAlignment="Stretch">
-                                        <Grid ColumnDefinitions="Auto, *">
-                                            <icon:PackIconBoxIcons Kind="RegularUndo" Width="18" Height="18" Foreground="#ef4444" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                            <StackPanel Grid.Column="1" Spacing="2">
-                                                <TextBlock Text="{loc:Loc 'settings.vault.revert_btn'}" FontWeight="SemiBold" FontSize="12.5"/>
-                                                <TextBlock Text="{loc:Loc 'settings.vault.revert_desc'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Button>
-                                </StackPanel>
                             </StackPanel>
                         </Border>
 
