@@ -12,8 +12,13 @@ using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IconPacks.Avalonia.BoxIcons;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using PlumbobForge.Backend.Database;
 using PlumbobForge.Backend.Services;
 using PlumbobForge.Desktop.Services;
+using PlumbobForge.Desktop.Services.Localization;
+using PlumbobForge.Desktop.Views.Dialogs;
 using S3ForgeTools.GameFiles.Package;
 using PlumbobForge.Desktop.Utils;
 
@@ -128,9 +133,109 @@ public partial class CollectionSetOptionViewModel : ObservableObject
     }
 }
 
+public sealed partial class CollectionIncludedItemViewModel : ObservableObject
+{
+    private readonly ItemThumbnail _thumbnail;
+
+    public long ItemId { get; }
+    public string FileName { get; }
+    public long? SetId { get; }
+    public string Location { get; }
+    public bool HasLocation => !string.IsNullOrEmpty(Location);
+    public Bitmap? Thumbnail => _thumbnail.Get();
+
+    public CollectionIncludedItemViewModel(long itemId, string fileName, long? setId, string location)
+    {
+        ItemId = itemId;
+        FileName = fileName;
+        SetId = setId;
+        Location = location;
+        _thumbnail = new ItemThumbnail(itemId, () => OnPropertyChanged(nameof(Thumbnail)));
+    }
+}
+
 public partial class HealthViewModel
 {
     #region Collection Creator Properties & Commands
+
+    public RangeObservableCollection<CollectionIncludedItemViewModel> IncludedItems { get; } = new();
+    public bool HasIncludedItems => IncludedItems.Count > 0;
+    private List<SetsEntity> _collectionSets = new();
+
+    private string GetCollectionSetLocation(long? setId)
+    {
+        var byId = _collectionSets.ToDictionary(s => s.Id);
+        var names = new List<string>();
+        var visited = new HashSet<long>();
+        long? current = setId;
+        while (current.HasValue && visited.Add(current.Value) && byId.TryGetValue(current.Value, out var set))
+        {
+            names.Insert(0, set.Name);
+            current = set.ParentSetsEntityId;
+        }
+        return string.Join("  ›  ", names);
+    }
+
+    private async Task LoadIncludedItemsAsync(IReadOnlyCollection<long> itemIds)
+    {
+        var services = App.Services;
+        if (services == null) return;
+        var ids = itemIds.Distinct().ToList();
+        var (sets, rows) = await Task.Run(async () =>
+        {
+            using var scope = services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var s = await db.SetsEntities.AsNoTracking().ToListAsync();
+            var r = ids.Count == 0
+                ? new List<(long Id, string FileName, long? SetId)>()
+                : (await db.MetaEntities.AsNoTracking()
+                    .Where(m => ids.Contains(m.Id))
+                    .Select(m => new { m.Id, m.FileName, m.SetsEntityId })
+                    .ToListAsync())
+                    .Select(m => (Id: m.Id, FileName: m.FileName, SetId: m.SetsEntityId))
+                    .ToList();
+            return (s, r);
+        });
+        _collectionSets = sets;
+        IncludedItems.ReplaceAll(rows
+            .OrderBy(r => r.FileName, StringComparer.OrdinalIgnoreCase)
+            .Select(r => new CollectionIncludedItemViewModel(r.Id, r.FileName, r.SetId, GetCollectionSetLocation(r.SetId))));
+        OnIncludedItemsChanged();
+    }
+
+    private void OnIncludedItemsChanged()
+    {
+        OnPropertyChanged(nameof(HasIncludedItems));
+        OnPropertyChanged(nameof(SelectedSetsItemCount));
+    }
+
+    [RelayCommand]
+    public async Task IncludeItemsInCollectionAsync()
+    {
+        try
+        {
+            if (_collectionSets.Count == 0) await LoadIncludedItemsAsync(IncludedItems.Select(i => i.ItemId).ToList());
+            string name = string.IsNullOrWhiteSpace(EditingCollectionName)
+                ? LocalizationManager.Instance.GetString("tools.collections.this_collection")
+                : EditingCollectionName.Trim();
+            var existing = IncludedItems.ToDictionary(i => i.ItemId, _ => true);
+            var picked = await DialogHelper.ShowConfigItemPickerAsync(true, name, _collectionSets, existing, forCollection: true);
+            if (picked.Count == 0) return;
+            await LoadIncludedItemsAsync(IncludedItems.Select(i => i.ItemId).Concat(picked).ToList());
+        }
+        catch (Exception ex)
+        {
+            ShowCacheToast($"Error including items: {ex.Message}", isError: true);
+        }
+    }
+
+    [RelayCommand]
+    public void RemoveIncludedItem(CollectionIncludedItemViewModel? item)
+    {
+        if (item == null) return;
+        IncludedItems.Remove(item);
+        OnIncludedItemsChanged();
+    }
 
     public RangeObservableCollection<CollectionItemViewModel> AllCollections { get; } = new();
     public RangeObservableCollection<CollectionItemViewModel> FilteredCollections { get; } = new();
@@ -203,7 +308,14 @@ public partial class HealthViewModel
     public bool HasAssignedSets => AssignedSets.Count > 0;
     public bool HasAvailableToAddSets => AvailableToAddSets.Count > 0;
 
-    public int SelectedSetsItemCount => AssignedSets.Sum(s => s.ItemCount);
+    public int SelectedSetsItemCount
+    {
+        get
+        {
+            var assigned = AssignedSets.Select(s => s.SetId).ToHashSet();
+            return AssignedSets.Sum(s => s.ItemCount) + IncludedItems.Count(i => !i.SetId.HasValue || !assigned.Contains(i.SetId.Value));
+        }
+    }
     public int SelectedSetsCount => AssignedSets.Count;
 
     partial void OnSetSearchQueryChanged(string value)
@@ -436,10 +548,26 @@ public partial class HealthViewModel
         OnPropertyChanged(nameof(SelectedSetsItemCount));
         OnPropertyChanged(nameof(SelectedSetsCount));
 
+        IncludedItems.Clear();
+        OnIncludedItemsChanged();
+
         // Open immediately so the user experiences zero lag
         IsCollectionEditorOpen = true;
 
         await LoadAvailableSetOptionsAsync();
+        await LoadIncludedItemsSafeAsync(Array.Empty<long>());
+    }
+
+    private async Task LoadIncludedItemsSafeAsync(IReadOnlyCollection<long> itemIds)
+    {
+        try
+        {
+            await LoadIncludedItemsAsync(itemIds);
+        }
+        catch (Exception ex)
+        {
+            ShowCacheToast($"Error loading included items: {ex.Message}", isError: true);
+        }
     }
 
     [RelayCommand]
@@ -461,10 +589,14 @@ public partial class HealthViewModel
         OnPropertyChanged(nameof(SelectedSetsItemCount));
         OnPropertyChanged(nameof(SelectedSetsCount));
 
+        IncludedItems.Clear();
+        OnIncludedItemsChanged();
+
         // Open immediately so the user experiences zero lag
         IsCollectionEditorOpen = true;
 
         await LoadAvailableSetOptionsAsync(item.Model.LinkedSetIds);
+        await LoadIncludedItemsSafeAsync(item.Model.LinkedItemIds);
     }
 
     private async Task LoadAvailableSetOptionsAsync(List<long>? preSelectedSetIds = null)
@@ -595,7 +727,8 @@ public partial class HealthViewModel
                 EditingCollectionName.Trim(),
                 iconKey,
                 selectedSets,
-                EditingHideFromCatalog);
+                EditingHideFromCatalog,
+                includedItemIds: IncludedItems.Select(i => i.ItemId).ToList());
 
             if (result.Success)
             {
@@ -647,7 +780,7 @@ public partial class HealthViewModel
 
                 if (file != null)
                 {
-                    string xmlContent = await _collectionService.ExportHiderXmlAsync(item.Id, item.Name, item.Model.LinkedSetIds);
+                    string xmlContent = await _collectionService.ExportHiderXmlAsync(item.Id, item.Name, item.Model.LinkedSetIds, includedItemIds: item.Model.LinkedItemIds);
                     await using var stream = await file.OpenWriteAsync();
                     await using var writer = new StreamWriter(stream, Encoding.UTF8);
                     await writer.WriteAsync(xmlContent);
@@ -687,7 +820,7 @@ public partial class HealthViewModel
                 {
                     var selectedSets = AssignedSets.Select(s => s.SetId).ToList();
                     ulong collId = EditingCollectionId ?? 0;
-                    string xmlContent = await _collectionService.ExportHiderXmlAsync(collId, name, selectedSets);
+                    string xmlContent = await _collectionService.ExportHiderXmlAsync(collId, name, selectedSets, includedItemIds: IncludedItems.Select(i => i.ItemId).ToList());
                     await using var stream = await file.OpenWriteAsync();
                     await using var writer = new StreamWriter(stream, Encoding.UTF8);
                     await writer.WriteAsync(xmlContent);
