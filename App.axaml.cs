@@ -47,13 +47,24 @@ public partial class App : Application
         ConfigureServices(services);
         var rootProvider = services.BuildServiceProvider();
 
+        // Schema first and synchronously: queries made during startup select the newest columns. It is a single
+        // PRAGMA read once the database is up to date.
+        try
+        {
+            using var schemaScope = rootProvider.CreateScope();
+            EnsureDatabaseSchema(schemaScope.ServiceProvider.GetRequiredService<AppDbContext>());
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError("Database schema upgrade error", ex);
+        }
+
         _ = Task.Run(() =>
         {
             try
             {
                 using var scope = rootProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                EnsureDatabaseSchema(db);
                 EnsureDefaultSetAndConfig(db);
             }
             catch (Exception ex)
@@ -73,9 +84,21 @@ public partial class App : Application
             ItemViewModel.GlobalThumbnailDirectory = Path.Combine(options.DocumentBaseDir, "Thumbnails");
         }
 
+        ItemViewModel.TextureOptimizationActive = options.OptimizeTextures;
+
         AppLogger.LogInfo($"PlumbobForge Desktop started (Theme: {options.Theme}, Lang: {options.Language}, Logs: {AppLogger.LogsDirectory})");
 
-        ThemeService.Initialize(options.Theme, options.AccentColor);
+        ThemeService.Initialize(
+            options.Theme,
+            options.AccentColor,
+            options.IsCustomTheme || string.Equals(options.Theme, "Custom", StringComparison.OrdinalIgnoreCase),
+            options.CustomThemeBaseColor,
+            options.CustomThemeIsDark,
+            options.UseCustomAccent,
+            options.CustomThemeAccentColor,
+            options.CustomThemeIntensity
+        );
+        CustomColorPresetsService.Initialize(options);
         LocalizationManager.Instance.Initialize(options.Language);
         LocalizationService.SetExternalProvider((key, args) => LocalizationManager.Instance.GetString(key, args ?? Array.Empty<object>()));
 
@@ -135,6 +158,49 @@ public partial class App : Application
                     using var scope = Services.CreateScope();
                     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+                    if (!options.EnableSingleSourceVault && (db.VaultShards.Any() || db.MetaEntities.Any(m => m.IsVaultManaged)))
+                    {
+                        options.EnableSingleSourceVault = true;
+                        await AppSettingsService.SaveOptionsAsync(options);
+                    }
+
+                    var cacheBuilder = scope.ServiceProvider.GetRequiredService<CacheBuilderService>();
+                    if (db.VaultShards.Any())
+                    {
+                        // Finish/roll back interrupted compactions, trim interrupted writes, re-derive mismatched indexes.
+                        bool layoutChanged = await scope.ServiceProvider.GetRequiredService<VaultService>().CheckAndRecoverAllShardsAsync();
+                        if (layoutChanged)
+                        {
+                            Services.GetRequiredService<IOptionsMonitor<PlumbobForgeOptions>>().CurrentValue.EnableSingleSourceVault = true;
+                            await cacheBuilder.SyncToSims3Async();
+                        }
+                    }
+
+                    if (Services.GetRequiredService<IOptionsMonitor<PlumbobForgeOptions>>().CurrentValue.EnableSingleSourceVault)
+                    {
+                        // Lots, Sims and worlds older versions put into shards go back to the library, and items a
+                        // migration could not move are retried. Then deploy lots/Sims/worlds and refresh Resource.cfg.
+                        await scope.ServiceProvider.GetRequiredService<VaultService>().ExtractLibraryOnlyItemsAsync();
+                        var leftovers = await scope.ServiceProvider.GetRequiredService<MigrationService>().MigrateRemainingLibraryItemsAsync();
+                        foreach (var failure in leftovers.Failures)
+                        {
+                            AppLogger.LogWarning($"Library item still not in the vault: {failure}", null, "Startup");
+                        }
+                        await cacheBuilder.SyncToSims3Async();
+                    }
+                    else
+                    {
+                        // Set caches move from the old name-based folders to Set_{id}; a set whose cache is missing is
+                        // marked for rebuild. Resource.cfg has to follow the moved folders.
+                        if (await cacheBuilder.UpgradeSetCacheFoldersAsync())
+                        {
+                            await cacheBuilder.SyncToSims3Async();
+                        }
+                    }
+
+                    // Mods changed while the game was running last session: clear its caches now that it has exited.
+                    scope.ServiceProvider.GetRequiredService<CacheBuilderService>().ProcessPendingGameCacheClear();
+
                     var unhashedSets = db.SetsEntities
                         .Include(s => s.MetaEntities)
                         .Where(s => s.CachedHash == null && !s.Dirty)
@@ -164,6 +230,8 @@ public partial class App : Application
                 {
                 }
             });
+
+            _ = Task.Run(WatchForGameExitAsync);
 
             try
             {
@@ -227,7 +295,7 @@ public partial class App : Application
                 }
             }
 
-            string installedLocation = RegistryManager.GetInstalledLocation();
+            string? installedLocation = RegistryManager.GetInstalledLocation();
             if (!string.IsNullOrEmpty(installedLocation) && (PathSafety.IsForbiddenDirectory(installedLocation) || !PathSafety.IsDedicatedAppDirectory(installedLocation)))
             {
                 RegistryManager.RegisterInstallation(appDir);
@@ -277,9 +345,14 @@ public partial class App : Application
         services.AddScoped<PackageTypeService>();
         services.AddScoped<ArchiveService>();
         services.AddScoped<ThumbnailService>();
+        services.AddScoped<PackageInspectorService>();
+        services.AddScoped<PackageEditService>();
+        services.AddScoped<CasFlagsService>();
         services.AddScoped<CacheBuilderService>();
         services.AddScoped<MigrationService>();
         services.AddScoped<PKGManager>();
+        services.AddScoped<VaultService>();
+        services.AddScoped<ConfigItemOverrideService>();
         services.AddScoped<Sims3HealthService>();
         services.AddScoped<Sims3HiderService>();
         services.AddScoped<Sims3CollectionService>();
@@ -344,6 +417,34 @@ public partial class App : Application
         }
     }
 
+    private static async Task WatchForGameExitAsync()
+    {
+        bool wasRunning = Sims3GameProcess.IsGameRunning();
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(20));
+        while (await timer.WaitForNextTickAsync())
+        {
+            bool running = Sims3GameProcess.IsGameRunning();
+            if ((wasRunning && !running) || (!running && VaultService.HasPendingIndexSync))
+            {
+                try
+                {
+                    using var scope = Services!.CreateScope();
+                    var opts = scope.ServiceProvider.GetRequiredService<IOptionsMonitor<PlumbobForgeOptions>>().CurrentValue;
+                    if (opts.EnableSingleSourceVault)
+                    {
+                        await scope.ServiceProvider.GetRequiredService<VaultService>().PunchPendingHolesAsync();
+                    }
+                    scope.ServiceProvider.GetRequiredService<CacheBuilderService>().ProcessPendingGameCacheClear();
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError("Finishing deferred work after the game exited failed", ex);
+                }
+            }
+            wasRunning = running;
+        }
+    }
+
     private static void EnsureDatabaseSchema(AppDbContext db)
     {
         try
@@ -374,8 +475,192 @@ public partial class App : Application
         {
         }
 
-        if (userVersion >= 4) return;
+        if (userVersion < 5) ApplySchemaV5(db);
+        if (userVersion < 6) ApplySchemaV6(db);
+        if (userVersion < 7) ApplySchemaV7(db);
+        if (userVersion < 8) ApplySchemaV8(db);
+        if (userVersion < 9) ApplySchemaV9(db);
+        if (userVersion < 10) ApplySchemaV10(db);
+        if (userVersion < 11) ApplySchemaV11(db);
+    }
 
+    private static void ApplySchemaV11(AppDbContext db)
+    {
+        try
+        {
+            db.Database.ExecuteSqlRaw(Sims3CollectionService.CreateCollectionItemsTableSql);
+            db.Database.ExecuteSqlRaw("PRAGMA user_version = 11;");
+        }
+        catch
+        {
+        }
+    }
+
+    private static void ApplySchemaV10(AppDbContext db)
+    {
+        string[] migrations =
+        {
+            "ALTER TABLE MetaEntities ADD COLUMN HasConfigOverrides INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE VaultShards ADD COLUMN IndexScope TEXT;",
+            @"
+CREATE TABLE IF NOT EXISTS ConfigItemOverrides (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    ConfigEntityId INTEGER NOT NULL,
+    MetaEntityId INTEGER NOT NULL,
+    Include INTEGER NOT NULL,
+    FOREIGN KEY (ConfigEntityId) REFERENCES ConfigEntities(Id) ON DELETE CASCADE,
+    FOREIGN KEY (MetaEntityId) REFERENCES MetaEntities(Id) ON DELETE CASCADE
+);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS IX_ConfigItemOverrides_ConfigEntityId_MetaEntityId ON ConfigItemOverrides (ConfigEntityId, MetaEntityId);",
+            "CREATE INDEX IF NOT EXISTS IX_ConfigItemOverrides_MetaEntityId ON ConfigItemOverrides (MetaEntityId);"
+        };
+
+        foreach (var sql in migrations)
+        {
+            try
+            {
+                db.Database.ExecuteSqlRaw(sql);
+            }
+            catch
+            {
+                // Column already exists (fresh database created from the model).
+            }
+        }
+
+        try
+        {
+            db.Database.ExecuteSqlRaw("PRAGMA user_version = 10;");
+        }
+        catch
+        {
+        }
+    }
+
+    private static void ApplySchemaV9(AppDbContext db)
+    {
+        string[] migrations =
+        {
+            "ALTER TABLE MetaEntities ADD COLUMN DisabledObjectCount INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE MetaEntities ADD COLUMN DisabledObjectsStamp TEXT;",
+            @"
+CREATE TABLE IF NOT EXISTS DisabledObjects (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    MetaEntityId INTEGER NOT NULL,
+    Type INTEGER NOT NULL,
+    ""Group"" INTEGER NOT NULL,
+    Instance INTEGER NOT NULL,
+    FOREIGN KEY (MetaEntityId) REFERENCES MetaEntities(Id) ON DELETE CASCADE
+);",
+            "CREATE INDEX IF NOT EXISTS IX_DisabledObjects_MetaEntityId ON DisabledObjects (MetaEntityId);"
+        };
+
+        foreach (var sql in migrations)
+        {
+            try
+            {
+                db.Database.ExecuteSqlRaw(sql);
+            }
+            catch
+            {
+                // Column already exists (fresh database created from the model).
+            }
+        }
+
+        try
+        {
+            db.Database.ExecuteSqlRaw("PRAGMA user_version = 9;");
+        }
+        catch
+        {
+        }
+    }
+
+    private static void ApplySchemaV8(AppDbContext db)
+    {
+        string[] migrations =
+        {
+            "ALTER TABLE MetaEntities ADD COLUMN BBKind TEXT;",
+            "ALTER TABLE MetaEntities ADD COLUMN BBRooms TEXT;",
+            "ALTER TABLE MetaEntities ADD COLUMN BBFunctions TEXT;",
+            "ALTER TABLE MetaEntities ADD COLUMN BBPriceMin REAL;",
+            "ALTER TABLE MetaEntities ADD COLUMN BBPriceMax REAL;"
+        };
+
+        foreach (var sql in migrations)
+        {
+            try
+            {
+                db.Database.ExecuteSqlRaw(sql);
+            }
+            catch
+            {
+                // Column already exists (fresh database created from the model).
+            }
+        }
+
+        try
+        {
+            db.Database.ExecuteSqlRaw("PRAGMA user_version = 8;");
+        }
+        catch
+        {
+        }
+    }
+
+    private static void ApplySchemaV7(AppDbContext db)
+    {
+        try
+        {
+            db.Database.ExecuteSqlRaw("ALTER TABLE VaultChunks ADD COLUMN OptimizedResourceLength INTEGER NOT NULL DEFAULT 0;");
+        }
+        catch
+        {
+            // Column already exists (fresh database created from the model).
+        }
+
+        try
+        {
+            db.Database.ExecuteSqlRaw("PRAGMA user_version = 7;");
+        }
+        catch
+        {
+        }
+    }
+
+    private static void ApplySchemaV6(AppDbContext db)
+    {
+        string[] migrations =
+        {
+            "ALTER TABLE MetaEntities ADD COLUMN SkipTextureOptimization INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE VaultChunks ADD COLUMN OptimizedOffset INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE VaultChunks ADD COLUMN OptimizedLength INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE VaultChunks ADD COLUMN OptimizedProfile INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE VaultHoles ADD COLUMN IsPending INTEGER NOT NULL DEFAULT 0;"
+        };
+
+        foreach (var sql in migrations)
+        {
+            try
+            {
+                db.Database.ExecuteSqlRaw(sql);
+            }
+            catch
+            {
+                // Column already exists (fresh database created from the model).
+            }
+        }
+
+        try
+        {
+            db.Database.ExecuteSqlRaw("PRAGMA user_version = 6;");
+        }
+        catch
+        {
+        }
+    }
+
+    private static void ApplySchemaV5(AppDbContext db)
+    {
         try
         {
             db.Database.EnsureCreated();
@@ -401,7 +686,56 @@ public partial class App : Application
         {
         }
 
-        string[] migrations = new string[41]
+                try
+        {
+            db.Database.ExecuteSqlRaw(@"
+CREATE TABLE IF NOT EXISTS VaultShards (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    SetsEntityId INTEGER NOT NULL,
+    ShardIndex INTEGER NOT NULL,
+    RelativePath TEXT NOT NULL,
+    FileSize INTEGER NOT NULL DEFAULT 0,
+    DeadHoleBytes INTEGER NOT NULL DEFAULT 0,
+    HeaderIndexOffset INTEGER NOT NULL DEFAULT 0,
+    HeaderIndexSize INTEGER NOT NULL DEFAULT 0,
+    ResourceCount INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (SetsEntityId) REFERENCES SetsEntities(Id) ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS IX_VaultShards_SetsEntityId_ShardIndex ON VaultShards (SetsEntityId, ShardIndex);
+
+CREATE TABLE IF NOT EXISTS VaultChunks (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    MetaEntityId INTEGER NOT NULL,
+    VaultShardId INTEGER NOT NULL,
+    Type INTEGER NOT NULL,
+    ""Group"" INTEGER NOT NULL,
+    Instance INTEGER NOT NULL,
+    Offset INTEGER NOT NULL,
+    ChunkLength INTEGER NOT NULL,
+    ResourceLength INTEGER NOT NULL,
+    IsCompressed INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (MetaEntityId) REFERENCES MetaEntities(Id) ON DELETE CASCADE,
+    FOREIGN KEY (VaultShardId) REFERENCES VaultShards(Id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS IX_VaultChunks_TGI ON VaultChunks (Type, ""Group"", Instance);
+CREATE INDEX IF NOT EXISTS IX_VaultChunks_MetaEntityId ON VaultChunks (MetaEntityId);
+CREATE INDEX IF NOT EXISTS IX_VaultChunks_VaultShardId ON VaultChunks (VaultShardId);
+
+CREATE TABLE IF NOT EXISTS VaultHoles (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    VaultShardId INTEGER NOT NULL,
+    Offset INTEGER NOT NULL,
+    Length INTEGER NOT NULL,
+    FOREIGN KEY (VaultShardId) REFERENCES VaultShards(Id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS IX_VaultHoles_VaultShardId ON VaultHoles (VaultShardId);
+");
+        }
+        catch
+        {
+        }
+
+        string[] migrations = new string[44]
         {
             "ALTER TABLE Tombstones ADD COLUMN PackageType TEXT NOT NULL DEFAULT '';",
             "ALTER TABLE Tombstones ADD COLUMN CASCategories TEXT;",
@@ -443,7 +777,10 @@ public partial class App : Application
             "ALTER TABLE MetaEntities ADD COLUMN URL TEXT;",
             "ALTER TABLE Collections ADD COLUMN HideFromCatalog INTEGER NOT NULL DEFAULT 0;",
             "ALTER TABLE MetaEntities ADD COLUMN IsFavorite INTEGER NOT NULL DEFAULT 0;",
-            "ALTER TABLE Tombstones ADD COLUMN IsFavorite INTEGER NOT NULL DEFAULT 0;"
+            "ALTER TABLE Tombstones ADD COLUMN IsFavorite INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE MetaEntities ADD COLUMN IsVaultManaged INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE MetaEntities ADD COLUMN VaultShardId INTEGER;",
+            "ALTER TABLE MetaEntities ADD COLUMN ParentMetaEntityId INTEGER;"
         };
 
         foreach (var sql in migrations)
@@ -467,7 +804,7 @@ public partial class App : Application
 
         try
         {
-            db.Database.ExecuteSqlRaw($"PRAGMA user_version = 4;");
+            db.Database.ExecuteSqlRaw($"PRAGMA user_version = 5;");
         }
         catch
         {
