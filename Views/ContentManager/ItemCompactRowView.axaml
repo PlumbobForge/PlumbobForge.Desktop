@@ -47,6 +47,16 @@
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="BoxShadow" Value="0 0 20 4 #6010b981"/>
         </Style>
+        <Style Selector="Border.compact-row">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.18"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.compact-row.dragging">
+            <Setter Property="Opacity" Value="0.4"/>
+        </Style>
         <Style Selector="Border.compact-fav-badge">
             <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
@@ -66,6 +76,7 @@
     <Border Classes="compact-row"
             Classes.selected="{Binding IsSelected}"
             Classes.jump-highlighted="{Binding IsJumpHighlighted}"
+            Classes.dragging="{Binding IsDragging}"
             HorizontalAlignment="Stretch"
             Margin="6, 2"
             Padding="8, 0"

@@ -91,7 +91,7 @@ public partial class ItemCompactRowView : UserControl
         }
     }
 
-    private async void OnItemRowPointerMoved(object? sender, PointerEventArgs e)
+    private void OnItemRowPointerMoved(object? sender, PointerEventArgs e)
     {
         if (IsInteractiveChild(e.Source)) return;
 
@@ -109,7 +109,7 @@ public partial class ItemCompactRowView : UserControl
                     var cmView = this.FindAncestorOfType<ContentManagerView>();
                     var cmVm = cmView?.DataContext as ContentManagerViewModel;
 
-                    await ItemDragDropHelper.StartItemDragAsync(this, e, itemVm, cmVm);
+                    ItemDragDropHelper.BeginItemDrag(this, e, itemVm, cmVm);
                 }
             }
         }

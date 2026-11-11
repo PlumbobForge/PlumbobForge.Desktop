@@ -62,6 +62,14 @@ public partial class ContentManagerView : UserControl
     #region Drag & Drop Files Import
     private void OnDragOver(object? sender, DragEventArgs e)
     {
+        // Items dragged from the library itself also carry their files (so they can be dropped in Explorer);
+        // those are moves, not imports.
+        if (e.Data.Contains("plumbob-item-drag") || e.Data.Contains("plumbob-sets-drag"))
+        {
+            if (DataContext is ContentManagerViewModel vmInternal) vmInternal.IsDragOver = false;
+            return;
+        }
+
         if (e.Data.Contains(DataFormats.Files))
         {
             var files = e.Data.GetFiles()?.ToList();
@@ -109,6 +117,7 @@ public partial class ContentManagerView : UserControl
         if (DataContext is ContentManagerViewModel vm)
         {
             vm.IsDragOver = false;
+            if (e.Data.Contains("plumbob-item-drag") || e.Data.Contains("plumbob-sets-drag")) return;
 
             if (e.Data.Contains(DataFormats.Files))
             {

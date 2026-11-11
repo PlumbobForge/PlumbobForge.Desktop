@@ -41,6 +41,17 @@
             <Setter Property="BoxShadow" Value="0 0 20 4 #6010b981"/>
         </Style>
 
+        <Style Selector="Border.item-card">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.18"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.item-card.dragging">
+            <Setter Property="Opacity" Value="0.4"/>
+        </Style>
+
         <Style Selector="Button.card-fav-btn">
             <Setter Property="Opacity" Value="0"/>
             <Setter Property="Transitions">
@@ -61,6 +72,7 @@
     <Border Classes="item-card"
             Classes.selected="{Binding IsSelected}"
             Classes.jump-highlighted="{Binding IsJumpHighlighted}"
+            Classes.dragging="{Binding IsDragging}"
             HorizontalAlignment="Stretch"
             Margin="6"
             Background="{DynamicResource BgSidebar}"

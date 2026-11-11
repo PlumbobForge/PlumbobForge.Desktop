@@ -175,6 +175,9 @@ public partial class ItemViewModel : ObservableObject
     [ObservableProperty]
     private bool _isJumpHighlighted;
 
+    [ObservableProperty]
+    private bool _isDragging;
+
     private System.Threading.CancellationTokenSource? _jumpHighlightCts;
 
     public void TriggerJumpHighlight()

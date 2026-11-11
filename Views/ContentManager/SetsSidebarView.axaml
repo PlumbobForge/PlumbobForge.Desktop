@@ -90,6 +90,12 @@
         <Style Selector="Border.set-node-row:pointerover">
             <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
         </Style>
+        <!-- The set an item drag would drop into -->
+        <Style Selector="Border.set-node-row.drop-target">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
         <Style Selector="Border.set-node-row.set-node-selected">
             <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
