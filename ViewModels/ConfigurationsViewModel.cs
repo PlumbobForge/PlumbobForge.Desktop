@@ -98,15 +98,27 @@ public partial class ConfigurationsViewModel : ObservableObject
     public void ClearDisabledSetsSearch() => DisabledSetsSearchQuery = string.Empty;
 
     public ObservableCollection<ConfigItemViewModel> Configurations { get; } = new();
-    public ObservableCollection<ConfigSetItemViewModel> EnabledSets { get; } = new();
-    public ObservableCollection<ConfigSetItemViewModel> DisabledSets { get; } = new();
+    public ObservableCollection<ConfigColumnEntry> EnabledSets { get; } = new();
+    public ObservableCollection<ConfigColumnEntry> DisabledSets { get; } = new();
+
+    private List<ConfigItemCardViewModel> _itemCards = new();
+
+    [ObservableProperty]
+    private bool _sortItemsFirst = true;
+
+    [RelayCommand]
+    public void ToggleSortItemsFirst()
+    {
+        SortItemsFirst = !SortItemsFirst;
+        RefreshSetsColumns();
+    }
 
     private List<SetsEntity> _allSets = new();
     private Dictionary<long, SetsEntity> _setsById = new();
 
     public int TotalSetsCount => _allSets.Count;
-    public int EnabledSetsCount => EnabledSets.Count;
-    public int DisabledSetsCount => DisabledSets.Count;
+    public int EnabledSetsCount => EnabledSets.OfType<ConfigSetItemViewModel>().Count();
+    public int DisabledSetsCount => DisabledSets.OfType<ConfigSetItemViewModel>().Count();
 
     public string SetSortModeLabel => SetSortMode switch
     {
@@ -142,6 +154,7 @@ public partial class ConfigurationsViewModel : ObservableObject
                 if (payload.Contains("sets_changed") || payload.Contains("library_changed") || payload.Contains("items_imported"))
                 {
                     await LoadDataAsync();
+                    await Dispatcher.UIThread.InvokeAsync(LoadItemCardsAsync);
                 }
             });
         }
@@ -225,7 +238,91 @@ public partial class ConfigurationsViewModel : ObservableObject
         {
             c.IsSelected = (c == value);
         }
+        // Drop the previous configuration's items right away; this one's load below.
+        _itemCards = new List<ConfigItemCardViewModel>();
         RefreshSetsColumns();
+        _ = LoadItemCardsAsync();
+    }
+
+    private async Task LoadItemCardsAsync()
+    {
+        long? configId = SelectedConfiguration?.Id;
+        try
+        {
+            var cards = new List<ConfigItemCardViewModel>();
+            if (configId.HasValue)
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var rules = await db.ConfigItemOverrides.AsNoTracking()
+                    .Where(o => o.ConfigEntityId == configId.Value)
+                    .Select(o => new { o.Id, o.MetaEntityId, o.Include, o.MetaEntity!.FileName, o.MetaEntity.CompleteFileName, o.MetaEntity.SetsEntityId })
+                    .ToListAsync();
+                var selectedIds = _itemCards.Where(c => c.IsSelected).Select(c => c.ItemId).ToHashSet();
+                cards = rules
+                    .Select(r => new ConfigItemCardViewModel(r.MetaEntityId, r.Id, r.FileName, r.CompleteFileName, GetSetLocation(r.SetsEntityId), r.Include)
+                    {
+                        IsSelected = selectedIds.Contains(r.MetaEntityId)
+                    })
+                    .ToList();
+            }
+
+            // A newer selection may have loaded meanwhile.
+            if (SelectedConfiguration?.Id != configId) return;
+            _itemCards = cards;
+            RefreshSetsColumns();
+        }
+        catch (Exception ex)
+        {
+            ShowStatusToast($"Failed to load item rules: {ex.Message}", isError: true);
+        }
+    }
+
+    public string GetSetLocation(long? setId)
+    {
+        if (!setId.HasValue || !_setsById.TryGetValue(setId.Value, out var set)) return string.Empty;
+        string parents = BuildBreadcrumb(set);
+        return string.IsNullOrEmpty(parents) ? set.Name : $"{parents}  ›  {set.Name}";
+    }
+
+    [RelayCommand]
+    public async Task RemoveItemRuleAsync(ConfigItemCardViewModel? card)
+    {
+        if (card == null) return;
+        var ids = card.IsSelected
+            ? _itemCards.Where(c => c.IsSelected && c.Include == card.Include).Select(c => c.ItemId).ToList()
+            : new List<long> { card.ItemId };
+        await SaveItemRulesAsync(ids, null);
+    }
+
+    public Task MoveItemsAsync(IReadOnlyCollection<long> itemIds, bool toEnabled) => SaveItemRulesAsync(itemIds, toEnabled);
+
+    [RelayCommand]
+    public Task IncludeItemsAsync() => PickItemsAsync(include: true);
+
+    [RelayCommand]
+    public Task ExcludeItemsAsync() => PickItemsAsync(include: false);
+
+    private async Task PickItemsAsync(bool include)
+    {
+        if (SelectedConfiguration == null) return;
+        var existing = _itemCards.ToDictionary(c => c.ItemId, c => c.Include);
+        var picked = await DialogHelper.ShowConfigItemPickerAsync(include, SelectedConfiguration.Name, _allSets, existing);
+        if (picked.Count > 0) await SaveItemRulesAsync(picked, include);
+    }
+
+    private async Task SaveItemRulesAsync(IReadOnlyCollection<long> itemIds, bool? include)
+    {
+        if (SelectedConfiguration == null || itemIds.Count == 0) return;
+        try
+        {
+            ShowStatusToast(await ConfigItemRules.SetAsync(SelectedConfiguration.Id, itemIds, include), isError: false);
+        }
+        catch (Exception ex)
+        {
+            ShowStatusToast(LocalizationManager.Instance.GetString("configurations.items_failed", ex.Message), isError: true);
+        }
+        await LoadItemCardsAsync();
     }
 
     [RelayCommand]
@@ -300,32 +397,26 @@ public partial class ConfigurationsViewModel : ObservableObject
             }
         }
 
-        enabledList = SortSetsList(enabledList);
-        disabledList = SortSetsList(disabledList);
+        var enabledColumn = MergeColumn(SortSetsList(enabledList), _itemCards.Where(c => c.Include));
+        var disabledColumn = MergeColumn(SortSetsList(disabledList), _itemCards.Where(c => !c.Include));
 
         if (!string.IsNullOrWhiteSpace(EnabledSetsSearchQuery))
         {
             var q = EnabledSetsSearchQuery.Trim();
-            enabledList = enabledList.Where(s =>
-                s.Name.Contains(q, StringComparison.OrdinalIgnoreCase) ||
-                (!string.IsNullOrEmpty(s.BreadcrumbPath) && s.BreadcrumbPath.Contains(q, StringComparison.OrdinalIgnoreCase))
-            ).ToList();
+            enabledColumn = enabledColumn.Where(e => e.SearchText.Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         if (!string.IsNullOrWhiteSpace(DisabledSetsSearchQuery))
         {
             var q = DisabledSetsSearchQuery.Trim();
-            disabledList = disabledList.Where(s =>
-                s.Name.Contains(q, StringComparison.OrdinalIgnoreCase) ||
-                (!string.IsNullOrEmpty(s.BreadcrumbPath) && s.BreadcrumbPath.Contains(q, StringComparison.OrdinalIgnoreCase))
-            ).ToList();
+            disabledColumn = disabledColumn.Where(e => e.SearchText.Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         EnabledSets.Clear();
-        foreach (var item in enabledList) EnabledSets.Add(item);
+        foreach (var item in enabledColumn) EnabledSets.Add(item);
 
         DisabledSets.Clear();
-        foreach (var item in disabledList) DisabledSets.Add(item);
+        foreach (var item in disabledColumn) DisabledSets.Add(item);
 
         UpdateSelectionState();
         OnPropertyChanged(nameof(TotalSetsCount));
@@ -341,6 +432,27 @@ public partial class ConfigurationsViewModel : ObservableObject
             "NameDesc" => list.OrderByDescending(s => s.Name, StringComparer.OrdinalIgnoreCase).ToList(),
             "SubsetsDesc" => list.OrderByDescending(s => s.DescendantCount).ThenBy(s => s.Name).ToList(),
             _ => list.OrderBy(s => s.Id).ToList()
+        };
+    }
+
+    private List<ConfigColumnEntry> MergeColumn(List<ConfigSetItemViewModel> sortedSets, IEnumerable<ConfigItemCardViewModel> items)
+    {
+        var sortedItems = SetSortMode switch
+        {
+            "NameDesc" => items.OrderByDescending(i => i.FileName, StringComparer.OrdinalIgnoreCase).ToList(),
+            "Date" => items.OrderBy(i => i.RuleId).ToList(),
+            _ => items.OrderBy(i => i.FileName, StringComparer.OrdinalIgnoreCase).ToList()
+        };
+
+        if (SortItemsFirst) return sortedItems.Cast<ConfigColumnEntry>().Concat(sortedSets).ToList();
+
+        return SetSortMode switch
+        {
+            "NameAsc" => sortedSets.Cast<ConfigColumnEntry>().Concat(sortedItems)
+                .OrderBy(e => e.SortName, StringComparer.OrdinalIgnoreCase).ToList(),
+            "NameDesc" => sortedSets.Cast<ConfigColumnEntry>().Concat(sortedItems)
+                .OrderByDescending(e => e.SortName, StringComparer.OrdinalIgnoreCase).ToList(),
+            _ => sortedSets.Cast<ConfigColumnEntry>().Concat(sortedItems).ToList()
         };
     }
 
@@ -494,6 +606,11 @@ public partial class ConfigurationsViewModel : ObservableObject
             }
             await _db.SaveChangesAsync();
 
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                await scope.ServiceProvider.GetRequiredService<ConfigItemOverrideService>().CopyRulesAsync(config.Id, duplicate.Id);
+            }
+
             await LoadDataAsync();
             var created = Configurations.FirstOrDefault(c => c.Id == duplicate.Id);
             if (created != null) SelectedConfiguration = created;
@@ -595,8 +712,17 @@ public partial class ConfigurationsViewModel : ObservableObject
             var entity = await _db.ConfigEntities.FindAsync(config.Id);
             if (entity != null)
             {
+                bool hadRules = await _db.ConfigItemOverrides.AnyAsync(o => o.ConfigEntityId == entity.Id);
                 _db.ConfigEntities.Remove(entity);
                 await _db.SaveChangesAsync();
+
+                // Its rules are gone; items no other configuration has a rule for go back into their set caches.
+                if (hadRules)
+                {
+                    using var scope = _serviceProvider.CreateScope();
+                    await scope.ServiceProvider.GetRequiredService<ConfigItemOverrideService>().RefreshOverrideFlagsAsync();
+                    _ = App.Services?.GetService<MainViewModel>()?.RefreshDirtyStateAsync();
+                }
                 await LoadDataAsync();
                 ShowStatusToast($"Configuration '{config.Name}' deleted.", isError: false);
             }
@@ -607,7 +733,7 @@ public partial class ConfigurationsViewModel : ObservableObject
         }
     }
 
-
+    // Vault mode never rebuilds: switching configurations there just rewrites Resource.cfg, like dynamic mode.
     private bool IsStaticLibraryCache()
     {
         // The monitor is the copy the vault toggle and migration/revert keep current.
@@ -767,6 +893,7 @@ public partial class ConfigurationsViewModel : ObservableObject
     private List<long> GetSelectedTargetSetIds(ConfigSetItemViewModel clickedSet)
     {
         var allSelectedInColumn = (clickedSet.IsEnabledInConfig ? EnabledSets : DisabledSets)
+            .OfType<ConfigSetItemViewModel>()
             .Where(s => s.IsSelected)
             .Select(s => s.Id)
             .ToList();
@@ -948,10 +1075,18 @@ public partial class ConfigurationsViewModel : ObservableObject
         ShowStatusToast("All sets disabled in configuration.", isError: false);
     }
 
-    public void SelectSetCard(ConfigSetItemViewModel set, bool isCtrlPressed, bool isShiftPressed)
+    public Task ToggleItemCardAsync(ConfigItemCardViewModel card)
     {
-        var targetCollection = set.IsEnabledInConfig ? EnabledSets : DisabledSets;
-        var otherCollection = set.IsEnabledInConfig ? DisabledSets : EnabledSets;
+        var ids = card.IsSelected
+            ? (card.Include ? EnabledSets : DisabledSets).OfType<ConfigItemCardViewModel>().Where(c => c.IsSelected).Select(c => c.ItemId).ToList()
+            : new List<long> { card.ItemId };
+        return MoveItemsAsync(ids, toEnabled: !card.Include);
+    }
+
+    public void SelectSetCard(ConfigColumnEntry set, bool isCtrlPressed, bool isShiftPressed)
+    {
+        var targetCollection = set.IsInEnabledColumn ? EnabledSets : DisabledSets;
+        var otherCollection = set.IsInEnabledColumn ? DisabledSets : EnabledSets;
 
         foreach (var other in otherCollection) other.IsSelected = false;
 

@@ -7,7 +7,7 @@ using PlumbobForge.Desktop.Services;
 
 namespace PlumbobForge.Desktop.ViewModels;
 
-public partial class ConfigSetItemViewModel : ObservableObject
+public partial class ConfigSetItemViewModel : ConfigColumnEntry
 {
     private readonly SetsEntity _entity;
 
@@ -16,14 +16,15 @@ public partial class ConfigSetItemViewModel : ObservableObject
     public long? ParentSetsEntityId => _entity.ParentSetsEntityId;
     public SetsEntity Entity => _entity;
 
+    public override bool IsInEnabledColumn => IsEnabledInConfig;
+    public override string SortName => Name;
+    public override string SearchText => $"{Name} {BreadcrumbPath}";
+
     [ObservableProperty]
     private string _breadcrumbPath = string.Empty;
 
     [ObservableProperty]
     private int _descendantCount = 0;
-
-    [ObservableProperty]
-    private bool _isSelected = false;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IconBrush))]
