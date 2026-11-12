@@ -3,7 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
-             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
              xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
              mc:Ignorable="d" d:DesignWidth="308"
              x:Class="PlumbobForge.Desktop.Views.ContentManager.ItemDetailsFlyoutView"

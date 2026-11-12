@@ -1,7 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:primitives="using:Avalonia.Controls.Primitives"
-             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
              xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
              x:Class="PlumbobForge.Desktop.Views.Controls.PlumbobColorPicker"
              Width="210">

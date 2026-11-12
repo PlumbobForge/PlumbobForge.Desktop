@@ -7,7 +7,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
-using IconPacks.Avalonia.BoxIcons;
+using PlumbobForge.Desktop.Controls.Icons;
 using PlumbobForge.Desktop.Services.Localization;
 
 namespace PlumbobForge.Desktop.Views.Dialogs;

@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
-using IconPacks.Avalonia.BoxIcons;
+using PlumbobForge.Desktop.Controls.Icons;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PlumbobForge.Backend.Database;

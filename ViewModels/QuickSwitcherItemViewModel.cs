@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
-using IconPacks.Avalonia.BoxIcons;
+using PlumbobForge.Desktop.Controls.Icons;
 
 namespace PlumbobForge.Desktop.ViewModels;
 

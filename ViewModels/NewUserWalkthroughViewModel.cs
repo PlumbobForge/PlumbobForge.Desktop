@@ -6,7 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IconPacks.Avalonia.BoxIcons;
+using PlumbobForge.Desktop.Controls.Icons;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using PlumbobForge.Backend.Configuration;

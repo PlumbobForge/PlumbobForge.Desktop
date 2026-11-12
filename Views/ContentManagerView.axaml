@@ -3,7 +3,7 @@
              xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
              xmlns:cm="using:PlumbobForge.Desktop.Views.ContentManager"
              xmlns:ctrl="using:PlumbobForge.Desktop.Controls"
-             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
              xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
              x:Class="PlumbobForge.Desktop.Views.ContentManagerView"
              x:DataType="vm:ContentManagerViewModel"

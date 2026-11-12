@@ -1,6 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:icon="using:IconPacks.Avalonia.BoxIcons"
+             xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
              xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
              xmlns:views="using:PlumbobForge.Desktop.Views"
              xmlns:modals="using:PlumbobForge.Desktop.Views.Modals"
@@ -35,7 +35,7 @@
 
     <Application.Styles>
         <FluentTheme />
-        <StyleInclude Source="avares://IconPacks.Avalonia.BoxIcons/BoxIcons.axaml" />
+                <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
         <StyleInclude Source="avares://PlumbobForge.Desktop/Styles/Controls.axaml" />
 
         <!-- Fully Custom ScrollBar Control Template -->

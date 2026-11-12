@@ -45,8 +45,8 @@ public partial class MainWindow : Window
         if (change.Property == WindowStateProperty && MaximizeIcon != null)
         {
             MaximizeIcon.Kind = WindowState == WindowState.Maximized 
-                ? IconPacks.Avalonia.BoxIcons.PackIconBoxIconsKind.RegularCopy 
-                : IconPacks.Avalonia.BoxIcons.PackIconBoxIconsKind.RegularSquare;
+                ? PlumbobForge.Desktop.Controls.Icons.PackIconBoxIconsKind.RegularCopy 
+                : PlumbobForge.Desktop.Controls.Icons.PackIconBoxIconsKind.RegularSquare;
         }
     }
 
