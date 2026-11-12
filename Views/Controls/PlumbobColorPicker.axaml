@@ -116,7 +116,7 @@
                      MaxLength="9"
                      FontSize="11.5"
                      Height="28"
-                     Watermark="#10b981"
+                     PlaceholderText="#10b981"
                      VerticalContentAlignment="Center"
                      TextChanged="OnHexTextBoxChanged"/>
         </Grid>

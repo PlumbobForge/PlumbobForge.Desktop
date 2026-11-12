@@ -7,9 +7,8 @@
         Width="660" Height="465"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
-        SystemDecorations="Full"
+        WindowDecorations="BorderOnly"
         ExtendClientAreaToDecorationsHint="True"
-        ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaTitleBarHeightHint="-1"
         Background="{DynamicResource BgDark}">
 
@@ -152,7 +151,7 @@
                     <!-- Set Name Input -->
                     <StackPanel Spacing="6">
                         <TextBlock Text="{loc:Loc 'dialogs.customize_set.name_label'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="0.5"/>
-                        <TextBox x:Name="SetNameTextBox" Classes="settings-input" Watermark="{loc:Loc 'dialogs.customize_set.name_watermark'}" FontSize="12.5" TextChanged="OnSetNameChanged"/>
+                        <TextBox x:Name="SetNameTextBox" Classes="settings-input" PlaceholderText="{loc:Loc 'dialogs.customize_set.name_watermark'}" FontSize="12.5" TextChanged="OnSetNameChanged"/>
                         <TextBlock x:Name="ErrorTextBlock" Foreground="#ef4444" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap" IsVisible="False"/>
                     </StackPanel>
 
@@ -177,7 +176,7 @@
                     <StackPanel Spacing="6">
                         <Grid ColumnDefinitions="*, Auto" VerticalAlignment="Center">
                             <TextBlock Grid.Column="0" Text="{loc:Loc 'dialogs.customize_set.choose_icon'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="0.5" VerticalAlignment="Center"/>
-                            <TextBox x:Name="IconSearchBox" Grid.Column="1" Classes="capsule-search" Width="130" Height="28" Padding="6,0" FontSize="11" Watermark="{loc:Loc 'dialogs.customize_set.search_icons'}" TextChanged="OnIconSearchChanged">
+                            <TextBox x:Name="IconSearchBox" Grid.Column="1" Classes="capsule-search" Width="130" Height="28" Padding="6,0" FontSize="11" PlaceholderText="{loc:Loc 'dialogs.customize_set.search_icons'}" TextChanged="OnIconSearchChanged">
                                 <TextBox.InnerLeftContent>
                                     <icon:PackIconBoxIcons Kind="RegularSearch" Width="11" Height="11" Foreground="{DynamicResource TextMuted}" Margin="6,0,2,0" VerticalAlignment="Center"/>
                                 </TextBox.InnerLeftContent>

@@ -9,9 +9,8 @@
         Width="900" Height="620"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
-        SystemDecorations="Full"
+        WindowDecorations="BorderOnly"
         ExtendClientAreaToDecorationsHint="True"
-        ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaTitleBarHeightHint="-1"
         Background="{DynamicResource BgSidebar}">
 

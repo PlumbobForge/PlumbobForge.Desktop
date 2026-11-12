@@ -7,9 +7,8 @@
         Width="440" Height="220"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
-        SystemDecorations="Full"
+        WindowDecorations="BorderOnly"
         ExtendClientAreaToDecorationsHint="True"
-        ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaTitleBarHeightHint="-1"
         Background="{DynamicResource BgDark}">
 

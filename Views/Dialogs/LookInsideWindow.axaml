@@ -9,9 +9,8 @@
         Width="1040" Height="700" MinWidth="760" MinHeight="480"
         WindowStartupLocation="CenterOwner"
         CanResize="True"
-        SystemDecorations="Full"
+        WindowDecorations="BorderOnly"
         ExtendClientAreaToDecorationsHint="True"
-        ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaTitleBarHeightHint="-1"
         Background="{DynamicResource BgDark}">
 
@@ -197,7 +196,7 @@
                     <!-- Object list: search and filters on top of the list, in one panel that starts at the top -->
                     <Border Grid.Column="0" Background="{DynamicResource BgSidebar}" CornerRadius="12" Padding="8">
                         <Grid RowDefinitions="Auto, Auto, *">
-                            <TextBox Grid.Row="0" Classes="capsule-search" Margin="0,0,0,8" Text="{Binding SearchText}" Watermark="{loc:Loc 'look_inside.search'}">
+                            <TextBox Grid.Row="0" Classes="capsule-search" Margin="0,0,0,8" Text="{Binding SearchText}" PlaceholderText="{loc:Loc 'look_inside.search'}">
                                 <TextBox.InnerLeftContent>
                                     <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="10,0,4,0" VerticalAlignment="Center"/>
                                 </TextBox.InnerLeftContent>

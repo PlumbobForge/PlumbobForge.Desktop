@@ -21,7 +21,6 @@ public sealed class LookInsideSource
     public long ItemId { get; }
     public string FileName { get; }
     public PackageInspection Inspection { get; }
-    /// <summary>Encrypted, damaged or partly missing items can be looked at but not rewritten.</summary>
     public bool EditBlocked { get; }
 
     public LookInsideSource(long itemId, string fileName, PackageInspection inspection)
@@ -420,6 +419,7 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
             if (part >= 0 && o.Object.Resource.PartIndex != part) return false;
             return query.Length == 0 || o.Matches(query);
         });
+        // "All items" sits on top of the unfiltered list; it always acts on every object shown.
         if (_allItemsEntry != null && KindFilter == FilterAll && part < 0 && query.Length == 0 && !ShowOnlyOff)
         {
             filtered = filtered.Prepend(_allItemsEntry);
@@ -673,7 +673,6 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
     public string GetSuggestedFileName(LookInsideThumbnailItem item) =>
         SourceOf(item) is { } source ? ThumbnailExporter.GetSuggestedFileName(source.Inspection, item.Owner, item.Thumbnail) : "thumbnail.png";
 
-    /// <summary>Saves one thumbnail, as stored in the package, to <paramref name="destinationPath"/>.</summary>
     public async Task ExportThumbnailAsync(LookInsideThumbnailItem item, string destinationPath)
     {
         var source = SourceOf(item);
@@ -697,7 +696,6 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(CanOpenExportFolder));
         }
     }
-
 
     public async Task ExportManyAsync(string folder, LookInsideObjectItem? onlyObject = null)
     {
@@ -1223,6 +1221,7 @@ public sealed class LookInsideObjectItem : ObservableObject
         _searchBlob = string.Empty;
     }
 
+    /// <param name="origin">The item's file name, shown when several items share the list.</param>
     public static LookInsideObjectItem ForUnlinked(IReadOnlyList<InspectedThumbnail> unlinked, Func<InspectedResource, byte[]> reader, LookInsideSource source, string? origin) =>
         new(unlinked, reader, origin) { Source = source };
 

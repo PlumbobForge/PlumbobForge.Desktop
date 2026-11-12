@@ -34,7 +34,7 @@
 
         <TextBox Classes="transparent-notes"
                  Text="{Binding Note, Mode=TwoWay}"
-                 Watermark="{loc:Loc 'library.edit_description'}"
+                 PlaceholderText="{loc:Loc 'library.edit_description'}"
                  AcceptsReturn="True"
                  TextWrapping="Wrap"
                  FontSize="12"

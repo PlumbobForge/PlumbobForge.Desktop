@@ -166,7 +166,7 @@
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
     </Style>
-    <Style Selector="TextBox.transparent-notes /template/ TextBlock#PART_Watermark">
+    <Style Selector="TextBox.transparent-notes /template/ TextBlock#PART_Placeholder">
         <Setter Property="FontStyle" Value="Italic"/>
         <Setter Property="Foreground" Value="#64748b"/>
     </Style>

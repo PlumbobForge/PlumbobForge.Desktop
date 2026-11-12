@@ -9,9 +9,8 @@
         Width="900" Height="620"
         MinWidth="640" MinHeight="420"
         WindowStartupLocation="CenterOwner"
-        SystemDecorations="Full"
+        WindowDecorations="BorderOnly"
         ExtendClientAreaToDecorationsHint="True"
-        ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaTitleBarHeightHint="-1"
         Background="{DynamicResource BgDark}">
 
@@ -196,7 +195,7 @@
                     <Grid RowDefinitions="Auto, *">
                         <TextBox Grid.Row="0" x:Name="SearchBox" Classes="capsule-search" Margin="0,0,0,10"
                                  Text="{Binding SearchQuery, Mode=TwoWay}"
-                                 Watermark="{loc:Loc 'dialogs.item_picker.search'}">
+                                 PlaceholderText="{loc:Loc 'dialogs.item_picker.search'}">
                             <TextBox.InnerLeftContent>
                                 <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="10,0,4,0" VerticalAlignment="Center"/>
                             </TextBox.InnerLeftContent>

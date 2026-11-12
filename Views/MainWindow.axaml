@@ -6,6 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
         xmlns:bx="using:PlumbobForge.Desktop.Controls.Icons"
+        xmlns:controls="using:PlumbobForge.Desktop.Controls"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="PlumbobForge.Desktop.Views.MainWindow"
         x:DataType="vm:MainViewModel"
@@ -15,9 +16,8 @@
         Width="1200" Height="800"
         MinWidth="900" MinHeight="600"
         WindowStartupLocation="CenterScreen"
-        SystemDecorations="Full"
+        WindowDecorations="BorderOnly"
         ExtendClientAreaToDecorationsHint="True"
-        ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaTitleBarHeightHint="-1"
         TransparencyLevelHint="Mica, AcrylicBlur, Transparent"
         TransparencyBackgroundFallback="#1A1C22"
@@ -154,6 +154,7 @@
         <Style Selector="RadioButton.nav-tab:checked bx|PackIconBoxIcons">
             <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
         </Style>
+        <!-- Titles only show as tooltips once the bar has dropped them. -->
         <Style Selector="RadioButton.nav-tab">
             <Setter Property="ToolTip.ServiceEnabled" Value="False"/>
         </Style>

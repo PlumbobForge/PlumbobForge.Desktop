@@ -119,7 +119,7 @@
                      HorizontalAlignment="Right"
                      VerticalAlignment="Center"
                      Text="{Binding ConflictSearchQuery, Mode=TwoWay}"
-                     Watermark="{loc:Loc 'tools.conflicts.search_watermark'}">
+                     PlaceholderText="{loc:Loc 'tools.conflicts.search_watermark'}">
                 <TextBox.InnerLeftContent>
                     <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="10,0,4,0" VerticalAlignment="Center"/>
                 </TextBox.InnerLeftContent>

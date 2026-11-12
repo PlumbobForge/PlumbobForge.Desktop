@@ -100,7 +100,7 @@
                         <TextBox x:Name="SearchBox" Grid.Column="1"
                                  Classes="quick-search-box"
                                  Text="{Binding SearchQuery, Mode=TwoWay}"
-                                 Watermark="{loc:Loc 'filters.search_placeholder'}"
+                                 PlaceholderText="{loc:Loc 'filters.search_placeholder'}"
                                  FontSize="14"
                                  Foreground="{DynamicResource TextMain}"
                                  VerticalAlignment="Center"

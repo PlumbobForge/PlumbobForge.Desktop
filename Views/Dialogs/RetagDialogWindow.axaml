@@ -7,9 +7,8 @@
         Width="560" Height="560"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
-        SystemDecorations="Full"
+        WindowDecorations="BorderOnly"
         ExtendClientAreaToDecorationsHint="True"
-        ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaTitleBarHeightHint="-1"
         Background="{DynamicResource BgDark}">
 
@@ -115,7 +114,7 @@
                                 </ItemsControl>
 
                                 <!-- Borderless Input Box -->
-                                <TextBox x:Name="TagInputTextBox" Width="140" MinHeight="28" Background="Transparent" BorderThickness="0" Padding="4,4" Foreground="{DynamicResource TextMain}" FontSize="12" Watermark="{loc:Loc 'dialogs.retag.add_tag'}" VerticalAlignment="Center" TextInput="OnTagInputTextInput">
+                                <TextBox x:Name="TagInputTextBox" Width="140" MinHeight="28" Background="Transparent" BorderThickness="0" Padding="4,4" Foreground="{DynamicResource TextMain}" FontSize="12" PlaceholderText="{loc:Loc 'dialogs.retag.add_tag'}" VerticalAlignment="Center" TextInput="OnTagInputTextInput">
                                     <TextBox.Styles>
                                         <Style Selector="TextBox">
                                             <Setter Property="Background" Value="Transparent"/>

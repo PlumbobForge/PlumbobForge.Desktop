@@ -7,9 +7,8 @@
         Width="440" Height="220"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
-        SystemDecorations="Full"
+        WindowDecorations="BorderOnly"
         ExtendClientAreaToDecorationsHint="True"
-        ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaTitleBarHeightHint="-1"
         Background="{DynamicResource BgDark}">
 
@@ -41,7 +40,7 @@
                 <StackPanel Spacing="0">
                     <TextBlock x:Name="PromptTextBlock" Text="{loc:Loc 'dialogs.input.prompt'}" FontSize="12" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,10"/>
                     <Grid ColumnDefinitions="*, Auto">
-                        <TextBox x:Name="ValueTextBox" Grid.Column="0" Classes="settings-input" Watermark="{loc:Loc 'dialogs.input.watermark'}" VerticalAlignment="Top" TextChanged="OnValueChanged"/>
+                        <TextBox x:Name="ValueTextBox" Grid.Column="0" Classes="settings-input" PlaceholderText="{loc:Loc 'dialogs.input.watermark'}" VerticalAlignment="Top" TextChanged="OnValueChanged"/>
                         <Border x:Name="ExtensionBadge" Grid.Column="1" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="7" Padding="10,0" Margin="6,0,0,0" VerticalAlignment="Top" Height="34" IsVisible="False">
                             <TextBlock x:Name="ExtensionTextBlock" Text=".package" Foreground="{DynamicResource TextMuted}" FontSize="12" VerticalAlignment="Center"/>
                         </Border>

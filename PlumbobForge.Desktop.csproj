@@ -19,17 +19,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.2.5" />
-    <PackageReference Include="Avalonia.Controls.ColorPicker" Version="11.2.5" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.2.5" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.5" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.5" />
-    <PackageReference Include="Avalonia.Svg.Skia" Version="11.2.0.2" />
+    <PackageReference Include="Avalonia" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.6" />
+    <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.17" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.10" />
-    <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -83,6 +82,7 @@
       <HintPath>..\libs\s3pi.ObjKeyResource.dll</HintPath>
       <Private>true</Private>
     </Reference>
+    <!-- Needed at runtime by the s3pi wrappers above -->
     <Reference Include="System.Custom">
       <HintPath>..\libs\System.Custom.dll</HintPath>
       <Private>true</Private>

@@ -9,9 +9,8 @@
         MinHeight="360"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
-        SystemDecorations="Full"
+        WindowDecorations="BorderOnly"
         ExtendClientAreaToDecorationsHint="True"
-        ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaTitleBarHeightHint="-1"
         Background="{DynamicResource BgDark}">
 
@@ -95,7 +94,7 @@
                                 <TextBlock Text="{loc:Loc 'dialogs.migration.ccmagic_folder'}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
                                 <Grid ColumnDefinitions="*, Auto">
                                     <TextBox x:Name="CcMagicPathBox"
-                                             Watermark="C:\Users\...\Documents\Electronic Arts\CC Magic"
+                                             PlaceholderText="C:\Users\...\Documents\Electronic Arts\CC Magic"
                                              Background="{DynamicResource BgDark}" BorderBrush="{DynamicResource BorderSubtle}"
                                              Foreground="{DynamicResource TextMain}"
                                              BorderThickness="1"
@@ -173,7 +172,7 @@
                                 <TextBlock Text="{loc:Loc 'dialogs.migration.s3mo_folder'}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
                                 <Grid ColumnDefinitions="*, Auto">
                                     <TextBox x:Name="S3moPathBox"
-                                             Watermark="C:\Path\To\s3mo"
+                                             PlaceholderText="C:\Path\To\s3mo"
                                              Background="{DynamicResource BgDark}" BorderBrush="{DynamicResource BorderSubtle}"
                                              Foreground="{DynamicResource TextMain}"
                                              BorderThickness="1"

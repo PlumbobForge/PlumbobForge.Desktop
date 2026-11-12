@@ -162,7 +162,7 @@
                     <!-- Filters Body Panel (Search & Accordions, Dims when collapsed) -->
                     <Grid Grid.Row="1" RowDefinitions="Auto, *" Classes="dimmable-content" Classes.collapsed="{Binding IsFiltersSidebarCollapsed}">
                         <!-- Capsule Search Input -->
-                        <TextBox Grid.Row="0" Classes="capsule-search" Margin="0,0,0,16" Text="{Binding SearchQuery}" Watermark="{loc:Loc 'filters.search_placeholder'}">
+                        <TextBox Grid.Row="0" Classes="capsule-search" Margin="0,0,0,16" Text="{Binding SearchQuery}" PlaceholderText="{loc:Loc 'filters.search_placeholder'}">
                             <TextBox.InnerLeftContent>
                                 <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="10,0,4,0" VerticalAlignment="Center"/>
                             </TextBox.InnerLeftContent>
@@ -861,11 +861,11 @@
                                                     <TextBox Grid.Column="0" Classes="settings-input"
                                                              Height="34" Padding="10,0" FontSize="12"
                                                              Text="{Binding FilterBBPriceMinText, Mode=TwoWay}"
-                                                             Watermark="{loc:Loc 'filters.bb_price_min'}"/>
+                                                             PlaceholderText="{loc:Loc 'filters.bb_price_min'}"/>
                                                     <TextBox Grid.Column="2" Classes="settings-input"
                                                              Height="34" Padding="10,0" FontSize="12"
                                                              Text="{Binding FilterBBPriceMaxText, Mode=TwoWay}"
-                                                             Watermark="{loc:Loc 'filters.bb_price_max'}"/>
+                                                             PlaceholderText="{loc:Loc 'filters.bb_price_max'}"/>
                                                 </Grid>
                                             </StackPanel>
                                         </StackPanel>

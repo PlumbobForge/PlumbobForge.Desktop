@@ -490,7 +490,7 @@
                         <!-- Sets Search Input -->
                         <TextBox Grid.Row="1" Classes="capsule-search config-search" Margin="0,0,0,10"
                                  Text="{Binding EnabledSetsSearchQuery, Mode=TwoWay}"
-                                 Watermark="{loc:Loc 'configurations.search_sets_placeholder'}">
+                                 PlaceholderText="{loc:Loc 'configurations.search_sets_placeholder'}">
                             <TextBox.InnerLeftContent>
                                 <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="10,0,4,0" VerticalAlignment="Center"/>
                             </TextBox.InnerLeftContent>
@@ -663,7 +663,7 @@
                         <!-- Sets Search Input -->
                         <TextBox Grid.Row="1" Classes="capsule-search config-search" Margin="0,0,0,10"
                                  Text="{Binding DisabledSetsSearchQuery, Mode=TwoWay}"
-                                 Watermark="{loc:Loc 'configurations.search_sets_placeholder'}">
+                                 PlaceholderText="{loc:Loc 'configurations.search_sets_placeholder'}">
                             <TextBox.InnerLeftContent>
                                 <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="10,0,4,0" VerticalAlignment="Center"/>
                             </TextBox.InnerLeftContent>

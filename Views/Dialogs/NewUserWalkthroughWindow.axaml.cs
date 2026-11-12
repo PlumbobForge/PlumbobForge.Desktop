@@ -60,7 +60,6 @@ public partial class NewUserWalkthroughWindow : Window
         }
     }
 
-
     private async void ShowStep(int step)
     {
         var pages = PageHost.Children;

@@ -2,8 +2,8 @@ using System;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using PlumbobForge.Desktop.ViewModels;
 using Avalonia.Threading;
+using PlumbobForge.Desktop.ViewModels;
 
 namespace PlumbobForge.Desktop.Views;
 

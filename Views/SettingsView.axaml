@@ -8,6 +8,7 @@
              x:DataType="vm:SettingsViewModel">
 
     <UserControl.Styles>
+        <!-- Swatch Button (no gray hover) -->
         <Style Selector="Button.swatch-picker-btn">
             <Setter Property="Template">
                 <ControlTemplate>
@@ -443,7 +444,7 @@
                                     <TextBlock Text="{loc:Loc 'settings.appearance.language_help'}" Classes="form-helper"/>
                                 </StackPanel>
 
-                                <!-- Theme Mode Switcher -->
+                                <!-- Theme Mode Switcher (Dark, Light, System, Custom) -->
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="{loc:Loc 'settings.appearance.theme'}" Classes="form-label"/>
                                     <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="3">
@@ -504,7 +505,7 @@
                                     <TextBlock Text="{loc:Loc 'settings.appearance.theme_help'}" Classes="form-helper"/>
                                 </StackPanel>
 
-                                <!-- Accent Color Picker -->
+                                <!-- PRESET ACCENT SELECTION (Shown when Dark, Light, or System) -->
                                 <StackPanel Spacing="8" IsVisible="{Binding IsPresetTheme}">
                                     <TextBlock Text="{loc:Loc 'settings.appearance.accent_color'}" Classes="form-label"/>
                                     <ItemsControl ItemsSource="{Binding AccentOptions}">
@@ -620,7 +621,7 @@
                                                      TextChanged="OnCustomBaseHexChanged"
                                                      VerticalAlignment="Center"
                                                      MaxLength="9"
-                                                     Watermark="#1e293b"/>
+                                                     PlaceholderText="#1e293b"/>
 
                                             <!-- Quick Base Tone Swatches -->
                                             <ItemsControl Grid.Column="2" Margin="14,0,0,0" ItemsSource="{Binding BaseColorPresets}" VerticalAlignment="Center">
@@ -710,7 +711,7 @@
                                                          TextChanged="OnCustomAccentHexChanged"
                                                          VerticalAlignment="Center"
                                                          MaxLength="9"
-                                                         Watermark="#10b981"/>
+                                                         PlaceholderText="#10b981"/>
 
                                                 <!-- Quick accent swatches -->
                                                 <ItemsControl Grid.Column="2" Margin="14,0,0,0" ItemsSource="{Binding AccentOptions}" VerticalAlignment="Center">
@@ -762,7 +763,7 @@
                                                  Text="{Binding DocumentBaseDir, Mode=TwoWay}"
                                                  LostFocus="OnDocumentBaseDirLostFocus"
                                                  KeyDown="OnDocumentBaseDirKeyDown"
-                                                 Watermark="e.g. C:\Users\Username\Documents\PlumbobForge"/>
+                                                 PlaceholderText="e.g. C:\Users\Username\Documents\PlumbobForge"/>
                                         <Button Grid.Column="2" Classes="btn-action-sec" Click="OnBrowseDocumentBaseDirClick" ToolTip.Tip="{loc:Loc 'settings.storage.browse'}">
                                             <icon:PackIconBoxIcons Kind="RegularFolderOpen" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
                                         </Button>
@@ -781,7 +782,7 @@
                                                  Text="{Binding GameFilesDir, Mode=TwoWay}"
                                                  LostFocus="OnGameFilesDirLostFocus"
                                                  KeyDown="OnGameFilesDirKeyDown"
-                                                 Watermark="e.g. C:\Program Files (x86)\Electronic Arts\The Sims 3"/>
+                                                 PlaceholderText="e.g. C:\Program Files (x86)\Electronic Arts\The Sims 3"/>
                                         <Button Grid.Column="2" Classes="btn-action-sec" Click="OnBrowseGameFilesDirClick" ToolTip.Tip="{loc:Loc 'settings.storage.browse'}">
                                             <icon:PackIconBoxIcons Kind="RegularFolderOpen" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
                                         </Button>
@@ -800,7 +801,7 @@
                                                  Text="{Binding Sims3UserDir, Mode=TwoWay}"
                                                  LostFocus="OnSims3UserDirLostFocus"
                                                  KeyDown="OnSims3UserDirKeyDown"
-                                                 Watermark="e.g. C:\Users\Username\Documents\Electronic Arts\The Sims 3"/>
+                                                 PlaceholderText="e.g. C:\Users\Username\Documents\Electronic Arts\The Sims 3"/>
                                         <Button Grid.Column="2" Classes="btn-action-sec" Click="OnBrowseSims3UserDirClick" ToolTip.Tip="{loc:Loc 'settings.storage.browse'}">
                                             <icon:PackIconBoxIcons Kind="RegularFolderOpen" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
                                         </Button>
@@ -886,7 +887,7 @@
                     <!-- RIGHT COLUMN: Engine Optimization & Maintenance -->
                     <StackPanel Grid.Column="2" Spacing="20">
 
-                        <!-- CARD 3: Cache & Engine Optimization -->
+                        <!-- CARD 3: Storage mode. Shows the current mode, its options, and the switch to the other mode. -->
                         <Border x:Name="EngineCard" Classes="settings-card">
                             <StackPanel Spacing="16">
                                 <!-- Card Header -->
