@@ -641,7 +641,6 @@ public partial class ContentManagerViewModel
     }
 
     private List<ItemViewModel> _allMatchingItems = new();
-    private const int BatchSize = 24;
 
     public void ApplyFilter()
     {

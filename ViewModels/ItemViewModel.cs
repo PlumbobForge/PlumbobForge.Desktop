@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -166,8 +168,24 @@ public partial class ItemViewModel : ObservableObject
 
     public Bitmap? ThumbnailBitmap => DisplayThumbnailBitmap;
 
-    [ObservableProperty]
-    private bool _isLoadingThumbnail = false;
+    private volatile bool _isLoadingThumbnail;
+    public bool IsLoadingThumbnail => _isLoadingThumbnail;
+
+    // How many library cards or rows currently show this item. The thumbnail queue skips items that
+    // scrolled out of view before their turn came.
+    private int _viewCount;
+    public bool IsOnScreen => Volatile.Read(ref _viewCount) > 0;
+
+    public void AttachView()
+    {
+        if (Interlocked.Increment(ref _viewCount) == 1 && !_isLoadingThumbnail && !_hasNoThumbnail
+            && ThumbnailCache.TryGet(Id, grayscale: !Enabled) == null)
+        {
+            _ = LoadThumbnailAsync();
+        }
+    }
+
+    public void DetachView() => Interlocked.Decrement(ref _viewCount);
 
     [ObservableProperty]
     private bool _isSelected;
@@ -362,8 +380,6 @@ public partial class ItemViewModel : ObservableObject
         _note = entity.Description ?? string.Empty;
     }
 
-    private static readonly System.Threading.SemaphoreSlim _thumbnailSemaphore = new(4, 4);
-
     public void UnloadThumbnail()
     {
         // Persistent cache keeps decoded 140px bitmaps for 0-allocation smooth scrolling
@@ -378,16 +394,30 @@ public partial class ItemViewModel : ObservableObject
         _cachedThumbnailPath = null;
         _hasNoThumbnail = false;
         ThumbnailCache.Invalidate(Id);
-        IsLoadingThumbnail = false;
-        await LoadThumbnailAsync();
+        await LoadThumbnailAsync(force: true);
     }
 
-    public async Task LoadThumbnailAsync(ThumbnailService? thumbnailService = null)
+    // Queues the thumbnail; all file and package work runs on background threads (ThumbnailLoadQueue).
+    public Task LoadThumbnailAsync(bool force = false)
     {
-        if (_hasNoThumbnail || IsLoadingThumbnail) return;
-        if (ThumbnailCache.TryGet(Id, grayscale: !Enabled) != null) return;
+        if (_hasNoThumbnail || (_isLoadingThumbnail && !force)) return Task.CompletedTask;
+        if (ThumbnailCache.TryGet(Id, grayscale: !Enabled) != null) return Task.CompletedTask;
 
-        IsLoadingThumbnail = true;
+        _isLoadingThumbnail = true;
+        return ThumbnailLoadQueue.Enqueue(this, force);
+    }
+
+    // Called by the queue when the item scrolled away before its turn; it is queued again once shown.
+    internal void OnThumbnailLoadSkipped()
+    {
+        _isLoadingThumbnail = false;
+        // It may have come back into view while it was being skipped.
+        if (IsOnScreen) _ = LoadThumbnailAsync();
+    }
+
+    // Runs on a background thread.
+    internal async Task LoadThumbnailCoreAsync()
+    {
         try
         {
             string? path = _cachedThumbnailPath;
@@ -411,11 +441,10 @@ public partial class ItemViewModel : ObservableObject
 
                 if (string.IsNullOrEmpty(path))
                 {
-                    var service = thumbnailService ?? GlobalThumbnailService;
-                    if (service != null)
-                    {
-                        path = await service.GetThumbnailPathAsync(Id, Entity.CompleteFileName);
-                    }
+                    // Its own scope: several thumbnails load at once and a DbContext can't be shared.
+                    using var scope = App.Services.CreateScope();
+                    var service = scope.ServiceProvider.GetRequiredService<ThumbnailService>();
+                    path = await service.GetThumbnailPathAsync(Id, Entity.CompleteFileName);
                 }
             }
 
@@ -448,7 +477,7 @@ public partial class ItemViewModel : ObservableObject
         }
         finally
         {
-            IsLoadingThumbnail = false;
+            _isLoadingThumbnail = false;
         }
     }
 }

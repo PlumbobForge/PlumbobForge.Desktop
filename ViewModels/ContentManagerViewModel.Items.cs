@@ -23,21 +23,6 @@ public partial class ContentManagerViewModel
         HasSelectedItems = SelectedCount > 0;
     }
 
-    public void LoadMoreItems()
-    {
-        if (FilteredItems.Count >= _allMatchingItems.Count) return;
-
-        int nextCount = Math.Min(BatchSize, _allMatchingItems.Count - FilteredItems.Count);
-        var nextBatch = _allMatchingItems.Skip(FilteredItems.Count).Take(nextCount).ToList();
-        foreach (var item in nextBatch)
-        {
-            FilteredItems.Add(item);
-            if (item.ThumbnailBitmap == null && !item.IsLoadingThumbnail)
-            {
-                _ = item.LoadThumbnailAsync(_thumbnailService);
-            }
-        }
-    }
 
     // Vault mods have no file of their own, so a non-permanent delete exports them first and recycles the export.
     private static async Task RecycleVaultItemsAsync(VaultService vaultService, IEnumerable<(long Id, string FileName)> items)

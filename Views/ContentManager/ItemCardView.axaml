@@ -215,87 +215,9 @@
                             Margin="4,0,0,0"
                             Cursor="Hand"
                             ToolTip.Tip="Details &amp; Metadata"
+                            Click="OnInfoButtonClick"
                             VerticalAlignment="Center">
                         <icon:PackIconBoxIcons Kind="RegularInfoCircle" Width="15" Height="15" Foreground="{DynamicResource TextMuted}"/>
-                        <Button.Flyout>
-                            <Flyout Placement="BottomEdgeAlignedRight">
-                                <StackPanel Width="280" Margin="14" Spacing="10" Focusable="True">
-                                    <TextBlock Text="{Binding FileName}" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap"/>
-                                    <Separator Background="{DynamicResource BorderSubtle}"/>
-                                    <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto, Auto, Auto, Auto" Margin="0,2">
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc 'common.type'}" Foreground="{DynamicResource TextMuted}" FontSize="11.5" Margin="0,0,14,6"/>
-                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding PackageType}" FontWeight="Bold" Foreground="{DynamicResource TextMain}" FontSize="11.5"/>
-
-                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc 'common.status'}" Foreground="{DynamicResource TextMuted}" FontSize="11.5" Margin="0,0,14,6"/>
-                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding StatusText}" Foreground="{Binding StatusColor}" FontWeight="Bold" FontSize="11.5"/>
-
-                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc 'common.size'}" Foreground="{DynamicResource TextMuted}" FontSize="11.5" Margin="0,0,14,6"/>
-                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding FileSizeText}" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" FontSize="11.5"/>
-
-                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc 'common.cas_category'}" Foreground="{DynamicResource TextMuted}" FontSize="11.5" Margin="0,0,14,6"/>
-                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CasCategoryDisplay}" Foreground="{DynamicResource TextMain}" FontSize="11.5" TextWrapping="Wrap"/>
-
-                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Loc 'common.user_tags'}" Foreground="{DynamicResource TextMuted}" FontSize="11.5" Margin="0,0,14,0"/>
-                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding UserTags}" Foreground="{DynamicResource TextMain}" FontSize="11.5" TextWrapping="Wrap"/>
-                                    </Grid>
-
-                                    <!-- Notes Separator Line -->
-                                    <Separator Background="{DynamicResource BorderSubtle}"/>
-
-                                    <!-- Clean transparent auto-expanding note box -->
-                                    <TextBox Classes="transparent-notes"
-                                             Text="{Binding Note, Mode=TwoWay}"
-                                             Watermark="{loc:Loc 'library.edit_description'}"
-                                             AcceptsReturn="True"
-                                             TextWrapping="Wrap"
-                                             FontSize="12"
-                                             MinHeight="22"
-                                             MaxHeight="140"
-                                             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
-
-                                    <!-- Bottom Separator Line -->
-                                    <Separator Background="{DynamicResource BorderSubtle}"/>
-
-                                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-                                        <Button Command="{Binding RefreshCommand}"
-                                                ToolTip.Tip="{loc:Loc 'library.refresh_item'}"
-                                                Background="{DynamicResource BgCardAlt}"
-                                                Foreground="{DynamicResource TextMain}"
-                                                BorderBrush="{DynamicResource BorderSubtle}"
-                                                BorderThickness="1"
-                                                Padding="10,5" FontSize="11.5" CornerRadius="6" Cursor="Hand">
-                                            <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                                                <icon:PackIconBoxIcons Kind="RegularRefreshCw" Width="12" Height="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
-                                                <TextBlock Text="{loc:Loc 'common.refresh'}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Button>
-                                        <Button Command="{Binding SearchGoogleCommand}"
-                                                Background="{DynamicResource BgCardAlt}"
-                                                Foreground="{DynamicResource TextMain}"
-                                                BorderBrush="{DynamicResource BorderSubtle}"
-                                                BorderThickness="1"
-                                                Padding="10,5" FontSize="11.5" CornerRadius="6" Cursor="Hand">
-                                            <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                                                <icon:PackIconBoxIcons Kind="RegularSearch" Width="12" Height="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
-                                                <TextBlock Text="Google" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Button>
-                                        <Button Command="{Binding OpenInExplorerCommand}"
-                                                ToolTip.Tip="{loc:Loc 'common.show_in_folder'}"
-                                                Background="{DynamicResource BgCardAlt}"
-                                                Foreground="{DynamicResource TextMain}"
-                                                BorderBrush="{DynamicResource BorderSubtle}"
-                                                BorderThickness="1"
-                                                Padding="10,5" FontSize="11.5" CornerRadius="6" Cursor="Hand">
-                                            <StackPanel Orientation="Horizontal" Spacing="6" IsHitTestVisible="False">
-                                                <icon:PackIconBoxIcons Kind="RegularFolder" Width="12" Height="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
-                                                <TextBlock Text="{loc:Loc 'common.folder'}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Button>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Flyout>
-                        </Button.Flyout>
                     </Button>
                 </Grid>
 

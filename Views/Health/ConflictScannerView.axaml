@@ -25,7 +25,6 @@
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Disabled"
                           AllowAutoHide="True"
-                          PointerWheelChanged="OnFilterPointerWheelChanged"
                           Margin="0,0,12,0">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                 <!-- All Issues -->

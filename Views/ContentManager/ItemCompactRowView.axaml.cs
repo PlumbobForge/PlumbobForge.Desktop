@@ -13,10 +13,32 @@ public partial class ItemCompactRowView : UserControl
     private Point? _dragStartPos;
     private bool _pendingSelectionNarrow;
 
+    private readonly ItemViewTracker _tracker = new();
+
     public ItemCompactRowView()
     {
         InitializeComponent();
     }
+
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+        _tracker.Update(DataContext);
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _tracker.SetInTree(true, DataContext);
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        _tracker.SetInTree(false, DataContext);
+    }
+
+    private void OnInfoButtonClick(object? sender, RoutedEventArgs e) => ItemDetailsFlyoutView.AttachTo(sender as Button);
 
     private static bool IsInteractiveChild(object? source)
     {
