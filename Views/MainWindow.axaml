@@ -154,6 +154,16 @@
         <Style Selector="RadioButton.nav-tab:checked bx|PackIconBoxIcons">
             <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
         </Style>
+        <Style Selector="RadioButton.nav-tab">
+            <Setter Property="ToolTip.ServiceEnabled" Value="False"/>
+        </Style>
+        <Style Selector="controls|AdaptiveTabPanel:compact RadioButton.nav-tab">
+            <Setter Property="ToolTip.ServiceEnabled" Value="True"/>
+            <Setter Property="Padding" Value="10,6,10,6"/>
+        </Style>
+        <Style Selector="controls|AdaptiveTabPanel:compact TextBlock.tab-label">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
         <Style Selector="Window[WindowState=Maximized] Border#RootBorder">
             <Setter Property="BorderThickness" Value="0"/>
         </Style>
@@ -171,52 +181,31 @@
                     Padding="10,0,0,0"
                     PointerPressed="OnHeaderPointerPressed">
                 <Grid ColumnDefinitions="*,Auto">
-                    <!-- Left: Navigation Tabs -->
-                    <StackPanel Grid.Column="0"
-                                Orientation="Horizontal"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Center"
-                                Spacing="2">
-                        <RadioButton Classes="nav-tab"
-                                     GroupName="NavGroup"
-                                     IsChecked="{Binding IsContentManagerActive, Mode=OneWay}"
-                                     Command="{Binding NavigateToContentManagerCommand}">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <bx:PackIconBoxIcons Kind="RegularFolder" Width="16" Height="16" VerticalAlignment="Center"/>
-                                <TextBlock Text="{loc:Loc nav.library}" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </RadioButton>
-
-                        <RadioButton Classes="nav-tab"
-                                     GroupName="NavGroup"
-                                     IsChecked="{Binding IsConfigurationsActive, Mode=OneWay}"
-                                     Command="{Binding NavigateToConfigurationsCommand}">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <bx:PackIconBoxIcons Kind="RegularSliderAlt" Width="16" Height="16" VerticalAlignment="Center"/>
-                                <TextBlock Text="{loc:Loc nav.configurations}" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </RadioButton>
-
-                        <RadioButton Classes="nav-tab"
-                                     GroupName="NavGroup"
-                                     IsChecked="{Binding IsToolsActive, Mode=OneWay}"
-                                     Command="{Binding NavigateToToolsCommand}">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <bx:PackIconBoxIcons Kind="RegularSpanner" Width="16" Height="16" VerticalAlignment="Center"/>
-                                <TextBlock Text="{loc:Loc nav.tools}" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </RadioButton>
-
-                        <RadioButton Classes="nav-tab"
-                                     GroupName="NavGroup"
-                                     IsChecked="{Binding IsSettingsActive, Mode=OneWay}"
-                                     Command="{Binding NavigateToSettingsCommand}">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <bx:PackIconBoxIcons Kind="RegularCog" Width="16" Height="16" VerticalAlignment="Center"/>
-                                <TextBlock Text="{loc:Loc nav.settings}" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </RadioButton>
-                    </StackPanel>
+                    <!-- Left: Navigation Tabs (titles hide when they don't fit) -->
+                    <ItemsControl Grid.Column="0"
+                                  ItemsSource="{Binding NavTabs}"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Center">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <controls:AdaptiveTabPanel Spacing="2" LabelSpacing="8"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:NavTabViewModel}">
+                                <RadioButton Classes="nav-tab"
+                                             GroupName="NavGroup"
+                                             IsChecked="{Binding IsActive, Mode=OneWay}"
+                                             Command="{Binding Command}"
+                                             ToolTip.Tip="{Binding Title}">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <bx:PackIconBoxIcons Kind="{Binding Icon}" Width="16" Height="16" VerticalAlignment="Center"/>
+                                        <TextBlock Classes="tab-label" Text="{Binding Title}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </RadioButton>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
                     <!-- Right: Quick search, Rebuild button & Window controls -->
                     <StackPanel Grid.Column="1"

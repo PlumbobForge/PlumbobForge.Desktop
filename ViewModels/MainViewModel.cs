@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -11,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PlumbobForge.Backend.Database;
 using PlumbobForge.Installer.Shared;
+using PlumbobForge.Desktop.Controls.Icons;
 using PlumbobForge.Desktop.Services;
 using PlumbobForge.Desktop.Services.Localization;
 
@@ -76,6 +78,16 @@ public partial class MainViewModel : ObservableObject
     public bool IsToolsActive => ActiveTab == "Health" || ActiveTab == "Tools";
     public bool IsSettingsActive => ActiveTab == "Settings";
 
+    // Title-bar tabs, in display order.
+    public ObservableCollection<NavTabViewModel> NavTabs { get; }
+
+    partial void OnActiveTabChanged(string value) => RefreshNavTabs();
+
+    public void RefreshNavTabs()
+    {
+        foreach (var tab in NavTabs) tab.RefreshIsActive();
+    }
+
     public QuickSwitcherViewModel QuickSwitcher { get; }
     public ContentManagerViewModel ContentManagerVm { get; }
     public ConfigurationsViewModel ConfigurationsVm { get; }
@@ -90,6 +102,15 @@ public partial class MainViewModel : ObservableObject
         ConfigurationsVm = serviceProvider.GetRequiredService<ConfigurationsViewModel>();
         HealthVm = serviceProvider.GetRequiredService<HealthViewModel>();
         SettingsVm = serviceProvider.GetRequiredService<SettingsViewModel>();
+
+        NavTabs = new ObservableCollection<NavTabViewModel>
+        {
+            new("library", "nav.library", PackIconBoxIconsKind.RegularFolder, NavigateToContentManagerCommand, () => IsContentManagerActive),
+            new("configurations", "nav.configurations", PackIconBoxIconsKind.RegularSliderAlt, NavigateToConfigurationsCommand, () => IsConfigurationsActive),
+            new("tools", "nav.tools", PackIconBoxIconsKind.RegularSpanner, NavigateToToolsCommand, () => IsToolsActive),
+            new("settings", "nav.settings", PackIconBoxIconsKind.RegularCog, NavigateToSettingsCommand, () => IsSettingsActive),
+        };
+        RefreshNavTabs();
 
         VaultStatusText = LocalizationManager.Instance.GetString("progress.vault_status_uptodate");
         LocalizationManager.Instance.LanguageChanged += _ =>
