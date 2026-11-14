@@ -65,10 +65,7 @@ public static class ThumbnailCache
                         using var surface = SKSurface.Create(info);
                         if (surface == null) return null;
 
-                        using var paint = new SKPaint
-                        {
-                            FilterQuality = SKFilterQuality.Medium
-                        };
+                        using var paint = new SKPaint();
 
                         if (k.Grayscale)
                         {
@@ -82,7 +79,8 @@ public static class ThumbnailCache
                             });
                         }
 
-                        surface.Canvas.DrawBitmap(original, new SKRect(0, 0, targetWidth, targetHeight), paint);
+                        using var originalImage = SKImage.FromBitmap(original);
+                        surface.Canvas.DrawImage(originalImage, new SKRect(0, 0, targetWidth, targetHeight), new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear), paint);
 
                         // Direct zero-copy into Avalonia WriteableBitmap (no PNG/JPEG re-encoding)
                         var wb = new WriteableBitmap(
