@@ -39,6 +39,7 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         PlumbobForge.Desktop.Controls.SmoothScrolling.Install();
+        PlumbobForge.Desktop.Views.AppDragData.Install();
         _ = Task.Run(EnsureInstallSafetyOnStartup);
 
         string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "plumbobforge-app");
