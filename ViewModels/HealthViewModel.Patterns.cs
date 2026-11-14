@@ -219,8 +219,7 @@ public partial class HealthViewModel
         {
             foreach (var item in selected) item.IsFixing = true;
 
-            var paths = selected.Select(p => p.PackagePath).ToList();
-            var result = await _healthService.FixPatternPackagesAsync(paths);
+            var result = await _healthService.FixPatternItemsAsync(selected.Select(p => p.Model).ToList());
 
             foreach (var item in selected)
             {
@@ -257,8 +256,7 @@ public partial class HealthViewModel
         {
             foreach (var item in broken) item.IsFixing = true;
 
-            var paths = broken.Select(p => p.PackagePath).ToList();
-            var result = await _healthService.FixPatternPackagesAsync(paths);
+            var result = await _healthService.FixPatternItemsAsync(broken.Select(p => p.Model).ToList());
 
             foreach (var item in broken)
             {
@@ -290,7 +288,7 @@ public partial class HealthViewModel
         item.IsFixing = true;
         try
         {
-            bool ok = await Task.Run(() => _healthService.FixPatternPackage(item.PackagePath));
+            bool ok = await _healthService.FixPatternItemAsync(item.Model);
             if (ok)
             {
                 item.IsBroken = false;
