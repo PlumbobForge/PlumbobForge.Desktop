@@ -1,5 +1,6 @@
 namespace PlumbobForge.Desktop.Controls.Icons;
 
+// Generated from the BoxIcons set (MIT). Only icons the app references are included.
 public enum PackIconBoxIconsKind
 {
     None,
@@ -203,4 +204,5 @@ public enum PackIconBoxIconsKind
     SolidStar,
     SolidToggleLeft,
     SolidToggleRight,
+    RegularMessageDetail,
 }
