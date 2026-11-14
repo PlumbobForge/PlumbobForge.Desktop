@@ -1097,6 +1097,7 @@
                                 <TextBlock FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="16">
                                     <Run Text="• "/><Run Text="granthes" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/><Run Text=" "/><Run Text="{loc:Loc 'settings.thanks.granthes_desc'}"/><LineBreak/>
                                     <Run Text="• "/><Run Text="Peter &amp; Inge Jones" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/><Run Text=" "/><Run Text="{loc:Loc 'settings.thanks.peter_desc'}"/><LineBreak/>
+                                    <Run Text="• "/><Run Text="Kitlith" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/><Run Text=" "/><Run Text="{loc:Loc 'settings.thanks.kitlith_desc'}"/><LineBreak/>
                                 </TextBlock>
 
                                 <Button Classes="btn-action-sec" Command="{Binding OpenGithubCommand}" HorizontalAlignment="Left" Margin="0,4,0,0">

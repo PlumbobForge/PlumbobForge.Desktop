@@ -472,6 +472,16 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 IconKind = PackIconBoxIconsKind.RegularFolder,
                 IconBrush = accentBrush
             },
+            new()
+            {
+                Type = QuickSwitcherItemType.Place,
+                PlaceTarget = "Tools:Meshes",
+                Title = loc.GetString("tools.meshes.title") ?? "Mesh Report",
+                Subtitle = (loc.GetString("nav.tools") ?? "Tools") + "  •  " + (loc.GetString("tools.meshes.subtitle") ?? "Find high-poly CAS items and objects"),
+                Keywords = "tools mesh report polygon poly count triangles high poly heavy lag performance cas objects build buy",
+                IconKind = PackIconBoxIconsKind.RegularCube,
+                IconBrush = accentBrush
+            },
 
             // Settings Tab Sub-sections
             new()

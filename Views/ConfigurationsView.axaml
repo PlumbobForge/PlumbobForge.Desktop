@@ -3,6 +3,7 @@
              xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
              xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
              xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             xmlns:ctrl="using:PlumbobForge.Desktop.Controls"
              x:Class="PlumbobForge.Desktop.Views.ConfigurationsView"
              x:DataType="vm:ConfigurationsViewModel">
 
@@ -152,6 +153,7 @@
         <!-- 1. LEFT SIDEBAR: CONFIGURATIONS TREE       -->
         <!-- ========================================== -->
         <Border Grid.Column="0"
+                ctrl:GuideTarget.Id="configurations.list"
                 Width="260"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Stretch"
@@ -215,7 +217,7 @@
                     </Button>
 
                     <!-- Add New Config Button -->
-                    <Button Grid.Column="2" Command="{Binding CreateConfigurationCommand}" Background="{DynamicResource AccentBrush}" Foreground="White" CornerRadius="6" Padding="8,6" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'configurations.create_configuration_tooltip'}">
+                    <Button Grid.Column="2" ctrl:GuideTarget.Id="configurations.new" Command="{Binding CreateConfigurationCommand}" Background="{DynamicResource AccentBrush}" Foreground="White" CornerRadius="6" Padding="8,6" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'configurations.create_configuration_tooltip'}">
                         <icon:PackIconBoxIcons Kind="RegularPlus" Width="14" Height="14" VerticalAlignment="Center"/>
                     </Button>
                 </Grid>
@@ -478,6 +480,7 @@
                             <TextBlock Grid.Column="0" Text="{loc:Loc 'configurations.enabled_sets'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" Text="{loc:Loc 'configurations.drag_to_move'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                             <Button Grid.Column="2" Classes="btn-action-sec" Margin="10,0,0,0" VerticalAlignment="Center"
+                                    ctrl:GuideTarget.Id="configurations.include"
                                     Command="{Binding IncludeItemsCommand}"
                                     ToolTip.Tip="{loc:Loc 'configurations.include_items_tip'}">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
@@ -622,6 +625,7 @@
 
                     <!-- Swap Sets -->
                     <Button Classes="config-ctrl-btn"
+                            ctrl:GuideTarget.Id="configurations.swap"
                             Command="{Binding SwapSetsCommand}"
                             ToolTip.Tip="{loc:Loc 'configurations.swap_sets'}">
                         <icon:PackIconBoxIcons Kind="RegularSwapHorizontal" Width="16" Height="16" Foreground="{DynamicResource TextMain}"/>

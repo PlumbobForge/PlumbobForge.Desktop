@@ -203,7 +203,7 @@ public partial class SettingsViewModel
                 watcher?.ReloadWatchers(_options);
 
                 // Rebuild cache
-                await _pkgManager.RunAsync(isRefresh: true, onProgress: null, progress: modal, forceRebuild: true);
+                await FreshScope.RunAsync<PKGManager>(pkg => pkg.RunAsync(isRefresh: true, onProgress: null, progress: modal, forceRebuild: true));
             });
 
             modal.Finish(success: true);

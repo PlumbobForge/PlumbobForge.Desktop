@@ -4,6 +4,8 @@ namespace PlumbobForge.Desktop.Controls.Icons;
 public enum PackIconBoxIconsKind
 {
     None,
+    SolidPin,
+    RegularPin,
     RegularAArrowDown,
     RegularAArrowUp,
     RegularAlertCircle,
@@ -109,6 +111,7 @@ public enum PackIconBoxIconsKind
     RegularHanger,
     RegularHardHat,
     RegularHeart,
+    RegularHelpCircle,
     RegularHome,
     RegularHomeAlt,
     RegularImage,

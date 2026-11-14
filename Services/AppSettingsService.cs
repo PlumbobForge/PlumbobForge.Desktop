@@ -11,8 +11,7 @@ public static class AppSettingsService
 {
     public static string GetAppSettingsPath()
     {
-        string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        string text = Path.Combine(folderPath, "plumbobforge-app");
+        string text = AppPaths.AppDataDir;
         Directory.CreateDirectory(text);
         return Path.Combine(text, "appsettings.json");
     }
@@ -103,6 +102,20 @@ public static class AppSettingsService
                 }
             }
             plumbobNode["CustomColorPresets"] = customPresetsArray;
+            plumbobNode["LastActiveTool"] = options.LastActiveTool ?? "Cache";
+
+            JsonArray pinnedToolsArray = new JsonArray((JsonNodeOptions?)null);
+            if (options.PinnedTools != null)
+            {
+                foreach (string tool in options.PinnedTools)
+                {
+                    if (!string.IsNullOrWhiteSpace(tool))
+                    {
+                        pinnedToolsArray.Add(tool);
+                    }
+                }
+            }
+            plumbobNode["PinnedTools"] = pinnedToolsArray;
             plumbobNode["HasSeenWalkthrough"] = options.HasSeenWalkthrough;
             plumbobNode["HasCompletedUpgradeWizard"] = options.HasCompletedUpgradeWizard;
 

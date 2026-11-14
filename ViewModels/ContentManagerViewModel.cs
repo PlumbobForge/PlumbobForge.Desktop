@@ -609,6 +609,11 @@ public partial class ContentManagerViewModel : ObservableObject
                 targetNode = FindNodeById(RootSets, _savedSetId.Value);
             }
             SelectedSetNode = targetNode ?? allItemsNode;
+            // Mark the restored set selected too, or the sidebar shows no highlight until it is clicked.
+            if (SelectedSetNode != null && !SelectedSetNode.IsSelected)
+            {
+                SelectedSetNode.IsSelected = true;
+            }
 
             // 2. Allow UI frame to render window, header, and loading animation on screen
             await Task.Delay(150);

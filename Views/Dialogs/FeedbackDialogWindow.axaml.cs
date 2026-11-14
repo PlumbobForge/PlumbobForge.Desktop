@@ -28,9 +28,17 @@ public partial class FeedbackDialogWindow : Window
         UpdateCategoryButtons();
     }
 
-    public FeedbackDialogWindow(IReadOnlyList<string> gameLogs) : this()
+    public FeedbackDialogWindow(IReadOnlyList<string> gameLogs, string? initialMessage = null) : this()
     {
         _gameLogs = gameLogs;
+        if (!string.IsNullOrWhiteSpace(initialMessage))
+        {
+            // Opened from the guide's "Ask in Feedback": it's a question, and the search is the start of it.
+            _category = FeedbackCategory.Other;
+            UpdateCategoryButtons();
+            MessageTextBox.Text = initialMessage;
+            MessageTextBox.CaretIndex = initialMessage.Length;
+        }
         if (_gameLogs.Count > 0)
         {
             IncludeGameLogsCheckBox.IsVisible = true;
@@ -108,7 +116,6 @@ public partial class FeedbackDialogWindow : Window
 
     private void OnDoneClick(object? sender, RoutedEventArgs e) => Close(true);
 
-    /// <summary>Swaps the form for the thank-you view, keeping the window the same size.</summary>
     public void ShowSent(FeedbackReport report)
     {
         _sent = true;

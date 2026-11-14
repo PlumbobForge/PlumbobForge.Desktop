@@ -30,12 +30,12 @@
     <Grid Background="{DynamicResource BgDark}">
         <Grid ColumnDefinitions="Auto, *, Auto">
             <!-- Left Floating Sidebar: Sets Tree Component -->
-            <cm:SetsSidebarView Grid.Column="0"/>
+            <cm:SetsSidebarView Grid.Column="0" ctrl:GuideTarget.Id="library.sets"/>
 
             <!-- Main Items Center Area -->
             <Grid Grid.Column="1">
                 <!-- Items Virtualized Grid Container (Rubberband Drag Select, Middle-Click Autoscroll & ContextMenu) -->
-                <Grid x:Name="ItemsGridContainer" Background="Transparent">
+                <Grid x:Name="ItemsGridContainer" Background="Transparent" ctrl:GuideTarget.Id="library.items">
                     <Grid.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="{loc:Loc 'library.toggle_enable_selected'}" Command="{Binding ToggleEnableSelectedCommand}" IsEnabled="{Binding HasSelectedItems}">
@@ -149,7 +149,7 @@
                     <Border Height="72" VerticalAlignment="Top" IsHitTestVisible="False" Background="{DynamicResource TopFadeGradientBrush}"/>
 
                     <!-- Floating Top Toolbar Component -->
-                    <cm:ContentHeaderBarView Margin="14, 14, 14, 0" VerticalAlignment="Top"/>
+                    <cm:ContentHeaderBarView Margin="14, 14, 14, 0" VerticalAlignment="Top" ctrl:GuideTarget.Id="library.toolbar"/>
 
                     <!-- Rubberband & Autoscroll Canvas -->
                     <Canvas x:Name="RubberbandCanvas" IsHitTestVisible="False">
@@ -177,7 +177,7 @@
             </Grid>
 
             <!-- Right Floating Sidebar: Filters Component -->
-            <cm:FiltersSidebarView Grid.Column="2"/>
+            <cm:FiltersSidebarView Grid.Column="2" ctrl:GuideTarget.Id="library.filters"/>
         </Grid>
 
         <!-- Drop Files Visual Overlay -->

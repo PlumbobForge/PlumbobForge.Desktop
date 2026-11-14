@@ -12,7 +12,7 @@ public static class IgnoredConflictsService
 
     private static string GetFilePath()
     {
-        var appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "plumbobforge-app");
+        var appDataPath = PlumbobForge.Backend.Configuration.AppPaths.AppDataDir;
         Directory.CreateDirectory(appDataPath);
         return Path.Combine(appDataPath, "ignored_conflicts.json");
     }

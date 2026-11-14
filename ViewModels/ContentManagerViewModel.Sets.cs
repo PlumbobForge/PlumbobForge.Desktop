@@ -132,6 +132,13 @@ public partial class ContentManagerViewModel
             SelectedSetNode = allItemsNode;
         }
 
+        // The nodes were just rebuilt, so none is marked selected yet: mark the restored one, otherwise the
+        // sidebar shows no highlight for the set whose items are on screen (e.g. right after startup).
+        if (SelectedSetNode != null && !SelectedSetNode.IsSelected)
+        {
+            SelectedSetNode.IsSelected = true;
+        }
+
         var configVm = App.Services?.GetService<ConfigurationsViewModel>();
         if (configVm != null)
         {

@@ -134,7 +134,7 @@ public class UiStateService
 
     public UiStateService()
     {
-        var appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "plumbobforge-app");
+        var appDataPath = PlumbobForge.Backend.Configuration.AppPaths.AppDataDir;
         Directory.CreateDirectory(appDataPath);
         _stateFilePath = Path.Combine(appDataPath, "ui-state.json");
     }

@@ -742,6 +742,11 @@ public partial class ConfigurationsViewModel : ObservableObject
         return !vaultMode && string.Equals(_options.CacheMethod, "Static", StringComparison.OrdinalIgnoreCase);
     }
 
+    // Written straight to the database: this view model's long-lived session may hold outdated dirty flags,
+    // and setting a flag it already thinks is true would save nothing.
+    private Task MarkAllSetsDirtyAsync() =>
+        _db.SetsEntities.ExecuteUpdateAsync(u => u.SetProperty(s => s.Dirty, true));
+
     [RelayCommand]
     public async Task ActivateConfigurationAsync(ConfigItemViewModel? config)
     {
@@ -760,14 +765,10 @@ public partial class ConfigurationsViewModel : ObservableObject
                     c.Active = (c.Id == config.Id);
                 }
 
-                // In static mode without auto-rebuild, mark all sets dirty so user can rebuild when ready
-                var allSets = await _db.SetsEntities.ToListAsync();
-                foreach (var s in allSets)
-                {
-                    s.Dirty = true;
-                }
-
                 await _db.SaveChangesAsync();
+
+                // In static mode without auto-rebuild, mark all sets dirty so user can rebuild when ready
+                await MarkAllSetsDirtyAsync();
 
                 foreach (var c in Configurations)
                 {
@@ -804,24 +805,17 @@ public partial class ConfigurationsViewModel : ObservableObject
                     c.Active = (c.Id == config.Id);
                 }
 
-                if (isStatic)
-                {
-                    // For static caching, mark all sets dirty to rebuild the bundle
-                    var allSets = await _db.SetsEntities.ToListAsync();
-                    foreach (var s in allSets)
-                    {
-                        s.Dirty = true;
-                    }
-                }
-
                 await _db.SaveChangesAsync();
+
+                // For static caching, mark all sets dirty to rebuild the bundle
+                if (isStatic) await MarkAllSetsDirtyAsync();
                 modal.CompleteStep("update_db", finalBadge: LocalizationManager.Instance.GetString("progress.badge_updated"));
 
                 // Sync to The Sims 3
                 modal.StartStep("sync_sims3", isStatic
                     ? LocalizationManager.Instance.GetString("progress.rebuilding_static_bundle")
                     : LocalizationManager.Instance.GetString("progress.updating_game_configs"), progress: 0.6);
-                await _pkgManager.SyncToSims3Async(forceRebuildStatic: isStatic);
+                await FreshScope.RunAsync<PKGManager>(pkg => pkg.SyncToSims3Async(forceRebuildStatic: isStatic));
                 modal.CompleteStep("sync_sims3", finalBadge: LocalizationManager.Instance.GetString("progress.badge_synchronized"));
             });
 
@@ -971,19 +965,17 @@ public partial class ConfigurationsViewModel : ObservableObject
                     bool isStatic = IsStaticLibraryCache();
                     if (isStatic)
                     {
-                        var allSets = await _db.SetsEntities.ToListAsync();
-                        foreach (var s in allSets) s.Dirty = true;
-                        await _db.SaveChangesAsync();
+                        await MarkAllSetsDirtyAsync();
 
                         if (_options.AutoRebuildStaticCache)
                         {
-                            await _pkgManager.SyncToSims3Async(forceRebuildStatic: true);
+                            await FreshScope.RunAsync<PKGManager>(pkg => pkg.SyncToSims3Async(forceRebuildStatic: true));
                         }
                     }
                     else
                     {
                         // On dynamic caching, only update Resource.cfg!
-                        await _pkgManager.SyncToSims3Async(forceRebuildStatic: false);
+                        await FreshScope.RunAsync<PKGManager>(pkg => pkg.SyncToSims3Async(forceRebuildStatic: false));
                     }
                 }
             }
@@ -1031,18 +1023,16 @@ public partial class ConfigurationsViewModel : ObservableObject
                     bool isStatic = IsStaticLibraryCache();
                     if (isStatic)
                     {
-                        var allSets = await _db.SetsEntities.ToListAsync();
-                        foreach (var s in allSets) s.Dirty = true;
-                        await _db.SaveChangesAsync();
+                        await MarkAllSetsDirtyAsync();
 
                         if (_options.AutoRebuildStaticCache)
                         {
-                            await _pkgManager.SyncToSims3Async(forceRebuildStatic: true);
+                            await FreshScope.RunAsync<PKGManager>(pkg => pkg.SyncToSims3Async(forceRebuildStatic: true));
                         }
                     }
                     else
                     {
-                        await _pkgManager.SyncToSims3Async(forceRebuildStatic: false);
+                        await FreshScope.RunAsync<PKGManager>(pkg => pkg.SyncToSims3Async(forceRebuildStatic: false));
                     }
                 }
             }

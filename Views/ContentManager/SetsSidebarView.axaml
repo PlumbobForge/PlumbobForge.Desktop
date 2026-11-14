@@ -3,6 +3,7 @@
              xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
              xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
              xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             xmlns:ctrl="using:PlumbobForge.Desktop.Controls"
              x:Class="PlumbobForge.Desktop.Views.ContentManager.SetsSidebarView"
              x:DataType="vm:ContentManagerViewModel">
 
@@ -234,7 +235,7 @@
                             </Button>
 
                             <!-- Create Set (+) Button -->
-                            <Button Grid.Column="2" Command="{Binding CreateTopLevelSetCommand}" Background="{DynamicResource AccentBrush}" Foreground="White" CornerRadius="6" Padding="8,6" Margin="0,0,6,0" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'library.add_set'}">
+                            <Button Grid.Column="2" ctrl:GuideTarget.Id="library.new-set" Command="{Binding CreateTopLevelSetCommand}" Background="{DynamicResource AccentBrush}" Foreground="White" CornerRadius="6" Padding="8,6" Margin="0,0,6,0" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'library.add_set'}">
                                 <icon:PackIconBoxIcons Kind="RegularPlus" Width="14" Height="14" VerticalAlignment="Center"/>
                             </Button>
                         </Grid>
