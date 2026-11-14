@@ -40,9 +40,13 @@ public partial class App : Application
     {
         PlumbobForge.Desktop.Controls.SmoothScrolling.Install();
         PlumbobForge.Desktop.Views.AppDragData.Install();
-        _ = Task.Run(EnsureInstallSafetyOnStartup);
+        bool sandboxed = AppPaths.IsSandboxed;
+        if (!sandboxed)
+        {
+            _ = Task.Run(EnsureInstallSafetyOnStartup);
+        }
 
-        string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "plumbobforge-app");
+        string appDataPath = AppPaths.AppDataDir;
         bool appSettingsExistedBefore = File.Exists(Path.Combine(appDataPath, "appsettings.json"));
 
         var services = new ServiceCollection();
@@ -151,6 +155,19 @@ public partial class App : Application
                 {
                     await DialogHelper.ShowNewUserWalkthroughAsync(Services.GetRequiredService<NewUserWalkthroughViewModel>(), mainWindow);
                 };
+            }
+
+            if (sandboxed)
+            {
+                // Sandbox (PLUMBOBFORGE_DATA_DIR): show the copied library as it is, touch nothing else.
+                AppLogger.LogInfo($"Sandbox mode: data from {appDataPath}; startup sync, scans and watchers skipped");
+                mainWindow.Opened += async (_, _) =>
+                {
+                    var contentVm = Services?.GetService<ContentManagerViewModel>();
+                    if (contentVm != null) await contentVm.LoadDataAsync();
+                };
+                base.OnFrameworkInitializationCompleted();
+                return;
             }
 
             _ = Task.Run(async () =>
@@ -310,7 +327,7 @@ public partial class App : Application
 
     private void ConfigureServices(IServiceCollection services)
     {
-        string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "plumbobforge-app");
+        string appDataPath = AppPaths.AppDataDir;
         Directory.CreateDirectory(appDataPath);
 
         var config = new ConfigurationBuilder()
@@ -322,7 +339,9 @@ public partial class App : Application
         {
             if (string.IsNullOrEmpty(opts.DocumentBaseDir))
             {
-                opts.DocumentBaseDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "PlumbobForge");
+                opts.DocumentBaseDir = AppPaths.IsSandboxed
+                    ? Path.Combine(appDataPath, "Documents")
+                    : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "PlumbobForge");
             }
         });
 
