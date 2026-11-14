@@ -225,10 +225,7 @@ public partial class ConfigurationsView : UserControl
                             ItemIds = dragged.OfType<ConfigItemCardViewModel>().Select(i => i.ItemId).ToList()
                         };
 
-                        var data = new DataObject();
-                        data.Set("plumbobforge-config-sets", dragPayload.Serialize());
-
-                        await DragDrop.DoDragDrop(e, data, DragDropEffects.Move);
+                        await AppDragData.StartAsync(AppDragData.Create(AppDragData.ConfigCards, dragPayload.Serialize()), DragDropEffects.Move);
                     }
                 }
             }
@@ -274,7 +271,7 @@ public partial class ConfigurationsView : UserControl
     #region Drop Zones
     private void OnDropZoneDragOver(object? sender, DragEventArgs e)
     {
-        if (!e.Data.Contains("plumbobforge-config-sets"))
+        if (!e.DataTransfer.Contains(AppDragData.ConfigCards))
         {
             e.DragEffects = DragDropEffects.None;
             return;
@@ -282,7 +279,7 @@ public partial class ConfigurationsView : UserControl
 
         try
         {
-            var payload = ConfigDragPayload.Deserialize(e.Data.Get("plumbobforge-config-sets")?.ToString());
+            var payload = ConfigDragPayload.Deserialize(e.DataTransfer.TryGetValue(AppDragData.ConfigCards));
 
             if (payload != null)
             {
@@ -308,11 +305,11 @@ public partial class ConfigurationsView : UserControl
 
     private async void OnDropZoneDrop(object? sender, DragEventArgs e)
     {
-        if (!e.Data.Contains("plumbobforge-config-sets") || DataContext is not ConfigurationsViewModel vm) return;
+        if (!e.DataTransfer.Contains(AppDragData.ConfigCards) || DataContext is not ConfigurationsViewModel vm) return;
 
         try
         {
-            var payload = ConfigDragPayload.Deserialize(e.Data.Get("plumbobforge-config-sets")?.ToString());
+            var payload = ConfigDragPayload.Deserialize(e.DataTransfer.TryGetValue(AppDragData.ConfigCards));
 
             if (payload != null && (payload.SetIds.Count > 0 || payload.ItemIds.Count > 0))
             {
@@ -479,6 +476,7 @@ public partial class ConfigurationsView : UserControl
     }
     #endregion
 
+    // Format: "enabled:setIds;itemIds", e.g. "1:3,4;120".
     private class ConfigDragPayload
     {
         public bool SourceIsEnabled { get; set; }

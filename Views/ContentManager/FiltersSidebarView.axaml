@@ -83,39 +83,6 @@
             <Setter Property="Foreground" Value="White"/>
         </Style>
 
-        <!-- Filter Sub-Category Pill Toggle Button Style -->
-        <Style Selector="ToggleButton.filter-pill">
-            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="14"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0,0,6,6"/>
-        </Style>
-        <Style Selector="ToggleButton.filter-pill:checked /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-        </Style>
-        <Style Selector="ToggleButton.filter-pill:checked TextBlock">
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-        <Style Selector="ToggleButton.filter-pill:checked icon|PackIconBoxIcons">
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-        <Style Selector="ToggleButton.filter-pill:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-        <Style Selector="ToggleButton.filter-pill:pointerover TextBlock">
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-        <Style Selector="ToggleButton.filter-pill:pointerover icon|PackIconBoxIcons">
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
 
 
         <!-- Accordion Section Header Button Style -->

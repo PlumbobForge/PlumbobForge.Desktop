@@ -30,6 +30,10 @@ public record FeedbackReport(
     bool IncludeAppLogs,
     IReadOnlyList<string> GameLogFiles);
 
+/// <summary>
+/// Sends feedback to the PlumbobForge feedback relay (a Cloudflare Worker that forwards to Discord).
+/// The relay holds the Discord webhook, so nothing secret ships inside the app.
+/// </summary>
 public static class FeedbackService
 {
     // Set this to your deployed Worker URL (see PlumbobForge/feedback-worker/README.md).
@@ -61,6 +65,10 @@ public static class FeedbackService
     public static bool IsResourceCfg(string path) =>
         string.Equals(Path.GetFileName(path), "Resource.cfg", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Recent Sims 3 crash dumps (xcpt) and NRaas/script error logs, newest first,
+    /// followed by Mods\Resource.cfg when it exists.
+    /// </summary>
     public static IReadOnlyList<string> FindRecentGameLogs(string? sims3Folder)
     {
         try
@@ -117,6 +125,8 @@ public static class FeedbackService
         if (!IsConfigured)
             throw new InvalidOperationException("The feedback service isn't set up in this build.");
 
+        // Cloudflare Workers' formData() rejects .NET's default multipart output (quoted boundary,
+        // unquoted part names), so write both the browser way.
         var boundary = "----PlumbobForge" + Guid.NewGuid().ToString("N");
         using var form = new MultipartFormDataContent(boundary);
         form.Headers.Remove("Content-Type");
@@ -235,6 +245,7 @@ public static class FeedbackService
         }
     }
 
+    /// <summary>Removes the Windows account name from paths and text.</summary>
     public static string Redact(string text)
     {
         var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -251,6 +262,7 @@ public static class FeedbackService
         if (user.Length >= 3)
             text = Regex.Replace(text, $@"(?i)(?<![A-Za-z0-9]){Regex.Escape(user)}(?![A-Za-z0-9])", "<user>");
 
+        // Sims 3 puts the PC name in its log names and contents, and people often name PCs after themselves.
         var machine = Environment.MachineName;
         if (machine.Length >= 3)
             text = Regex.Replace(text, $@"(?i)(?<![A-Za-z0-9]){Regex.Escape(machine)}(?![A-Za-z0-9])", "PC");

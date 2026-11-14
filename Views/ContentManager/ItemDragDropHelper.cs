@@ -130,37 +130,25 @@ public static class ItemDragDropHelper
             }
         }
 
-        var data = new DataObject();
-        // Maintain internal drag payload so dragging back onto Sets in PlumbobForge still moves items
-        data.Set("plumbob-item-drag", "move");
+        // The internal marker lets a drop back onto a set still move the items; the files are for
+        // Explorer, the desktop or another folder.
+        var data = AppDragData.Create(AppDragData.ItemDrag, "move");
 
-        // Populate file drop formats so Windows Explorer, Desktop, or external folders can receive the package
         var topLevel = TopLevel.GetTopLevel(sourceVisual);
-        if (topLevel?.StorageProvider != null && validFilePaths.Count > 0)
+        if (topLevel?.StorageProvider != null)
         {
-            var storageFiles = new List<IStorageItem>();
             foreach (var path in validFilePaths)
             {
                 try
                 {
                     var sf = await topLevel.StorageProvider.TryGetFileFromPathAsync(path);
-                    if (sf != null) storageFiles.Add(sf);
+                    if (sf != null) data.Add(DataTransferItem.CreateFile(sf));
                 }
                 catch { }
             }
-
-            if (storageFiles.Count > 0)
-            {
-                data.Set(DataFormats.Files, storageFiles);
-            }
         }
 
-        if (validFilePaths.Count > 0)
-        {
-            data.Set("FileDrop", validFilePaths.ToArray());
-        }
-
-        await DragDrop.DoDragDrop(e, data, DragDropEffects.Copy | DragDropEffects.Move);
+        await AppDragData.StartAsync(data, DragDropEffects.Copy | DragDropEffects.Move);
     }
 }
 

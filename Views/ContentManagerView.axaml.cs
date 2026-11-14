@@ -64,15 +64,15 @@ public partial class ContentManagerView : UserControl
     {
         // Items dragged from the library itself also carry their files (so they can be dropped in Explorer);
         // those are moves, not imports.
-        if (e.Data.Contains("plumbob-item-drag") || e.Data.Contains("plumbob-sets-drag"))
+        if (e.DataTransfer.Contains(AppDragData.ItemDrag) || e.DataTransfer.Contains(AppDragData.SetsDrag))
         {
             if (DataContext is ContentManagerViewModel vmInternal) vmInternal.IsDragOver = false;
             return;
         }
 
-        if (e.Data.Contains(DataFormats.Files))
+        if (e.DataTransfer.Contains(DataFormat.File))
         {
-            var files = e.Data.GetFiles()?.ToList();
+            var files = e.DataTransfer.TryGetFiles()?.ToList();
             if (files != null && files.Count > 0)
             {
                 bool hasImportableFile = files.Any(f =>
@@ -117,11 +117,11 @@ public partial class ContentManagerView : UserControl
         if (DataContext is ContentManagerViewModel vm)
         {
             vm.IsDragOver = false;
-            if (e.Data.Contains("plumbob-item-drag") || e.Data.Contains("plumbob-sets-drag")) return;
+            if (e.DataTransfer.Contains(AppDragData.ItemDrag) || e.DataTransfer.Contains(AppDragData.SetsDrag)) return;
 
-            if (e.Data.Contains(DataFormats.Files))
+            if (e.DataTransfer.Contains(DataFormat.File))
             {
-                var files = e.Data.GetFiles()?.Select(f => f.Path.LocalPath).ToArray();
+                var files = e.DataTransfer.TryGetFiles()?.Select(f => f.Path.LocalPath).ToArray();
                 if (files != null && files.Length > 0)
                 {
                     await vm.ImportDroppedFilesAsync(files);
@@ -134,7 +134,7 @@ public partial class ContentManagerView : UserControl
     #region Sets Drag & Drop Target
     private void OnSetNodeDragOver(object? sender, DragEventArgs e)
     {
-        if (e.Data.Contains("plumbob-item-drag"))
+        if (e.DataTransfer.Contains(AppDragData.ItemDrag))
         {
             e.DragEffects = DragDropEffects.Move;
             e.Handled = true;
@@ -147,7 +147,7 @@ public partial class ContentManagerView : UserControl
 
     private async void OnSetNodeDrop(object? sender, DragEventArgs e)
     {
-        if (e.Data.Contains("plumbob-item-drag") && sender is Border border && border.DataContext is SetNodeViewModel targetSet)
+        if (e.DataTransfer.Contains(AppDragData.ItemDrag) && sender is Border border && border.DataContext is SetNodeViewModel targetSet)
         {
             if (DataContext is ContentManagerViewModel vm)
             {

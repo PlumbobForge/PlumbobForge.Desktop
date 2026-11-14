@@ -191,9 +191,7 @@ public partial class SetsSidebarView : UserControl
                             return;
                         }
 
-                        var data = new DataObject();
-                        data.Set("plumbob-sets-drag", string.Join(",", idsToMove));
-                        await DragDrop.DoDragDrop(e, data, DragDropEffects.Move);
+                        await AppDragData.StartAsync(AppDragData.Create(AppDragData.SetsDrag, string.Join(",", idsToMove)), DragDropEffects.Move);
                     }
                 }
             }
@@ -387,12 +385,12 @@ public partial class SetsSidebarView : UserControl
     #region Drag & Drop Targets
     private void OnSetNodeDragOver(object? sender, DragEventArgs e)
     {
-        if (e.Data.Contains("plumbob-item-drag"))
+        if (e.DataTransfer.Contains(AppDragData.ItemDrag))
         {
             e.DragEffects = DragDropEffects.Move;
             e.Handled = true;
         }
-        else if (e.Data.Contains("plumbob-sets-drag"))
+        else if (e.DataTransfer.Contains(AppDragData.SetsDrag))
         {
             if (sender is Control control && control.DataContext is SetNodeViewModel targetNode)
             {
@@ -413,7 +411,7 @@ public partial class SetsSidebarView : UserControl
                 }
 
                 // Check circular references: target cannot be one of the dragged sets or their descendants
-                var rawIds = e.Data.Get("plumbob-sets-drag")?.ToString();
+                var rawIds = e.DataTransfer.TryGetValue(AppDragData.SetsDrag);
                 if (!string.IsNullOrEmpty(rawIds) && targetNode.Id.HasValue)
                 {
                     var ids = rawIds.Split(',').Select(s => long.TryParse(s, out var id) ? id : -1).Where(id => id > 0).ToHashSet();
@@ -439,7 +437,7 @@ public partial class SetsSidebarView : UserControl
     {
         if (DataContext is not ContentManagerViewModel vm) return;
 
-        if (e.Data.Contains("plumbob-item-drag") && sender is Control control && control.DataContext is SetNodeViewModel setNode)
+        if (e.DataTransfer.Contains(AppDragData.ItemDrag) && sender is Control control && control.DataContext is SetNodeViewModel setNode)
         {
             if (setNode.IsFavorites)
             {
@@ -451,9 +449,9 @@ public partial class SetsSidebarView : UserControl
             }
             e.Handled = true;
         }
-        else if (e.Data.Contains("plumbob-sets-drag") && sender is Control ctrl && ctrl.DataContext is SetNodeViewModel targetNode)
+        else if (e.DataTransfer.Contains(AppDragData.SetsDrag) && sender is Control ctrl && ctrl.DataContext is SetNodeViewModel targetNode)
         {
-            var rawIds = e.Data.Get("plumbob-sets-drag")?.ToString();
+            var rawIds = e.DataTransfer.TryGetValue(AppDragData.SetsDrag);
             if (!string.IsNullOrEmpty(rawIds))
             {
                 var ids = rawIds.Split(',').Select(s => long.TryParse(s, out var id) ? id : -1).Where(id => id > 0).ToList();
@@ -469,7 +467,7 @@ public partial class SetsSidebarView : UserControl
 
     private void OnRootDragOver(object? sender, DragEventArgs e)
     {
-        if (e.Data.Contains("plumbob-sets-drag") || e.Data.Contains("plumbob-item-drag"))
+        if (e.DataTransfer.Contains(AppDragData.SetsDrag) || e.DataTransfer.Contains(AppDragData.ItemDrag))
         {
             e.DragEffects = DragDropEffects.Move;
             e.Handled = true;
@@ -480,9 +478,9 @@ public partial class SetsSidebarView : UserControl
     {
         if (DataContext is not ContentManagerViewModel vm) return;
 
-        if (e.Data.Contains("plumbob-sets-drag"))
+        if (e.DataTransfer.Contains(AppDragData.SetsDrag))
         {
-            var rawIds = e.Data.Get("plumbob-sets-drag")?.ToString();
+            var rawIds = e.DataTransfer.TryGetValue(AppDragData.SetsDrag);
             if (!string.IsNullOrEmpty(rawIds))
             {
                 var ids = rawIds.Split(',').Select(s => long.TryParse(s, out var id) ? id : -1).Where(id => id > 0).ToList();
@@ -494,7 +492,7 @@ public partial class SetsSidebarView : UserControl
                 }
             }
         }
-        else if (e.Data.Contains("plumbob-item-drag"))
+        else if (e.DataTransfer.Contains(AppDragData.ItemDrag))
         {
             await vm.MoveSelectedToSetAsync(null);
             e.Handled = true;
