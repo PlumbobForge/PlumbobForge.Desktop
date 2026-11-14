@@ -27,6 +27,9 @@
 
             <!-- SECTION 4: SIMS 3 COLLECTION CREATOR -->
             <health:CollectionCreatorView IsVisible="{Binding IsCollectionCreatorActive}"/>
+
+            <!-- SECTION 5: MESH REPORT -->
+            <health:MeshReportView IsVisible="{Binding IsMeshReportActive}"/>
         </Grid>
     </Grid>
 </UserControl>

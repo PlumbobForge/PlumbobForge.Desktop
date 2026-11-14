@@ -367,6 +367,7 @@ public partial class App : Application
         services.AddScoped<ArchiveService>();
         services.AddScoped<ThumbnailService>();
         services.AddScoped<PackageInspectorService>();
+        services.AddScoped<MeshReportService>();
         services.AddScoped<PackageEditService>();
         services.AddScoped<CasFlagsService>();
         services.AddScoped<CacheBuilderService>();

@@ -107,6 +107,39 @@
         <Setter Property="FontWeight" Value="SemiBold"/>
     </Style>
 
+    <!-- Global Filter Pill Toggle Buttons (filters sidebar sub-categories, feedback categories) -->
+    <!-- Triangle-weight tag (Look Inside, Mesh Report): add light, medium, heavy or veryheavy -->
+    <Style Selector="Border.weight-chip">
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="6,1"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Border.weight-chip > TextBlock">
+        <Setter Property="FontSize" Value="10.5"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="Border.weight-chip.light">
+        <Setter Property="Background" Value="{DynamicResource StatusGreenBg}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StatusGreen}"/>
+    </Style>
+    <Style Selector="Border.weight-chip.light > TextBlock"><Setter Property="Foreground" Value="{DynamicResource StatusGreen}"/></Style>
+    <Style Selector="Border.weight-chip.medium">
+        <Setter Property="Background" Value="{DynamicResource StatusBlueBg}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StatusBlue}"/>
+    </Style>
+    <Style Selector="Border.weight-chip.medium > TextBlock"><Setter Property="Foreground" Value="{DynamicResource StatusBlue}"/></Style>
+    <Style Selector="Border.weight-chip.heavy">
+        <Setter Property="Background" Value="{DynamicResource StatusAmberBg}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StatusAmber}"/>
+    </Style>
+    <Style Selector="Border.weight-chip.heavy > TextBlock"><Setter Property="Foreground" Value="{DynamicResource StatusAmber}"/></Style>
+    <Style Selector="Border.weight-chip.veryheavy">
+        <Setter Property="Background" Value="{DynamicResource StatusRedBg}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StatusRed}"/>
+    </Style>
+    <Style Selector="Border.weight-chip.veryheavy > TextBlock"><Setter Property="Foreground" Value="{DynamicResource StatusRed}"/></Style>
+
     <Style Selector="ToggleButton.filter-pill">
         <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>

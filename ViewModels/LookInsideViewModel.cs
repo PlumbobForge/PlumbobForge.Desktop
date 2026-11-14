@@ -166,6 +166,26 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
     private void ToggleOffFilter() => ShowOnlyOff = !ShowOnlyOff;
 
     partial void OnShowOnlyOffChanged(bool value) => ApplyFilter();
+
+    [ObservableProperty]
+    private bool _showOnlyHeavy;
+
+    [ObservableProperty]
+    private bool _sortHeaviestFirst;
+
+    public bool HasMeshInfo => _allObjects.Any(o => o.HasMeshData);
+    public int HeavyCount => _allObjects.Count(o => o.IsHeavyOrWorse);
+    public bool HasHeavyObjects => HeavyCount > 0;
+    public string HeavyFilterText => L("look_inside.filter_heavy", HeavyCount);
+
+    [RelayCommand]
+    private void ToggleHeavyFilter() => ShowOnlyHeavy = !ShowOnlyHeavy;
+
+    [RelayCommand]
+    private void ToggleHeaviestFirst() => SortHeaviestFirst = !SortHeaviestFirst;
+
+    partial void OnShowOnlyHeavyChanged(bool value) => ApplyFilter();
+    partial void OnSortHeaviestFirstChanged(bool value) => ApplyFilter();
     public bool HasPendingChanges => PendingCount > 0;
     public string PendingText => L("look_inside.pending_count", PendingCount);
 
@@ -257,6 +277,7 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
                 return;
             }
             Populate(failures);
+            _ = LoadMeshStatsAsync();
         }
         catch (Exception ex)
         {
@@ -269,6 +290,41 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
             IsLoading = false;
             NotifyStateChanged();
         }
+    }
+
+    // Reading meshes takes a moment, so the list appears first and the triangle counts fill in afterwards.
+    private async Task LoadMeshStatsAsync()
+    {
+        var sources = _sources;
+        var items = _allObjects;
+        try
+        {
+            await Task.Run(() =>
+            {
+                foreach (var s in sources) MeshStatsService.Analyse(s.Inspection, _cts.Token);
+            }, _cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError("Could not read mesh sizes", ex, "LookInsideViewModel");
+            return;
+        }
+        if (_cts.IsCancellationRequested) return;
+
+        foreach (var item in items)
+        {
+            if (item.Object != null) item.SetMesh(item.Object.Mesh);
+        }
+        AllItems?.RefreshMesh();
+        OnPropertyChanged(nameof(HasMeshInfo));
+        OnPropertyChanged(nameof(HeavyCount));
+        OnPropertyChanged(nameof(HasHeavyObjects));
+        OnPropertyChanged(nameof(HeavyFilterText));
+        if (SortHeaviestFirst || ShowOnlyHeavy) ApplyFilter();
     }
 
     private static string ErrorText(Exception ex) => ex switch
@@ -411,16 +467,22 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
         {
             if (o.Object == null)
             {
-                return KindFilter == FilterAll && part < 0 && query.Length == 0 && !ShowOnlyOff;
+                return KindFilter == FilterAll && part < 0 && query.Length == 0 && !ShowOnlyOff && !ShowOnlyHeavy;
             }
             if (ShowOnlyOff && !o.IsOff) return false;
+            if (ShowOnlyHeavy && !o.IsHeavyOrWorse) return false;
             if (KindFilter == FilterCas && o.Object.Kind != InspectedObjectKind.Cas) return false;
             if (KindFilter == FilterBuildBuy && o.Object.Kind != InspectedObjectKind.BuildBuy) return false;
             if (part >= 0 && o.Object.Resource.PartIndex != part) return false;
             return query.Length == 0 || o.Matches(query);
         });
+        if (SortHeaviestFirst)
+        {
+            // Objects without a known size (and the thumbnail group) go last; the sort is stable otherwise.
+            filtered = filtered.OrderByDescending(o => o.HasMeshData ? o.Triangles : -1).ToList();
+        }
         // "All items" sits on top of the unfiltered list; it always acts on every object shown.
-        if (_allItemsEntry != null && KindFilter == FilterAll && part < 0 && query.Length == 0 && !ShowOnlyOff)
+        if (_allItemsEntry != null && KindFilter == FilterAll && part < 0 && query.Length == 0 && !ShowOnlyOff && !ShowOnlyHeavy)
         {
             filtered = filtered.Prepend(_allItemsEntry);
         }
@@ -1158,6 +1220,47 @@ public sealed class LookInsideObjectItem : ObservableObject
     public bool HasOutfits => !CanEditCasFlags && !string.IsNullOrEmpty(OutfitsText);
     public bool HasPartLabel => !string.IsNullOrEmpty(PartLabel);
     public bool HasKey => Object != null;
+
+    #region Mesh size
+
+    private MeshStats? _mesh;
+
+    public void SetMesh(MeshStats? stats)
+    {
+        _mesh = stats;
+        foreach (var name in MeshProperties) OnPropertyChanged(name);
+    }
+
+    private static readonly string[] MeshProperties =
+    {
+        nameof(HasMeshData), nameof(ShowMeshCard), nameof(ShowExternalMesh), nameof(Triangles), nameof(TrianglesText),
+        nameof(VerticesText), nameof(CompactTriangles), nameof(WeightLevel), nameof(IsLight), nameof(IsMedium), nameof(IsHeavy),
+        nameof(IsVeryHeavy), nameof(IsHeavyOrWorse), nameof(IsPlainTriangles), nameof(WeightText), nameof(LodsText), nameof(HasLods)
+    };
+
+    public MeshStats? Mesh => _mesh;
+    public bool HasMeshData => _mesh?.HasData == true;
+    public bool ShowMeshCard => Object != null && _mesh != null && (_mesh.HasData || _mesh.HasExternalMesh);
+    public bool ShowExternalMesh => _mesh is { HasData: false, HasExternalMesh: true };
+    public string ExternalMeshText => LocalizationManager.Instance.GetString(IsCas ? "look_inside.mesh_external_cas" : "look_inside.mesh_external_bb");
+    public int Triangles => _mesh?.Triangles ?? 0;
+    public string TrianglesText => Triangles.ToString("N0");
+    public string VerticesText => (_mesh?.Vertices ?? 0).ToString("N0");
+    public string CompactTriangles => MeshFormat.Compact(Triangles);
+    public MeshWeightLevel WeightLevel => HasMeshData ? MeshWeight.Of(IsCas, Triangles) : MeshWeightLevel.Light;
+    public bool IsLight => HasMeshData && WeightLevel == MeshWeightLevel.Light;
+    public bool IsMedium => HasMeshData && WeightLevel == MeshWeightLevel.Medium;
+    public bool IsHeavy => HasMeshData && WeightLevel == MeshWeightLevel.Heavy;
+    public bool IsVeryHeavy => HasMeshData && WeightLevel == MeshWeightLevel.VeryHeavy;
+    public bool IsHeavyOrWorse => IsHeavy || IsVeryHeavy;
+    // Light and medium meshes show a plain number in the list; only heavy ones get a coloured tag.
+    public bool IsPlainTriangles => HasMeshData && !IsHeavyOrWorse;
+    public string WeightText => MeshFormat.WeightName(WeightLevel);
+    public string WeightTip => MeshFormat.WeightTip(IsCas);
+    public bool HasLods => _mesh is { Lods.Count: > 1 };
+    public string LodsText => _mesh == null ? string.Empty : MeshFormat.LodsText(_mesh);
+
+    #endregion
 
     public LookInsideObjectItem(InspectedObject obj, Func<InspectedResource, byte[]> reader, string? partLabel)
     {

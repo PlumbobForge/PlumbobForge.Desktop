@@ -42,6 +42,24 @@ public sealed partial class LookInsideAllItems : ObservableObject
 
     public bool HasMixed => ValidForRandom == null || OutfitOptions.Any(o => o.IsChecked == null);
 
+    // The heaviest objects, so the biggest savings are one switch away.
+    public IReadOnlyList<LookInsideObjectItem> Heaviest { get; private set; } = Array.Empty<LookInsideObjectItem>();
+    public bool HasHeaviest => Heaviest.Count > 0;
+    public string MeshSummaryText { get; private set; } = string.Empty;
+
+    public void RefreshMesh()
+    {
+        var withMesh = _objects.Where(o => o.HasMeshData).OrderByDescending(o => o.Triangles).ToList();
+        int heavy = withMesh.Count(o => o.IsHeavyOrWorse);
+        Heaviest = withMesh.Take(5).ToList();
+        MeshSummaryText = withMesh.Count == 0
+            ? string.Empty
+            : heavy > 0 ? L("look_inside.all_items_heavy", heavy, withMesh.Count) : L("look_inside.all_items_no_heavy", withMesh.Count);
+        OnPropertyChanged(nameof(Heaviest));
+        OnPropertyChanged(nameof(HasHeaviest));
+        OnPropertyChanged(nameof(MeshSummaryText));
+    }
+
     public LookInsideAllItems(IReadOnlyList<LookInsideObjectItem> objects)
     {
         _objects = objects.ToList();
@@ -62,6 +80,7 @@ public sealed partial class LookInsideAllItems : ObservableObject
         OutfitOptions = CasFlagsService.OutfitBits
             .Select(b => new AllItemsFlagOption(L($"filters.outfits.{b.Key}"), b.Bit, _editableCas))
             .ToList();
+        RefreshMesh();
     }
 
     [RelayCommand]
@@ -113,6 +132,7 @@ public sealed class AllItemsFlagOption : ObservableObject
         get => LookInsideAllItems.Aggregate(_objects.Select(o => o.OutfitOptions.FirstOrDefault(x => x.Bit == Bit)?.IsChecked == true));
         set
         {
+            // A mixed box clicked once becomes unchecked; null itself is never applied.
             if (value is not bool v) { OnPropertyChanged(); return; }
             foreach (var obj in _objects)
             {
