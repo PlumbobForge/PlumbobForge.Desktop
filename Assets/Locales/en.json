@@ -300,6 +300,8 @@
                            "items_failed":  "Could not save: {0}"
                        },
     "tools":  {
+                  "pin_tab":  "Pin as a tab",
+                   "unpin_tab":  "Unpin tab",
                   "title":  "Tools",
                   "cache":  {
                                 "title":  "Cache Cleaner",
@@ -362,6 +364,28 @@
                                     "bulk_duplicates_title":  "One-Click Duplicates Fix",
                                     "bulk_duplicates_desc":  "Automatically keep the active copy in each duplicate group and disable redundant copies to save memory and load time."
                                 },
+                  "meshes":  {
+                                 "title":  "Mesh Report",
+                                 "subtitle":  "Find high-poly objects",
+                                 "scan":  "Count triangles",
+                                 "rescan":  "Count again",
+                                 "counted":  "Counted",
+                                 "heavy_count":  "Heavy",
+                                 "filter_heavy":  "Heavy",
+                                 "filter_all":  "All",
+                                 "search_watermark":  "Search by name or file...",
+                                 "scanning":  "Counting triangles in your library...",
+                                 "progress":  "{0} of {1} packages",
+                                 "healthy_title":  "Nothing heavy found",
+                                 "healthy_desc":  "None of the counted items is heavy. Pick All to see every item, heaviest first.",
+                                 "empty_title":  "Nothing to show",
+                                 "empty_desc":  "No item matches the current filters.",
+                                 "explainer":  "Triangles are counted from each item's most detailed level. The more triangles, the more work for the game. Heavy is a rough guide, not a limit. Nothing here changes your files: open Look Inside to switch an item off, or Show in Library to remove it.",
+                                 "external_note":  "{0} items use the game's own meshes and could not be counted.",
+                                 "unreadable_note":  "{0} packages could not be read.",
+                                 "scan_failed":  "The scan could not finish.",
+                                 "row_detail":  "{0} vertices, {1} detail levels"
+                             },
                   "patterns":  {
                                    "title":  "Pattern Fixer",
                                    "subtitle":  "Detect and fix an issue in custom patterns that causes the 'Materializing Materials' stall.",
@@ -541,7 +565,8 @@
                                     "title":  "About \u0026 Credits",
                                     "github":  "GitHub Repository",
                                     "peter_desc":  "for the foundational s3pi binary library",
-                                    "granthes_desc":  "for CC Magic \u0026 S3ToolKit reverse-engineering"
+                                    "granthes_desc":  "for CC Magic \u0026 S3ToolKit reverse-engineering",
+                                    "kitlith_desc":  "for geom_tri_count and sims3-rs, which showed how to count triangles"
                                 },
                      "language_auto":  "System Default (Auto)",
                      "update_available":  "Update Available",
@@ -902,6 +927,17 @@
                               }
                 },
     "look_inside":  {
+                        "triangles":  "Triangles",
+                        "vertices":  "Vertices",
+                        "lods":  "Detail levels",
+                        "mesh_external_cas":  "Uses the game's own mesh, so there is nothing to count here.",
+                        "mesh_external_bb":  "Uses the game's own model, so there is nothing to count here.",
+                        "sort_heaviest":  "Heaviest first",
+                        "sort_heaviest_tip":  "Sort the list by triangle count, highest first",
+                        "filter_heavy":  "{0} heavy",
+                        "all_items_heavy":  "{0} of {1} counted objects are heavy. Heavy is a rough guide, not a limit.",
+                        "all_items_no_heavy":  "None of the {0} counted objects is heavy.",
+                        "heaviest":  "Heaviest objects",
                         "title":  "Look Inside",
                         "switch_item":  "Show the objects of every selected item, or of one",
                         "all_selected_items":  "All items ({0})",                        "summary_items":  "{0} items",
@@ -1151,6 +1187,15 @@
                           "operation_failed":  "Operation failed: {0}",
                           "rebuild_completed":  "Cache rebuild completed successfully in {0}s!"
                       },
+    "mesh":  {
+                "weight_light":  "Light",
+                "weight_medium":  "Medium",
+                "weight_heavy":  "Heavy",
+                "weight_very_heavy":  "Very heavy",
+                "weight_tip_cas":  "A rough guide for CAS parts, from the most detailed level: medium from {0} triangles, heavy from {1}, very heavy from {2}.",
+                "weight_tip_bb":  "A rough guide for objects, from the most detailed level: medium from {0} triangles, heavy from {1}, very heavy from {2}.",
+                "largest_meshes":  "{0} meshes, largest: {1}"
+            },
     "nav":  {
                 "minimize":  "Minimize",
                 "ctrl_k":  "Ctrl+K",
@@ -1162,6 +1207,21 @@
                 "maximize":  "Maximize",
                 "quick_jump":  "Quick Jump",
                 "places":  "Places",
-                "send_feedback":  "Send Feedback or Report a Bug"
-            }
+                "send_feedback":  "Send Feedback or Report a Bug",
+                "guide":  "Guide (F1)"
+            },
+    "guide":  {
+                  "search_placeholder":  "Ask a question or search...",
+                  "for_this_tab":  "FOR THIS TAB",
+                  "other_categories":  "OTHER CATEGORIES",
+                  "back":  "Back",
+                  "home":  "Guide home",
+                  "steps":  "STEPS",
+                  "related":  "RELATED",
+                  "show_me":  "Show me",
+                  "no_results_title":  "No matches",
+                  "no_results_desc":  "Try other words, or send your question and get an answer.",
+                  "not_found":  "Didn't find what you need?",
+                  "ask":  "Ask in Feedback"
+              }
 }

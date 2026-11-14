@@ -1,0 +1,878 @@
+{
+  "categories": [
+    {
+      "id": "start",
+      "title": "Getting Started",
+      "description": "The basics: bringing in your CC and getting it into the game.",
+      "icon": "RegularRocket",
+      "sections": [
+        { "id": "basics", "title": "The Basics" },
+        { "id": "import", "title": "Adding CC" }
+      ]
+    },
+    {
+      "id": "library",
+      "title": "Library",
+      "description": "Sort, find and inspect everything you've added.",
+      "icon": "RegularFolder",
+      "sections": [
+        { "id": "sets", "title": "Sets" },
+        { "id": "items", "title": "Items" },
+        { "id": "filters", "title": "Filters" },
+        { "id": "tags", "title": "Tags & Categories" },
+        { "id": "look-inside", "title": "Look Inside" }
+      ]
+    },
+    {
+      "id": "configurations",
+      "title": "Configurations",
+      "description": "Decide which sets the game loads, per save or playstyle.",
+      "icon": "RegularSliderAlt",
+      "sections": [
+        { "id": "basics", "title": "Creating & Switching" },
+        { "id": "sets", "title": "Choosing Sets" },
+        { "id": "items", "title": "Single Items" },
+        { "id": "customize", "title": "Customizing" }
+      ]
+    },
+    {
+      "id": "tools",
+      "title": "Tools",
+      "description": "Keep your game fast and healthy.",
+      "icon": "RegularSpanner",
+      "sections": [
+        { "id": "cache", "title": "Cache Cleaner" },
+        { "id": "patterns", "title": "Pattern Fixer" },
+        { "id": "collections", "title": "Collection Creator" },
+        { "id": "conflicts", "title": "Conflict Scanner" },
+        { "id": "meshes", "title": "Mesh Report" }
+      ]
+    },
+    {
+      "id": "settings",
+      "title": "Settings",
+      "description": "Make PlumbobForge look and work the way you like.",
+      "icon": "RegularCog",
+      "sections": [
+        { "id": "appearance", "title": "Appearance" },
+        { "id": "storage-mode", "title": "Storage Mode" },
+        { "id": "maintenance", "title": "Maintenance" },
+        { "id": "game-paths", "title": "Game Paths" }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Troubleshooting",
+      "description": "Something's not right? Start here.",
+      "icon": "RegularMagicWand",
+      "sections": [
+        { "id": "game", "title": "In the Game" },
+        { "id": "app", "title": "In PlumbobForge" }
+      ]
+    }
+  ],
+
+  "articles": [
+    {
+      "id": "how-it-works",
+      "category": "start", "section": "basics",
+      "title": "How PlumbobForge works",
+      "summary": "Your CC lives in the Library, sorted into sets. A configuration decides which sets the game loads.",
+      "keywords": ["overview", "basics", "how it works", "introduction", "start"],
+      "questions": ["How does this app work?", "Where do I start?", "What is a set?", "What is a configuration?"],
+      "steps": [
+        "Add your CC in the **Library** tab. Each file becomes an item.",
+        "Group items into **sets**, like folders: by creator, style, or type.",
+        "In **Configurations**, choose which sets the game should load. The active configuration is what you play with.",
+        "In Library mode, click the **Rebuild** button in the title bar to send your changes to the game. In Vault mode, changes apply on their own."
+      ],
+      "tips": ["Press **Ctrl+K** to jump to any set, item or configuration by name."],
+      "related": ["import-cc", "rebuild", "cfg-create"]
+    },
+    {
+      "id": "import-cc",
+      "category": "start", "section": "import",
+      "title": "Add CC to your library",
+      "summary": "Drop your downloaded files onto the Library and they're imported into the selected set.",
+      "keywords": ["import", "add", "install", "drag", "drop", "package", "sims3pack", "zip", "rar", "7z", "download"],
+      "questions": ["How do I add CC?", "How do I install mods?", "Can I import a zip file?", "Where do my downloads go?"],
+      "steps": [
+        "Open the **Library** tab.",
+        "Select the set you want the new items in. If you skip this, pick a set later with **Move to Set**.",
+        "Drag your files from File Explorer onto the item grid. **.package**, **.sims3pack**, **.zip**, **.7z** and **.rar** all work, and archives are unpacked for you.",
+        "If some files are already in your library, choose whether to **Rename (Keep Both)**, **Replace Existing** or **Skip Duplicates**."
+      ],
+      "tips": ["Archives can hold many packages. Each one becomes its own item."],
+      "related": ["monitored-folders", "move-items", "rebuild"],
+      "showMe": { "target": "library" }
+    },
+    {
+      "id": "monitored-folders",
+      "category": "start", "section": "import",
+      "title": "Import new CC automatically",
+      "summary": "Let PlumbobForge watch a folder, like your Downloads, and import new packages from it.",
+      "keywords": ["monitored folders", "watch", "auto import", "automatic", "downloads folder", "scan"],
+      "questions": ["Can it import my downloads automatically?", "How do I watch a folder?"],
+      "steps": [
+        "Go to **Settings** → **Monitored Folders & Auto-Import**.",
+        "Click **Add Folder** and pick the folder you download CC into.",
+        "Turn on **Auto-Import on Launch** to check it every time PlumbobForge starts.",
+        "Or click **Scan & Import Now** to import right away."
+      ],
+      "related": ["import-cc"],
+      "showMe": { "target": "settings:ObservedFolders" }
+    },
+    {
+      "id": "migrate",
+      "category": "start", "section": "import",
+      "title": "Move over from CC Magic or Sims 3 Mod Organizer",
+      "summary": "Bring your packages, sets and configurations over from another CC manager.",
+      "keywords": ["migration", "migrate", "cc magic", "s3mo", "mod organizer", "switch manager", "transfer"],
+      "questions": ["I used CC Magic before", "How do I import from S3MO?", "Can I keep my old sets?"],
+      "steps": [
+        "Go to **Settings** → **Maintenance & Diagnostics** and click **Open Migration Tool**.",
+        "Pick **CC Magic** or **Sims 3 Mod Organizer** and check the installation folder.",
+        "Choose **Full Migration** to bring over sets and configurations too, or **Simple Migration** to only move the packages.",
+        "Click **Start Migration** and wait for it to finish."
+      ],
+      "related": ["import-cc", "how-it-works"],
+      "showMe": { "target": "settings:Maintenance" }
+    },
+    {
+      "id": "rebuild",
+      "category": "start", "section": "basics",
+      "title": "Get your changes into the game",
+      "summary": "In Library mode, the game only sees your changes after a rebuild.",
+      "keywords": ["rebuild", "apply", "sync", "update game", "refresh", "pending", "orange", "amber", "force rebuild"],
+      "questions": ["My changes don't show in the game", "What does the orange button mean?", "How do I apply changes?"],
+      "steps": [
+        "When something changes, the **Rebuild** button in the title bar (the circular arrows) turns orange.",
+        "Close The Sims 3. The game keeps the cache files open, so a rebuild can't run while it's open.",
+        "Click the **Rebuild** button and wait for it to finish.",
+        "If things still look wrong, right-click the button and choose **Force Rebuild** to rebuild everything from scratch."
+      ],
+      "tips": ["In Vault mode there's nothing to rebuild: the title bar shows the vault status instead."],
+      "related": ["storage-mode", "cache-mode", "cc-not-in-game"],
+      "showMe": { "target": "library", "highlight": "titlebar.rebuild" }
+    },
+    {
+      "id": "quick-jump",
+      "category": "start", "section": "basics",
+      "title": "Jump anywhere with Quick Jump",
+      "summary": "Find any set, item, configuration or page by typing its name.",
+      "keywords": ["quick jump", "ctrl+k", "ctrl k", "shortcut", "keyboard", "go to", "navigate"],
+      "questions": ["Is there a keyboard shortcut to search?", "How do I find a set quickly?"],
+      "steps": [
+        "Press **Ctrl+K**, or click **Quick Jump** in the title bar.",
+        "Start typing a name.",
+        "Use the arrow keys and press **Enter**, or click a result to go there."
+      ],
+      "related": ["filters"],
+      "showMe": { "target": "library", "highlight": "titlebar.quick-jump" }
+    },
+
+    {
+      "id": "create-set",
+      "category": "library", "section": "sets",
+      "title": "Create a set or sub-set",
+      "summary": "Sets work like folders for your CC. You can nest them too.",
+      "keywords": ["new set", "create set", "sub-set", "subset", "folder", "group", "nest"],
+      "questions": ["How do I make a new set?", "Can I put a set inside another set?", "How do I make folders?"],
+      "steps": [
+        "In the **Library**, click the **+** button at the top of the sets sidebar on the left (**New Set**).",
+        "Type a name and confirm.",
+        "To nest a set, right-click an existing set and choose **Add Sub-Set**."
+      ],
+      "tips": ["Turning off a set in a configuration also turns off its sub-sets."],
+      "related": ["customize-set", "move-items", "delete-set"],
+      "showMe": { "target": "library", "highlight": "library.new-set" }
+    },
+    {
+      "id": "customize-set",
+      "category": "library", "section": "sets",
+      "title": "Give a set an icon and color",
+      "summary": "Make sets easier to tell apart in the sidebar.",
+      "keywords": ["customize set", "icon", "color", "colour", "rename set", "sort sets", "rename folder", "folder color", "folder icon"],
+      "questions": ["How do I change a set's color?", "Can I rename a set?", "How do I sort my sets?", "How do I rename a folder?"],
+      "steps": [
+        "Right-click a set in the sidebar and choose **Customize Set**.",
+        "Click the avatar to pick an icon, then choose a color.",
+        "Rename it at the top and click **Save Changes**.",
+        "To change the order, use the sort button at the top of the sidebar (name, recently added, or item count)."
+      ],
+      "related": ["create-set"],
+      "showMe": { "target": "library", "highlight": "library.sets" }
+    },
+    {
+      "id": "move-items",
+      "category": "library", "section": "sets",
+      "title": "Move items to another set",
+      "summary": "Drag items onto a set, or use Move to Set.",
+      "keywords": ["move", "move to set", "drag", "sort", "organize", "reorganize", "put in set", "move to folder", "put in folder"],
+      "questions": ["How do I move CC between sets?", "How do I put items in a set?", "How do I move files into a folder?"],
+      "steps": [
+        "Select the items (see **Select several items at once**).",
+        "Drag them onto a set in the sidebar.",
+        "Or click **Move to Set** in the toolbar above the items and pick the set."
+      ],
+      "tips": ["Moving a set onto a set with the same name lets you merge them or rename the one you're moving."],
+      "related": ["select-items", "create-set"],
+      "showMe": { "target": "library", "highlight": "library.toolbar" }
+    },
+    {
+      "id": "delete-set",
+      "category": "library", "section": "sets",
+      "title": "Delete a set",
+      "summary": "Remove a set and choose what happens to the items inside.",
+      "keywords": ["delete set", "remove set", "delete folder", "remove folder", "get rid of folder"],
+      "questions": ["How do I delete a set without losing the CC?", "How do I remove a folder?", "How do I delete a folder without deleting my CC?"],
+      "steps": [
+        "Right-click the set and choose **Delete**.",
+        "Pick **Keep items and move them to Default set**, or delete the packages along with it.",
+        "Click **Delete Set**. Any sub-sets move up to the top level."
+      ],
+      "related": ["delete-items", "create-set"],
+      "showMe": { "target": "library", "highlight": "library.sets" }
+    },
+
+    {
+      "id": "select-items",
+      "category": "library", "section": "items",
+      "title": "Select several items at once",
+      "summary": "Most actions work on everything you've selected.",
+      "keywords": ["select", "multiple", "multi select", "select all", "ctrl", "shift", "bulk", "batch"],
+      "questions": ["How do I select more than one item?", "Can I edit many items at once?"],
+      "steps": [
+        "Click an item to select it.",
+        "Hold **Ctrl** and click to add or remove items, or hold **Shift** to select a range.",
+        "Drag a box around items in empty space to select them all.",
+        "Use **Select All** in the toolbar to select everything shown."
+      ],
+      "tips": ["Right-click your selection to see what you can do with it."],
+      "related": ["toggle-items", "move-items", "edit-tags"],
+      "showMe": { "target": "library", "highlight": "library.toolbar" }
+    },
+    {
+      "id": "toggle-items",
+      "category": "library", "section": "items",
+      "title": "Turn items on or off",
+      "summary": "Turned-off items stay in your library but the game doesn't load them.",
+      "keywords": ["enable", "disable", "turn off", "turn on", "toggle", "deactivate", "hide from game"],
+      "questions": ["How do I disable a mod without deleting it?", "How do I turn off CC?"],
+      "steps": [
+        "Select the items.",
+        "Click **Toggle Selected** in the toolbar, or right-click and choose it.",
+        "In Library mode, **Rebuild** to apply it in the game."
+      ],
+      "tips": ["To turn off just one object inside a package, use **Look Inside**.", "To turn items on or off for one configuration only, use **Include** and **Exclude** in Configurations."],
+      "related": ["look-inside-objects", "cfg-items", "rebuild"],
+      "showMe": { "target": "library", "highlight": "library.toolbar" }
+    },
+    {
+      "id": "favorites",
+      "category": "library", "section": "items",
+      "title": "Mark favorites",
+      "summary": "Star the items you love so they're easy to find.",
+      "keywords": ["favorite", "favourite", "star", "favorites first"],
+      "questions": ["How do I favorite an item?", "Where are my favorites?"],
+      "steps": [
+        "Hover an item and click the **star**, or select several and click **Favorite Selected** in the toolbar.",
+        "Open **Favorites** in the sets sidebar to see them all.",
+        "In the **Sort** menu, **Favorites First** keeps them at the top of every set."
+      ],
+      "related": ["select-items"],
+      "showMe": { "target": "library", "highlight": "library.sets" }
+    },
+    {
+      "id": "delete-items",
+      "category": "library", "section": "items",
+      "title": "Delete items",
+      "summary": "Remove CC from your library for good.",
+      "keywords": ["delete", "remove", "uninstall", "trash", "recycle bin"],
+      "questions": ["How do I delete CC?", "How do I uninstall a mod?"],
+      "steps": [
+        "Select the items.",
+        "Click **Delete Selected** in the toolbar, or right-click and delete.",
+        "Confirm. Files go to the Recycle Bin unless you tick the box to delete them permanently."
+      ],
+      "tips": ["Not sure? Turn the items off instead. You can always turn them back on."],
+      "related": ["toggle-items", "delete-set"],
+      "showMe": { "target": "library", "highlight": "library.toolbar" }
+    },
+    {
+      "id": "item-view",
+      "category": "library", "section": "items",
+      "title": "Change how items are shown",
+      "summary": "Switch between a grid and a compact list, resize thumbnails and sort.",
+      "keywords": ["grid", "list", "compact", "view", "zoom", "thumbnail size", "sort", "layout"],
+      "questions": ["How do I make the thumbnails bigger?", "Can I see items as a list?"],
+      "steps": [
+        "Use the view buttons in the toolbar to switch between **Grid View** and **Compact List View**.",
+        "Drag the **Thumbnail Zoom** slider to resize the cards.",
+        "Open **Sort** to order by name or recently added."
+      ],
+      "related": ["filters"],
+      "showMe": { "target": "library", "highlight": "library.toolbar" }
+    },
+
+    {
+      "id": "filters",
+      "category": "library", "section": "filters",
+      "title": "Find items with filters",
+      "summary": "Narrow the library down by type, category, age, room and more.",
+      "keywords": ["filter", "search", "find", "narrow", "age", "gender", "room", "function", "price", "outfit", "type"],
+      "questions": ["How do I find all hairs?", "How do I see only build mode items?", "How do I search my CC?", "Show only teen clothes"],
+      "steps": [
+        "Open the **Filters** sidebar on the right of the Library.",
+        "Type in the search box to search names and tags.",
+        "Pick a type (**CAS Items**, **Build / Buy** or **Other Content**) to see the filters for it, like CAS category, age, gender, room or function.",
+        "Click **Clear All** to start over."
+      ],
+      "tips": ["Filters work together, so Hair + Teen + Female shows only teen female hair."],
+      "related": ["custom-tags", "edit-tags", "quick-jump"],
+      "showMe": { "target": "library", "highlight": "library.filters" }
+    },
+
+    {
+      "id": "edit-tags",
+      "category": "library", "section": "tags",
+      "title": "Fix an item's category or tags",
+      "summary": "If something is sorted under the wrong category, age or room, you can correct it with Edit Tags & Categories.",
+      "keywords": ["edit tags", "categories", "category", "wrong category", "retag", "age", "gender", "outfit", "room", "function", "misplaced", "classified"],
+      "questions": ["My hair is under the wrong category", "This item shows up in the wrong place", "The age or gender is wrong", "How do I change an item's category?"],
+      "steps": [
+        "Select the item, or several at once.",
+        "Right-click and choose **Edit Tags & Categories**, or click the tag button on the item card.",
+        "Fix the category, age group, gender or outfit category. For Build/Buy items, set the room and function.",
+        "Click **Apply Changes**."
+      ],
+      "tips": ["This changes how PlumbobForge sorts and filters the item. It doesn't change the package file itself.", "When you run **Recheck Package Types**, keep **Skip packages that have manual user tags** ticked so your fixes stay."],
+      "related": ["custom-tags", "recheck-types", "filters"],
+      "showMe": { "target": "library", "highlight": "library.toolbar" }
+    },
+    {
+      "id": "custom-tags",
+      "category": "library", "section": "tags",
+      "title": "Use your own tags",
+      "summary": "Tag items with anything you like, such as a creator, style or era, and filter by it.",
+      "keywords": ["tags", "custom tags", "user tags", "label", "creator", "style", "tagging"],
+      "questions": ["Can I tag items by creator?", "How do I add my own tags?", "How do I filter by tag?"],
+      "steps": [
+        "Select items, right-click and choose **Edit Tags & Categories**.",
+        "Type tags in **Custom User Tags**, separated by commas (for example: Simsimi, Victorian).",
+        "Click **Apply Changes**.",
+        "Find them later by typing the tag in the **Filters** search box."
+      ],
+      "related": ["edit-tags", "filters"],
+      "showMe": { "target": "library", "highlight": "library.filters" }
+    },
+
+    {
+      "id": "look-inside",
+      "category": "library", "section": "look-inside",
+      "title": "Look inside an item",
+      "summary": "See every CAS part, object and thumbnail a package contains.",
+      "keywords": ["look inside", "contents", "inspect", "objects", "cas parts", "details", "what's inside", "resource key"],
+      "questions": ["What's inside this package?", "How do I see the objects in a file?"],
+      "steps": [
+        "Select one or more items.",
+        "Right-click and choose **Look Inside**.",
+        "Pick an object on the left to see its details and thumbnails.",
+        "With several items selected, switch between them at the top, or look at all of them together."
+      ],
+      "related": ["look-inside-objects", "look-inside-thumbnails"],
+      "showMe": { "target": "library", "highlight": "library.items" }
+    },
+    {
+      "id": "look-inside-objects",
+      "category": "library", "section": "look-inside",
+      "title": "Turn single objects off",
+      "summary": "Keep one object or CAS part out of the game without disabling the whole package.",
+      "keywords": ["turn off object", "disable object", "in game", "hide object", "single object", "part of package", "valid for random", "townies", "random sims"],
+      "questions": ["I only want one item from this set", "How do I hide one object from a package?", "How do I stop townies wearing this?"],
+      "steps": [
+        "Open the item with **Look Inside**.",
+        "Select the object and switch off **In game**. Use **Turn all off** for every object at once.",
+        "For CAS parts, switch off **Valid for random** to stop the game putting them on townies and newborns.",
+        "Close The Sims 3, save your changes, then **Rebuild** in Library mode."
+      ],
+      "tips": ["The package file isn't changed. Turned-off Build/Buy objects disappear from lots they were placed on."],
+      "related": ["look-inside", "toggle-items"],
+      "showMe": { "target": "library", "highlight": "library.items" }
+    },
+    {
+      "id": "look-inside-thumbnails",
+      "category": "library", "section": "look-inside",
+      "title": "Change or export thumbnails",
+      "summary": "Replace, remove, add or save the thumbnails inside a package.",
+      "keywords": ["thumbnail", "thumbnails", "preview", "icon", "image", "picture", "replace thumbnail", "export thumbnail"],
+      "questions": ["How do I change a thumbnail?", "Can I save the preview images?", "The thumbnail is ugly"],
+      "steps": [
+        "Open the item with **Look Inside** and pick an object.",
+        "Use **Replace...**, **Remove** or **Add thumbnails...** under its thumbnails. PNG, JPG, BMP, WebP and GIF all work.",
+        "Use **Export...** to save them as images.",
+        "Close The Sims 3 and save your changes."
+      ],
+      "tips": ["Still seeing the old thumbnail in game? Clear the **Thumbnails Cache** in Tools → Cache Cleaner."],
+      "related": ["look-inside", "clean-cache"],
+      "showMe": { "target": "library", "highlight": "library.items" }
+    },
+    {
+      "id": "look-inside-triangles",
+      "category": "library", "section": "look-inside",
+      "title": "See how many triangles an item has",
+      "summary": "Look Inside counts the triangles of CAS parts and Build/Buy objects, so you can spot the ones that slow the game down.",
+      "keywords": ["triangles", "polygons", "poly count", "polycount", "high poly", "heavy", "lag", "slow", "performance", "mesh", "vertices", "lod", "geom"],
+      "questions": ["How many polygons does this item have?", "Which CC makes my game lag?", "How do I find high-poly CC?"],
+      "steps": [
+        "Open the item with **Look Inside**. Every object shows its triangle count in the list, and a **Heavy** tag when it is large.",
+        "Pick an object to see its **Mesh size** card: triangles, vertices and every detail level.",
+        "Click **Heaviest first** to sort by size, or **heavy** to show only the heavy ones.",
+        "On **All items**, switch off the heaviest objects with their toggles."
+      ],
+      "tips": ["Triangles are counted from the most detailed level. Heavy is a rough guide, not a limit.", "Items that use the game's own mesh are shown as such, because there is nothing to count.", "To check the whole library at once, use Tools → Mesh Report."],
+      "related": ["look-inside", "mesh-report"],
+      "showMe": { "target": "library", "highlight": "library.items" }
+    },
+
+    {
+      "id": "cfg-create",
+      "category": "configurations", "section": "basics",
+      "title": "Create a configuration",
+      "summary": "A configuration is a list of sets for the game to load: one per save, playstyle or test.",
+      "keywords": ["new configuration", "create configuration", "config", "profile", "loadout", "duplicate configuration"],
+      "questions": ["How do I make a new config?", "Can I have different CC for different saves?", "How do I copy a configuration?"],
+      "steps": [
+        "Open the **Configurations** tab.",
+        "Click the **+** button at the top of the list (**New Configuration**).",
+        "Choose which sets it loads (see **Choose which sets a configuration loads**).",
+        "To start from an existing one, right-click it and choose **Duplicate Configuration**."
+      ],
+      "related": ["cfg-activate", "cfg-sets", "cfg-customize"],
+      "showMe": { "target": "configurations", "highlight": "configurations.new" }
+    },
+    {
+      "id": "cfg-activate",
+      "category": "configurations", "section": "basics",
+      "title": "Switch to another configuration",
+      "summary": "The active configuration is what the game loads.",
+      "keywords": ["active", "set as active", "switch configuration", "change configuration", "activate"],
+      "questions": ["How do I change which config the game uses?", "How do I switch configurations?"],
+      "steps": [
+        "Close The Sims 3.",
+        "In **Configurations**, right-click the configuration and choose **Set as Active**.",
+        "Wait for it to apply. The active one has an **ACTIVE** badge."
+      ],
+      "related": ["cfg-create", "cache-mode"],
+      "showMe": { "target": "configurations", "highlight": "configurations.list" }
+    },
+    {
+      "id": "cfg-sets",
+      "category": "configurations", "section": "sets",
+      "title": "Choose which sets a configuration loads",
+      "summary": "Move sets between Enabled Sets and Disabled Sets.",
+      "keywords": ["enabled sets", "disabled sets", "enable set", "disable set", "drag", "swap sets", "turn off set"],
+      "questions": ["How do I turn off a set for one save?", "How do I enable a set in a configuration?"],
+      "steps": [
+        "Select the configuration in **Configurations**.",
+        "Drag sets between **Enabled Sets** and **Disabled Sets**.",
+        "Or select sets and use the arrow buttons between the lists (**Swap Sets**).",
+        "Use the search box above each list to find a set by name."
+      ],
+      "tips": ["Disabling a set also disables its sub-sets."],
+      "related": ["cfg-items", "cfg-activate"],
+      "showMe": { "target": "configurations", "highlight": "configurations.swap" }
+    },
+    {
+      "id": "cfg-items",
+      "category": "configurations", "section": "items",
+      "title": "Include or exclude single items",
+      "summary": "Load one item from a disabled set, or leave one out of an enabled set, in this configuration only.",
+      "keywords": ["include", "exclude", "single item", "one item", "items first", "exception", "override"],
+      "questions": ["I want one item from a set I've disabled", "How do I leave out one item from a set?"],
+      "steps": [
+        "Select the configuration.",
+        "Click **Include** above Enabled Sets to pick items to load even though their set is disabled.",
+        "Click **Exclude** above Disabled Sets to pick items to leave out even though their set is enabled.",
+        "To undo, remove the item from the list and it follows its set again."
+      ],
+      "tips": ["Turn on **Items First** to see these items above the sets."],
+      "related": ["cfg-sets", "toggle-items"],
+      "showMe": { "target": "configurations", "highlight": "configurations.include" }
+    },
+    {
+      "id": "cfg-customize",
+      "category": "configurations", "section": "customize",
+      "title": "Rename or customize a configuration",
+      "summary": "Give a configuration a name, description, icon and color.",
+      "keywords": ["customize configuration", "rename configuration", "icon", "color", "description", "delete configuration"],
+      "questions": ["How do I rename a config?", "How do I delete a configuration?"],
+      "steps": [
+        "Right-click the configuration and choose **Customize Configuration**.",
+        "Change the name and description, click the avatar to pick an icon, and choose a color.",
+        "Click **Save Changes**.",
+        "To remove a configuration, right-click it and choose **Delete Configuration**."
+      ],
+      "related": ["cfg-create"],
+      "showMe": { "target": "configurations", "highlight": "configurations.list" }
+    },
+
+    {
+      "id": "clean-cache",
+      "category": "tools", "section": "cache",
+      "title": "Clean the game's caches",
+      "summary": "Clearing The Sims 3's cache files fixes many odd problems and old thumbnails.",
+      "keywords": ["cache", "caches", "clear cache", "clean", "cascache", "thumbnails cache", "temporary", "delete cache files"],
+      "questions": ["How do I clear the cache?", "Which cache files should I delete?", "Old CC still shows up"],
+      "steps": [
+        "Close The Sims 3.",
+        "Go to **Tools** → **Cache Cleaner**.",
+        "Click **Select Recommended**, or tick the caches you want.",
+        "Click **Clean Selected Caches**."
+      ],
+      "tips": ["Each cache explains when and why to clear it.", "To do this automatically after every change, turn on **Clear game caches after changes** in Settings → In-Game Performance."],
+      "related": ["game-slow", "cc-not-in-game"],
+      "showMe": { "target": "tools:Cache" }
+    },
+    {
+      "id": "fix-patterns",
+      "category": "tools", "section": "patterns",
+      "title": "Fix the 'Materializing Materials' stall",
+      "summary": "Broken custom patterns can make Create-a-Style hang. Pattern Fixer finds and repairs them.",
+      "keywords": ["pattern", "patterns", "materializing", "materialising", "create a style", "cast", "stall", "stuck", "reskey"],
+      "questions": ["Create a Style is stuck on Materializing Materials", "My patterns are broken", "CASt freezes"],
+      "steps": [
+        "Go to **Tools** → **Pattern Fixer**.",
+        "Click **Scan Patterns**.",
+        "Click **Fix All Broken**, or select patterns and click **Fix Selected Patterns**."
+      ],
+      "related": ["conflicts"],
+      "showMe": { "target": "tools:Patterns" }
+    },
+    {
+      "id": "collections",
+      "category": "tools", "section": "collections",
+      "title": "Create a Build/Buy collection",
+      "summary": "Turn your sets into in-game catalog collections with their own icon.",
+      "keywords": ["collection", "collections", "catalog", "build buy", "buy mode", "icon", "hide in catalog", "xml"],
+      "questions": ["How do I make a collection?", "Can I find my CC in one place in buy mode?", "How do I hide CC from the catalog?"],
+      "steps": [
+        "Go to **Tools** → **Collection Creator** and click **New Collection**.",
+        "Name it and pick an **In-Game Icon**, or use **Import PNG...** for your own.",
+        "Under **Add CC Sets**, click **+ Add** on the sets you want. Use **Include Items** to add single Build/Buy items without their whole set.",
+        "Save. Turn on **Hide objects in catalog** to show them only in this collection."
+      ],
+      "tips": ["Collections made outside PlumbobForge show up too. Saving one turns it into a PlumbobForge collection."],
+      "related": ["create-set"],
+      "showMe": { "target": "tools:Collections" }
+    },
+    {
+      "id": "conflicts",
+      "category": "tools", "section": "conflicts",
+      "title": "Find duplicate and conflicting CC",
+      "summary": "Conflict Scanner finds duplicate files, mods that override each other and damaged packages.",
+      "keywords": ["conflict", "conflicts", "duplicate", "duplicates", "override", "overrides", "incompatible", "corrupt", "broken package", "scan"],
+      "questions": ["Do I have duplicate CC?", "Which mods conflict?", "How do I find broken packages?"],
+      "steps": [
+        "Go to **Tools** → **Conflict Scanner** and click **Scan for Conflicts**.",
+        "Filter by **Duplicate Files**, **Resource Overrides**, **Incompatibilities** or **Corrupt Packages**.",
+        "Use **Disable Redundant Duplicates** to fix all duplicates in one click, or **Keep Only This** on a single group.",
+        "Use **Ignore Conflict** for overrides you want, such as a mod meant to replace another."
+      ],
+      "related": ["game-crash", "toggle-items"],
+      "showMe": { "target": "tools:Conflicts" }
+    },
+    {
+      "id": "mesh-report",
+      "category": "tools", "section": "meshes",
+      "title": "Find high-poly items in your whole library",
+      "summary": "Mesh Report counts the triangles of every CAS part and object and lists the heaviest first.",
+      "keywords": ["mesh", "mesh report", "triangles", "polygons", "poly count", "high poly", "heavy", "lag", "slow", "performance", "fps", "cas", "objects"],
+      "questions": ["Which of my CC is the heaviest?", "How do I make my game run faster?", "Can I see poly counts for everything?"],
+      "steps": [
+        "Go to **Tools** → **Mesh Report** and click **Count triangles**.",
+        "The list shows the **Heavy** items first. Choose **All** to see everything, or filter by CAS and Build / Buy.",
+        "Use **Look Inside** to switch an item off, or **View in Library** to remove it."
+      ],
+      "tips": ["Nothing is changed by the scan itself.", "Heavy is a rough guide: one heavy item matters less than hundreds of medium ones."],
+      "related": ["look-inside-triangles"],
+      "showMe": { "target": "tools:Meshes" }
+    },
+    {
+      "id": "pin-tool",
+      "category": "start", "section": "basics",
+      "title": "Pin a tool as a tab",
+      "summary": "Put the tools you use most right in the title bar.",
+      "keywords": ["pin", "tab", "shortcut", "title bar", "unpin"],
+      "questions": ["Can I add a tool to the top bar?"],
+      "steps": [
+        "Open **Tools** and open the tool list at the top.",
+        "Click the pin next to a tool (**Pin as a tab**).",
+        "Click it again to unpin."
+      ],
+      "related": ["quick-jump"],
+      "showMe": { "target": "tools" }
+    },
+
+    {
+      "id": "theme",
+      "category": "settings", "section": "appearance",
+      "title": "Change the theme and accent color",
+      "summary": "Dark, light or system theme, any accent color, or a theme built from your own color.",
+      "keywords": ["theme", "dark mode", "light mode", "accent", "color", "colour", "custom theme", "appearance", "look"],
+      "questions": ["How do I turn on dark mode?", "Can I change the colors?", "How do I make it pink?"],
+      "steps": [
+        "Go to **Settings** → **Appearance & Personalization**.",
+        "Pick a **Theme Mode**: Dark, Light or System.",
+        "Pick an **Accent Color** for buttons and highlights.",
+        "For your own palette, choose the **Custom Theme Generator**, enter a base color and adjust **Tint Strength**."
+      ],
+      "related": ["language"],
+      "showMe": { "target": "settings:Appearance" }
+    },
+    {
+      "id": "language",
+      "category": "settings", "section": "appearance",
+      "title": "Change the language",
+      "summary": "PlumbobForge is available in English and Polish.",
+      "keywords": ["language", "translation", "english", "polish", "polski"],
+      "questions": ["How do I change the language?"],
+      "steps": [
+        "Go to **Settings** → **Appearance & Personalization**.",
+        "Pick a **Language**. It changes right away."
+      ],
+      "related": ["theme"],
+      "showMe": { "target": "settings:Appearance" }
+    },
+    {
+      "id": "storage-mode",
+      "category": "settings", "section": "storage-mode",
+      "title": "Library mode or Vault mode?",
+      "summary": "Library mode keeps your original files and builds a cache. Vault mode stores everything once and needs no rebuilds.",
+      "keywords": ["vault", "library mode", "vault mode", "storage mode", "disk space", "switch to vault", "revert", "shards"],
+      "questions": ["What is Vault mode?", "How do I save disk space?", "How do I go back to Library mode?"],
+      "steps": [
+        "Go to **Settings** → **Storage Mode**.",
+        "**Library Mode** keeps your originals plus a cache for the game. It's stable and the default.",
+        "**Vault Mode** keeps one copy (about half the disk space) and switches configurations in seconds. It's still experimental.",
+        "Click **Switch to Vault Mode** and choose a backup option, or **Revert to Library Mode** to go back."
+      ],
+      "tips": ["In Vault mode, **Clean Up Wasted Disk Space** frees space from CC you've deleted or updated."],
+      "related": ["cache-mode", "rebuild"],
+      "showMe": { "target": "settings:Engine" }
+    },
+    {
+      "id": "cache-mode",
+      "category": "settings", "section": "storage-mode",
+      "title": "Dynamic Cache or Static Bundle?",
+      "summary": "Choose how Library mode builds the files the game loads.",
+      "keywords": ["dynamic cache", "static bundle", "cache generation", "auto rebuild", "loading performance"],
+      "questions": ["What's the difference between dynamic and static?", "Which cache mode is faster?"],
+      "steps": [
+        "Go to **Settings** → **Storage Mode** → **Cache Generation Mode**.",
+        "**Dynamic Cache** builds one cache per set: quick rebuilds and quick configuration changes.",
+        "**Static Bundle** merges all active sets into one bundle for faster loading in game, but every change needs a full rebuild.",
+        "With Static Bundle, **Auto-Rebuild Static Cache** rebuilds right after each change. Turn it off to make several changes first."
+      ],
+      "related": ["storage-mode", "rebuild", "game-slow"],
+      "showMe": { "target": "settings:Engine" }
+    },
+    {
+      "id": "recheck-types",
+      "category": "settings", "section": "maintenance",
+      "title": "Recheck package types",
+      "summary": "Reads every package again to refresh its type, CAS category, ages and genders.",
+      "keywords": ["recheck", "package types", "rescan", "redetect", "categories wrong", "reread"],
+      "questions": ["Lots of items have the wrong type", "How do I re-detect categories?"],
+      "steps": [
+        "Go to **Settings** → **Maintenance & Diagnostics**.",
+        "Click **Recheck Package Types**.",
+        "Keep **Skip packages that have manual user tags/overrides** ticked to keep the fixes you made yourself.",
+        "Click **Start Scan**."
+      ],
+      "related": ["edit-tags", "autofix"],
+      "showMe": { "target": "settings:Maintenance" }
+    },
+    {
+      "id": "autofix",
+      "category": "settings", "section": "maintenance",
+      "title": "Run the Auto-Fix routine",
+      "summary": "Repairs common problems in PlumbobForge's database and rebuilds everything.",
+      "keywords": ["auto fix", "autofix", "repair", "database", "fix library", "unassigned"],
+      "questions": ["Something is broken in my library", "Items have no set"],
+      "steps": [
+        "Close The Sims 3.",
+        "Go to **Settings** → **Maintenance & Diagnostics**.",
+        "Click **Run Auto-Fix Routine**. Items without a set move to Default, and every set is rebuilt."
+      ],
+      "related": ["recheck-types", "rebuild-fails"],
+      "showMe": { "target": "settings:Maintenance" }
+    },
+    {
+      "id": "game-paths",
+      "category": "settings", "section": "game-paths",
+      "title": "Set your game folders",
+      "summary": "Tell PlumbobForge where The Sims 3 and your user folder are.",
+      "keywords": ["path", "paths", "folder", "directory", "game folder", "documents", "electronic arts", "detect", "location", "install"],
+      "questions": ["PlumbobForge can't find my game", "Where is my Sims 3 folder set?", "I moved my game"],
+      "steps": [
+        "Go to **Settings** → **Storage & Paths**.",
+        "Check **The Sims 3 Directory** (where the game is installed).",
+        "Check **The Sims 3 User Documents Folder** (in Documents\\Electronic Arts). Leave it empty to detect it automatically.",
+        "Use **Browse...** to change one, or **Auto-Detect** to find it again."
+      ],
+      "related": ["move-library", "cc-not-in-game"],
+      "showMe": { "target": "settings:Storage" }
+    },
+    {
+      "id": "move-library",
+      "category": "settings", "section": "game-paths",
+      "title": "Move your library to another drive",
+      "summary": "Store your CC somewhere with more space.",
+      "keywords": ["move library", "library folder", "another drive", "disk", "space", "location"],
+      "questions": ["My C drive is full", "How do I move my CC to another drive?"],
+      "steps": [
+        "Go to **Settings** → **Storage & Paths**.",
+        "Next to **PlumbobForge Library Directory**, click **Browse...** and pick the new folder.",
+        "Choose **Move all files from current library to new path**, then **Confirm**."
+      ],
+      "related": ["game-paths", "storage-mode"],
+      "showMe": { "target": "settings:Storage" }
+    },
+
+    {
+      "id": "cc-not-in-game",
+      "category": "troubleshooting", "section": "game",
+      "title": "My CC doesn't show up in the game",
+      "summary": "Go through these checks one by one.",
+      "keywords": ["missing", "not showing", "doesn't show", "not in game", "invisible", "can't find in game", "not working", "not loading"],
+      "questions": ["My CC doesn't show in game", "I can't find my hair in CAS", "The mod isn't working", "Items are missing in buy mode"],
+      "steps": [
+        "Check the item is turned on in the Library, and that no object is turned off in **Look Inside**.",
+        "Check its set is under **Enabled Sets** in the active configuration.",
+        "In Library mode, close the game and click **Rebuild** if the button is orange.",
+        "Check your game folders in **Settings** → **Storage & Paths**.",
+        "Clean the caches with **Tools** → **Cache Cleaner**."
+      ],
+      "tips": ["Sims3Pack files may need the matching expansion or store content to show up."],
+      "related": ["rebuild", "cfg-sets", "clean-cache", "game-paths"],
+      "showMe": { "target": "configurations" }
+    },
+    {
+      "id": "game-crash",
+      "category": "troubleshooting", "section": "game",
+      "title": "The game crashes or won't load",
+      "summary": "Find what's causing it and narrow it down.",
+      "keywords": ["crash", "crashes", "won't load", "error", "freezes", "stuck loading", "black screen", "xcpt", "script error"],
+      "questions": ["My game crashes on load", "The game freezes", "Sims 3 won't start after adding CC"],
+      "steps": [
+        "Run **Tools** → **Conflict Scanner** and fix any **Corrupt Packages** and duplicates.",
+        "Clean the caches with **Tools** → **Cache Cleaner**.",
+        "Duplicate your configuration, disable the sets you added most recently, and test again to narrow it down.",
+        "Still crashing? Send a bug report with the bug button in the title bar and tick the Sims 3 logs."
+      ],
+      "related": ["conflicts", "clean-cache", "send-feedback"],
+      "showMe": { "target": "tools:Conflicts" }
+    },
+    {
+      "id": "game-slow",
+      "category": "troubleshooting", "section": "game",
+      "title": "The game is slow or takes long to load",
+      "summary": "A few settings and tools can speed things up.",
+      "keywords": ["slow", "lag", "loading", "performance", "fps", "long load", "loading screen", "optimise", "textures"],
+      "questions": ["The game takes forever to load", "My game lags with CC"],
+      "steps": [
+        "Remove duplicates with **Disable Redundant Duplicates** in the Conflict Scanner.",
+        "Try **Static Bundle** in **Settings** → **Storage Mode** for faster loading.",
+        "Turn on **Clear game caches after changes** in **Settings** → **In-Game Performance**.",
+        "Load fewer sets: make a lighter configuration with only what that save needs."
+      ],
+      "related": ["cache-mode", "conflicts", "clean-cache"],
+      "showMe": { "target": "settings:GamePerformance" }
+    },
+    {
+      "id": "old-thumbnails",
+      "category": "troubleshooting", "section": "game",
+      "title": "The game shows old or wrong thumbnails",
+      "summary": "The game keeps its own copies of thumbnails.",
+      "keywords": ["thumbnail", "thumbnails", "wrong picture", "old icon", "preview", "blank thumbnail"],
+      "questions": ["The thumbnail in game is wrong", "Thumbnails didn't update"],
+      "steps": [
+        "Close The Sims 3.",
+        "Go to **Tools** → **Cache Cleaner**, tick **Thumbnails Cache** and click **Clean Selected Caches**."
+      ],
+      "related": ["clean-cache", "look-inside-thumbnails"],
+      "showMe": { "target": "tools:Cache" }
+    },
+    {
+      "id": "rebuild-fails",
+      "category": "troubleshooting", "section": "app",
+      "title": "A rebuild fails or skips files",
+      "summary": "What to do when the rebuild stops or reports skipped packages.",
+      "keywords": ["rebuild failed", "skipped", "error", "game is running", "unreadable", "damaged", "rebuild error"],
+      "questions": ["Rebuild says the game is running", "Some files were skipped", "The rebuild failed"],
+      "steps": [
+        "Make sure The Sims 3 is fully closed, then try again.",
+        "Skipped files are usually damaged or incomplete downloads. Download them again or delete them.",
+        "Try **Force Rebuild** (right-click the Rebuild button).",
+        "Still failing? Run **Auto-Fix** in **Settings** → **Maintenance & Diagnostics**."
+      ],
+      "related": ["rebuild", "autofix", "conflicts"],
+      "showMe": { "target": "library", "highlight": "titlebar.rebuild" }
+    },
+    {
+      "id": "send-feedback",
+      "category": "troubleshooting", "section": "app",
+      "title": "Report a bug or ask a question",
+      "summary": "Send feedback straight from the app, with your logs if you want.",
+      "keywords": ["bug", "report", "feedback", "contact", "help", "question", "support", "suggestion", "idea"],
+      "questions": ["How do I report a bug?", "Who do I contact?", "I have an idea for a feature"],
+      "steps": [
+        "Click the **bug button** in the title bar.",
+        "Pick what it's about and describe what happened.",
+        "Leave your Tumblr username or email if you'd like a reply.",
+        "Keep the logs ticked for bugs. Your Windows username is removed from them."
+      ],
+      "related": ["game-crash"],
+      "showMe": { "target": "library", "highlight": "titlebar.feedback" }
+    }
+  ],
+
+  "synonyms": [
+    ["wrong", "incorrect", "misplaced", "mislabeled", "mislabelled", "weird", "bad"],
+    ["category", "type", "kind", "classified", "classification"],
+    ["hair", "hairstyle", "clothes", "clothing", "outfit", "top", "bottom", "shoes", "accessory", "makeup", "skin", "cas", "dress"],
+    ["cc", "mod", "mods", "package", "packages", "item", "items", "file", "files", "content", "download", "downloads"],
+    ["delete", "remove", "erase", "uninstall", "trash"],
+    ["disable", "deactivate", "hide", "off", "exclude"],
+    ["enable", "activate", "on", "include"],
+    ["crash", "crashes", "crashing", "freeze", "frozen", "hang", "error", "broken"],
+    ["slow", "lag", "laggy", "performance", "fps", "loading"],
+    ["missing", "disappeared", "gone", "invisible", "showing", "show"],
+    ["folder", "directory", "path", "location"],
+    ["thumbnail", "icon", "picture", "image", "preview"],
+    ["set", "group"],
+    ["folder", "set", "subfolder", "subset"],
+    ["configuration", "config", "profile", "loadout"],
+    ["color", "colour", "accent", "theme", "dark", "light"],
+    ["import", "add", "install", "drop"],
+    ["duplicate", "copy", "copies", "double", "twice"],
+    ["tag", "label"],
+    ["search", "find", "look", "filter"],
+    ["rebuild", "apply", "sync"],
+    ["cache", "temp", "temporary"],
+    ["stall", "stuck", "materializing", "materialising"],
+    ["language", "translation", "polish", "english"],
+    ["vault", "disk", "space"],
+    ["favorite", "favourite", "star"],
+    ["object", "furniture", "buy", "build", "decor"]
+  ],
+
+  "stopwords": [
+    "my", "is", "the", "an", "to", "in", "under", "of", "it", "its", "it's", "and", "or", "how", "do", "does", "did",
+    "can", "could", "what", "why", "where", "when", "which", "this", "that", "these", "those", "there", "are", "be",
+    "with", "for", "from", "me", "you", "your", "im", "at", "as", "by", "get", "want", "wanna", "help", "please",
+    "some", "just", "into", "about", "was", "were", "has", "have", "been", "not", "don't", "dont", "doesn't", "doesnt",
+    "won't", "wont", "isn't", "isnt", "can't", "cant", "should", "would", "will", "keep", "keeps", "still", "now", "anymore", "all"
+  ]
+}

@@ -1,0 +1,718 @@
+{
+  "categories": [
+    {
+      "id": "start", "title": "Pierwsze kroki",
+      "description": "Podstawy: dodawanie CC i przenoszenie go do gry.",
+      "sections": [ { "id": "basics", "title": "Podstawy" }, { "id": "import", "title": "Dodawanie CC" } ]
+    },
+    {
+      "id": "library", "title": "Biblioteka",
+      "description": "Porządkuj, wyszukuj i przeglądaj wszystko, co dodałeś.",
+      "sections": [
+        { "id": "sets", "title": "Zestawy" },
+        { "id": "items", "title": "Przedmioty" },
+        { "id": "filters", "title": "Filtry" },
+        { "id": "tags", "title": "Tagi i kategorie" },
+        { "id": "look-inside", "title": "Zajrzyj do środka" }
+      ]
+    },
+    {
+      "id": "configurations", "title": "Konfiguracje",
+      "description": "Wybierz, które zestawy wczytuje gra, osobno dla każdego zapisu lub stylu gry.",
+      "sections": [
+        { "id": "basics", "title": "Tworzenie i przełączanie" },
+        { "id": "sets", "title": "Wybór zestawów" },
+        { "id": "items", "title": "Pojedyncze przedmioty" },
+        { "id": "customize", "title": "Dostosowywanie" }
+      ]
+    },
+    {
+      "id": "tools", "title": "Narzędzia",
+      "description": "Dbaj o to, by gra działała szybko i bez problemów.",
+      "sections": [
+        { "id": "cache", "title": "Czyszczenie pamięci podręcznej" },
+        { "id": "patterns", "title": "Naprawa wzorców" },
+        { "id": "collections", "title": "Kreator kolekcji" },
+        { "id": "conflicts", "title": "Skaner konfliktów" },
+        { "id": "meshes", "title": "Raport siatek" }
+      ]
+    },
+    {
+      "id": "settings", "title": "Ustawienia",
+      "description": "Dopasuj wygląd i działanie PlumbobForge do siebie.",
+      "sections": [
+        { "id": "appearance", "title": "Wygląd" },
+        { "id": "storage-mode", "title": "Tryb przechowywania" },
+        { "id": "maintenance", "title": "Diagnostyka" },
+        { "id": "game-paths", "title": "Ścieżki gry" }
+      ]
+    },
+    {
+      "id": "troubleshooting", "title": "Rozwiązywanie problemów",
+      "description": "Coś nie działa? Zacznij tutaj.",
+      "sections": [ { "id": "game", "title": "W grze" }, { "id": "app", "title": "W PlumbobForge" } ]
+    }
+  ],
+
+  "articles": [
+    {
+      "id": "how-it-works",
+      "title": "Jak działa PlumbobForge",
+      "summary": "Twoje CC jest w Bibliotece, podzielone na zestawy. Konfiguracja decyduje, które zestawy wczytuje gra.",
+      "keywords": ["podstawy", "jak to działa", "wprowadzenie", "start", "zestaw", "konfiguracja"],
+      "questions": ["Jak działa ten program?", "Od czego zacząć?", "Co to jest zestaw?", "Co to jest konfiguracja?"],
+      "steps": [
+        "Dodaj CC w karcie **Biblioteka**. Każdy plik staje się przedmiotem.",
+        "Grupuj przedmioty w **zestawy**, jak w foldery: według twórcy, stylu lub rodzaju.",
+        "W **Konfiguracjach** wybierz, które zestawy ma wczytywać gra. Aktywna konfiguracja to ta, z którą grasz.",
+        "W trybie biblioteki kliknij przycisk **Przebuduj** na pasku tytułu, aby przenieść zmiany do gry. W trybie skarbca zmiany działają same."
+      ],
+      "tips": ["Naciśnij **Ctrl+K**, aby przejść do dowolnego zestawu, przedmiotu lub konfiguracji po nazwie."]
+    },
+    {
+      "id": "import-cc",
+      "title": "Dodaj CC do biblioteki",
+      "summary": "Przeciągnij pobrane pliki do Biblioteki, a trafią do zaznaczonego zestawu.",
+      "keywords": ["import", "dodaj", "zainstaluj", "przeciągnij", "upuść", "pakiet", "sims3pack", "zip", "rar", "7z", "pobrane"],
+      "questions": ["Jak dodać CC?", "Jak zainstalować mody?", "Czy mogę zaimportować plik zip?", "Gdzie trafiają pobrane pliki?"],
+      "steps": [
+        "Otwórz kartę **Biblioteka**.",
+        "Zaznacz zestaw, do którego mają trafić nowe przedmioty. Możesz to też zrobić później przez **Przenieś do zestawu**.",
+        "Przeciągnij pliki z Eksploratora na siatkę przedmiotów. Działają pliki **.package**, **.sims3pack**, **.zip**, **.7z** i **.rar**, a archiwa są rozpakowywane automatycznie.",
+        "Jeśli niektóre pliki są już w bibliotece, wybierz, czy je **zachować oba**, **zastąpić** czy **pominąć**."
+      ],
+      "tips": ["Archiwum może zawierać wiele pakietów. Każdy z nich staje się osobnym przedmiotem."]
+    },
+    {
+      "id": "monitored-folders",
+      "title": "Automatyczny import nowego CC",
+      "summary": "PlumbobForge może obserwować folder, np. Pobrane, i importować z niego nowe pakiety.",
+      "keywords": ["monitorowane foldery", "obserwuj", "automatyczny import", "automatycznie", "folder pobranych", "skanuj"],
+      "questions": ["Czy program może sam importować pobrane pliki?", "Jak obserwować folder?"],
+      "steps": [
+        "Przejdź do **Ustawienia** → **Monitorowane foldery i automatyczny import**.",
+        "Kliknij **Dodaj folder** i wybierz folder, do którego pobierasz CC.",
+        "Włącz **Automatyczny import przy uruchomieniu**, aby sprawdzać go przy każdym starcie PlumbobForge.",
+        "Albo kliknij **Skanuj i importuj teraz**, aby zaimportować od razu."
+      ]
+    },
+    {
+      "id": "migrate",
+      "title": "Przenieś się z CC Magic lub Sims 3 Mod Organizer",
+      "summary": "Przenieś pakiety, zestawy i konfiguracje z innego menedżera CC.",
+      "keywords": ["migracja", "przenieś", "cc magic", "s3mo", "mod organizer", "zmiana menedżera"],
+      "questions": ["Wcześniej używałam CC Magic", "Jak zaimportować z S3MO?", "Czy mogę zachować stare zestawy?"],
+      "steps": [
+        "Przejdź do **Ustawienia** → **Diagnostyka** i kliknij **Otwórz narzędzie migracji**.",
+        "Wybierz **CC Magic** lub **Sims 3 Mod Organizer** i sprawdź folder instalacji.",
+        "Wybierz **pełną migrację**, aby przenieść też zestawy i konfiguracje, lub **prostą migrację**, aby przenieść tylko pakiety.",
+        "Kliknij **Rozpocznij migrację** i poczekaj, aż się zakończy."
+      ]
+    },
+    {
+      "id": "rebuild",
+      "title": "Przenieś zmiany do gry",
+      "summary": "W trybie biblioteki gra widzi zmiany dopiero po przebudowie.",
+      "keywords": ["przebuduj", "przebudowa", "zastosuj", "synchronizuj", "odśwież", "oczekujące", "pomarańczowy", "wymuś przebudowę"],
+      "questions": ["Moje zmiany nie widać w grze", "Co oznacza pomarańczowy przycisk?", "Jak zastosować zmiany?"],
+      "steps": [
+        "Gdy coś się zmieni, przycisk **Przebuduj** na pasku tytułu (okrągłe strzałki) zmienia kolor na pomarańczowy.",
+        "Zamknij The Sims 3. Gra trzyma pliki pamięci podręcznej otwarte, więc przebudowa nie zadziała, gdy jest włączona.",
+        "Kliknij **Przebuduj** i poczekaj do końca.",
+        "Jeśli coś nadal jest nie tak, kliknij przycisk prawym przyciskiem i wybierz **Wymuś przebudowę**, aby zbudować wszystko od nowa."
+      ],
+      "tips": ["W trybie skarbca nie ma czego przebudowywać: pasek tytułu pokazuje wtedy stan skarbca."]
+    },
+    {
+      "id": "quick-jump",
+      "title": "Szybki skok w dowolne miejsce",
+      "summary": "Znajdź zestaw, przedmiot, konfigurację lub stronę, wpisując nazwę.",
+      "keywords": ["szybki skok", "ctrl+k", "skrót", "klawiatura", "przejdź do"],
+      "questions": ["Czy jest skrót do wyszukiwania?", "Jak szybko znaleźć zestaw?"],
+      "steps": [
+        "Naciśnij **Ctrl+K** lub kliknij **Szybki skok** na pasku tytułu.",
+        "Zacznij wpisywać nazwę.",
+        "Wybierz wynik strzałkami i naciśnij **Enter** lub kliknij go."
+      ]
+    },
+    {
+      "id": "pin-tool",
+      "title": "Przypnij narzędzie jako kartę",
+      "summary": "Umieść najczęściej używane narzędzia na pasku tytułu.",
+      "keywords": ["przypnij", "karta", "skrót", "pasek tytułu", "odepnij"],
+      "questions": ["Czy mogę dodać narzędzie na górny pasek?"],
+      "steps": [
+        "Otwórz **Narzędzia** i rozwiń listę narzędzi na górze.",
+        "Kliknij pinezkę obok narzędzia (**Przypnij jako kartę**).",
+        "Kliknij ją ponownie, aby odpiąć."
+      ]
+    },
+
+    {
+      "id": "create-set",
+      "title": "Utwórz zestaw lub podzestaw",
+      "summary": "Zestawy działają jak foldery na CC. Można je też zagnieżdżać.",
+      "keywords": ["nowy zestaw", "utwórz zestaw", "podzestaw", "folder", "grupa", "zagnieżdż"],
+      "questions": ["Jak zrobić nowy zestaw?", "Czy mogę włożyć zestaw do innego zestawu?", "Jak zrobić foldery?"],
+      "steps": [
+        "W **Bibliotece** kliknij **+** na górze panelu zestawów po lewej (**Nowy zestaw**).",
+        "Wpisz nazwę i zatwierdź.",
+        "Aby zagnieździć zestaw, kliknij istniejący zestaw prawym przyciskiem i wybierz **Dodaj podzestaw**."
+      ],
+      "tips": ["Wyłączenie zestawu w konfiguracji wyłącza też jego podzestawy."]
+    },
+    {
+      "id": "customize-set",
+      "title": "Nadaj zestawowi ikonę i kolor",
+      "summary": "Dzięki temu łatwiej odróżnić zestawy w panelu.",
+      "keywords": ["dostosuj zestaw", "ikona", "kolor", "zmień nazwę zestawu", "sortuj zestawy", "zmień nazwę folderu", "kolor folderu", "ikona folderu"],
+      "questions": ["Jak zmienić kolor zestawu?", "Czy mogę zmienić nazwę zestawu?", "Jak posortować zestawy?", "Jak zmienić nazwę folderu?"],
+      "steps": [
+        "Kliknij zestaw w panelu prawym przyciskiem i wybierz **Dostosuj zestaw**.",
+        "Kliknij awatar, aby wybrać ikonę, i wybierz kolor.",
+        "Zmień nazwę na górze i kliknij **Zapisz zmiany**.",
+        "Kolejność zmienisz przyciskiem sortowania na górze panelu (nazwa, ostatnio dodane lub liczba przedmiotów)."
+      ]
+    },
+    {
+      "id": "move-items",
+      "title": "Przenieś przedmioty do innego zestawu",
+      "summary": "Przeciągnij przedmioty na zestaw albo użyj Przenieś do zestawu.",
+      "keywords": ["przenieś", "przenieś do zestawu", "przeciągnij", "porządkuj", "uporządkuj", "przenieś do folderu", "wrzuć do folderu"],
+      "questions": ["Jak przenosić CC między zestawami?", "Jak wrzucić przedmioty do zestawu?", "Jak przenieść pliki do folderu?"],
+      "steps": [
+        "Zaznacz przedmioty (zobacz **Zaznacz kilka przedmiotów naraz**).",
+        "Przeciągnij je na zestaw w panelu.",
+        "Albo kliknij **Przenieś do zestawu** na pasku nad przedmiotami i wybierz zestaw."
+      ],
+      "tips": ["Gdy przenosisz zestaw tam, gdzie jest już zestaw o tej samej nazwie, możesz je połączyć albo zmienić nazwę przenoszonego."]
+    },
+    {
+      "id": "delete-set",
+      "title": "Usuń zestaw",
+      "summary": "Usuń zestaw i zdecyduj, co stanie się z jego przedmiotami.",
+      "keywords": ["usuń zestaw", "skasuj zestaw", "usuń folder", "skasuj folder"],
+      "questions": ["Jak usunąć zestaw bez utraty CC?", "Jak usunąć folder?", "Jak usunąć folder bez kasowania CC?"],
+      "steps": [
+        "Kliknij zestaw prawym przyciskiem i wybierz **Usuń**.",
+        "Wybierz, czy zachować przedmioty i przenieść je do zestawu Domyślny, czy usunąć pakiety razem z zestawem.",
+        "Kliknij **Usuń zestaw**. Podzestawy przechodzą na najwyższy poziom."
+      ]
+    },
+
+    {
+      "id": "select-items",
+      "title": "Zaznacz kilka przedmiotów naraz",
+      "summary": "Większość działań dotyczy wszystkiego, co zaznaczysz.",
+      "keywords": ["zaznacz", "wiele", "zaznacz wszystko", "ctrl", "shift", "masowo", "hurtowo"],
+      "questions": ["Jak zaznaczyć więcej niż jeden przedmiot?", "Czy mogę edytować wiele przedmiotów naraz?"],
+      "steps": [
+        "Kliknij przedmiot, aby go zaznaczyć.",
+        "Przytrzymaj **Ctrl** i klikaj, aby dodawać lub usuwać przedmioty, albo **Shift**, aby zaznaczyć zakres.",
+        "Przeciągnij prostokąt w pustym miejscu, aby zaznaczyć wszystko w środku.",
+        "**Zaznacz wszystko** na pasku narzędzi zaznacza wszystkie widoczne przedmioty."
+      ],
+      "tips": ["Kliknij zaznaczenie prawym przyciskiem, aby zobaczyć, co możesz z nim zrobić."]
+    },
+    {
+      "id": "toggle-items",
+      "title": "Włącz lub wyłącz przedmioty",
+      "summary": "Wyłączone przedmioty zostają w bibliotece, ale gra ich nie wczytuje.",
+      "keywords": ["włącz", "wyłącz", "przełącz", "dezaktywuj", "ukryj przed grą"],
+      "questions": ["Jak wyłączyć moda bez usuwania?", "Jak wyłączyć CC?"],
+      "steps": [
+        "Zaznacz przedmioty.",
+        "Kliknij **Przełącz zaznaczone** na pasku narzędzi lub wybierz to z menu pod prawym przyciskiem.",
+        "W trybie biblioteki **przebuduj**, aby zmiana zadziałała w grze."
+      ],
+      "tips": ["Aby wyłączyć tylko jeden obiekt w pakiecie, użyj **Zajrzyj do środka**.", "Aby włączać lub wyłączać przedmioty tylko w jednej konfiguracji, użyj **Uwzględnij** i **Wyklucz** w Konfiguracjach."]
+    },
+    {
+      "id": "favorites",
+      "title": "Oznacz ulubione",
+      "summary": "Oznacz gwiazdką przedmioty, które lubisz, aby łatwo je znaleźć.",
+      "keywords": ["ulubione", "gwiazdka", "ulubione na początku"],
+      "questions": ["Jak dodać przedmiot do ulubionych?", "Gdzie są moje ulubione?"],
+      "steps": [
+        "Najedź na przedmiot i kliknij **gwiazdkę**, albo zaznacz kilka i kliknij ulubione na pasku narzędzi.",
+        "Otwórz **Ulubione** w panelu zestawów, aby zobaczyć je wszystkie.",
+        "W menu **Sortuj** opcja **Ulubione na początku** trzyma je na górze każdego zestawu."
+      ]
+    },
+    {
+      "id": "delete-items",
+      "title": "Usuń przedmioty",
+      "summary": "Usuń CC z biblioteki na dobre.",
+      "keywords": ["usuń", "skasuj", "odinstaluj", "kosz"],
+      "questions": ["Jak usunąć CC?", "Jak odinstalować moda?"],
+      "steps": [
+        "Zaznacz przedmioty.",
+        "Kliknij usuwanie na pasku narzędzi lub w menu pod prawym przyciskiem.",
+        "Potwierdź. Pliki trafią do Kosza, chyba że zaznaczysz trwałe usunięcie."
+      ],
+      "tips": ["Nie masz pewności? Wyłącz przedmioty zamiast je usuwać. Zawsze możesz je włączyć z powrotem."]
+    },
+    {
+      "id": "item-view",
+      "title": "Zmień sposób wyświetlania przedmiotów",
+      "summary": "Przełączaj między siatką a listą, zmieniaj rozmiar miniatur i sortowanie.",
+      "keywords": ["siatka", "lista", "kompaktowa", "widok", "powiększenie", "rozmiar miniatur", "sortuj", "układ"],
+      "questions": ["Jak powiększyć miniatury?", "Czy mogę widzieć przedmioty jako listę?"],
+      "steps": [
+        "Przyciskami widoku na pasku narzędzi przełączasz między **siatką** a **kompaktową listą**.",
+        "Suwak powiększenia zmienia rozmiar kart.",
+        "W menu **Sortuj** ustawisz kolejność według nazwy lub daty dodania."
+      ]
+    },
+
+    {
+      "id": "filters",
+      "title": "Wyszukuj przedmioty filtrami",
+      "summary": "Zawęź bibliotekę według typu, kategorii, wieku, pomieszczenia i więcej.",
+      "keywords": ["filtr", "filtry", "szukaj", "znajdź", "wiek", "płeć", "pomieszczenie", "funkcja", "cena", "strój", "typ"],
+      "questions": ["Jak znaleźć wszystkie fryzury?", "Jak pokazać tylko przedmioty z trybu budowania?", "Jak przeszukać moje CC?", "Pokaż tylko ubrania dla nastolatków"],
+      "steps": [
+        "Otwórz panel **Filtry** po prawej stronie Biblioteki.",
+        "Wpisz coś w pole wyszukiwania, aby szukać po nazwach i tagach.",
+        "Wybierz typ (**CAS**, **Kup / Buduj** lub **Inne**), aby zobaczyć jego filtry, np. kategorię CAS, wiek, płeć, pomieszczenie czy funkcję.",
+        "Kliknij **Wyczyść wszystko**, aby zacząć od nowa."
+      ],
+      "tips": ["Filtry działają razem, więc Włosy + Nastolatek + Kobieta pokaże tylko fryzury dla nastolatek."]
+    },
+
+    {
+      "id": "edit-tags",
+      "title": "Popraw kategorię lub tagi przedmiotu",
+      "summary": "Jeśli coś jest w złej kategorii, wieku lub pomieszczeniu, popraw to w oknie Edytuj tagi i kategorie.",
+      "keywords": ["edytuj tagi", "kategoria", "kategorie", "zła kategoria", "wiek", "płeć", "strój", "pomieszczenie", "funkcja", "źle przypisane"],
+      "questions": ["Moje włosy są w złej kategorii", "Ten przedmiot pokazuje się w złym miejscu", "Wiek lub płeć się nie zgadza", "Jak zmienić kategorię przedmiotu?"],
+      "steps": [
+        "Zaznacz przedmiot lub kilka naraz.",
+        "Kliknij prawym przyciskiem i wybierz **Edytuj tagi i kategorie**, albo kliknij przycisk tagu na karcie przedmiotu.",
+        "Popraw kategorię, grupę wiekową, płeć lub kategorię stroju. Dla przedmiotów Kup/Buduj ustaw pomieszczenie i funkcję.",
+        "Kliknij **Zastosuj zmiany**."
+      ],
+      "tips": ["Zmienia to sposób sortowania i filtrowania w PlumbobForge. Sam plik pakietu się nie zmienia.", "Przy **Sprawdź ponownie typy plików** zostaw zaznaczone pomijanie pakietów z ręcznymi tagami, aby zachować swoje poprawki."]
+    },
+    {
+      "id": "custom-tags",
+      "title": "Używaj własnych tagów",
+      "summary": "Taguj przedmioty czymkolwiek chcesz, np. twórcą, stylem lub epoką, i filtruj po tym.",
+      "keywords": ["tagi", "własne tagi", "tagi użytkownika", "etykieta", "twórca", "styl"],
+      "questions": ["Czy mogę tagować przedmioty według twórcy?", "Jak dodać własne tagi?", "Jak filtrować po tagu?"],
+      "steps": [
+        "Zaznacz przedmioty, kliknij prawym przyciskiem i wybierz **Edytuj tagi i kategorie**.",
+        "Wpisz tagi w polu **Własne tagi użytkownika**, oddzielone przecinkami (np. Simsimi, Wiktoriański).",
+        "Kliknij **Zastosuj zmiany**.",
+        "Znajdziesz je potem wpisując tag w wyszukiwarkę."
+      ]
+    },
+
+    {
+      "id": "look-inside",
+      "title": "Zajrzyj do środka przedmiotu",
+      "summary": "Zobacz wszystkie części CAS, obiekty i miniatury w pakiecie.",
+      "keywords": ["zajrzyj do środka", "zawartość", "sprawdź", "obiekty", "części cas", "szczegóły", "co jest w środku"],
+      "questions": ["Co jest w tym pakiecie?", "Jak zobaczyć obiekty w pliku?"],
+      "steps": [
+        "Zaznacz jeden lub więcej przedmiotów.",
+        "Kliknij prawym przyciskiem i wybierz **Zajrzyj do środka**.",
+        "Wybierz obiekt po lewej, aby zobaczyć jego szczegóły i miniatury.",
+        "Przy kilku przedmiotach przełączaj się między nimi na górze albo oglądaj wszystkie razem."
+      ]
+    },
+    {
+      "id": "look-inside-objects",
+      "title": "Wyłącz pojedyncze obiekty",
+      "summary": "Wyłącz jeden obiekt lub część CAS bez wyłączania całego pakietu.",
+      "keywords": ["wyłącz obiekt", "w grze", "ukryj obiekt", "pojedynczy obiekt", "część pakietu", "dostępne losowo", "mieszkańcy", "losowe simy"],
+      "questions": ["Chcę tylko jeden przedmiot z tego zestawu", "Jak ukryć jeden obiekt z pakietu?", "Jak sprawić, żeby mieszkańcy tego nie nosili?"],
+      "steps": [
+        "Otwórz przedmiot przez **Zajrzyj do środka**.",
+        "Wybierz obiekt i wyłącz **W grze**. **Wyłącz wszystkie** wyłącza każdy obiekt naraz.",
+        "Dla części CAS wyłącz **Dostępne losowo**, aby gra nie zakładała ich mieszkańcom i noworodkom.",
+        "Zamknij The Sims 3, zapisz zmiany, a w trybie biblioteki **przebuduj**."
+      ],
+      "tips": ["Plik pakietu się nie zmienia. Wyłączone obiekty Kup/Buduj znikają z parceli, na których stały."]
+    },
+    {
+      "id": "look-inside-thumbnails",
+      "title": "Zmień lub wyeksportuj miniatury",
+      "summary": "Zastępuj, usuwaj, dodawaj lub zapisuj miniatury w pakiecie.",
+      "keywords": ["miniatura", "miniatury", "podgląd", "ikona", "obrazek", "zdjęcie", "zastąp miniaturę", "eksportuj miniaturę"],
+      "questions": ["Jak zmienić miniaturę?", "Czy mogę zapisać obrazki podglądu?", "Miniatura jest brzydka"],
+      "steps": [
+        "Otwórz przedmiot przez **Zajrzyj do środka** i wybierz obiekt.",
+        "Pod miniaturami użyj **Zastąp...**, **Usuń** lub **Dodaj miniatury...**. Działają PNG, JPG, BMP, WebP i GIF.",
+        "**Eksportuj...** zapisuje je jako obrazy.",
+        "Zamknij The Sims 3 i zapisz zmiany."
+      ],
+      "tips": ["Nadal widzisz starą miniaturę w grze? Wyczyść **pamięć miniatur** w Narzędzia → Czyszczenie pamięci podręcznej."]
+    },
+    {
+      "id": "look-inside-triangles",
+      "title": "Sprawdź, ile trójkątów ma przedmiot",
+      "summary": "Zajrzyj do środka liczy trójkąty części CAS i obiektów Buduj/Kupuj, więc łatwo znajdziesz te, które spowalniają grę.",
+      "keywords": ["trójkąty", "wielokąty", "poligony", "liczba poligonów", "ciężki", "lag", "wolno", "wydajność", "siatka", "wierzchołki", "lod", "geom"],
+      "questions": ["Ile poligonów ma ten przedmiot?", "Które CC powoduje lagi?", "Jak znaleźć ciężkie CC?"],
+      "steps": [
+        "Otwórz przedmiot przez **Zajrzyj do środka**. Każdy obiekt ma na liście liczbę trójkątów, a duże dostają znacznik **Ciężki**.",
+        "Wybierz obiekt, aby zobaczyć kartę **Rozmiar siatki**: trójkąty, wierzchołki i wszystkie poziomy szczegółowości.",
+        "**Najcięższe najpierw** sortuje według rozmiaru, a **Ciężkich** pokazuje tylko ciężkie.",
+        "W zakładce **Wszystkie elementy** wyłączaj najcięższe obiekty przełącznikami."
+      ],
+      "tips": ["Trójkąty liczone są z najbardziej szczegółowego poziomu. Ciężki to orientacyjna wskazówka, nie limit.", "Przedmioty używające siatki z samej gry są tak oznaczone, bo nie ma czego liczyć.", "Aby sprawdzić całą bibliotekę naraz, użyj Narzędzia → Raport siatek."]
+    },
+
+    {
+      "id": "cfg-create",
+      "title": "Utwórz konfigurację",
+      "summary": "Konfiguracja to lista zestawów, które wczytuje gra: jedna na zapis, styl gry lub testy.",
+      "keywords": ["nowa konfiguracja", "utwórz konfigurację", "konfig", "profil", "duplikuj konfigurację"],
+      "questions": ["Jak zrobić nową konfigurację?", "Czy mogę mieć inne CC w różnych zapisach?", "Jak skopiować konfigurację?"],
+      "steps": [
+        "Otwórz kartę **Konfiguracje**.",
+        "Kliknij **+** na górze listy (**Nowa konfiguracja**).",
+        "Wybierz, które zestawy ma wczytywać (zobacz **Wybierz zestawy dla konfiguracji**).",
+        "Aby zacząć od istniejącej, kliknij ją prawym przyciskiem i wybierz **Duplikuj konfigurację**."
+      ]
+    },
+    {
+      "id": "cfg-activate",
+      "title": "Przełącz na inną konfigurację",
+      "summary": "Gra wczytuje aktywną konfigurację.",
+      "keywords": ["aktywna", "ustaw jako aktywną", "przełącz konfigurację", "zmień konfigurację", "aktywuj"],
+      "questions": ["Jak zmienić konfigurację używaną przez grę?", "Jak przełączać konfiguracje?"],
+      "steps": [
+        "Zamknij The Sims 3.",
+        "W **Konfiguracjach** kliknij konfigurację prawym przyciskiem i wybierz **Ustaw jako aktywną**.",
+        "Poczekaj, aż zostanie zastosowana. Aktywna ma plakietkę **AKTYWNA**."
+      ]
+    },
+    {
+      "id": "cfg-sets",
+      "title": "Wybierz zestawy dla konfiguracji",
+      "summary": "Przenoś zestawy między Włączone zestawy i Wyłączone zestawy.",
+      "keywords": ["włączone zestawy", "wyłączone zestawy", "włącz zestaw", "wyłącz zestaw", "przeciągnij", "zamień zestawy"],
+      "questions": ["Jak wyłączyć zestaw dla jednego zapisu?", "Jak włączyć zestaw w konfiguracji?"],
+      "steps": [
+        "Wybierz konfigurację w **Konfiguracjach**.",
+        "Przeciągaj zestawy między **Włączone zestawy** a **Wyłączone zestawy**.",
+        "Albo zaznacz zestawy i użyj strzałek między listami (**Zamień zestawy**).",
+        "Pole wyszukiwania nad każdą listą pomoże znaleźć zestaw po nazwie."
+      ],
+      "tips": ["Wyłączenie zestawu wyłącza też jego podzestawy."]
+    },
+    {
+      "id": "cfg-items",
+      "title": "Uwzględnij lub wyklucz pojedyncze przedmioty",
+      "summary": "Wczytaj jeden przedmiot z wyłączonego zestawu albo pomiń jeden z włączonego, tylko w tej konfiguracji.",
+      "keywords": ["uwzględnij", "wyklucz", "pojedynczy przedmiot", "jeden przedmiot", "elementy na początku", "wyjątek"],
+      "questions": ["Chcę jeden przedmiot z wyłączonego zestawu", "Jak pominąć jeden przedmiot z zestawu?"],
+      "steps": [
+        "Wybierz konfigurację.",
+        "Kliknij **Uwzględnij** nad Włączonymi zestawami, aby wybrać przedmioty wczytywane mimo wyłączonego zestawu.",
+        "Kliknij **Wyklucz** nad Wyłączonymi zestawami, aby wybrać przedmioty pomijane mimo włączonego zestawu.",
+        "Aby cofnąć, usuń przedmiot z listy, a znowu będzie podążał za swoim zestawem."
+      ],
+      "tips": ["Włącz **Elementy na początku**, aby widzieć te przedmioty nad zestawami."]
+    },
+    {
+      "id": "cfg-customize",
+      "title": "Zmień nazwę lub wygląd konfiguracji",
+      "summary": "Nadaj konfiguracji nazwę, opis, ikonę i kolor.",
+      "keywords": ["dostosuj konfigurację", "zmień nazwę konfiguracji", "ikona", "kolor", "opis", "usuń konfigurację"],
+      "questions": ["Jak zmienić nazwę konfiguracji?", "Jak usunąć konfigurację?"],
+      "steps": [
+        "Kliknij konfigurację prawym przyciskiem i wybierz **Dostosuj konfigurację**.",
+        "Zmień nazwę i opis, kliknij awatar, aby wybrać ikonę, i wybierz kolor.",
+        "Kliknij **Zapisz zmiany**.",
+        "Aby usunąć konfigurację, kliknij ją prawym przyciskiem i wybierz usuwanie."
+      ]
+    },
+
+    {
+      "id": "clean-cache",
+      "title": "Wyczyść pamięć podręczną gry",
+      "summary": "Czyszczenie plików pamięci podręcznej The Sims 3 naprawia wiele dziwnych problemów i stare miniatury.",
+      "keywords": ["pamięć podręczna", "cache", "wyczyść cache", "wyczyść", "cascache", "pamięć miniatur", "pliki tymczasowe"],
+      "questions": ["Jak wyczyścić cache?", "Które pliki cache usunąć?", "Stare CC nadal się pokazuje"],
+      "steps": [
+        "Zamknij The Sims 3.",
+        "Przejdź do **Narzędzia** → **Czyszczenie pamięci podręcznej**.",
+        "Kliknij **Zaznacz zalecane** albo wybierz pamięci samodzielnie.",
+        "Kliknij **Wyczyść zaznaczone**."
+      ],
+      "tips": ["Przy każdej pamięci jest opis, kiedy i po co ją czyścić.", "Aby robić to automatycznie po każdej zmianie, włącz **Czyść pamięć podręczną gry po zmianach** w Ustawienia → Wydajność w grze."]
+    },
+    {
+      "id": "fix-patterns",
+      "title": "Napraw zawieszanie na „Materializing Materials”",
+      "summary": "Uszkodzone wzorce mogą zawiesić Twórz styl. Naprawa wzorców je znajduje i naprawia.",
+      "keywords": ["wzorzec", "wzorce", "materializing", "materializowanie", "twórz styl", "cast", "zawiesza", "utknęło"],
+      "questions": ["Twórz styl zawiesza się na Materializing Materials", "Moje wzorce są uszkodzone", "CASt się zacina"],
+      "steps": [
+        "Przejdź do **Narzędzia** → **Naprawa wzorców**.",
+        "Kliknij **Skanuj wzorce**.",
+        "Kliknij **Napraw wszystkie uszkodzone** albo zaznacz wzorce i napraw tylko je."
+      ]
+    },
+    {
+      "id": "collections",
+      "title": "Utwórz kolekcję Kup/Buduj",
+      "summary": "Zamień swoje zestawy w kolekcje w katalogu gry z własną ikoną.",
+      "keywords": ["kolekcja", "kolekcje", "katalog", "kup buduj", "tryb kupowania", "ikona", "ukryj w katalogu", "xml"],
+      "questions": ["Jak zrobić kolekcję?", "Czy mogę mieć swoje CC w jednym miejscu w trybie kupowania?", "Jak ukryć CC w katalogu?"],
+      "steps": [
+        "Przejdź do **Narzędzia** → **Kreator kolekcji** i kliknij **Nowa kolekcja**.",
+        "Nadaj jej nazwę i wybierz ikonę w grze albo użyj **Importuj PNG...** dla własnej.",
+        "W **Dodaj zestawy CC** kliknij **+ Dodaj** przy wybranych zestawach. **Dołącz przedmioty** dodaje pojedyncze przedmioty Kup/Buduj bez całego zestawu.",
+        "Zapisz. Włącz **Ukryj obiekty w katalogu**, aby pokazywały się tylko w tej kolekcji."
+      ],
+      "tips": ["Kolekcje utworzone poza PlumbobForge też się pojawią. Zapisanie takiej zamienia ją w kolekcję PlumbobForge."]
+    },
+    {
+      "id": "conflicts",
+      "title": "Znajdź zduplikowane i kolidujące CC",
+      "summary": "Skaner konfliktów znajduje duplikaty, mody nadpisujące się nawzajem i uszkodzone pakiety.",
+      "keywords": ["konflikt", "konflikty", "duplikat", "duplikaty", "nadpisanie", "niezgodność", "uszkodzony", "uszkodzony pakiet", "skanuj"],
+      "questions": ["Czy mam zduplikowane CC?", "Które mody się gryzą?", "Jak znaleźć uszkodzone pakiety?"],
+      "steps": [
+        "Przejdź do **Narzędzia** → **Skaner konfliktów** i kliknij **Skanuj w poszukiwaniu konfliktów**.",
+        "Filtruj według **Zduplikowane pliki**, **Nadpisania zasobów**, **Niezgodności** lub **Uszkodzone pakiety**.",
+        "**Wyłącz nadmiarowe duplikaty** naprawia wszystkie duplikaty jednym kliknięciem, a **Zostaw tylko ten** jedną grupę.",
+        "**Ignoruj konflikt** dla nadpisań, które są zamierzone, np. moda, który ma zastąpić inny."
+      ]
+    },
+    {
+      "id": "mesh-report",
+      "title": "Znajdź ciężkie elementy w całej bibliotece",
+      "summary": "Raport siatek liczy trójkąty każdej części CAS i obiektu i pokazuje najcięższe na górze.",
+      "keywords": ["siatka", "raport siatek", "trójkąty", "wielokąty", "poligony", "ciężki", "lag", "wolno", "wydajność", "fps", "cas", "obiekty"],
+      "questions": ["Które moje CC jest najcięższe?", "Jak przyspieszyć grę?", "Czy zobaczę liczbę poligonów wszystkiego?"],
+      "steps": [
+        "Przejdź do **Narzędzia** → **Raport siatek** i kliknij **Policz trójkąty**.",
+        "Lista pokazuje najpierw **Ciężkie** elementy. **Wszystkie** pokazuje wszystko, a filtry rozdzielają CAS i Buduj / Kupuj.",
+        "**Zajrzyj do środka** pozwala wyłączyć element, a **Pokaż w bibliotece** usunąć go."
+      ],
+      "tips": ["Sam skan niczego nie zmienia.", "Ciężki to orientacyjna wskazówka: jeden ciężki element znaczy mniej niż setki średnich."]
+    },
+
+    {
+      "id": "theme",
+      "title": "Zmień motyw i kolor akcentu",
+      "summary": "Motyw ciemny, jasny lub systemowy, dowolny kolor akcentu albo motyw z własnego koloru.",
+      "keywords": ["motyw", "tryb ciemny", "tryb jasny", "akcent", "kolor", "motyw własny", "wygląd"],
+      "questions": ["Jak włączyć tryb ciemny?", "Czy mogę zmienić kolory?", "Jak zrobić różowy motyw?"],
+      "steps": [
+        "Przejdź do **Ustawienia** → **Wygląd i personalizacja**.",
+        "Wybierz **Motyw**: ciemny, jasny lub systemowy.",
+        "Wybierz **Kolor akcentu** dla przycisków i wyróżnień.",
+        "Aby mieć własną paletę, wybierz **Generator motywu własnego**, wpisz kolor bazowy i dostosuj intensywność."
+      ]
+    },
+    {
+      "id": "language",
+      "title": "Zmień język",
+      "summary": "PlumbobForge jest dostępny po angielsku i po polsku.",
+      "keywords": ["język", "tłumaczenie", "angielski", "polski", "english"],
+      "questions": ["Jak zmienić język?"],
+      "steps": [
+        "Przejdź do **Ustawienia** → **Wygląd i personalizacja**.",
+        "Wybierz **Język**. Zmiana działa od razu."
+      ]
+    },
+    {
+      "id": "storage-mode",
+      "title": "Tryb biblioteki czy tryb skarbca?",
+      "summary": "Tryb biblioteki trzyma oryginalne pliki i buduje pamięć podręczną. Tryb skarbca przechowuje wszystko raz i nie wymaga przebudowy.",
+      "keywords": ["skarbiec", "tryb biblioteki", "tryb skarbca", "tryb przechowywania", "miejsce na dysku", "przejdź na skarbiec", "wróć"],
+      "questions": ["Co to jest tryb skarbca?", "Jak oszczędzić miejsce na dysku?", "Jak wrócić do trybu biblioteki?"],
+      "steps": [
+        "Przejdź do **Ustawienia** → **Tryb przechowywania**.",
+        "**Tryb biblioteki** trzyma oryginały i pamięć podręczną dla gry. Jest stabilny i domyślny.",
+        "**Tryb skarbca** trzyma jedną kopię (około połowy miejsca) i przełącza konfiguracje w kilka sekund. Wciąż jest eksperymentalny.",
+        "Kliknij **Przejdź na tryb skarbca** i wybierz kopię zapasową albo **Wróć do trybu biblioteki**, aby wrócić."
+      ],
+      "tips": ["W trybie skarbca **Oczyść zmarnowane miejsce na dysku** zwalnia miejsce po usuniętym lub zaktualizowanym CC."]
+    },
+    {
+      "id": "cache-mode",
+      "title": "Pamięć dynamiczna czy pakiet statyczny?",
+      "summary": "Wybierz, jak tryb biblioteki buduje pliki wczytywane przez grę.",
+      "keywords": ["pamięć dynamiczna", "pakiet statyczny", "generowanie pamięci", "automatyczna przebudowa", "szybkość wczytywania"],
+      "questions": ["Czym różni się dynamiczna od statycznej?", "Który tryb jest szybszy?"],
+      "steps": [
+        "Przejdź do **Ustawienia** → **Tryb przechowywania** → **Tryb generowania pamięci podręcznej**.",
+        "**Pamięć dynamiczna** buduje osobną pamięć dla każdego zestawu: szybkie przebudowy i szybka zmiana konfiguracji.",
+        "**Pakiet statyczny** łączy wszystkie aktywne zestawy w jeden pakiet, więc gra wczytuje się szybciej, ale każda zmiana wymaga pełnej przebudowy.",
+        "Przy pakiecie statycznym **Automatyczna przebudowa pakietu statycznego** przebudowuje od razu po każdej zmianie. Wyłącz ją, aby najpierw zrobić kilka zmian."
+      ]
+    },
+    {
+      "id": "recheck-types",
+      "title": "Sprawdź ponownie typy plików",
+      "summary": "Odczytuje każdy pakiet jeszcze raz, aby odświeżyć jego typ, kategorię CAS, wiek i płeć.",
+      "keywords": ["sprawdź ponownie", "typy plików", "przeskanuj", "wykryj ponownie", "złe kategorie"],
+      "questions": ["Wiele przedmiotów ma zły typ", "Jak ponownie wykryć kategorie?"],
+      "steps": [
+        "Przejdź do **Ustawienia** → **Diagnostyka**.",
+        "Kliknij **Sprawdź ponownie typy plików**.",
+        "Zostaw zaznaczone pomijanie pakietów z ręcznymi tagami, aby zachować swoje poprawki.",
+        "Rozpocznij skanowanie."
+      ]
+    },
+    {
+      "id": "autofix",
+      "title": "Uruchom automatyczną naprawę",
+      "summary": "Naprawia typowe problemy w bazie PlumbobForge i przebudowuje wszystko.",
+      "keywords": ["automatyczna naprawa", "napraw", "baza danych", "napraw bibliotekę", "bez zestawu"],
+      "questions": ["Coś jest zepsute w mojej bibliotece", "Przedmioty nie mają zestawu"],
+      "steps": [
+        "Zamknij The Sims 3.",
+        "Przejdź do **Ustawienia** → **Diagnostyka**.",
+        "Kliknij **Uruchom automatycznej naprawy**. Przedmioty bez zestawu trafią do zestawu Domyślny, a wszystkie zestawy zostaną przebudowane."
+      ]
+    },
+    {
+      "id": "game-paths",
+      "title": "Ustaw foldery gry",
+      "summary": "Wskaż PlumbobForge, gdzie są The Sims 3 i Twój folder użytkownika.",
+      "keywords": ["ścieżka", "ścieżki", "folder", "katalog", "folder gry", "dokumenty", "electronic arts", "wykryj", "lokalizacja", "instalacja"],
+      "questions": ["PlumbobForge nie widzi mojej gry", "Gdzie ustawić folder Sims 3?", "Przeniosłam grę"],
+      "steps": [
+        "Przejdź do **Ustawienia** → **Dane i ścieżki**.",
+        "Sprawdź **Folder The Sims 3** (gdzie gra jest zainstalowana).",
+        "Sprawdź **Folder użytkownika The Sims 3** (w Dokumenty\\Electronic Arts). Zostaw puste, aby wykryć go automatycznie.",
+        "Zmień ścieżkę przez **Przeglądaj...** albo kliknij **Wykryj**, aby znaleźć ją ponownie."
+      ]
+    },
+    {
+      "id": "move-library",
+      "title": "Przenieś bibliotekę na inny dysk",
+      "summary": "Przechowuj CC tam, gdzie jest więcej miejsca.",
+      "keywords": ["przenieś bibliotekę", "folder biblioteki", "inny dysk", "dysk", "miejsce", "lokalizacja"],
+      "questions": ["Mój dysk C jest pełny", "Jak przenieść CC na inny dysk?"],
+      "steps": [
+        "Przejdź do **Ustawienia** → **Dane i ścieżki**.",
+        "Obok **Folder biblioteki PlumbobForge** kliknij **Przeglądaj...** i wybierz nowy folder.",
+        "Wybierz przeniesienie wszystkich plików do nowej ścieżki i potwierdź."
+      ]
+    },
+
+    {
+      "id": "cc-not-in-game",
+      "title": "Mojego CC nie widać w grze",
+      "summary": "Sprawdź po kolei te rzeczy.",
+      "keywords": ["brak", "nie widać", "nie pokazuje się", "nie ma w grze", "niewidoczne", "nie działa", "nie wczytuje"],
+      "questions": ["Nie widzę CC w grze", "Nie mogę znaleźć fryzury w CAS", "Mod nie działa", "Brakuje przedmiotów w trybie kupowania"],
+      "steps": [
+        "Sprawdź, czy przedmiot jest włączony w Bibliotece i czy żaden obiekt nie jest wyłączony w **Zajrzyj do środka**.",
+        "Sprawdź, czy jego zestaw jest we **Włączonych zestawach** aktywnej konfiguracji.",
+        "W trybie biblioteki zamknij grę i kliknij **Przebuduj**, jeśli przycisk jest pomarańczowy.",
+        "Sprawdź foldery gry w **Ustawienia** → **Dane i ścieżki**.",
+        "Wyczyść pamięć podręczną w **Narzędzia** → **Czyszczenie pamięci podręcznej**."
+      ],
+      "tips": ["Pliki Sims3Pack mogą wymagać odpowiedniego dodatku lub zawartości ze sklepu."]
+    },
+    {
+      "id": "game-crash",
+      "title": "Gra się wywala lub nie wczytuje",
+      "summary": "Znajdź przyczynę i zawęź poszukiwania.",
+      "keywords": ["crash", "wywala", "wysypuje", "nie wczytuje", "błąd", "zawiesza", "czarny ekran", "xcpt", "błąd skryptu"],
+      "questions": ["Gra się wywala przy wczytywaniu", "Gra się zawiesza", "Sims 3 nie startuje po dodaniu CC"],
+      "steps": [
+        "Uruchom **Narzędzia** → **Skaner konfliktów** i usuń **Uszkodzone pakiety** oraz duplikaty.",
+        "Wyczyść pamięć podręczną w **Narzędzia** → **Czyszczenie pamięci podręcznej**.",
+        "Zduplikuj konfigurację, wyłącz ostatnio dodane zestawy i sprawdź ponownie, aby zawęzić problem.",
+        "Nadal się wywala? Wyślij zgłoszenie przyciskiem z robakiem na pasku tytułu i zaznacz logi Sims 3."
+      ]
+    },
+    {
+      "id": "game-slow",
+      "title": "Gra działa wolno lub długo się wczytuje",
+      "summary": "Kilka ustawień i narzędzi może to przyspieszyć.",
+      "keywords": ["wolno", "lagi", "wczytywanie", "ładowanie", "wydajność", "fps", "długo", "ekran ładowania", "optymalizuj", "tekstury"],
+      "questions": ["Gra wczytuje się wieki", "Gra laguje z CC"],
+      "steps": [
+        "Usuń duplikaty przez **Wyłącz nadmiarowe duplikaty** w Skanerze konfliktów.",
+        "Wypróbuj **Pakiet statyczny** w **Ustawienia** → **Tryb przechowywania**, aby gra szybciej się wczytywała.",
+        "Włącz **Czyść pamięć podręczną gry po zmianach** w **Ustawienia** → **Wydajność w grze**.",
+        "Wczytuj mniej zestawów: zrób lżejszą konfigurację z tym, czego potrzebuje dany zapis."
+      ]
+    },
+    {
+      "id": "old-thumbnails",
+      "title": "Gra pokazuje stare lub złe miniatury",
+      "summary": "Gra przechowuje własne kopie miniatur.",
+      "keywords": ["miniatura", "miniatury", "zły obrazek", "stara ikona", "podgląd", "pusta miniatura"],
+      "questions": ["Miniatura w grze jest zła", "Miniatury się nie zaktualizowały"],
+      "steps": [
+        "Zamknij The Sims 3.",
+        "Przejdź do **Narzędzia** → **Czyszczenie pamięci podręcznej**, zaznacz pamięć miniatur i kliknij **Wyczyść zaznaczone**."
+      ]
+    },
+    {
+      "id": "rebuild-fails",
+      "title": "Przebudowa się nie udaje lub pomija pliki",
+      "summary": "Co zrobić, gdy przebudowa się zatrzymuje lub pomija pakiety.",
+      "keywords": ["przebudowa nieudana", "pominięte", "błąd", "gra jest uruchomiona", "nieczytelny", "uszkodzony", "błąd przebudowy"],
+      "questions": ["Przebudowa mówi, że gra jest uruchomiona", "Niektóre pliki zostały pominięte", "Przebudowa się nie udała"],
+      "steps": [
+        "Upewnij się, że The Sims 3 jest całkiem zamknięte, i spróbuj ponownie.",
+        "Pominięte pliki to zwykle uszkodzone lub niedokończone pobrania. Pobierz je ponownie lub usuń.",
+        "Spróbuj **Wymuś przebudowę** (prawy przycisk na przycisku Przebuduj).",
+        "Nadal nie działa? Uruchom automatyczną naprawę w **Ustawienia** → **Diagnostyka**."
+      ]
+    },
+    {
+      "id": "send-feedback",
+      "title": "Zgłoś błąd lub zadaj pytanie",
+      "summary": "Wyślij opinię prosto z programu, razem z logami, jeśli chcesz.",
+      "keywords": ["błąd", "bug", "zgłoś", "opinia", "kontakt", "pomoc", "pytanie", "wsparcie", "sugestia", "pomysł"],
+      "questions": ["Jak zgłosić błąd?", "Z kim się skontaktować?", "Mam pomysł na funkcję"],
+      "steps": [
+        "Kliknij **przycisk z robakiem** na pasku tytułu.",
+        "Wybierz, czego dotyczy zgłoszenie, i opisz, co się stało.",
+        "Zostaw nazwę na Tumblrze lub e-mail, jeśli chcesz dostać odpowiedź.",
+        "Przy błędach zostaw zaznaczone logi. Twoja nazwa użytkownika Windows jest z nich usuwana."
+      ]
+    }
+  ],
+
+  "synonyms": [
+    ["zła", "zły", "złej", "złym", "źle", "niewłaściwa", "niewłaściwej", "błędna", "błędnej", "nieprawidłowa", "pomylona", "dziwne"],
+    ["kategoria", "kategorii", "typ", "rodzaj", "dział"],
+    ["włosy", "fryzura", "fryzury", "ubranie", "ubrania", "strój", "buty", "akcesoria", "makijaż", "skóra", "cas", "sukienka"],
+    ["cc", "mod", "mody", "pakiet", "pakiety", "plik", "pliki", "przedmiot", "przedmioty", "element", "zawartość", "pobrane"],
+    ["usuń", "usunąć", "skasuj", "skasować", "wyrzuć", "odinstaluj"],
+    ["wyłącz", "wyłączyć", "dezaktywuj", "ukryj", "ukryć", "wyklucz"],
+    ["włącz", "włączyć", "aktywuj", "uwzględnij"],
+    ["crash", "wywala", "wywaliło", "wysypuje", "zawiesza", "zawiesiła", "błąd", "zepsute", "zacina"],
+    ["wolno", "wolna", "laguje", "lagi", "wydajność", "długo", "wczytywanie", "ładowanie", "ładuje", "wczytuje"],
+    ["brak", "brakuje", "zniknął", "zniknęło", "niewidoczne", "widać", "widzę", "pokazuje"],
+    ["folder", "katalog", "ścieżka", "lokalizacja"],
+    ["miniatura", "miniatury", "miniaturę", "ikona", "obrazek", "podgląd", "zdjęcie"],
+    ["zestaw", "zestawy", "grupa"],
+    ["folder", "foldery", "zestaw", "zestawy", "podzestaw", "podfolder"],
+    ["konfiguracja", "konfiguracje", "konfigurację", "konfig", "profil"],
+    ["kolor", "motyw", "ciemny", "jasny", "akcent"],
+    ["import", "dodaj", "dodać", "zainstaluj", "zainstalować", "wrzuć", "przeciągnij"],
+    ["duplikat", "duplikaty", "kopia", "kopie", "podwójne"],
+    ["tag", "tagi", "etykieta"],
+    ["szukaj", "znajdź", "znaleźć", "wyszukaj", "filtr", "filtry"],
+    ["przebuduj", "przebudowa", "zastosuj", "synchronizuj"],
+    ["pamięć", "cache", "podręczna", "tymczasowe"],
+    ["język", "tłumaczenie", "polski", "angielski"],
+    ["skarbiec", "skarbca", "skarbcu", "dysk"],
+    ["ulubione", "gwiazdka"],
+    ["obiekt", "obiekty", "mebel", "meble", "kupowanie", "budowanie"]
+  ],
+
+  "stopwords": [
+    "mój", "moja", "moje", "moi", "moich", "moim", "jest", "są", "we", "na", "do", "ze", "się", "nie", "jak", "co", "czy",
+    "to", "ten", "ta", "mi", "mnie", "po", "pod", "dlaczego", "gdzie", "kiedy", "mam", "który", "która", "które",
+    "jestem", "chcę", "można", "mogę", "już", "tylko", "przez", "dla", "ale", "też", "jeszcze", "wciąż", "nadal", "mi",
+    "tego", "tej", "tym", "jakiś", "jakieś", "proszę", "pomóż", "zrobić"
+  ]
+}

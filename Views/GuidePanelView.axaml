@@ -1,0 +1,260 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
+             xmlns:controls="using:PlumbobForge.Desktop.Controls"
+             xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             x:Class="PlumbobForge.Desktop.Views.GuidePanelView"
+             x:DataType="vm:GuideViewModel">
+
+    <UserControl.Styles>
+        <!-- Clickable article row -->
+        <Style Selector="Button.guide-row">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.guide-row:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+        <Style Selector="Button.guide-row:pointerover icon|PackIconBoxIcons.chevron">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <!-- Header icon buttons -->
+        <Style Selector="Button.guide-icon-btn">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.guide-icon-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+        <Style Selector="Button.guide-icon-btn:pointerover icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <!-- Small section labels (FOR THIS PAGE, STEPS...) -->
+        <Style Selector="TextBlock.guide-label">
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="LetterSpacing" Value="0.6"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="Margin" Value="4,0,0,6"/>
+        </Style>
+        <Style Selector="Button.filter-btn.guide-chip">
+            <Setter Property="Padding" Value="9,4"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Margin" Value="0,0,5,5"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <Style Selector="Button.filter-btn.guide-chip:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.guide-icon-btn">
+            <Setter Property="Height" Value="36"/>
+        </Style>
+    </UserControl.Styles>
+
+    <UserControl.DataTemplates>
+        <DataTemplate DataType="{x:Type vm:GuideArticleItem}">
+            <Button Classes="guide-row" Command="{Binding OpenCommand}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{Binding Title}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding Summary}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2,0,0" IsVisible="{Binding HasFooter}">
+                            <TextBlock Text="{Binding Breadcrumb}" FontSize="10.5" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding HasBreadcrumb}"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasMatched}">
+                                <icon:PackIconBoxIcons Kind="RegularSearch" Width="10" Height="10" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Matched}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                    <icon:PackIconBoxIcons Grid.Column="1" Classes="chevron" Kind="RegularChevronRight" Width="14" Height="14"
+                                           Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                </Grid>
+            </Button>
+        </DataTemplate>
+    </UserControl.DataTemplates>
+
+    <Border Background="{DynamicResource BgSidebar}" BorderBrush="{DynamicResource BorderMain}" BorderThickness="1,0,0,0">
+        <Grid RowDefinitions="Auto,*,Auto">
+            <!-- Search, with Back and Home beside it once you've left the home page -->
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="10,12,10,10">
+                <Button Grid.Column="0" Classes="guide-icon-btn" Command="{Binding BackCommand}" IsVisible="{Binding CanGoBack}"
+                        ToolTip.Tip="{loc:Loc 'guide.back'}" Margin="0,0,6,0">
+                    <icon:PackIconBoxIcons Kind="RegularChevronLeft" Width="16" Height="16" Foreground="{DynamicResource TextMuted}"/>
+                </Button>
+                <TextBox Grid.Column="1" x:Name="SearchBox" Classes="capsule-search"
+                         Text="{Binding SearchText}"
+                         PlaceholderText="{loc:Loc 'guide.search_placeholder'}">
+                    <TextBox.InnerLeftContent>
+                        <icon:PackIconBoxIcons Kind="RegularSearch" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" Margin="8,0,2,0" VerticalAlignment="Center"/>
+                    </TextBox.InnerLeftContent>
+                </TextBox>
+                <Button Grid.Column="2" Classes="guide-icon-btn" Command="{Binding HomeCommand}" IsVisible="{Binding CanGoBack}"
+                        ToolTip.Tip="{loc:Loc 'guide.home'}" Margin="6,0,0,0">
+                    <icon:PackIconBoxIcons Kind="RegularHome" Width="15" Height="15" Foreground="{DynamicResource TextMuted}"/>
+                </Button>
+            </Grid>
+
+            <ScrollViewer Grid.Row="1" x:Name="ContentScroller" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <Panel Margin="10,4,10,14">
+
+                    <!-- Home -->
+                    <StackPanel IsVisible="{Binding IsHome}" Spacing="16">
+                        <StackPanel IsVisible="{Binding HasSuggestions}">
+                            <TextBlock Classes="guide-label" Text="{loc:Loc 'guide.for_this_tab'}"/>
+                            <ItemsControl ItemsSource="{Binding Suggestions}"/>
+                        </StackPanel>
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="guide-label" Text="{loc:Loc 'guide.other_categories'}"/>
+                            <ItemsControl ItemsSource="{Binding Categories}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Spacing="16"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:GuideCategoryItem}">
+                                        <Border Padding="4,0">
+                                            <StackPanel Spacing="8">
+                                                <Grid ColumnDefinitions="Auto,*">
+                                                    <icon:PackIconBoxIcons Kind="{Binding Icon}" Width="17" Height="17" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Top" Margin="0,1,10,0"/>
+                                                    <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                                                        <TextBlock Text="{Binding Description}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                                <ItemsControl ItemsSource="{Binding Sections}" Margin="27,0,0,0">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type vm:GuideSectionItem}">
+                                                            <Button Classes="filter-btn guide-chip" Content="{Binding Title}" Command="{Binding OpenCommand}"/>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Section -->
+                    <StackPanel IsVisible="{Binding IsSection}" Spacing="10">
+                        <StackPanel Margin="4,2,4,0" Spacing="2">
+                            <TextBlock Text="{Binding SectionBreadcrumb}" FontSize="11" Foreground="{DynamicResource AccentBrush}"/>
+                            <TextBlock Text="{Binding SectionTitle}" FontSize="17" FontWeight="Bold" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <ItemsControl ItemsSource="{Binding SectionArticles}"/>
+                    </StackPanel>
+
+                    <!-- Search results -->
+                    <StackPanel IsVisible="{Binding IsResults}">
+                        <ItemsControl ItemsSource="{Binding Results}"/>
+                        <StackPanel IsVisible="{Binding HasNoResults}" Spacing="6" Margin="12,28,12,0" HorizontalAlignment="Center">
+                            <Border Width="48" Height="48" CornerRadius="24" Background="{DynamicResource AccentBadgeBgBrush}" HorizontalAlignment="Center" Margin="0,0,0,6">
+                                <icon:PackIconBoxIcons Kind="RegularSearch" Width="20" Height="20" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="{loc:Loc 'guide.no_results_title'}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'guide.no_results_desc'}" FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="260"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Article -->
+                    <StackPanel IsVisible="{Binding IsArticle}" Spacing="16" Margin="4,2,4,0">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="{Binding Article.Breadcrumb}" FontSize="11" Foreground="{DynamicResource AccentBrush}"/>
+                            <TextBlock Text="{Binding Article.Title}" FontSize="17" FontWeight="Bold" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding Article.Summary}" FontSize="12.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="18" Margin="0,2,0,0"/>
+                        </StackPanel>
+
+                        <Button Classes="btn-action-primary" Command="{Binding ShowMeCommand}" IsVisible="{Binding Article.HasShowMe}" HorizontalAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                <icon:PackIconBoxIcons Kind="RegularTarget" Width="14" Height="14" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'guide.show_me'}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <StackPanel>
+                            <TextBlock Classes="guide-label" Text="{loc:Loc 'guide.steps'}" Margin="0,0,0,8"/>
+                            <ItemsControl ItemsSource="{Binding Article.Steps}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Spacing="10"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:GuideStepItem}">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <Border Width="22" Height="22" CornerRadius="11" Background="{DynamicResource AccentBadgeBgBrush}" VerticalAlignment="Top" Margin="0,0,10,0">
+                                                <TextBlock Text="{Binding Number}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <controls:GuideRichText Grid.Column="1" Markup="{Binding Text}" FontSize="12.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="18" Margin="0,2,0,0"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <Border IsVisible="{Binding Article.HasTips}" Background="{DynamicResource AccentBadgeBgBrush}" CornerRadius="8" Padding="12,10">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <icon:PackIconBoxIcons Kind="RegularLightBulb" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Top" Margin="0,2,10,0"/>
+                                <ItemsControl Grid.Column="1" ItemsSource="{Binding Article.Tips}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Spacing="6"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="x:String">
+                                            <controls:GuideRichText Markup="{Binding}" FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="17"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </Border>
+
+                        <StackPanel IsVisible="{Binding Article.HasRelated}" Margin="-4,0,-4,0">
+                            <TextBlock Classes="guide-label" Text="{loc:Loc 'guide.related'}" Margin="4,0,0,4"/>
+                            <ItemsControl ItemsSource="{Binding Article.Related}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Panel>
+            </ScrollViewer>
+
+            <!-- Footer -->
+            <Border Grid.Row="2" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0" Padding="14,10">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{loc:Loc 'guide.not_found'}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                    <Button Grid.Column="1" Classes="btn-action-sec" Command="{Binding AskCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <icon:PackIconBoxIcons Kind="RegularMessageDetail" Width="13" Height="13" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'guide.ask'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

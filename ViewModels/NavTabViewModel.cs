@@ -6,6 +6,8 @@ using PlumbobForge.Desktop.Services.Localization;
 
 namespace PlumbobForge.Desktop.ViewModels;
 
+// One entry in the title-bar navigation. The built-in pages are fixed; user-pinned shortcuts (for
+// example a tool section) are meant to be added to MainViewModel.NavTabs with IsPinned set.
 public partial class NavTabViewModel : ObservableObject
 {
     private readonly string _titleKey;
@@ -38,6 +40,9 @@ public partial class NavTabViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isActive;
+
+    [ObservableProperty]
+    private bool _isShown = true;
 
     public void RefreshIsActive() => IsActive = _activeWhen();
 }

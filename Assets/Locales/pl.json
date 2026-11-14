@@ -300,11 +300,13 @@
                            "items_failed":  "Nie udało się zapisać: {0}"
                        },
     "tools":  {
+                  "pin_tab":  "Przypnij jako kartę",
+                   "unpin_tab":  "Odepnij kartę",
                   "title":  "Narzędzia",
                   "cache":  {
-                                "title":  "Czyszczenie pamięci podręcznej",
+                                "title":  "Oczyszczacz cache",
                                 "subtitle":  "Usuwaj tymczasowe i uszkodzone pliki pamięci podręcznej z folderu The Sims 3.",
-                                "clean_cache":  "Wyczyść zaznaczone",
+                                "clean_cache":  "Wyczyść cache",
                                 "detected_caches":  "Wykryte pliki pamięci",
                                 "selected_clean":  "Zaznaczone do wyczyszczenia",
                                 "select_recommended":  "Zaznacz zalecane",
@@ -362,8 +364,30 @@
                                     "bulk_duplicates_title":  "Naprawa duplikatów jednym kliknięciem",
                                     "bulk_duplicates_desc":  "Automatycznie zachowaj aktywny pakiet w każdej grupie i wyłącz zbędne kopie, aby przyspieszyć ładowanie gry."
                                 },
+                  "meshes":  {
+                                 "title":  "Raport meshów",
+                                 "subtitle":  "Znajdź cięźkie obiekty",
+                                 "scan":  "Policz trójkąty",
+                                 "rescan":  "Policz ponownie",
+                                 "counted":  "Policzone",
+                                 "heavy_count":  "Cięźkie",
+                                 "filter_heavy":  "Cięźkie",
+                                 "filter_all":  "Wszystkie",
+                                 "search_watermark":  "Szukaj według nazwy lub pliku...",
+                                 "scanning":  "Liczenie trójkątów w bibliotece...",
+                                 "progress":  "{0} z {1} pakietów",
+                                 "healthy_title":  "Nie znaleziono nic cięźkiego",
+                                 "healthy_desc":  "Żaden z policzonych elementów nie jest ciężki. Wybierz Wszystkie, aby zobaczyć każdy element, od najcięższego.",
+                                 "empty_title":  "Nic do pokazania",
+                                 "empty_desc":  "Żaden element nie pasuje do bieżących filtrów.",
+                                 "explainer":  "Trójkąty są liczone z najbardziej szczegółowego poziomu każdego elementu. Im ich więcej, tym więcej pracy dla gry. 'Ciężki' to wskazówka, nie limit. Nic tutaj nie zmienia Twoich plików: otwórz Zajrzyj do środka, aby wyłączyć element, albo Pokaż w bibliotece, aby go usunąć.",
+                                 "external_note":  "Elementy korzystające z siatek samej gry (nie da się ich policzyć): {0}.",
+                                 "unreadable_note":  "Nie udało się odczytać pakietów: {0}.",
+                                 "scan_failed":  "Nie udało się dokończyć skanowania.",
+                                 "row_detail":  "Wierzchołków: {0}, poziomów szczegółowości: {1}"
+                             },
                   "patterns":  {
-                                   "title":  "Naprawa wzorców",
+                                   "title":  "Naprawiacz wzorów",
                                    "subtitle":  "Wykrywaj i naprawiaj uszkodzone formaty obrazów we wzorcach, które powodują awarie gry.",
                                    "patterns_found":  "Przeskanowane wzorce",
                                    "broken_patterns":  "Uszkodzone wzorce",
@@ -541,7 +565,8 @@
                                     "title":  "O programie i twórcy",
                                     "github":  "Repozytorium GitHub",
                                     "peter_desc":  "za bibliotekę binarną s3pi",
-                                    "granthes_desc":  "za CC Magic i S3ToolKit"
+                                    "granthes_desc":  "za CC Magic i S3ToolKit",
+                                    "kitlith_desc":  "za geom_tri_count i sims3-rs, które pokazały, jak liczyć trójkąty"
                                 },
                      "language_auto":  "Domyślny systemowy (Auto)",
                      "update_available":  "Dostępna aktualizacja",
@@ -902,6 +927,17 @@
                               }
                 },
     "look_inside":  {
+                        "triangles":  "Tr\u00f3jk\u0105ty",
+                        "vertices":  "Wierzcho\u0142ki",
+                        "lods":  "Poziomy szczeg\u00f3\u0142owo\u015bci",
+                        "mesh_external_cas":  "U\u017cywa siatki z samej gry, wi\u0119c nie ma tu czego liczy\u0107.",
+                        "mesh_external_bb":  "U\u017cywa modelu z samej gry, wi\u0119c nie ma tu czego liczy\u0107.",
+                        "sort_heaviest":  "Najci\u0119\u017csze najpierw",
+                        "sort_heaviest_tip":  "Sortuj list\u0119 wed\u0142ug liczby tr\u00f3jk\u0105t\u00f3w, od najwi\u0119kszej",
+                        "filter_heavy":  "Ci\u0119\u017ckich: {0}",
+                        "all_items_heavy":  "Ci\u0119\u017ckich obiekt\u00f3w: {0} z {1} policzonych. Wy\u0142\u0105cz najci\u0119\u017csze, aby odci\u0105\u017cy\u0107 gr\u0119. Ci\u0119\u017cki\u0027 to wskaz\u00f3wka, nie limit.",
+                        "all_items_no_heavy":  "\u017baden z {0} policzonych obiekt\u00f3w nie jest ci\u0119\u017cki.",
+                        "heaviest":  "Najci\u0119\u017csze obiekty",
                         "title":  "Zajrzyj do środka",
                         "switch_item":  "Pokaż obiekty wszystkich zaznaczonych elementów albo jednego z nich",
                         "all_selected_items":  "Wszystkie elementy ({0})",                        "summary_items":  "Elementy: {0}",
@@ -1151,6 +1187,15 @@
                           "operation_failed":  "Operacja nie powiodła się: {0}",
                           "rebuild_completed":  "Przebudowa pamięci podręcznej zakończona pomyślnie w {0}s!"
                       },
+    "mesh":  {
+                "weight_light":  "Lekki",
+                "weight_medium":  "\u015aredni",
+                "weight_heavy":  "Ci\u0119\u017cki",
+                "weight_very_heavy":  "Bardzo ci\u0119\u017cki",
+                "weight_tip_cas":  "Orientacyjnie dla cz\u0119\u015bci CAS, wed\u0142ug najbardziej szczeg\u00f3\u0142owego poziomu: \u015bredni od {0} tr\u00f3jk\u0105t\u00f3w, ci\u0119\u017cki od {1}, bardzo ci\u0119\u017cki od {2}.",
+                "weight_tip_bb":  "Orientacyjnie dla obiekt\u00f3w, wed\u0142ug najbardziej szczeg\u00f3\u0142owego poziomu: \u015bredni od {0} tr\u00f3jk\u0105t\u00f3w, ci\u0119\u017cki od {1}, bardzo ci\u0119\u017cki od {2}.",
+                "largest_meshes":  "{0} siatek, najwi\u0119ksze: {1}"
+            },
     "nav":  {
                 "minimize":  "Minimalizuj",
                 "ctrl_k":  "Ctrl+K",
@@ -1162,6 +1207,21 @@
                 "maximize":  "Maksymalizuj",
                 "quick_jump":  "Szybki skok",
                 "places":  "Miejsca",
-                "send_feedback":  "Wyślij opinię lub zgłoś błąd"
-            }
+                "send_feedback":  "Wyślij opinię lub zgłoś błąd",
+                "guide":  "Poradnik (F1)"
+            },
+    "guide":  {
+                  "search_placeholder":  "Zadaj pytanie lub szukaj...",
+                  "for_this_tab":  "DLA TEJ KARTY",
+                  "other_categories":  "POZOSTAŁE KATEGORIE",
+                  "back":  "Wstecz",
+                  "home":  "Strona główna poradnika",
+                  "steps":  "KROKI",
+                  "related":  "POWIĄZANE",
+                  "show_me":  "Pokaż mi",
+                  "no_results_title":  "Brak wyników",
+                  "no_results_desc":  "Spróbuj innych słów albo wyślij pytanie i otrzymaj odpowiedź.",
+                  "not_found":  "Nie znalazłeś tego, czego szukasz?",
+                  "ask":  "Zapytaj w opinii"
+              }
 }

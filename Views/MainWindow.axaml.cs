@@ -10,9 +10,41 @@ public partial class MainWindow : Window
 {
     private bool _isClosingForced;
 
+    private ViewModels.MainViewModel? _vm;
+
     public MainWindow()
     {
         InitializeComponent();
+    }
+
+    protected override void OnDataContextChanged(System.EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+        if (_vm != null)
+        {
+            _vm.GuideHighlightRequested -= OnGuideHighlightRequested;
+            _vm.PropertyChanged -= OnVmPropertyChanged;
+        }
+        _vm = DataContext as ViewModels.MainViewModel;
+        if (_vm != null)
+        {
+            _vm.GuideHighlightRequested += OnGuideHighlightRequested;
+            _vm.PropertyChanged += OnVmPropertyChanged;
+        }
+    }
+
+    private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ViewModels.MainViewModel.IsGuideOpen) && _vm?.IsGuideOpen == true)
+            GuidePanel.FocusSearch();
+    }
+
+    private void OnGuideHighlightRequested(string id)
+    {
+        // Give a tab that just became visible a moment to lay out before looking for the control.
+        Avalonia.Threading.DispatcherTimer.RunOnce(
+            () => PlumbobForge.Desktop.Controls.GuideTarget.Highlight(this, id),
+            System.TimeSpan.FromMilliseconds(180));
     }
 
     private void OnHeaderPointerPressed(object? sender, PointerPressedEventArgs e)

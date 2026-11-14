@@ -81,14 +81,111 @@ public partial class MainViewModel : ObservableObject
     // Title-bar tabs, in display order.
     public ObservableCollection<NavTabViewModel> NavTabs { get; }
 
-    partial void OnActiveTabChanged(string value) => RefreshNavTabs();
+    partial void OnActiveTabChanged(string value)
+    {
+        RefreshNavTabs();
+        if (IsGuideOpen) UpdateGuideContext();
+    }
 
+    // Call when anything a tab's active check depends on changes (a pinned tool tab would also
+    // depend on the selected tool section).
     public void RefreshNavTabs()
     {
         foreach (var tab in NavTabs) tab.RefreshIsActive();
     }
 
+    private const string PinnedToolKeyPrefix = "tool:";
+
+    // Pinned tool tabs sit right after Tools, in the order they were pinned.
+    private void RebuildPinnedToolTabs()
+    {
+        for (int i = NavTabs.Count - 1; i >= 0; i--)
+        {
+            if (NavTabs[i].IsPinned) NavTabs.RemoveAt(i);
+        }
+
+        int insertAt = NavTabs.IndexOf(NavTabs.First(t => t.Key == "tools")) + 1;
+        foreach (var section in HealthVm.PinnedTools)
+        {
+            var s = section;
+            NavTabs.Insert(insertAt++, new NavTabViewModel(
+                PinnedToolKeyPrefix + s,
+                HealthViewModel.SectionTitleKey(s),
+                HealthViewModel.SectionIcon(s),
+                new RelayCommand(() => NavigateToToolSection(s)),
+                () => IsToolsActive && HealthVm.ActiveSection == s,
+                isPinned: true));
+        }
+
+        // With every tool pinned, Tools would only repeat them.
+        NavTabs.First(t => t.Key == "tools").IsShown =
+            HealthViewModel.Sections.Any(s => !HealthVm.IsSectionPinned(s));
+        RefreshNavTabs();
+    }
+
+    // The Tools tab opens a tool that has no tab of its own, so the tab clicked is the one highlighted.
+    [RelayCommand]
+    private void OpenToolsTab()
+    {
+        if (HealthVm.IsSectionPinned(HealthVm.ActiveSection))
+        {
+            var unpinned = HealthViewModel.Sections.FirstOrDefault(s => !HealthVm.IsSectionPinned(s));
+            if (unpinned != null)
+            {
+                NavigateToToolSection(unpinned);
+                return;
+            }
+        }
+        NavigateToTools();
+    }
+
     public QuickSwitcherViewModel QuickSwitcher { get; }
+    public GuideViewModel Guide { get; } = new();
+
+    [ObservableProperty]
+    private bool _isGuideOpen;
+
+    public event Action<string>? GuideHighlightRequested;
+
+    [RelayCommand]
+    private void ToggleGuide()
+    {
+        if (!IsGuideOpen) UpdateGuideContext();
+        IsGuideOpen = !IsGuideOpen;
+    }
+
+    // The guide's "For this tab" follows the tab (and tool) the user is on.
+    private void UpdateGuideContext()
+    {
+        var (category, section) = ActiveTab switch
+        {
+            "Configurations" => ("configurations", (string?)null),
+            "Tools" or "Health" => ("tools", HealthVm?.ActiveSection?.ToLowerInvariant()),
+            "Settings" => ("settings", null),
+            _ => ("library", null),
+        };
+        Guide.SetContext(category, section);
+    }
+
+    private void OnGuideShowMe(PlumbobForge.Desktop.Services.Guide.GuideShowMe showMe)
+    {
+        var parts = showMe.Target.Split(':', 2);
+        var sub = parts.Length > 1 ? parts[1] : null;
+        switch (parts[0])
+        {
+            case "configurations": NavigateToConfigurations(); break;
+            case "tools":
+                if (sub != null) NavigateToToolSection(sub); else NavigateToTools();
+                break;
+            case "settings":
+                if (sub != null) NavigateToSettingsSection(sub); else NavigateToSettings();
+                break;
+            default: NavigateToContentManager(); break;
+        }
+        if (!string.IsNullOrEmpty(showMe.Highlight))
+            GuideHighlightRequested?.Invoke(showMe.Highlight);
+    }
+
     public ContentManagerViewModel ContentManagerVm { get; }
     public ConfigurationsViewModel ConfigurationsVm { get; }
     public HealthViewModel HealthVm { get; }
@@ -107,10 +204,25 @@ public partial class MainViewModel : ObservableObject
         {
             new("library", "nav.library", PackIconBoxIconsKind.RegularFolder, NavigateToContentManagerCommand, () => IsContentManagerActive),
             new("configurations", "nav.configurations", PackIconBoxIconsKind.RegularSliderAlt, NavigateToConfigurationsCommand, () => IsConfigurationsActive),
-            new("tools", "nav.tools", PackIconBoxIconsKind.RegularSpanner, NavigateToToolsCommand, () => IsToolsActive),
+            // A pinned tool shows as its own tab, so Tools stays unhighlighted while one of those is open.
+            new("tools", "nav.tools", PackIconBoxIconsKind.RegularSpanner, OpenToolsTabCommand,
+                () => IsToolsActive && !HealthVm.IsSectionPinned(HealthVm.ActiveSection)),
             new("settings", "nav.settings", PackIconBoxIconsKind.RegularCog, NavigateToSettingsCommand, () => IsSettingsActive),
         };
-        RefreshNavTabs();
+        RebuildPinnedToolTabs();
+        HealthVm.PinnedToolsChanged += RebuildPinnedToolTabs;
+        HealthVm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(HealthViewModel.ActiveSection))
+            {
+                RefreshNavTabs();
+                if (IsGuideOpen) UpdateGuideContext();
+            }
+        };
+
+        Guide.ShowMeRequested += OnGuideShowMe;
+        Guide.CloseRequested += () => IsGuideOpen = false;
+        Guide.AskRequested += question => _ = OpenFeedbackWithMessageAsync(question);
 
         VaultStatusText = LocalizationManager.Instance.GetString("progress.vault_status_uptodate");
         LocalizationManager.Instance.LanguageChanged += _ =>
@@ -307,7 +419,9 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public async Task OpenFeedbackAsync()
+    public Task OpenFeedbackAsync() => OpenFeedbackWithMessageAsync(null);
+
+    public async Task OpenFeedbackWithMessageAsync(string? initialMessage)
     {
         var options = _serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<PlumbobForge.Backend.Configuration.PlumbobForgeOptions>>().Value;
         var gameLogs = await Task.Run(() =>
@@ -322,7 +436,7 @@ public partial class MainViewModel : ObservableObject
                 return (System.Collections.Generic.IReadOnlyList<string>)Array.Empty<string>();
             }
         });
-        await Views.Dialogs.DialogHelper.ShowFeedbackAsync(gameLogs);
+        await Views.Dialogs.DialogHelper.ShowFeedbackAsync(gameLogs, initialMessage);
     }
 
     [RelayCommand]

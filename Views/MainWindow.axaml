@@ -26,6 +26,7 @@
     <Window.KeyBindings>
         <KeyBinding Gesture="Ctrl+K" Command="{Binding OpenQuickSwitcherCommand}" />
         <KeyBinding Gesture="Ctrl+P" Command="{Binding OpenQuickSwitcherCommand}" />
+        <KeyBinding Gesture="F1" Command="{Binding ToggleGuideCommand}" />
     </Window.KeyBindings>
 
     <Window.DataTemplates>
@@ -83,6 +84,12 @@
         <Style Selector="Button.nav-action-btn:pointerover bx|PackIconBoxIcons">
             <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
         </Style>
+        <Style Selector="Button.nav-action-btn.active /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+        </Style>
+        <Style Selector="Button.nav-action-btn.active bx|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
         <Style Selector="Button.quick-search-trigger-btn">
             <Setter Property="Width" Value="NaN"/>
             <Setter Property="Padding" Value="8,4,8,4"/>
@@ -114,7 +121,7 @@
         <Style Selector="Button.rebuild-btn.dirty:pointerover bx|PackIconBoxIcons">
             <Setter Property="Foreground" Value="#FFFFFF"/>
         </Style>
-        <Style Selector="RadioButton.nav-tab">
+        <Style Selector="Button.nav-tab">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
             <Setter Property="CornerRadius" Value="6"/>
@@ -135,34 +142,34 @@
                 </ControlTemplate>
             </Setter>
         </Style>
-        <Style Selector="RadioButton.nav-tab:pointerover /template/ Border">
+        <Style Selector="Button.nav-tab:pointerover /template/ Border">
             <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
         </Style>
-        <Style Selector="RadioButton.nav-tab:pointerover TextBlock">
+        <Style Selector="Button.nav-tab:pointerover TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
         </Style>
-        <Style Selector="RadioButton.nav-tab:pointerover bx|PackIconBoxIcons">
+        <Style Selector="Button.nav-tab:pointerover bx|PackIconBoxIcons">
             <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
         </Style>
-        <Style Selector="RadioButton.nav-tab:checked /template/ Border">
+        <Style Selector="Button.nav-tab.active /template/ Border">
             <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
         </Style>
-        <Style Selector="RadioButton.nav-tab:checked TextBlock">
+        <Style Selector="Button.nav-tab.active TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="FontWeight" Value="DemiBold"/>
         </Style>
-        <Style Selector="RadioButton.nav-tab:checked bx|PackIconBoxIcons">
+        <Style Selector="Button.nav-tab.active bx|PackIconBoxIcons">
             <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
         </Style>
         <!-- Titles only show as tooltips once the bar has dropped them. -->
-        <Style Selector="RadioButton.nav-tab">
+        <Style Selector="Button.nav-tab">
             <Setter Property="ToolTip.ServiceEnabled" Value="False"/>
         </Style>
-        <Style Selector="controls|AdaptiveTabPanel:compact RadioButton.nav-tab">
+        <Style Selector="Button.nav-tab.compact">
             <Setter Property="ToolTip.ServiceEnabled" Value="True"/>
             <Setter Property="Padding" Value="10,6,10,6"/>
         </Style>
-        <Style Selector="controls|AdaptiveTabPanel:compact TextBlock.tab-label">
+        <Style Selector="Button.nav-tab.compact TextBlock.tab-label">
             <Setter Property="IsVisible" Value="False"/>
         </Style>
         <Style Selector="Window[WindowState=Maximized] Border#RootBorder">
@@ -194,16 +201,16 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:NavTabViewModel}">
-                                <RadioButton Classes="nav-tab"
-                                             GroupName="NavGroup"
-                                             IsChecked="{Binding IsActive, Mode=OneWay}"
-                                             Command="{Binding Command}"
-                                             ToolTip.Tip="{Binding Title}">
+                                <Button Classes="nav-tab"
+                                        Classes.active="{Binding IsActive}"
+                                        IsVisible="{Binding IsShown}"
+                                        Command="{Binding Command}"
+                                        ToolTip.Tip="{Binding Title}">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <bx:PackIconBoxIcons Kind="{Binding Icon}" Width="16" Height="16" VerticalAlignment="Center"/>
                                         <TextBlock Classes="tab-label" Text="{Binding Title}" VerticalAlignment="Center"/>
                                     </StackPanel>
-                                </RadioButton>
+                                </Button>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -215,6 +222,7 @@
                                 HorizontalAlignment="Right">
                         <!-- Quick Jump Search Trigger Button -->
                         <Button Classes="nav-action-btn quick-search-trigger-btn"
+                                controls:GuideTarget.Id="titlebar.quick-jump"
                                 Command="{Binding OpenQuickSwitcherCommand}"
                                 ToolTip.Tip="{loc:Loc common.quick_jump}">
                             <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -233,9 +241,18 @@
 
                         <!-- Send Feedback / Bug Report -->
                         <Button Classes="nav-action-btn"
+                                controls:GuideTarget.Id="titlebar.feedback"
                                 Command="{Binding OpenFeedbackCommand}"
                                 ToolTip.Tip="{loc:Loc nav.send_feedback}">
                             <bx:PackIconBoxIcons Kind="RegularBug" Width="15" Height="15" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+
+                        <!-- Guide (F1) -->
+                        <Button Classes="nav-action-btn"
+                                Classes.active="{Binding IsGuideOpen}"
+                                Command="{Binding ToggleGuideCommand}"
+                                ToolTip.Tip="{loc:Loc nav.guide}">
+                            <bx:PackIconBoxIcons Kind="RegularHelpCircle" Width="16" Height="16" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
 
                         <!-- Vault Status Regular Text (When Vault is active) -->
@@ -249,6 +266,7 @@
 
                         <!-- Rebuild Cache Button (Only when Vault is NOT active) -->
                         <Button Classes="nav-action-btn rebuild-btn"
+                                controls:GuideTarget.Id="titlebar.rebuild"
                                 Classes.dirty="{Binding HasDirtySets}"
                                 Command="{Binding RebuildCacheCommand}"
                                 ToolTip.Tip="{loc:Loc common.rebuild_cache}"
@@ -291,15 +309,22 @@
             </Border>
 
             <!-- Main Content Area (Persistent tab views for instant switching & state preservation) -->
-            <Grid Grid.Row="1">
-                <ContentControl Content="{Binding ContentManagerVm}"
-                                IsVisible="{Binding IsContentManagerActive}"/>
-                <ContentControl Content="{Binding ConfigurationsVm}"
-                                IsVisible="{Binding IsConfigurationsActive}"/>
-                <ContentControl Content="{Binding HealthVm}"
-                                IsVisible="{Binding IsToolsActive}"/>
-                <ContentControl Content="{Binding SettingsVm}"
-                                IsVisible="{Binding IsSettingsActive}"/>
+            <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
+                <Grid Grid.Column="0">
+                    <ContentControl Content="{Binding ContentManagerVm}"
+                                    IsVisible="{Binding IsContentManagerActive}"/>
+                    <ContentControl Content="{Binding ConfigurationsVm}"
+                                    IsVisible="{Binding IsConfigurationsActive}"/>
+                    <ContentControl Content="{Binding HealthVm}"
+                                    IsVisible="{Binding IsToolsActive}"/>
+                    <ContentControl Content="{Binding SettingsVm}"
+                                    IsVisible="{Binding IsSettingsActive}"/>
+                </Grid>
+
+                <!-- Guide: docked beside the app so it can be followed while using it -->
+                <Panel Grid.Column="1" Width="360" IsVisible="{Binding IsGuideOpen}">
+                    <views:GuidePanelView x:Name="GuidePanel" DataContext="{Binding Guide}"/>
+                </Panel>
             </Grid>
 
             <!-- Quick Switcher Modal Overlay -->
