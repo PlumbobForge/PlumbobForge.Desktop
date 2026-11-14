@@ -36,6 +36,23 @@ public static class SmoothScrolling
         if (_installed) return;
         _installed = true;
         InputElement.PointerWheelChangedEvent.AddClassHandler<ScrollViewer>(OnWheel, RoutingStrategies.Tunnel);
+        InputElement.PointerPressedEvent.AddClassHandler<ScrollViewer>((sv, _) => Stop(sv), RoutingStrategies.Tunnel, handledEventsToo: true);
+        InputElement.KeyDownEvent.AddClassHandler<ScrollViewer>((sv, _) => Stop(sv), RoutingStrategies.Tunnel, handledEventsToo: true);
+    }
+
+    private static void Stop(ScrollViewer sv)
+    {
+        if (_states.TryGetValue(sv, out var st)) st.Running = false;
+    }
+
+    private static bool FollowDrift(ScrollViewer sv, State st)
+    {
+        var drift = sv.Offset - st.LastSet;
+        if (drift.Length <= 1) return true;
+        if (Math.Abs(drift.X) >= sv.Viewport.Width || Math.Abs(drift.Y) >= sv.Viewport.Height) return false;
+        st.Target += drift;
+        st.LastSet = sv.Offset;
+        return true;
     }
 
     private static void OnWheel(ScrollViewer sender, PointerWheelEventArgs e)
@@ -106,7 +123,7 @@ public static class SmoothScrolling
         Math.Max(0, sv.Extent.Height - sv.Viewport.Height));
 
     private static Vector CurrentTarget(ScrollViewer sv) =>
-        _states.TryGetValue(sv, out var st) && st.Running ? st.Target : sv.Offset;
+        _states.TryGetValue(sv, out var st) && st.Running ? Clamp(st.Target, MaxOffset(sv)) : sv.Offset;
 
     private static Vector Clamp(Vector v, Vector max) =>
         new(Math.Clamp(v.X, 0, max.X), Math.Clamp(v.Y, 0, max.Y));
@@ -115,7 +132,7 @@ public static class SmoothScrolling
     {
         var st = _states.GetValue(sv, _ => new State());
 
-        if (!st.Running || Distance(sv.Offset, st.LastSet) > 1)
+        if (!st.Running || !FollowDrift(sv, st))
         {
             st.Target = sv.Offset;
             st.Running = false;
@@ -123,7 +140,9 @@ public static class SmoothScrolling
 
         double stepX = Math.Min(StepSize, Math.Max(16, sv.Viewport.Width * 0.8));
         double stepY = Math.Min(StepSize, Math.Max(16, sv.Viewport.Height * 0.8));
-        st.Target = Clamp(st.Target + new Vector(notches.X * stepX, notches.Y * stepY), MaxOffset(sv));
+        var max = MaxOffset(sv);
+        var next = Clamp(st.Target, max) + new Vector(notches.X * stepX, notches.Y * stepY);
+        st.Target = Clamp(next, max + new Vector(sv.Viewport.Width, sv.Viewport.Height));
 
         if (st.Running) return;
         var topLevel = TopLevel.GetTopLevel(sv);
@@ -142,7 +161,7 @@ public static class SmoothScrolling
     {
         if (!st.Running) return;
         var topLevel = TopLevel.GetTopLevel(sv);
-        if (topLevel == null || Distance(sv.Offset, st.LastSet) > 1)
+        if (topLevel == null || !FollowDrift(sv, st))
         {
             st.Running = false;
             return;
@@ -151,12 +170,12 @@ public static class SmoothScrolling
         double dt = st.LastFrame is { } last ? Math.Clamp((now - last).TotalSeconds, 0, 0.1) : 1.0 / 60;
         st.LastFrame = now;
 
-        st.Target = Clamp(st.Target, MaxOffset(sv));
+        var goal = Clamp(st.Target, MaxOffset(sv));
         var current = sv.Offset;
-        var remaining = st.Target - current;
+        var remaining = goal - current;
         if (remaining.Length < 0.5)
         {
-            sv.Offset = st.Target;
+            sv.Offset = goal;
             st.LastSet = sv.Offset;
             st.Running = false;
             return;
