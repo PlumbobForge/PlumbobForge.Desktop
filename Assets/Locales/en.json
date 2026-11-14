@@ -559,6 +559,32 @@
                                }
                  },
     "dialogs":  {
+                                        "feedback":  {
+                                            "title":  "Send Feedback",
+                                            "category":  "What is this about?",
+                                            "cat_bug":  "Bug Report",
+                                            "cat_feedback":  "Feedback",
+                                            "cat_feature":  "Feature",
+                                            "cat_other":  "Other",
+                                            "message":  "Message",
+                                            "message_placeholder":  "What happened, or what would you like to see? For bugs, include the steps that led up to it.",
+                                            "contact":  "Contact (optional)",
+                                            "contact_placeholder":  "Tumblr username or email, if you'd like a reply",
+                                            "include_app_logs":  "Include PlumbobForge logs",
+                                            "include_game_logs":  "Include recent Sims 3 logs and Resource.cfg",
+                                            "include_game_logs_only":  "Include recent Sims 3 logs",
+                                            "include_resource_cfg":  "Include Resource.cfg",
+                                            "privacy_note":  "Your Windows username is scrubbed from the logs before sending.",
+                                            "view_files":  "View Files",
+                                            "no_files":  "There are no log files to include.",
+                                            "send":  "Send",
+                                            "sending":  "Sending...",
+                                            "sent_title":  "Thanks for your feedback!",
+                                            "sent_title_bug":  "Thanks for reporting this!",
+                                            "sent_title_feature":  "Thanks for the idea!",
+                                            "sent_message":  "Your report is on its way. Every message gets read, even if there isn't a reply.",
+                                            "sent_message_contact":  "Your report is on its way. If there are any questions, you'll hear back through the contact you left.",                                            "failed":  "Couldn't send the report: {0}"
+                                        },
                                         "vault_revert":  {
                                             "title":  "Revert to Library Mode",
                                             "subtitle":  "Library Mode keeps a copy of all items in PlumbobForge\\Library and requires rebuilds. Vault shard files in Mods\\PF_Vault will be removed once your files are restored.",
@@ -1135,6 +1161,7 @@
                 "settings":  "Settings",
                 "maximize":  "Maximize",
                 "quick_jump":  "Quick Jump",
-                "places":  "Places"
+                "places":  "Places",
+                "send_feedback":  "Send Feedback or Report a Bug"
             }
 }

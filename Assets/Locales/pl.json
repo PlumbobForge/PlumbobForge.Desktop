@@ -559,8 +559,34 @@
                                }
                  },
     "dialogs":  {
+                                        "feedback":  {
+                                            "title":  "Wyślij opinię",
+                                            "category":  "Czego to dotyczy?",
+                                            "cat_bug":  "Błąd",
+                                            "cat_feedback":  "Opinia",
+                                            "cat_feature":  "Funkcja",
+                                            "cat_other":  "Inne",
+                                            "message":  "Wiadomość",
+                                            "message_placeholder":  "Co się stało albo co chcesz zobaczyć? Przy błędach opisz kroki, które do nich doprowadziły.",
+                                            "contact":  "Kontakt (opcjonalnie)",
+                                            "contact_placeholder":  "Nazwa na Tumblr lub e-mail, jeśli chcesz odpowiedź",
+                                            "include_app_logs":  "Dołącz logi PlumbobForge",
+                                            "include_game_logs":  "Dołącz ostatnie logi The Sims 3 i Resource.cfg",
+                                            "include_game_logs_only":  "Dołącz ostatnie logi The Sims 3",
+                                            "include_resource_cfg":  "Dołącz Resource.cfg",
+                                            "privacy_note":  "Twoja nazwa na Windows jest usuwana z logów przed wysłaniem.",
+                                            "view_files":  "Pokaż pliki",
+                                            "no_files":  "Brak plików logów do dołączenia.",
+                                            "send":  "Wyślij",
+                                            "sending":  "Wysyłanie...",
+                                            "sent_title":  "Dzięki za opinię!",
+                                            "sent_title_bug":  "Dzięki za zgłoszenie!",
+                                            "sent_title_feature":  "Dzięki za pomysł!",
+                                            "sent_message":  "Zgłoszenie zostało wysłane. Każda wiadomość jest czytana, nawet jeśli nie ma odpowiedzi.",
+                                            "sent_message_contact":  "Zgłoszenie zostało wysłane. Jeśli pojawią się pytania, usłyszysz z powrotem na podany kontakt.",                                            "failed":  "Nie udało się wysłać zgłoszenia: {0}"
+                                        },
                                         "vault_revert":  {
-                                            "title":  "Wroc do trybu biblioteki",
+                                            "title":  "Wróć do trybu biblioteki",
                                             "subtitle":  "Tryb biblioteki przechowuje kopię wszystkich plików w folderze PlumbobForge\\Library i wymaga rebuildów. Pliki skarbca znajdujące się w katalogu Mods\\PF_Vault zostaną usunięte po przywróceniu Twoich plików..",
                                             "option_folder_title":  "Przywroc z folderu",
                                             "option_folder_desc":  "Przenosi nienaruszone oryginalne pliki z folderu PlumbobForge\\Library_Backup z powrotem do biblioteki.",
@@ -1135,6 +1161,7 @@
                 "settings":  "Ustawienia",
                 "maximize":  "Maksymalizuj",
                 "quick_jump":  "Szybki skok",
-                "places":  "Miejsca"
+                "places":  "Miejsca",
+                "send_feedback":  "Wyślij opinię lub zgłoś błąd"
             }
 }

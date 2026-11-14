@@ -231,6 +231,13 @@
                             </StackPanel>
                         </Button>
 
+                        <!-- Send Feedback / Bug Report -->
+                        <Button Classes="nav-action-btn"
+                                Command="{Binding OpenFeedbackCommand}"
+                                ToolTip.Tip="{loc:Loc nav.send_feedback}">
+                            <bx:PackIconBoxIcons Kind="RegularBug" Width="15" Height="15" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+
                         <!-- Vault Status Regular Text (When Vault is active) -->
                         <TextBlock Text="{Binding VaultStatusText}"
                                    FontSize="11.5"

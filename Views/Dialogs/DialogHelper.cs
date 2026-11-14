@@ -54,6 +54,15 @@ public static class DialogHelper
         return parent != null ? await dialog.ShowDialog<string?>(parent) : null;
     }
 
+    public static async Task ShowFeedbackAsync(IReadOnlyList<string> gameLogs, Window? owner = null)
+    {
+        var parent = owner ?? GetMainWindow();
+        if (parent != null)
+        {
+            await new FeedbackDialogWindow(gameLogs).ShowDialog(parent);
+        }
+    }
+
     public static async Task<RetagDialogResult?> ShowRetagAsync(RetagDialogInput input, Window? owner = null)
     {
         var parent = owner ?? GetMainWindow();

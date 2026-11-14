@@ -307,6 +307,25 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
+    public async Task OpenFeedbackAsync()
+    {
+        var options = _serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<PlumbobForge.Backend.Configuration.PlumbobForgeOptions>>().Value;
+        var gameLogs = await Task.Run(() =>
+        {
+            try
+            {
+                var sims3Folder = PlumbobForge.Backend.Services.Sims3PathResolver.ResolveSims3UserFolder(options.Sims3UserDir);
+                return FeedbackService.FindRecentGameLogs(sims3Folder);
+            }
+            catch
+            {
+                return (System.Collections.Generic.IReadOnlyList<string>)Array.Empty<string>();
+            }
+        });
+        await Views.Dialogs.DialogHelper.ShowFeedbackAsync(gameLogs);
+    }
+
+    [RelayCommand]
     public async Task RebuildCacheAsync()
     {
         await _serviceProvider.GetRequiredService<ContentManagerViewModel>().RebuildCacheAsync();

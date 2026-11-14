@@ -1,0 +1,167 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
+        xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+        x:Class="PlumbobForge.Desktop.Views.Dialogs.FeedbackDialogWindow"
+        Title="{loc:Loc 'dialogs.feedback.title'}"
+        Width="540" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        WindowDecorations="BorderOnly"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        Background="{DynamicResource BgDark}">
+
+    <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" ClipToBounds="True" Background="{DynamicResource BgDark}">
+        <Grid RowDefinitions="Auto, *, Auto">
+            <!-- Modal Title Bar Header -->
+            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="42" Padding="18,0,0,0" PointerPressed="OnHeaderPointerPressed">
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularBug" Width="17" Height="17" Foreground="{DynamicResource AccentBrush}"/>
+                        <TextBlock Text="{loc:Loc 'dialogs.feedback.title'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Width="42" Height="42" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCancelClick" ToolTip.Tip="{loc:Loc 'common.close'}">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#ef4444"/>
+                            </Style>
+                            <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                <Setter Property="Foreground" Value="White"/>
+                            </Style>
+                        </Button.Styles>
+                        <icon:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Body -->
+            <StackPanel x:Name="FormPanel" Grid.Row="1" Margin="20,16" Spacing="14">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{loc:Loc 'dialogs.feedback.category'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                    <Grid x:Name="CategoryPanel" ColumnDefinitions="*,*,*,*">
+                        <Grid.Styles>
+                            <Style Selector="ToggleButton.filter-pill">
+                                <Setter Property="Margin" Value="0,0,6,0"/>
+                                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                <Setter Property="Padding" Value="6,6"/>
+                            </Style>
+                            <Style Selector="ToggleButton.filter-pill.last">
+                                <Setter Property="Margin" Value="0"/>
+                            </Style>
+                        </Grid.Styles>
+                        <ToggleButton Grid.Column="0" Classes="filter-pill" Tag="BugReport" Click="OnCategoryClick">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <icon:PackIconBoxIcons Kind="RegularBug" Width="12" Height="12" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'dialogs.feedback.cat_bug'}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ToggleButton>
+                        <ToggleButton Grid.Column="1" Classes="filter-pill" Tag="Feedback" Click="OnCategoryClick">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <icon:PackIconBoxIcons Kind="RegularMessageDetail" Width="12" Height="12" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'dialogs.feedback.cat_feedback'}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ToggleButton>
+                        <ToggleButton Grid.Column="2" Classes="filter-pill" Tag="FeatureRequest" Click="OnCategoryClick">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <icon:PackIconBoxIcons Kind="RegularLightBulb" Width="12" Height="12" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'dialogs.feedback.cat_feature'}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ToggleButton>
+                        <ToggleButton Grid.Column="3" Classes="filter-pill last" Tag="Other" Click="OnCategoryClick">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <icon:PackIconBoxIcons Kind="RegularDotsHorizontal" Width="12" Height="12" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Loc 'dialogs.feedback.cat_other'}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ToggleButton>
+                    </Grid>
+                </StackPanel>
+
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{loc:Loc 'dialogs.feedback.message'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                    <TextBox x:Name="MessageTextBox"
+                             Classes="settings-input"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             Height="150"
+                             VerticalContentAlignment="Top"
+                             PlaceholderText="{loc:Loc 'dialogs.feedback.message_placeholder'}"
+                             TextChanged="OnMessageChanged"/>
+                </StackPanel>
+
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{loc:Loc 'dialogs.feedback.contact'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                    <TextBox x:Name="ContactTextBox"
+                             Classes="settings-input"
+                             MaxLength="100"
+                             PlaceholderText="{loc:Loc 'dialogs.feedback.contact_placeholder'}"/>
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <CheckBox x:Name="IncludeAppLogsCheckBox"
+                              IsChecked="True"
+                              Cursor="Hand"
+                              Content="{loc:Loc 'dialogs.feedback.include_app_logs'}"
+                              IsCheckedChanged="OnAttachmentOptionChanged"/>
+                    <CheckBox x:Name="IncludeGameLogsCheckBox"
+                              IsChecked="True"
+                              Cursor="Hand"
+                              IsVisible="False"
+                              IsCheckedChanged="OnAttachmentOptionChanged"/>
+                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                        <icon:PackIconBoxIcons Kind="RegularShield" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{loc:Loc 'dialogs.feedback.privacy_note'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <TextBlock x:Name="StatusTextBlock" FontSize="11.5" TextWrapping="Wrap" IsVisible="False"/>
+            </StackPanel>
+
+            <!-- Shown after a successful send, in place of the form -->
+            <Grid x:Name="SentPanel" Grid.Row="1" IsVisible="False">
+            <StackPanel Margin="32,16" Spacing="0"
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border Width="72" Height="72" CornerRadius="36"
+                        Background="{DynamicResource AccentBadgeBgBrush}"
+                        BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1.5"
+                        HorizontalAlignment="Center" Margin="0,0,0,18">
+                    <icon:PackIconBoxIcons Kind="SolidCheckCircle" Width="36" Height="36"
+                                           Foreground="{DynamicResource AccentBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock x:Name="SentTitleTextBlock" Text="{loc:Loc 'dialogs.feedback.sent_title'}"
+                           FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}"
+                           HorizontalAlignment="Center" TextAlignment="Center" Margin="0,0,0,8"/>
+                <TextBlock x:Name="SentMessageTextBlock"
+                           FontSize="12.5" Foreground="{DynamicResource TextMuted}"
+                           HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                           MaxWidth="380" LineHeight="19"/>
+            </StackPanel>
+            </Grid>
+
+            <!-- Footer -->
+            <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0" Padding="18,12">
+                <Grid ColumnDefinitions="Auto, *, Auto">
+                    <Button x:Name="ViewFilesButton" Grid.Column="0" Classes="btn-action-sec" Click="OnViewFilesClick">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <icon:PackIconBoxIcons Kind="RegularFolderOpen" Width="13" Height="13" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'dialogs.feedback.view_files'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                        <Button x:Name="CancelButton" Content="{loc:Loc 'common.cancel'}" Click="OnCancelClick" Background="Transparent" Foreground="{DynamicResource TextMain}" BorderThickness="1" BorderBrush="{DynamicResource BorderSubtle}" CornerRadius="7" Padding="16,7" FontSize="12.5" Cursor="Hand"/>
+                        <Button x:Name="DoneButton" Classes="btn-action-primary" Click="OnDoneClick" IsVisible="False" Padding="24,7"
+                                Content="{loc:Loc 'common.close'}"/>
+                        <Button x:Name="SendButton" Classes="btn-action-primary" Click="OnSendClick" IsEnabled="False" Padding="18,7">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <icon:PackIconBoxIcons Kind="RegularPaperPlane" Width="13" Height="13" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="SendButtonText" Text="{loc:Loc 'dialogs.feedback.send'}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>
