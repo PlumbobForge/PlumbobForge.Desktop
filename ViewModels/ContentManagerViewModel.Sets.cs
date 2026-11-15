@@ -630,7 +630,7 @@ public partial class ContentManagerViewModel
             {
                 if (await vaultService.MigrateLegacyShardsAsync(setEntity.Id) > 0)
                 {
-                    await _pkgManager.SyncToSims3Async();
+                    await FreshScope.RunAsync<PKGManager>(pkg => pkg.SyncToSims3Async());
                 }
             }
 
@@ -850,14 +850,16 @@ public partial class ContentManagerViewModel
                 var options = _optionsMonitor?.CurrentValue;
                 bool staticLibraryCache = options != null && !options.EnableSingleSourceVault &&
                     string.Equals(options.CacheMethod, "Static", StringComparison.OrdinalIgnoreCase);
+                await _db.SaveChangesAsync();
                 if (staticLibraryCache && setItemMetas.Any(m => m.Enabled))
                 {
-                    foreach (var s in await _db.SetsEntities.Where(s => s.Id != setEntity.Id).ToListAsync()) s.Dirty = true;
+                    // Written straight to the database: this context's copies of the other sets may be stale, and setting
+                    // Dirty on a copy that already reads true would save nothing.
+                    await _db.SetsEntities.Where(s => s.Id != setEntity.Id).ExecuteUpdateAsync(u => u.SetProperty(s => s.Dirty, true));
                 }
-                await _db.SaveChangesAsync();
 
                 // Resource.cfg still lists the deleted set's cache or shard folder; rewrite it so the game stops loading it.
-                try { await _pkgManager.SyncToSims3Async(); }
+                try { await FreshScope.RunAsync<PKGManager>(pkg => pkg.SyncToSims3Async()); }
                 catch (Exception syncEx) { AppLogger.LogError("Failed to update game files after deleting a set", syncEx, "ContentManagerViewModel"); }
 
                 RecalculateSetCounts();

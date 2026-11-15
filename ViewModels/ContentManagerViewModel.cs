@@ -835,14 +835,15 @@ public partial class ContentManagerViewModel : ObservableObject
         bool success = false;
         try
         {
-            await Task.Run(async () =>
+            // A fresh scope: this view model's own PKGManager keeps rows loaded long ago and would miss dirty flags set since.
+            await Task.Run(() => FreshScope.RunAsync<PKGManager>(async pkgManager =>
             {
                 if (repairLegacyCompression)
                 {
-                    await _pkgManager.RepairLegacyCompressionAsync(onProgress: null, progress: modal);
+                    await pkgManager.RepairLegacyCompressionAsync(onProgress: null, progress: modal);
                 }
-                await _pkgManager.RunAsync(isRefresh: true, onProgress: null, progress: modal, forceRebuild: forceRebuild);
-            });
+                await pkgManager.RunAsync(isRefresh: true, onProgress: null, progress: modal, forceRebuild: forceRebuild);
+            }));
             success = true;
             modal.Finish(success: true);
             if (onSucceeded != null) await onSucceeded();

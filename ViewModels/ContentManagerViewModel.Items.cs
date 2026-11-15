@@ -55,7 +55,7 @@ public partial class ContentManagerViewModel
         if (!IsVaultActive) return;
         try
         {
-            await _pkgManager.SyncToSims3Async();
+            await FreshScope.RunAsync<PKGManager>(pkg => pkg.SyncToSims3Async());
         }
         catch (Exception ex)
         {

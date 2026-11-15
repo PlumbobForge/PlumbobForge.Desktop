@@ -184,6 +184,10 @@ public partial class App : Application
                     }
 
                     var cacheBuilder = scope.ServiceProvider.GetRequiredService<CacheBuilderService>();
+
+                    // Older versions loaded Cache/Config with "PackedFile .../Resource.cfg", which loops the game.
+                    cacheBuilder.UpgradeMainResourceCfg();
+
                     if (db.VaultShards.Any())
                     {
                         // Finish/roll back interrupted compactions, trim interrupted writes, re-derive mismatched indexes.
@@ -504,6 +508,38 @@ public partial class App : Application
         if (userVersion < 9) ApplySchemaV9(db);
         if (userVersion < 10) ApplySchemaV10(db);
         if (userVersion < 11) ApplySchemaV11(db);
+        if (userVersion < 13) ApplySchemaV13(db);
+    }
+
+    // MetaEntities.HasConfigOverrides used to be set by any configuration rule and now only by an exclude
+    // (MetaEntity.ExcludedByAnyConfig). On the dynamic cache, items with only include rules go back into their set's
+    // bundle, so those sets are rebuilt once. The static bundle ignores the flag: there the sets only lose their stored
+    // hash (it covers the flag), which startup recomputes, so no rebuild is asked for.
+    private static void ApplySchemaV13(AppDbContext db)
+    {
+        const string excludedIds = "SELECT MetaEntityId FROM ConfigItemOverrides WHERE \"Include\" = 0";
+        try
+        {
+            var options = Services?.GetService<IOptionsMonitor<PlumbobForgeOptions>>()?.CurrentValue;
+            bool staticCache = options != null && !options.EnableSingleSourceVault &&
+                string.Equals(options.CacheMethod, "Static", StringComparison.OrdinalIgnoreCase);
+            string change = staticCache ? "CachedHash = NULL" : "Dirty = 1";
+
+            using var tx = db.Database.BeginTransaction();
+            db.Database.ExecuteSqlRaw($@"
+UPDATE SetsEntities SET {change} WHERE Id IN (
+    SELECT SetsEntityId FROM MetaEntities
+    WHERE HasConfigOverrides = 1 AND SetsEntityId IS NOT NULL
+      AND COALESCE(ParentMetaEntityId, Id) NOT IN ({excludedIds}));");
+            db.Database.ExecuteSqlRaw($@"
+UPDATE MetaEntities SET HasConfigOverrides =
+    CASE WHEN COALESCE(ParentMetaEntityId, Id) IN ({excludedIds}) THEN 1 ELSE 0 END;");
+            db.Database.ExecuteSqlRaw("PRAGMA user_version = 13;");
+            tx.Commit();
+        }
+        catch
+        {
+        }
     }
 
     private static void ApplySchemaV11(AppDbContext db)
