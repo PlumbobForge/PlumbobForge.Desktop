@@ -26,12 +26,17 @@ public class MeshPreviewControl : OpenGlControlBase
     public static readonly StyledProperty<bool> ShowGridProperty =
         AvaloniaProperty.Register<MeshPreviewControl, bool>(nameof(ShowGrid), true);
 
+    public static readonly StyledProperty<MeshPreviewTexture?> TextureProperty =
+        AvaloniaProperty.Register<MeshPreviewControl, MeshPreviewTexture?>(nameof(Texture));
+
     public static readonly StyledProperty<IBrush?> BackgroundProperty =
         AvaloniaProperty.Register<MeshPreviewControl, IBrush?>(nameof(Background));
 
     public IReadOnlyList<MeshPreviewItem>? Meshes { get => GetValue(MeshesProperty); set => SetValue(MeshesProperty, value); }
     public bool ShowWireframe { get => GetValue(ShowWireframeProperty); set => SetValue(ShowWireframeProperty, value); }
     public bool ShowGrid { get => GetValue(ShowGridProperty); set => SetValue(ShowGridProperty, value); }
+    // Drawn on every mesh through its UVs; null shows plain clay colours.
+    public MeshPreviewTexture? Texture { get => GetValue(TextureProperty); set => SetValue(TextureProperty, value); }
     // Scene background; a solid colour brush (e.g. a theme resource).
     public IBrush? Background { get => GetValue(BackgroundProperty); set => SetValue(BackgroundProperty, value); }
 
@@ -58,7 +63,8 @@ public class MeshPreviewControl : OpenGlControlBase
     }
     private readonly List<GpuMesh> _gpu = new();
     private IReadOnlyList<MeshPreviewItem>? _uploaded;
-    private int _solidProgram, _lineProgram, _vao, _gridVbo, _gridCount;
+    private int _solidProgram, _lineProgram, _vao, _gridVbo, _gridCount, _glTexture;
+    private MeshPreviewTexture? _uploadedTexture;
     private bool _glReady;
     private unsafe delegate* unmanaged<float, float, void> _glPolygonOffset;
     private unsafe delegate* unmanaged<int, int, void> _glBlendFunc;
@@ -67,6 +73,7 @@ public class MeshPreviewControl : OpenGlControlBase
     private unsafe delegate* unmanaged<int, float, float, float, float, void> _glUniform4f;
     private unsafe delegate* unmanaged<int, int, int, int, int, int, void*, void> _glReadPixels;
     private static unsafe delegate* unmanaged<int, void> _glDisableVertexAttribArray;
+    private unsafe delegate* unmanaged<int, void> _glGenerateMipmap;
 
     static MeshPreviewControl()
     {
@@ -99,6 +106,7 @@ public class MeshPreviewControl : OpenGlControlBase
             RequestNextFrameRendering();
         }
         else if (change.Property == ShowWireframeProperty || change.Property == ShowGridProperty || change.Property == BackgroundProperty
+                 || change.Property == TextureProperty
                  || change.Property == BoundsProperty)
         {
             RequestNextFrameRendering();
@@ -201,9 +209,12 @@ public class MeshPreviewControl : OpenGlControlBase
         GL_STATIC_DRAW = 0x88E4, GL_FLOAT = 0x1406, GL_UNSIGNED_INT = 0x1405, GL_DEPTH_TEST = 0x0B71, GL_CULL_FACE = 0x0B44,
         GL_BLEND = 0x0BE2, GL_POLYGON_OFFSET_FILL = 0x8037, GL_COLOR_BUFFER_BIT = 0x4000, GL_DEPTH_BUFFER_BIT = 0x0100,
         GL_LEQUAL = 0x0203, GL_SRC_ALPHA = 0x0302, GL_ONE_MINUS_SRC_ALPHA = 0x0303, GL_VERTEX_SHADER = 0x8B31,
-        GL_FRAGMENT_SHADER = 0x8B30, GL_BACK = 0x0405, GL_RGBA = 0x1908, GL_UNSIGNED_BYTE = 0x1401;
+        GL_FRAGMENT_SHADER = 0x8B30, GL_BACK = 0x0405, GL_RGBA = 0x1908, GL_UNSIGNED_BYTE = 0x1401,
+        GL_TEXTURE_2D = 0x0DE1, GL_TEXTURE0 = 0x84C0, GL_TEXTURE_MIN_FILTER = 0x2801, GL_TEXTURE_MAG_FILTER = 0x2800,
+        GL_TEXTURE_WRAP_S = 0x2802, GL_TEXTURE_WRAP_T = 0x2803, GL_LINEAR = 0x2601, GL_LINEAR_MIPMAP_LINEAR = 0x2703, GL_REPEAT = 0x2901;
 
-    private const int AttrPosition = 0, AttrNormal = 1;
+    private const int AttrPosition = 0, AttrNormal = 1, AttrUv = 2;
+    private const int VertexFloats = 8; // position, normal, uv
 
     private string ShaderHeader => GlVersion.Type == GlProfileType.OpenGLES
         ? "#version 300 es\nprecision highp float;\n"
@@ -212,20 +223,32 @@ public class MeshPreviewControl : OpenGlControlBase
     private const string SolidVertex = @"
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec2 aUv;
 uniform mat4 uMvp;
 out vec3 vNormal;
 out vec3 vWorld;
-void main() { vNormal = aNormal; vWorld = aPos; gl_Position = uMvp * vec4(aPos, 1.0); }";
+out vec2 vUv;
+void main() { vNormal = aNormal; vWorld = aPos; vUv = aUv; gl_Position = uMvp * vec4(aPos, 1.0); }";
 
     private const string SolidFragment = @"
 in vec3 vNormal;
 in vec3 vWorld;
+in vec2 vUv;
 uniform vec3 uColor;
+uniform sampler2D uTex;
+uniform int uUseTexture;
+uniform int uCutout;
 uniform vec3 uEye;
 uniform vec3 uSky;
 uniform vec3 uGround;
 out vec4 fragColor;
 void main() {
+    vec3 base = uColor;
+    if (uUseTexture == 1) {
+        vec4 t = texture(uTex, vUv);
+        if (uCutout == 1 && t.a < 0.35) discard;
+        base = t.rgb;
+    }
     vec3 n = normalize(vNormal);
     if (!gl_FrontFacing) n = -n;
     vec3 hemi = mix(uGround, uSky, n.y * 0.5 + 0.5) * 0.55;
@@ -234,7 +257,7 @@ void main() {
     vec3 v = normalize(uEye - vWorld);
     vec3 h = normalize(v + normalize(vec3(1.0, 2.0, 3.0)));
     float spec = pow(max(dot(n, h), 0.0), 24.0) * 0.08;
-    fragColor = vec4(min(uColor * (hemi + key + rim) + spec, vec3(1.0)), 1.0);
+    fragColor = vec4(min(base * (hemi + key + rim) + spec, vec3(1.0)), 1.0);
 }";
 
     private const string LineVertex = @"
@@ -257,6 +280,7 @@ void main() { fragColor = uColor; }";
         _glUniform4f = (delegate* unmanaged<int, float, float, float, float, void>)gl.GetProcAddress("glUniform4f");
         _glReadPixels = (delegate* unmanaged<int, int, int, int, int, int, void*, void>)gl.GetProcAddress("glReadPixels");
         _glDisableVertexAttribArray = (delegate* unmanaged<int, void>)gl.GetProcAddress("glDisableVertexAttribArray");
+        _glGenerateMipmap = (delegate* unmanaged<int, void>)gl.GetProcAddress("glGenerateMipmap");
         if (_glUniform3f == null || _glUniform4f == null || _glBlendFunc == null || _glDisableVertexAttribArray == null)
         {
             Backend.Services.AppLogger.LogWarning("3D preview: OpenGL functions are missing");
@@ -281,7 +305,11 @@ void main() { fragColor = uColor; }";
             gl.AttachShader(program, vs);
             gl.AttachShader(program, fs);
             gl.BindAttribLocationString(program, AttrPosition, "aPos");
-            if (withNormal) gl.BindAttribLocationString(program, AttrNormal, "aNormal");
+            if (withNormal)
+            {
+                gl.BindAttribLocationString(program, AttrNormal, "aNormal");
+                gl.BindAttribLocationString(program, AttrUv, "aUv");
+            }
             error = gl.LinkProgramAndGetError(program);
             if (error != null) { gl.DeleteProgram(program); program = 0; }
         }
@@ -295,6 +323,9 @@ void main() { fragColor = uColor; }";
     {
         FreeMeshes(gl);
         if (_gridVbo != 0) gl.DeleteBuffer(_gridVbo);
+        if (_glTexture != 0) gl.DeleteTexture(_glTexture);
+        _glTexture = 0;
+        _uploadedTexture = null;
         if (_vao != 0 && gl.IsDeleteVertexArraysAvailable) gl.DeleteVertexArray(_vao);
         if (_solidProgram != 0) gl.DeleteProgram(_solidProgram);
         if (_lineProgram != 0) gl.DeleteProgram(_lineProgram);
@@ -324,13 +355,18 @@ void main() { fragColor = uColor; }";
         {
             if (m.Indices.Length < 3 || m.Positions.Length < 9) continue;
             int count = m.VertexCount;
-            var interleaved = new float[count * 6];
+            var interleaved = new float[count * VertexFloats];
             for (int v = 0; v < count; v++)
             {
-                interleaved[v * 6] = m.Positions[v * 3]; interleaved[v * 6 + 1] = m.Positions[v * 3 + 1]; interleaved[v * 6 + 2] = m.Positions[v * 3 + 2];
+                int o = v * VertexFloats;
+                interleaved[o] = m.Positions[v * 3]; interleaved[o + 1] = m.Positions[v * 3 + 1]; interleaved[o + 2] = m.Positions[v * 3 + 2];
                 if (m.Normals.Length >= (v + 1) * 3)
                 {
-                    interleaved[v * 6 + 3] = m.Normals[v * 3]; interleaved[v * 6 + 4] = m.Normals[v * 3 + 1]; interleaved[v * 6 + 5] = m.Normals[v * 3 + 2];
+                    interleaved[o + 3] = m.Normals[v * 3]; interleaved[o + 4] = m.Normals[v * 3 + 1]; interleaved[o + 5] = m.Normals[v * 3 + 2];
+                }
+                if (m.Uvs != null && m.Uvs.Length >= (v + 1) * 2)
+                {
+                    interleaved[o + 6] = m.Uvs[v * 2]; interleaved[o + 7] = m.Uvs[v * 2 + 1];
                 }
             }
             var gpu = new GpuMesh
@@ -402,6 +438,8 @@ void main() { fragColor = uColor; }";
 
         var meshes = Meshes;
         if (!ReferenceEquals(meshes, _uploaded)) Upload(gl, meshes);
+        var texture = Texture;
+        if (!ReferenceEquals(texture, _uploadedTexture)) UploadTexture(gl, texture);
         if (_vao != 0) gl.BindVertexArray(_vao);
 
         var eye = Eye;
@@ -422,6 +460,12 @@ void main() { fragColor = uColor; }";
         _glUniform3f(gl.GetUniformLocationString(_solidProgram, "uSky"), SkyColor.X, SkyColor.Y, SkyColor.Z);
         _glUniform3f(gl.GetUniformLocationString(_solidProgram, "uGround"), GroundColor.X, GroundColor.Y, GroundColor.Z);
         int colorLoc = gl.GetUniformLocationString(_solidProgram, "uColor");
+        bool textured = texture != null && _glTexture != 0;
+        gl.Uniform1i(gl.GetUniformLocationString(_solidProgram, "uUseTexture"), textured ? 1 : 0);
+        gl.Uniform1i(gl.GetUniformLocationString(_solidProgram, "uCutout"), textured && texture!.Cutout ? 1 : 0);
+        gl.Uniform1i(gl.GetUniformLocationString(_solidProgram, "uTex"), 0);
+        gl.ActiveTexture(GL_TEXTURE0);
+        gl.BindTexture(GL_TEXTURE_2D, textured ? _glTexture : 0);
         gl.Enable(GL_POLYGON_OFFSET_FILL);
         if (_glPolygonOffset != null) _glPolygonOffset(1f, 1f);
         foreach (var m in _gpu)
@@ -468,12 +512,13 @@ void main() { fragColor = uColor; }";
             gl.DrawArrays(GL_LINES, 0, _gridCount);
         }
         gl.Disable(GL_BLEND);
+        gl.BindTexture(GL_TEXTURE_2D, 0);
         gl.UseProgram(0);
 
         OnFrameRendered(gl, width, height);
     }
 
-    private static void BindAttributes(GlInterface gl, int vbo, bool withNormal, int stride = 6)
+    private static void BindAttributes(GlInterface gl, int vbo, bool withNormal, int stride = VertexFloats)
     {
         gl.BindBuffer(GL_ARRAY_BUFFER, vbo);
         gl.VertexAttribPointer(AttrPosition, 3, GL_FLOAT, 0, stride * sizeof(float), IntPtr.Zero);
@@ -482,11 +527,32 @@ void main() { fragColor = uColor; }";
         {
             gl.VertexAttribPointer(AttrNormal, 3, GL_FLOAT, 0, stride * sizeof(float), 3 * sizeof(float));
             gl.EnableVertexAttribArray(AttrNormal);
+            gl.VertexAttribPointer(AttrUv, 2, GL_FLOAT, 0, stride * sizeof(float), 6 * sizeof(float));
+            gl.EnableVertexAttribArray(AttrUv);
         }
         else
         {
-            unsafe { _glDisableVertexAttribArray(AttrNormal); }
+            unsafe { _glDisableVertexAttribArray(AttrNormal); _glDisableVertexAttribArray(AttrUv); }
         }
+    }
+
+    private unsafe void UploadTexture(GlInterface gl, MeshPreviewTexture? texture)
+    {
+        _uploadedTexture = texture;
+        if (texture == null || texture.Rgba.Length < texture.Width * texture.Height * 4) return;
+        if (_glTexture == 0) _glTexture = gl.GenTexture();
+        gl.BindTexture(GL_TEXTURE_2D, _glTexture);
+        fixed (byte* p = texture.Rgba)
+        {
+            gl.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.Width, texture.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (IntPtr)p);
+        }
+        bool mipmaps = _glGenerateMipmap != null;
+        if (mipmaps) _glGenerateMipmap(GL_TEXTURE_2D);
+        gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmaps ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+        gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        gl.BindTexture(GL_TEXTURE_2D, 0);
     }
 
     // Called after each frame while the GL context is current; ReadPixels works here.

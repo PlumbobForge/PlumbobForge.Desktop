@@ -20,6 +20,8 @@ public sealed class MeshPreviewItem
     public required float[] Positions { get; init; }
     public required float[] Normals { get; init; }
     public required uint[] Indices { get; init; }
+    // Texture coordinates, 2 floats per vertex; null when the mesh has none.
+    public float[]? Uvs { get; init; }
     public Color Color { get; init; } = PartColors[0];
     // The mesh already holds back-facing copies of its faces, so only front faces are drawn
     // (drawing both would make the coinciding layers flicker).
@@ -33,11 +35,23 @@ public sealed class MeshPreviewItem
         var positions = geom.GetFloats(GeomVertexFormat.UsagePosition, out _) ?? Array.Empty<float>();
         var normals = geom.GetFloats(GeomVertexFormat.UsageNormal, out int n);
         if (normals == null || n != 3) normals = ComputeNormals(positions, geom.Indices);
+        var uvs = geom.GetFloats(GeomVertexFormat.UsageUv, out int uvN);
+        if (uvs != null && uvN != 2)
+        {
+            float[]? first = null;
+            if (uvN > 2)
+            {
+                first = new float[geom.VertexCount * 2];
+                for (int v = 0; v < geom.VertexCount; v++) { first[v * 2] = uvs[v * uvN]; first[v * 2 + 1] = uvs[v * uvN + 1]; }
+            }
+            uvs = first;
+        }
         return new MeshPreviewItem
         {
             Positions = positions,
             Normals = normals,
             Indices = geom.Indices,
+            Uvs = uvs,
             Color = PartColors[Math.Abs(partIndex) % PartColors.Length],
             IsDoubleSided = doubleSided,
         };
