@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <!-- The 3D mesh preview passes raw buffers to OpenGL. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationIcon>Assets\appicon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
