@@ -301,7 +301,7 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
         {
             await Task.Run(() =>
             {
-                foreach (var s in sources) MeshStatsService.Analyse(s.Inspection, _cts.Token);
+                foreach (var s in sources) MeshStatsService.Analyse(s.Inspection, _cts.Token, MeshBackupStore.ValidOriginals(s.ItemId, s.Inspection));
             }, _cts.Token);
         }
         catch (OperationCanceledException)
@@ -730,6 +730,59 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
         ShowCacheNote = thumbnailsSaved;
     }
 
+    public async Task ReverseOptimizationAsync(LookInsideObjectItem item)
+    {
+        if (item.Source is not { } source || item.Object is not { OptimizedKeys.Count: > 0 } obj || IsSaving) return;
+        if (HasPendingChanges)
+        {
+            StatusMessage = L("look_inside.reverse_pending");
+            return;
+        }
+        if (Sims3GameProcess.IsGameRunning())
+        {
+            StatusMessage = L("look_inside.game_running");
+            return;
+        }
+
+        var keys = obj.OptimizedKeys.ToList();
+        bool isVault = source.Inspection.IsVault;
+        string? selectedKey = SelectedObject?.KeyText;
+        IsSaving = true;
+        ShowUnsavedPrompt = false;
+        StatusMessage = L("look_inside.reversing");
+        string? failure = null;
+
+        // The library files must not be held open while they are replaced.
+        var sources = _sources;
+        _sources = new List<LookInsideSource>();
+        foreach (var s in sources) s.Inspection.Dispose();
+
+        try
+        {
+            using var scope = App.Services?.CreateScope();
+            var service = scope?.ServiceProvider.GetRequiredService<CcOptimizerService>()
+                ?? throw new InvalidOperationException("Services are not available");
+            if (await service.RestoreAsync(source.ItemId, keys)) SavedItemIds.Add(source.ItemId);
+        }
+        catch (GameRunningException)
+        {
+            failure = L("look_inside.game_running_unsaved");
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError($"Could not reverse the optimization of item {source.ItemId}", ex, "LookInsideViewModel");
+            failure = L("look_inside.reverse_failed", ex.Message);
+        }
+
+        await LoadAsync();
+        IsSaving = false;
+        if (selectedKey != null)
+        {
+            SelectedObject = VisibleObjects.FirstOrDefault(o => o.KeyText == selectedKey) ?? SelectedObject;
+        }
+        StatusMessage = failure ?? L(isVault ? "look_inside.reversed" : "look_inside.reversed_rebuild");
+    }
+
     #endregion
 
     public string GetSuggestedFileName(LookInsideThumbnailItem item) =>
@@ -1081,6 +1134,7 @@ public sealed class LookInsideObjectItem : ObservableObject
     public string Title { get; }
     public string Subtitle { get; }
     public bool IsCas => Object?.Kind == InspectedObjectKind.Cas;
+    public bool CanOptimize => HasMeshData;
     public bool IsBuildBuy => Object?.Kind == InspectedObjectKind.BuildBuy;
     public bool IsUnlinkedGroup => Object == null && !IsAllItems;
     public bool IsAllItems { get; }
@@ -1233,9 +1287,10 @@ public sealed class LookInsideObjectItem : ObservableObject
 
     private static readonly string[] MeshProperties =
     {
-        nameof(HasMeshData), nameof(ShowMeshCard), nameof(ShowExternalMesh), nameof(Triangles), nameof(TrianglesText),
+        nameof(HasMeshData), nameof(CanOptimize), nameof(ShowMeshCard), nameof(ShowExternalMesh), nameof(Triangles), nameof(TrianglesText),
         nameof(VerticesText), nameof(CompactTriangles), nameof(WeightLevel), nameof(IsLight), nameof(IsMedium), nameof(IsHeavy),
-        nameof(IsVeryHeavy), nameof(IsHeavyOrWorse), nameof(IsPlainTriangles), nameof(WeightText), nameof(LodsText), nameof(HasLods)
+        nameof(IsVeryHeavy), nameof(IsHeavyOrWorse), nameof(IsPlainTriangles), nameof(WeightText), nameof(LodsText), nameof(HasLods),
+        nameof(IsOptimized), nameof(ShowOriginalTriangles), nameof(OriginalTrianglesText)
     };
 
     public MeshStats? Mesh => _mesh;
@@ -1258,6 +1313,9 @@ public sealed class LookInsideObjectItem : ObservableObject
     public string WeightText => MeshFormat.WeightName(WeightLevel);
     public string WeightTip => MeshFormat.WeightTip(IsCas);
     public bool HasLods => _mesh is { Lods.Count: > 1 };
+    public bool IsOptimized => HasMeshData && Object?.OriginalMesh != null && Object.OptimizedKeys.Count > 0;
+    public bool ShowOriginalTriangles => IsOptimized && Object!.OriginalMesh!.Triangles != Triangles;
+    public string OriginalTrianglesText => (Object?.OriginalMesh?.Triangles ?? 0).ToString("N0");
     public string LodsText => _mesh == null ? string.Empty : MeshFormat.LodsText(_mesh);
 
     #endregion

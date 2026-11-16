@@ -482,6 +482,16 @@ public partial class QuickSwitcherViewModel : ObservableObject
                 IconKind = PackIconBoxIconsKind.RegularCube,
                 IconBrush = accentBrush
             },
+            new()
+            {
+                Type = QuickSwitcherItemType.Place,
+                PlaceTarget = "Tools:Optimizer",
+                Title = loc.GetString("optimizer.title") ?? "CC Optimizer",
+                Subtitle = (loc.GetString("nav.tools") ?? "Tools") + "  •  " + (loc.GetString("optimizer.subtitle") ?? "Make heavy CAS parts lighter"),
+                Keywords = "tools cc optimizer optimize reduce simplify decimate polygon poly count triangles high poly heavy hair clothes cas lod",
+                IconKind = PackIconBoxIconsKind.RegularMagicWand,
+                IconBrush = accentBrush
+            },
 
             // Settings Tab Sub-sections
             new()

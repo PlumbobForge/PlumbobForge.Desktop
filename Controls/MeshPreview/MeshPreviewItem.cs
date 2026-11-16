@@ -5,10 +5,8 @@ using PlumbobForge.Backend.Services;
 
 namespace PlumbobForge.Desktop.Controls.MeshPreview;
 
-// One mesh to draw in a MeshPreviewControl: positions and normals (3 floats per vertex) and triangles.
 public sealed class MeshPreviewItem
 {
-    // Plain clay colours given to the parts of a mesh, in order.
     public static readonly Color[] PartColors =
     {
         Color.FromRgb(0xd9, 0xb4, 0x8f),
@@ -20,17 +18,18 @@ public sealed class MeshPreviewItem
     public required float[] Positions { get; init; }
     public required float[] Normals { get; init; }
     public required uint[] Indices { get; init; }
-    // Texture coordinates, 2 floats per vertex; null when the mesh has none.
     public float[]? Uvs { get; init; }
     public Color Color { get; init; } = PartColors[0];
-    // The mesh already holds back-facing copies of its faces, so only front faces are drawn
-    // (drawing both would make the coinciding layers flicker).
+    // Already has back faces, so only front faces are drawn.
     public bool IsDoubleSided { get; init; }
+    public bool AllowCutout { get; init; } = true;
+    // Null uses the control's texture.
+    public MeshPreviewTexture? Texture { get; init; }
 
     public int VertexCount => Positions.Length / 3;
     public int TriangleCount => Indices.Length / 3;
 
-    public static MeshPreviewItem FromGeom(GeomMesh geom, int partIndex = 0, bool doubleSided = false)
+    public static MeshPreviewItem FromGeom(GeomMesh geom, int partIndex = 0, bool doubleSided = false, bool allowCutout = true, MeshPreviewTexture? texture = null)
     {
         var positions = geom.GetFloats(GeomVertexFormat.UsagePosition, out _) ?? Array.Empty<float>();
         var normals = geom.GetFloats(GeomVertexFormat.UsageNormal, out int n);
@@ -54,6 +53,8 @@ public sealed class MeshPreviewItem
             Uvs = uvs,
             Color = PartColors[Math.Abs(partIndex) % PartColors.Length],
             IsDoubleSided = doubleSided,
+            AllowCutout = allowCutout,
+            Texture = texture,
         };
     }
 

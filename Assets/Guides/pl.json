@@ -34,7 +34,8 @@
         { "id": "patterns", "title": "Naprawa wzorców" },
         { "id": "collections", "title": "Kreator kolekcji" },
         { "id": "conflicts", "title": "Skaner konfliktów" },
-        { "id": "meshes", "title": "Raport siatek" }
+        { "id": "meshes", "title": "Raport siatek" },
+        { "id": "optimizer", "title": "Optymalizator CC" }
       ]
     },
     {
@@ -493,9 +494,23 @@
       "steps": [
         "Przejdź do **Narzędzia** → **Raport siatek** i kliknij **Policz trójkąty**.",
         "Lista pokazuje najpierw **Ciężkie** elementy. **Wszystkie** pokazuje wszystko, a filtry rozdzielają CAS i Buduj / Kupuj.",
-        "**Zajrzyj do środka** pozwala wyłączyć element, a **Pokaż w bibliotece** usunąć go."
+        "**Otwórz w Optymalizatorze CC** odchudza ciężkie elementy, **Zajrzyj do środka** pozwala wyłączyć element, a **Pokaż w bibliotece** usunąć go."
       ],
       "tips": ["Sam skan niczego nie zmienia.", "Ciężki to orientacyjna wskazówka: jeden ciężki element znaczy mniej niż setki średnich."]
+    },
+    {
+      "id": "cc-optimizer",
+      "title": "Odchudź ciężkie CC",
+      "summary": "Optymalizator CC zmniejsza liczbę trójkątów włosów, ubrań, dodatków i obiektów trybu budowania/kupowania, zachowując ich kształt, i pokazuje wynik w 3D przed zapisaniem.",
+      "keywords": ["optymalizuj", "optymalizator", "optymalizator cc", "zmniejsz", "uprość", "redukcja", "mniej poligonów", "low poly", "trójkąty", "wielokąty", "poligony", "ciężki", "lag", "lod", "włosy", "ubrania", "cas", "obiekty", "meble", "siatka"],
+      "questions": ["Jak zmniejszyć liczbę poligonów mojego CC?", "Czy mogę odchudzić ciężkie włosy?", "Jak zmniejszyć liczbę trójkątów?", "Czy mogę zoptymalizować całe ciężkie CC naraz?"],
+      "steps": [
+        "Otwórz **Narzędzia** → **Optymalizator CC** i kliknij **+** obok **Elementy** albo w **Raporcie siatek** kliknij **Otwórz w Optymalizatorze CC**, by wysłać wszystkie bardzo ciężkie elementy (strzałka obok dodaje też ciężkie).",
+        "Wybierz element z listy i ustaw, ile trójkątów zachować. Każdy element zaczyna od 50%.",
+        "Przełączaj **Przed** i **Po** nad modelem i obracaj go myszą, by sprawdzić, czy nadal dobrze wygląda.",
+        "Kliknij **Zapisz**, by zapisać wszystkie elementy z listy. Elementy biblioteki najpierw trafiają do Kosza, więc stary plik można odzyskać."
+      ],
+      "tips": ["**Zaawansowane** zawierają poziomy szczegółów, **Nie ruszaj otwartych krawędzi**, siatkę krawędzi i tekstury. **Użyj tych ustawień dla wszystkich** kopiuje ustawienia wybranego elementu do reszty.", "Nieotwierane elementy zapisują się z ustawieniem początkowym, więc najpierw sprawdź te, na których ci zależy.", "Włosy zachowują warstwę wewnętrzną: jest odtwarzana ze zmniejszonej zewnętrznej.", "Obiekt jest na liście raz, razem ze wszystkimi wariantami kolorystycznymi, bo mają wspólne siatki. Cienie zostają bez zmian, a obiekty z możliwością zmiany kolorów są pokazywane bez tekstury.", "Optymalizację można cofnąć. Oryginalne siatki są zachowywane: otwórz element ponownie w Optymalizatorze CC, by zobaczyć, gdzie stoją suwaki, i przesuń je z powrotem na 100%, albo użyj **Cofnij optymalizację** w Zajrzyj do środka.", "Zajrzyj do środka też może wysłać jedną część lub wszystkie części elementu do Optymalizatora CC."]
     },
 
     {

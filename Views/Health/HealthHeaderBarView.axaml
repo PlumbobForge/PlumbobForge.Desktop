@@ -34,6 +34,7 @@
                         <icon:PackIconBoxIcons Kind="RegularPalette" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsPatternFixerActive}"/>
                         <icon:PackIconBoxIcons Kind="RegularLayers" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsCollectionCreatorActive}"/>
                         <icon:PackIconBoxIcons Kind="RegularCube" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsMeshReportActive}"/>
+                        <icon:PackIconBoxIcons Kind="RegularMagicWand" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsOptimizerActive}"/>
                     </Panel>
 
                     <TextBlock Text="{Binding ActiveToolTitle}" FontSize="13.5" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
@@ -192,6 +193,31 @@
                                         </Button>
                                     </Grid>
                                 </Button>
+
+                                <!-- 6. CC Optimizer Option -->
+                                <Button Command="{Binding SelectSectionCommand}" CommandParameter="Optimizer"
+                                        Background="Transparent" HorizontalAlignment="Stretch" Padding="10,8" CornerRadius="6" Cursor="Hand">
+                                    <Button.Styles>
+                                        <Style Selector="Button:pointerover">
+                                            <Setter Property="Background" Value="{DynamicResource BgSurfaceHover}"/>
+                                        </Style>
+                                    </Button.Styles>
+                                    <Grid ColumnDefinitions="Auto, *, Auto">
+                                        <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularMagicWand" Width="20" Height="20" Foreground="{DynamicResource TextMain}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{loc:Loc 'optimizer.title'}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                                            <TextBlock Text="{loc:Loc 'optimizer.subtitle'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="2" Classes="tool-pin-btn" Classes.pinned="{Binding IsOptimizerPinned}"
+                                                Command="{Binding TogglePinSectionCommand}" CommandParameter="Optimizer"
+                                                ToolTip.Tip="{Binding OptimizerPinTip}">
+                                            <Panel>
+                                                <icon:PackIconBoxIcons Kind="RegularPin" Width="14" Height="14" IsVisible="{Binding !IsOptimizerPinned}"/>
+                                                <icon:PackIconBoxIcons Kind="SolidPin" Width="14" Height="14" IsVisible="{Binding IsOptimizerPinned}"/>
+                                            </Panel>
+                                        </Button>
+                                    </Grid>
+                                </Button>
                             </StackPanel>
                         </Border>
                     </Flyout>
@@ -339,6 +365,32 @@
                     </StackPanel>
                 </Border>
 
+                <StackPanel Orientation="Horizontal" Spacing="1" VerticalAlignment="Center" IsVisible="{Binding HasHeavy}" IsEnabled="{Binding !IsScanningMeshes}">
+                    <Button Classes="btn-action-sec" CornerRadius="7,0,0,7" Command="{Binding OptimizeVeryHeavyCommand}" ToolTip.Tip="{Binding OptimizeVeryHeavyText}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <icon:PackIconBoxIcons Kind="RegularMagicWand" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Loc 'tools.meshes.open_optimizer'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="OptimizerSendButton" Classes="btn-action-sec" CornerRadius="0,7,7,0" Padding="8,7" ToolTip.Tip="{loc:Loc 'tools.meshes.optimize_more'}">
+                        <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                        <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedRight">
+                                <Border Padding="6" MinWidth="260" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8">
+                                    <StackPanel Spacing="2">
+                                        <Button Command="{Binding OptimizeVeryHeavyCommand}" Click="OnOptimizerSendClick" Background="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="10,8" CornerRadius="6" Cursor="Hand">
+                                            <TextBlock Text="{Binding OptimizeVeryHeavyText}" FontSize="12.5" Foreground="{DynamicResource TextMain}"/>
+                                        </Button>
+                                        <Button Command="{Binding OptimizeHeavyCommand}" Click="OnOptimizerSendClick" Background="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="10,8" CornerRadius="6" Cursor="Hand">
+                                            <TextBlock Text="{Binding OptimizeHeavyText}" FontSize="12.5" Foreground="{DynamicResource TextMain}"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
+
                 <Button Classes="btn-action-primary"
                         Command="{Binding ScanMeshesCommand}"
                         IsEnabled="{Binding !IsScanningMeshes}">
@@ -348,6 +400,27 @@
                         <TextBlock Text="{loc:Loc 'tools.meshes.rescan'}" IsVisible="{Binding HasScannedMeshes}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
+            </StackPanel>
+
+            <!-- 6. CC Optimizer Controls -->
+            <StackPanel Grid.Column="2"
+                        Orientation="Horizontal"
+                        Spacing="16"
+                        VerticalAlignment="Center"
+                        IsVisible="{Binding IsOptimizerActive}">
+                <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="12,8" VerticalAlignment="Center" IsVisible="{Binding Optimizer.HasItems}">
+                    <StackPanel Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                        <StackPanel Spacing="1" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc 'optimizer.items'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="{Binding Optimizer.Items.Count}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                        </StackPanel>
+                        <Separator Width="1" Height="22" Background="{DynamicResource BorderSubtle}"/>
+                        <StackPanel Spacing="1" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc 'optimizer.to_save'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="{Binding Optimizer.SaveCount}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
             <!-- 4. Collection Creator Controls -->

@@ -90,10 +90,10 @@ public static class DialogHelper
 
     public static async Task<IReadOnlyList<long>> ShowConfigItemPickerAsync(bool include, string configName,
         IReadOnlyList<PlumbobForge.Backend.Database.SetsEntity> sets, IReadOnlyDictionary<long, bool> existingRules, Window? owner = null,
-        bool forCollection = false)
+        bool forCollection = false, bool forOptimizer = false)
     {
         var parent = owner ?? GetMainWindow();
-        var viewModel = new ConfigItemPickerViewModel(include, configName, sets, existingRules, forCollection);
+        var viewModel = new ConfigItemPickerViewModel(include, configName, sets, existingRules, forCollection, forOptimizer);
         if (parent != null)
         {
             await new ConfigItemPickerWindow(viewModel).ShowDialog(parent);

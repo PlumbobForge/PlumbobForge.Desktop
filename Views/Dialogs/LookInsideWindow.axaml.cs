@@ -1,5 +1,9 @@
 using System;
 using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using Avalonia.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
@@ -202,6 +206,46 @@ public partial class LookInsideWindow : Window
     private void OnOpenExportFolderClick(object? sender, RoutedEventArgs e)
     {
         ViewModel?.OpenLastExportFolder();
+    }
+
+    private void OnOptimizeMeshClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: LookInsideObjectItem obj }) SendToOptimizer(new[] { obj });
+    }
+
+    private async void OnReverseOptimizationClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: LookInsideObjectItem obj } && ViewModel is { } vm) await vm.ReverseOptimizationAsync(obj);
+    }
+
+    private void OnOptimizeAllClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: LookInsideAllItems all }) SendToOptimizer(all.Optimizable);
+    }
+
+    // Look Inside closes first so the optimizer can read the files.
+    private void SendToOptimizer(IReadOnlyList<LookInsideObjectItem> objects)
+    {
+        if (ViewModel is not { } vm) return;
+        var parts = objects
+            .Where(o => o.CanOptimize && o.Source != null && o.Object != null)
+            .Select(o => (o.Source!.ItemId, o.Object!.Resource.Key))
+            .ToHashSet();
+        if (parts.Count == 0) return;
+        if (vm.HasPendingChanges)
+        {
+            vm.StatusMessage = LocalizationManager.Instance.GetString("look_inside.optimize_pending");
+            return;
+        }
+        var ids = parts.Select(p => p.ItemId).Distinct().ToList();
+        _closeConfirmed = true;
+        Close();
+        Dispatcher.UIThread.Post(async () =>
+        {
+            if (App.Services?.GetService<MainViewModel>() is not { } main) return;
+            main.NavigateToTools();
+            await main.HealthVm.OpenInOptimizerAsync(ids, parts);
+        });
     }
 
     private void OnCloseClick(object? sender, RoutedEventArgs e)

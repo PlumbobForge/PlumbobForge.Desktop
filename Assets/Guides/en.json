@@ -45,7 +45,8 @@
         { "id": "patterns", "title": "Pattern Fixer" },
         { "id": "collections", "title": "Collection Creator" },
         { "id": "conflicts", "title": "Conflict Scanner" },
-        { "id": "meshes", "title": "Mesh Report" }
+        { "id": "meshes", "title": "Mesh Report" },
+        { "id": "optimizer", "title": "CC Optimizer" }
       ]
     },
     {
@@ -592,11 +593,28 @@
       "steps": [
         "Go to **Tools** → **Mesh Report** and click **Count triangles**.",
         "The list shows the **Heavy** items first. Choose **All** to see everything, or filter by CAS and Build / Buy.",
-        "Use **Look Inside** to switch an item off, or **View in Library** to remove it."
+        "Use **Open in CC Optimizer** to make heavy items lighter, **Look Inside** to switch an item off, or **View in Library** to remove it."
       ],
       "tips": ["Nothing is changed by the scan itself.", "Heavy is a rough guide: one heavy item matters less than hundreds of medium ones."],
-      "related": ["look-inside-triangles"],
+      "related": ["look-inside-triangles", "cc-optimizer"],
       "showMe": { "target": "tools:Meshes" }
+    },
+    {
+      "id": "cc-optimizer",
+      "category": "tools", "section": "optimizer",
+      "title": "Make heavy CC lighter",
+      "summary": "The CC Optimizer lowers the triangle count of hair, clothes, accessories and build/buy objects while keeping their shape, and shows the result in 3D before you save.",
+      "keywords": ["optimize", "optimizer", "cc optimizer", "reduce", "decimate", "simplify", "lower poly", "low poly", "triangles", "polygons", "poly count", "high poly", "heavy", "lag", "lod", "hair", "clothes", "cas", "objects", "furniture", "mesh"],
+      "questions": ["How do I lower the poly count of my CC?", "Can I make high-poly hair lighter?", "How do I reduce triangles?", "Can I optimize all my heavy CC at once?"],
+      "steps": [
+        "Open **Tools** → **CC Optimizer** and click **+** next to **Items**, or in **Mesh Report** click **Open in CC Optimizer** to send every very heavy item (the arrow next to it adds the heavy ones too).",
+        "Pick an item in the list and choose how many triangles to keep. Every item starts at 50%.",
+        "Switch between **Before** and **After** over the model and turn it with the mouse to check it still looks right.",
+        "Click **Save** to save every item in the list. Library items go to the Recycle Bin first, so you can get the old file back."
+      ],
+      "tips": ["**Advanced** has the detail levels, **Keep open edges in place**, the wireframe and the textures. **Use these settings for all items** copies the selected item's settings to the rest.", "Items you haven't opened are saved at their starting amount, so check the ones you care about first.", "Hair keeps its inner layer: it is rebuilt from the reduced outer layer.", "An object is listed once with all of its colour variants, since they share the same meshes. Shadows are left as they are, and recolourable objects show without their texture.", "Optimizing can be undone. The original meshes are kept: open the item in the CC Optimizer again to see where its sliders stand and move them back to 100%, or use **Undo optimization** in Look Inside.", "Look Inside can send one part, or all of an item's parts, to the CC Optimizer too."],
+      "related": ["mesh-report", "look-inside-triangles"],
+      "showMe": { "target": "tools:Optimizer" }
     },
     {
       "id": "pin-tool",

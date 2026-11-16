@@ -1,0 +1,395 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
+             xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             xmlns:mp="using:PlumbobForge.Desktop.Controls.MeshPreview"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="800"
+             x:Class="PlumbobForge.Desktop.Views.Health.CcOptimizerView"
+             x:DataType="vm:CcOptimizerViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.label">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="LetterSpacing" Value="0.5"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        </Style>
+        <Style Selector="TextBlock.hint">
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style Selector="Button.queue-row">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.queue-row:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.queue-row.selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="Button.queue-row Button.row-remove">
+            <Setter Property="Opacity" Value="0"/>
+        </Style>
+        <Style Selector="Button.queue-row:pointerover Button.row-remove, Button.queue-row.selected Button.row-remove">
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        <Style Selector="Button.row-remove">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style Selector="Button.lod-row">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.lod-row:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.lod-row.selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+
+        <Style Selector="WrapPanel.pills > Button.filter-btn, WrapPanel.pills > ContentPresenter > Button.filter-btn">
+            <Setter Property="Margin" Value="0,0,6,6"/>
+            <Setter Property="Padding" Value="10,5"/>
+        </Style>
+
+        <Style Selector="Button.btn-action-sec icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="Width" Value="13"/>
+            <Setter Property="Height" Value="13"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Slider.accent, Slider.accent:pointerover, Slider.accent:pressed">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="Slider.accent /template/ Thumb">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="Slider.accent /template/ Thumb:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+        <Style Selector="Slider.accent /template/ Thumb:pressed">
+            <Setter Property="Background" Value="{DynamicResource AccentPressedBrush}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid ColumnDefinitions="290, 16, *">
+
+        <!-- Sidebar -->
+        <Border Grid.Column="0" Classes="card" Padding="0">
+            <Grid RowDefinitions="Auto, *, Auto">
+                <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto" Margin="14,14,14,12">
+                    <TextBlock Text="{loc:Loc 'optimizer.list_title'}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                    <Button x:Name="ListMenuButton" Grid.Column="1" Background="{DynamicResource BgSurface}" Foreground="{DynamicResource TextMuted}" CornerRadius="6" Padding="8,6" Margin="0,0,6,0"
+                            VerticalAlignment="Center" IsVisible="{Binding HasItems}" IsEnabled="{Binding CanEditList}" ToolTip.Tip="{loc:Loc 'optimizer.list_menu'}">
+                        <icon:PackIconBoxIcons Kind="RegularDotsHorizontal" Width="14" Height="14" VerticalAlignment="Center"/>
+                        <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedRight">
+                                <Border Padding="6" MinWidth="200" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8">
+                                    <StackPanel Spacing="2">
+                                        <Button Command="{Binding RemoveSavedCommand}" Click="OnListMenuClick" Background="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="10,8" CornerRadius="6" Cursor="Hand">
+                                            <TextBlock Text="{loc:Loc 'optimizer.remove_saved'}" FontSize="12.5" Foreground="{DynamicResource TextMain}"/>
+                                        </Button>
+                                        <Button Command="{Binding ClearListCommand}" Click="OnListMenuClick" Background="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="10,8" CornerRadius="6" Cursor="Hand">
+                                            <TextBlock Text="{loc:Loc 'optimizer.clear_list'}" FontSize="12.5" Foreground="{DynamicResource TextMain}"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                    <Button Grid.Column="2" Command="{Binding AddItemsCommand}" IsEnabled="{Binding CanEditList}" Background="{DynamicResource AccentBrush}" Foreground="White" CornerRadius="6" Padding="8,6"
+                            VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'optimizer.add_items'}">
+                        <icon:PackIconBoxIcons Kind="RegularPlus" Width="14" Height="14" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+
+                <Panel Grid.Row="1">
+                    <StackPanel IsVisible="{Binding IsAdding}" Spacing="8" Margin="16,10" VerticalAlignment="Top">
+                        <ProgressBar IsIndeterminate="True" Foreground="{DynamicResource AccentBrush}"/>
+                        <TextBlock Text="{Binding ProgressText}" FontSize="11.5" Foreground="{DynamicResource TextMuted}"/>
+                    </StackPanel>
+                    <TextBlock Classes="hint" Text="{loc:Loc 'optimizer.list_empty'}" IsVisible="{Binding IsListEmpty}" Margin="18,6,18,0" TextAlignment="Center"/>
+
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled" IsVisible="{Binding HasItems}">
+                        <ItemsControl ItemsSource="{Binding Items}" Margin="8,0,8,10">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:CcQueueItem">
+                                    <Button Classes="queue-row" Classes.selected="{Binding IsSelected}" Margin="0,0,0,2"
+                                            Command="{Binding $parent[UserControl].((vm:CcOptimizerViewModel)DataContext).SelectItemCommand}" CommandParameter="{Binding}">
+                                        <Grid ColumnDefinitions="Auto, *, Auto">
+                                            <Border Width="38" Height="38" CornerRadius="7" ClipToBounds="True" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                                                    VerticalAlignment="Center" Margin="0,0,10,0">
+                                                <Panel>
+                                                    <icon:PackIconBoxIcons Kind="RegularHanger" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding Row.ShowKindIcon}"/>
+                                                    <Image Source="{Binding Row.Thumbnail}" Stretch="UniformToFill" IsVisible="{Binding !Row.ShowKindIcon}"/>
+                                                </Panel>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Title}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding FileName}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding CountText}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" Margin="0,2,0,0"/>
+                                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                                    <icon:PackIconBoxIcons Kind="RegularCheck" Width="12" Height="12" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" IsVisible="{Binding IsChecked}"/>
+                                                    <icon:PackIconBoxIcons Kind="RegularSave" Width="12" Height="12" Foreground="{DynamicResource StatusGreen}" VerticalAlignment="Center" IsVisible="{Binding IsSaved}"/>
+                                                    <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                            <Button Grid.Column="2" Classes="row-remove" VerticalAlignment="Top" Margin="4,0,0,0"
+                                                    Command="{Binding $parent[UserControl].((vm:CcOptimizerViewModel)DataContext).RemoveItemCommand}" CommandParameter="{Binding}"
+                                                    ToolTip.Tip="{loc:Loc 'optimizer.remove_item'}">
+                                                <icon:PackIconBoxIcons Kind="RegularX" Width="12" Height="12" Foreground="{DynamicResource TextMuted}"/>
+                                            </Button>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Panel>
+
+                <Border Grid.Row="2" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0" Padding="14,10" IsVisible="{Binding HasItems}">
+                    <TextBlock Text="{Binding ListSummary}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Empty list -->
+        <Border Grid.Column="2" Classes="card" IsVisible="{Binding !HasSelection}" Padding="32">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" MaxWidth="420">
+                <icon:PackIconBoxIcons Kind="RegularMagicWand" Width="36" Height="36" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center"/>
+                <TextBlock Text="{loc:Loc 'optimizer.empty_title'}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextMain}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                <TextBlock Classes="hint" Text="{loc:Loc 'optimizer.empty_text'}" FontSize="12.5" TextAlignment="Center"/>
+                <Button Classes="btn-action-primary" HorizontalAlignment="Center" Command="{Binding AddItemsCommand}" IsEnabled="{Binding CanEditList}" Margin="0,6,0,0">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <icon:PackIconBoxIcons Kind="RegularPlus" Width="14" Height="14" Foreground="White" VerticalAlignment="Center"/>
+                        <TextBlock Text="{loc:Loc 'optimizer.add_items'}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <!-- Selected item -->
+        <Grid Grid.Column="2" RowDefinitions="Auto, 12, *" IsVisible="{Binding HasSelection}">
+
+            <Border Grid.Row="0" Classes="card" Padding="18,14">
+                <Grid ColumnDefinitions="*, 24, Auto" RowDefinitions="Auto, Auto">
+                    <StackPanel Grid.Column="0" Spacing="10">
+                        <Grid ColumnDefinitions="*, Auto" IsEnabled="{Binding ShowEditor}">
+                            <Slider Classes="accent" Minimum="5" Maximum="100" SmallChange="1" LargeChange="10" Value="{Binding RatioPercent}" IsEnabled="{Binding CanEditRatio}" VerticalAlignment="Center"/>
+                            <WrapPanel Grid.Column="1" Classes="pills" IsEnabled="{Binding CanEditRatio}" Margin="20,6,0,0" VerticalAlignment="Center">
+                                <Button Classes="filter-btn" Command="{Binding SetRatioCommand}" CommandParameter="75" Content="75%"/>
+                                <Button Classes="filter-btn" Command="{Binding SetRatioCommand}" CommandParameter="50" Content="50%"/>
+                                <Button Classes="filter-btn" Command="{Binding SetRatioCommand}" CommandParameter="25" Content="25%"/>
+                                <Button Classes="filter-btn" Command="{Binding SetRatioCommand}" CommandParameter="100" Content="{loc:Loc 'optimizer.original'}"/>
+                            </WrapPanel>
+                        </Grid>
+
+                        <WrapPanel IsVisible="{Binding ShowEditor}">
+                            <TextBlock Text="{Binding SelectedLodName}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="0,0,10,0" IsVisible="{Binding HasSeveralLods}"/>
+                            <TextBlock Text="{Binding BeforeText}" FontSize="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            <icon:PackIconBoxIcons Kind="RegularArrowRight" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="8,0"/>
+                            <TextBlock Text="{Binding AfterText}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                            <Border Classes="weight-chip" Classes.light="{Binding IsLight}" Classes.medium="{Binding IsMedium}" Classes.heavy="{Binding IsHeavy}" Classes.veryheavy="{Binding IsVeryHeavy}"
+                                    ToolTip.Tip="{Binding WeightTip}" Margin="10,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding WeightText}"/>
+                            </Border>
+                            <TextBlock Text="{Binding SavingText}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="14,0,0,0"/>
+                        </WrapPanel>
+                        <TextBlock Classes="hint" Text="{Binding LimitNoteText}" IsVisible="{Binding ShowLimitNote}"/>
+                        <TextBlock Classes="hint" Text="{loc:Loc 'optimizer.linked_note'}" IsVisible="{Binding IsSelectedLinked}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Spacing="8" VerticalAlignment="Top" MinWidth="190">
+                        <Button Classes="btn-action-primary" Command="{Binding SaveCommand}" IsEnabled="{Binding CanSave}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                ToolTip.Tip="{loc:Loc 'optimizer.save_tip'}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <icon:PackIconBoxIcons Kind="RegularSave" Width="14" Height="14" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding SaveText}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Classes="btn-action-sec" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="{Binding ShowEditor}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <icon:PackIconBoxIcons Kind="RegularSlider"/>
+                                <TextBlock Text="{loc:Loc 'common.advanced'}" VerticalAlignment="Center"/>
+                                <icon:PackIconBoxIcons Kind="RegularChevronDown"/>
+                            </StackPanel>
+                            <Button.Flyout>
+                                <Flyout Placement="BottomEdgeAlignedRight">
+                                    <Border Width="330" MaxHeight="520" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10">
+                                        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                                            <StackPanel Margin="16,14" Spacing="16">
+
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Classes="label" Text="{loc:Loc 'optimizer.levels'}"/>
+                                                    <ItemsControl ItemsSource="{Binding Lods}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:CcLodOption">
+                                                                <Button Classes="lod-row" Classes.selected="{Binding IsSelected}" Margin="0,0,0,2"
+                                                                        Command="{Binding $parent[UserControl].((vm:CcOptimizerViewModel)DataContext).SelectLodCommand}" CommandParameter="{Binding}">
+                                                                    <Grid ColumnDefinitions="*, Auto">
+                                                                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                                            <TextBlock Text="{Binding Name}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                                                                            <TextBlock Text="{loc:Loc 'optimizer.linked'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" IsVisible="{Binding IsLinked}"/>
+                                                                        </StackPanel>
+                                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                                            <TextBlock Text="{Binding BeforeText}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextDecorations="Strikethrough" IsVisible="{Binding IsChanged}"/>
+                                                                            <TextBlock Text="{Binding CountText}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                                                                        </StackPanel>
+                                                                    </Grid>
+                                                                </Button>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <Grid ColumnDefinitions="*, Auto" IsVisible="{Binding HasLinkOption}" ToolTip.Tip="{loc:Loc 'optimizer.link_tip'}">
+                                                        <TextBlock Text="{Binding LinkText}" FontSize="12" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding LinkSecondLod}" MinWidth="0" VerticalAlignment="Center" OnContent="" OffContent=""/>
+                                                    </Grid>
+                                                </StackPanel>
+
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Classes="label" Text="{loc:Loc 'optimizer.options'}"/>
+                                                    <Grid ColumnDefinitions="*, Auto" ToolTip.Tip="{loc:Loc 'optimizer.lock_edges_tip'}">
+                                                        <TextBlock Text="{loc:Loc 'optimizer.lock_edges'}" FontSize="12" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding LockEdges}" MinWidth="0" VerticalAlignment="Center" OnContent="" OffContent=""/>
+                                                    </Grid>
+                                                    <TextBlock Classes="hint" Text="{loc:Loc 'optimizer.double_sided_note'}" IsVisible="{Binding ShowDoubleSidedNote}"/>
+                                                </StackPanel>
+
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock Classes="label" Text="{loc:Loc 'optimizer.preview'}"/>
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBlock Text="{loc:Loc 'optimizer.wireframe'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowWireframe}" MinWidth="0" VerticalAlignment="Center" OnContent="" OffContent=""/>
+                                                    </Grid>
+                                                    <StackPanel Spacing="6" IsVisible="{Binding HasTextures}">
+                                                        <TextBlock Text="{loc:Loc 'optimizer.texture'}" FontSize="12" Foreground="{DynamicResource TextMain}"/>
+                                                        <ItemsControl ItemsSource="{Binding TextureOptions}">
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate>
+                                                                    <WrapPanel Classes="pills"/>
+                                                                </ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate x:DataType="vm:CcTextureOption">
+                                                                    <Button Classes="filter-btn" Classes.active="{Binding IsSelected}" Content="{Binding Label}" Margin="0,0,6,6" Padding="10,5"
+                                                                            Command="{Binding $parent[UserControl].((vm:CcOptimizerViewModel)DataContext).SelectTextureCommand}" CommandParameter="{Binding}"/>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </StackPanel>
+                                                    <StackPanel Spacing="6" IsVisible="{Binding HasPresetChoice}">
+                                                        <TextBlock Text="{loc:Loc 'optimizer.preset'}" FontSize="12" Foreground="{DynamicResource TextMain}"/>
+                                                        <ItemsControl ItemsSource="{Binding Presets}">
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate>
+                                                                    <WrapPanel Classes="pills"/>
+                                                                </ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate x:DataType="vm:CcPresetOption">
+                                                                    <Button Classes="filter-btn" Classes.active="{Binding IsSelected}" Content="{Binding Label}" Margin="0,0,6,6" Padding="10,5" MinWidth="34"
+                                                                            Command="{Binding $parent[UserControl].((vm:CcOptimizerViewModel)DataContext).SelectPresetCommand}" CommandParameter="{Binding}"/>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </StackPanel>
+                                                    <Grid ColumnDefinitions="*, Auto" IsVisible="{Binding ShowTransparencyToggle}" ToolTip.Tip="{loc:Loc 'optimizer.transparency_tip'}">
+                                                        <TextBlock Text="{loc:Loc 'optimizer.transparency'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding UseTransparency}" MinWidth="0" VerticalAlignment="Center" OnContent="" OffContent=""/>
+                                                    </Grid>
+                                                    <TextBlock Classes="hint" Text="{loc:Loc 'optimizer.texture_note'}" IsVisible="{Binding HasTextures}"/>
+                                                </StackPanel>
+
+                                                <StackPanel Spacing="6" IsVisible="{Binding CanApplyToAll}">
+                                                    <Border Height="1" Background="{DynamicResource BorderSubtle}"/>
+                                                    <Button Classes="btn-action-sec" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding ApplyToAllCommand}" Margin="0,4,0,0">
+                                                        <TextBlock Text="{loc:Loc 'optimizer.apply_to_all'}"/>
+                                                    </Button>
+                                                    <TextBlock Classes="hint" Text="{loc:Loc 'optimizer.apply_to_all_note'}"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                    </StackPanel>
+
+                    <Grid Grid.Row="1" Grid.ColumnSpan="3" ColumnDefinitions="Auto, *" Margin="0,10,0,0" IsVisible="{Binding IsSaving}">
+                        <ProgressBar IsIndeterminate="True" Width="60" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Grid.Column="1" Text="{Binding ProgressText}" FontSize="12" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                    </Grid>
+                    <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding StatusMessage}" FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,10,0,0">
+                        <TextBlock.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                <Binding Path="HasStatus"/>
+                                <Binding Path="!IsSaving"/>
+                            </MultiBinding>
+                        </TextBlock.IsVisible>
+                    </TextBlock>
+                </Grid>
+            </Border>
+
+            <!-- 3D preview -->
+            <Border Grid.Row="2" Classes="card" Padding="0" ClipToBounds="True" MinHeight="260">
+                <Panel>
+                    <mp:MeshPreviewControl Meshes="{Binding PreviewMeshes}" Texture="{Binding PreviewTexture}" ShowWireframe="{Binding ShowWireframe}"
+                                           Background="{DynamicResource BgSurface}" IsVisible="{Binding ShowEditor}"/>
+
+                    <Border HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,14,0,0" Background="{DynamicResource BgCard}" CornerRadius="8" Padding="3"
+                            BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" BoxShadow="0 4 16 #20000000, 0 1 4 #10000000" IsVisible="{Binding ShowEditor}">
+                        <StackPanel Orientation="Horizontal" Spacing="2">
+                            <Button Classes="segment-btn" Classes.active="{Binding ShowingOriginal}" Command="{Binding ShowBeforeCommand}" Content="{loc:Loc 'optimizer.show_before'}" Padding="16,6"/>
+                            <Button Classes="segment-btn" Classes.active="{Binding ShowOptimized}" Command="{Binding ShowAfterCommand}" Content="{loc:Loc 'optimizer.show_after'}" Padding="16,6"/>
+                        </StackPanel>
+                    </Border>
+
+                    <ProgressBar IsIndeterminate="True" Width="60" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="16,20" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsWorking}"/>
+                    <TextBlock Text="{loc:Loc 'optimizer.controls_hint'}" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="14,10" VerticalAlignment="Bottom" HorizontalAlignment="Left" IsHitTestVisible="False" IsVisible="{Binding ShowEditor}"/>
+
+                    <StackPanel IsVisible="{Binding IsLoading}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+                        <ProgressBar IsIndeterminate="True" Width="160" Foreground="{DynamicResource AccentBrush}"/>
+                        <TextBlock Text="{loc:Loc 'optimizer.loading'}" FontSize="12.5" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel IsVisible="{Binding HasError}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" MaxWidth="460" Margin="24">
+                        <icon:PackIconBoxIcons Kind="RegularCube" Width="28" Height="28" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding ErrorMessage}" FontSize="13" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap" TextAlignment="Center"/>
+                    </StackPanel>
+                </Panel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

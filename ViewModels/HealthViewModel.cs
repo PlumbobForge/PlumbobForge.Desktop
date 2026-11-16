@@ -20,13 +20,14 @@ public partial class HealthViewModel : ObservableObject
     #region Navigation / Sections
 
     [ObservableProperty]
-    private string _activeSection = "Cache"; // "Cache", "Conflicts", "Patterns", "Collections" or "Meshes"
+    private string _activeSection = "Cache"; // "Cache", "Conflicts", "Patterns", "Collections", "Meshes" or "Optimizer"
 
     public bool IsCacheCleanerActive => ActiveSection == "Cache";
     public bool IsConflictScannerActive => ActiveSection == "Conflicts";
     public bool IsPatternFixerActive => ActiveSection == "Patterns";
     public bool IsCollectionCreatorActive => ActiveSection == "Collections";
     public bool IsMeshReportActive => ActiveSection == "Meshes";
+    public bool IsOptimizerActive => ActiveSection == "Optimizer";
 
     public string ActiveToolTitle => ActiveSection switch
     {
@@ -34,6 +35,7 @@ public partial class HealthViewModel : ObservableObject
         "Patterns" => LocalizationManager.Instance.GetString("tools.patterns.title"),
         "Collections" => LocalizationManager.Instance.GetString("tools.collections.title"),
         "Meshes" => LocalizationManager.Instance.GetString("tools.meshes.title"),
+        "Optimizer" => LocalizationManager.Instance.GetString("optimizer.title"),
         _ => LocalizationManager.Instance.GetString("tools.cache.title")
     };
 
@@ -43,6 +45,7 @@ public partial class HealthViewModel : ObservableObject
         "Patterns" => "RegularPalette",
         "Collections" => "RegularLayers",
         "Meshes" => "RegularCube",
+        "Optimizer" => "RegularMagicWand",
         _ => "RegularTrash"
     };
 
@@ -55,6 +58,7 @@ public partial class HealthViewModel : ObservableObject
         OnPropertyChanged(nameof(IsPatternFixerActive));
         OnPropertyChanged(nameof(IsCollectionCreatorActive));
         OnPropertyChanged(nameof(IsMeshReportActive));
+        OnPropertyChanged(nameof(IsOptimizerActive));
         OnPropertyChanged(nameof(ActiveToolTitle));
         OnPropertyChanged(nameof(ActiveToolIcon));
 
@@ -72,17 +76,13 @@ public partial class HealthViewModel : ObservableObject
         {
             _ = LoadCollectionsAsync();
         }
-        else if (section == "Meshes" && !HasScannedMeshes && !IsScanningMeshes)
-        {
-            _ = ScanMeshesAsync();
-        }
     }
 
     #endregion
 
     #region Pinned Tools
 
-    public static readonly string[] Sections = { "Cache", "Conflicts", "Patterns", "Collections", "Meshes" };
+    public static readonly string[] Sections = { "Cache", "Conflicts", "Patterns", "Collections", "Meshes", "Optimizer" };
 
     public static string SectionTitleKey(string section) => section switch
     {
@@ -90,6 +90,7 @@ public partial class HealthViewModel : ObservableObject
         "Patterns" => "tools.patterns.title",
         "Collections" => "tools.collections.title",
         "Meshes" => "tools.meshes.title",
+        "Optimizer" => "optimizer.title",
         _ => "tools.cache.title"
     };
 
@@ -99,6 +100,7 @@ public partial class HealthViewModel : ObservableObject
         "Patterns" => PlumbobForge.Desktop.Controls.Icons.PackIconBoxIconsKind.RegularPalette,
         "Collections" => PlumbobForge.Desktop.Controls.Icons.PackIconBoxIconsKind.RegularLayers,
         "Meshes" => PlumbobForge.Desktop.Controls.Icons.PackIconBoxIconsKind.RegularCube,
+        "Optimizer" => PlumbobForge.Desktop.Controls.Icons.PackIconBoxIconsKind.RegularMagicWand,
         _ => PlumbobForge.Desktop.Controls.Icons.PackIconBoxIconsKind.RegularTrash
     };
 
@@ -117,12 +119,14 @@ public partial class HealthViewModel : ObservableObject
     public bool IsPatternsPinned => IsSectionPinned("Patterns");
     public bool IsCollectionsPinned => IsSectionPinned("Collections");
     public bool IsMeshesPinned => IsSectionPinned("Meshes");
+    public bool IsOptimizerPinned => IsSectionPinned("Optimizer");
 
     public string CachePinTip => PinTip("Cache");
     public string ConflictsPinTip => PinTip("Conflicts");
     public string PatternsPinTip => PinTip("Patterns");
     public string CollectionsPinTip => PinTip("Collections");
     public string MeshesPinTip => PinTip("Meshes");
+    public string OptimizerPinTip => PinTip("Optimizer");
 
     private string PinTip(string section) =>
         LocalizationManager.Instance.GetString(IsSectionPinned(section) ? "tools.unpin_tab" : "tools.pin_tab");
@@ -151,11 +155,13 @@ public partial class HealthViewModel : ObservableObject
         OnPropertyChanged(nameof(IsPatternsPinned));
         OnPropertyChanged(nameof(IsCollectionsPinned));
         OnPropertyChanged(nameof(IsMeshesPinned));
+        OnPropertyChanged(nameof(IsOptimizerPinned));
         OnPropertyChanged(nameof(CachePinTip));
         OnPropertyChanged(nameof(ConflictsPinTip));
         OnPropertyChanged(nameof(PatternsPinTip));
         OnPropertyChanged(nameof(CollectionsPinTip));
         OnPropertyChanged(nameof(MeshesPinTip));
+        OnPropertyChanged(nameof(OptimizerPinTip));
     }
 
     #endregion
@@ -220,9 +226,10 @@ public partial class HealthViewModel : ObservableObject
         _ = ScanCachesAsync();
         InitCollectionIcons();
         InitMeshReport();
+        InitOptimizer();
 
         var initialTool = options?.Value?.LastActiveTool;
-        if (!string.IsNullOrWhiteSpace(initialTool) && (initialTool == "Cache" || initialTool == "Conflicts" || initialTool == "Patterns" || initialTool == "Collections" || initialTool == "Meshes"))
+        if (!string.IsNullOrWhiteSpace(initialTool) && (initialTool == "Cache" || initialTool == "Conflicts" || initialTool == "Patterns" || initialTool == "Collections" || initialTool == "Meshes" || initialTool == "Optimizer"))
         {
             SelectSection(initialTool);
         }

@@ -8,4 +8,8 @@ public partial class HealthHeaderBarView : UserControl
     {
         InitializeComponent();
     }
+
+    // Hide after the command runs, or it never runs.
+    private void OnOptimizerSendClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e) =>
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => OptimizerSendButton.Flyout?.Hide());
 }

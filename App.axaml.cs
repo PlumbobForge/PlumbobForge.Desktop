@@ -375,6 +375,7 @@ public partial class App : Application
         services.AddScoped<PackageEditService>();
         services.AddScoped<CasFlagsService>();
         services.AddScoped<CacheBuilderService>();
+        services.AddScoped<CcOptimizerService>();
         services.AddScoped<MigrationService>();
         services.AddScoped<PKGManager>();
         services.AddScoped<VaultService>();

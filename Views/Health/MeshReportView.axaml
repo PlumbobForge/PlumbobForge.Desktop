@@ -81,6 +81,17 @@
             </StackPanel>
 
             <Grid IsVisible="{Binding !IsScanningMeshes}">
+                <!-- Not counted yet -->
+                <Border Classes="settings-card" Padding="32" IsVisible="{Binding !HasScannedMeshes}" VerticalAlignment="Top">
+                    <StackPanel HorizontalAlignment="Center" Spacing="12" Margin="20">
+                        <Border Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="24" Width="48" Height="48" HorizontalAlignment="Center">
+                            <icon:PackIconBoxIcons Kind="RegularCube" Width="24" Height="24" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="{loc:Loc 'tools.meshes.intro_title'}" FontWeight="Bold" FontSize="16" Foreground="{DynamicResource TextMain}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{loc:Loc 'tools.meshes.intro_desc'}" FontSize="13" Foreground="{DynamicResource TextMuted}" MaxWidth="560" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- Nothing to show -->
                 <Border Classes="settings-card" Padding="32,24" IsVisible="{Binding ShowMeshEmpty}" VerticalAlignment="Top" Margin="0,8">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
@@ -92,7 +103,7 @@
                     </StackPanel>
                 </Border>
 
-                <ListBox Classes="card-list" ItemsSource="{Binding FilteredMeshRows}" IsVisible="{Binding !ShowMeshEmpty}">
+                <ListBox Classes="card-list" ItemsSource="{Binding FilteredMeshRows}" IsVisible="{Binding ShowMeshList}">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel />
@@ -141,6 +152,12 @@
                                             <StackPanel Orientation="Horizontal" Spacing="6">
                                                 <icon:PackIconBoxIcons Kind="RegularSearch" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
                                                 <TextBlock Text="{loc:Loc 'look_inside.title'}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Classes="btn-action-sec" Command="{Binding OptimizeCommand}" ToolTip.Tip="{loc:Loc 'optimizer.open_tip'}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <icon:PackIconBoxIcons Kind="RegularMagicWand" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Loc 'optimizer.open'}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
                                         <Button Classes="btn-action-sec" Command="{Binding ShowInLibraryCommand}">

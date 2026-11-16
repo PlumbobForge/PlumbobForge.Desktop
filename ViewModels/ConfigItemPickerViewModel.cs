@@ -27,8 +27,11 @@ public partial class ConfigItemPickerViewModel : ObservableObject
 
     public bool Include { get; }
     public bool ForCollection { get; }
-    public string Title => L(Include ? "dialogs.item_picker.title_include" : "dialogs.item_picker.title_exclude");
-    public string Subtitle => ForCollection
+    public bool ForOptimizer { get; }
+    public string Title => ForOptimizer ? L("dialogs.item_picker.title_optimizer")
+        : L(Include ? "dialogs.item_picker.title_include" : "dialogs.item_picker.title_exclude");
+    public string Subtitle => ForOptimizer ? L("dialogs.item_picker.subtitle_optimizer")
+        : ForCollection
         ? L("dialogs.item_picker.subtitle_collection", _configName)
         : L(Include ? "dialogs.item_picker.subtitle_include" : "dialogs.item_picker.subtitle_exclude", _configName);
     private readonly string _configName;
@@ -60,15 +63,17 @@ public partial class ConfigItemPickerViewModel : ObservableObject
     private int _pickedCount;
 
     public bool HasPicked => PickedCount > 0;
-    public string ConfirmText => L(Include ? "dialogs.item_picker.confirm_include" : "dialogs.item_picker.confirm_exclude", PickedCount);
+    public string ConfirmText => ForOptimizer ? L("dialogs.item_picker.confirm_optimizer", PickedCount)
+        : L(Include ? "dialogs.item_picker.confirm_include" : "dialogs.item_picker.confirm_exclude", PickedCount);
     public string SelectedText => L("dialogs.item_picker.selected", PickedCount);
 
     public IReadOnlyList<long> Result { get; private set; } = Array.Empty<long>();
 
-    public ConfigItemPickerViewModel(bool include, string configName, IReadOnlyList<SetsEntity> sets, IReadOnlyDictionary<long, bool> existingRules, bool forCollection = false)
+    public ConfigItemPickerViewModel(bool include, string configName, IReadOnlyList<SetsEntity> sets, IReadOnlyDictionary<long, bool> existingRules, bool forCollection = false, bool forOptimizer = false)
     {
         Include = include;
         ForCollection = forCollection;
+        ForOptimizer = forOptimizer;
         _configName = configName;
         _existingRules = existingRules;
         _setsById = sets.ToDictionary(s => s.Id);
@@ -102,6 +107,7 @@ public partial class ConfigItemPickerViewModel : ObservableObject
         {
             var services = App.Services ?? throw new InvalidOperationException("Services are not available");
             bool forCollection = ForCollection;
+            bool forOptimizer = ForOptimizer;
             var rows = await Task.Run(async () =>
             {
                 using var scope = services.CreateScope();
@@ -115,6 +121,12 @@ public partial class ConfigItemPickerViewModel : ObservableObject
                     query = query.Where(m => types.Contains(m.PackageType) ||
                         db.MetaEntities.Any(c => c.ParentMetaEntityId == m.Id && types.Contains(c.PackageType)));
                 }
+                if (forOptimizer)
+                {
+                    var types = PackageTypeHelper.CasTypes.Concat(PackageTypeHelper.BuildBuyTypes).ToArray();
+                    query = query.Where(m => types.Contains(m.PackageType) ||
+                        db.MetaEntities.Any(c => c.ParentMetaEntityId == m.Id && types.Contains(c.PackageType)));
+                }
                 return await query
                     .Select(m => new { m.Id, m.FileName, m.SetsEntityId, m.IsFavorite })
                     .ToListAsync();
@@ -125,7 +137,7 @@ public partial class ConfigItemPickerViewModel : ObservableObject
                 .Select(r =>
                 {
                     bool? rule = _existingRules.TryGetValue(r.Id, out bool inc) ? inc : null;
-                    var row = new PickerItemRow(r.Id, r.FileName, r.SetsEntityId, r.IsFavorite, GetLocation(r.SetsEntityId), rule, Include);
+                    var row = new PickerItemRow(r.Id, r.FileName, r.SetsEntityId, r.IsFavorite, GetLocation(r.SetsEntityId), rule, Include, ForOptimizer);
                     row.CheckedChanged += () => PickedCount = _allItems.Count(i => i.IsChecked);
                     return row;
                 })
@@ -247,7 +259,7 @@ public sealed partial class PickerItemRow : ObservableObject
 
     public event Action? CheckedChanged;
 
-    public PickerItemRow(long id, string fileName, long? setId, bool isFavorite, string location, bool? existingRule, bool pickerIncludes)
+    public PickerItemRow(long id, string fileName, long? setId, bool isFavorite, string location, bool? existingRule, bool pickerIncludes, bool forOptimizer = false)
     {
         Id = id;
         FileName = fileName;
@@ -255,7 +267,7 @@ public sealed partial class PickerItemRow : ObservableObject
         IsFavorite = isFavorite;
         Location = location;
         CanPick = existingRule != pickerIncludes;
-        RuleNote = existingRule switch
+        RuleNote = forOptimizer && existingRule == true ? LocalizationManager.Instance.GetString("dialogs.item_picker.already_added") : existingRule switch
         {
             true => LocalizationManager.Instance.GetString(pickerIncludes ? "dialogs.item_picker.already_included" : "dialogs.item_picker.included_now"),
             false => LocalizationManager.Instance.GetString(pickerIncludes ? "dialogs.item_picker.excluded_now" : "dialogs.item_picker.already_excluded"),

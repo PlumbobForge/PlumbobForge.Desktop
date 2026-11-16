@@ -483,6 +483,13 @@
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
+                                            <Button Classes="btn-action-sec" HorizontalAlignment="Left" Margin="0,4,0,2" IsVisible="{Binding HasOptimizable}"
+                                                    Click="OnOptimizeAllClick" ToolTip.Tip="{loc:Loc 'optimizer.open_tip'}">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <icon:PackIconBoxIcons Kind="RegularMagicWand"/>
+                                                    <TextBlock Text="{Binding OptimizeAllText}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
@@ -657,10 +664,15 @@
 
                                     <!-- Mesh size: triangles of the most detailed level, read from the package's own meshes -->
                                     <Border IsVisible="{Binding ShowMeshCard}" Classes="card" Padding="16,10">
-                                        <Grid ColumnDefinitions="140, *" RowDefinitions="Auto, Auto, Auto">
+                                        <Grid ColumnDefinitions="140, *" RowDefinitions="Auto, Auto, Auto, Auto">
                                             <TextBlock Grid.Row="0" Classes="fact-label" Text="{loc:Loc 'look_inside.triangles'}" Margin="0,5"/>
                                             <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="10" IsVisible="{Binding HasMeshData}" Margin="0,2"
                                                         ToolTip.Tip="{Binding WeightTip}">
+                                                <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding ShowOriginalTriangles}" VerticalAlignment="Center"
+                                                            ToolTip.Tip="{loc:Loc 'look_inside.optimized_tip'}">
+                                                    <TextBlock Classes="value" Text="{Binding OriginalTrianglesText}" Foreground="{DynamicResource TextMuted}" TextDecorations="Strikethrough" VerticalAlignment="Center"/>
+                                                    <icon:PackIconBoxIcons Kind="RegularArrowRight" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                </StackPanel>
                                                 <TextBlock Classes="value" Text="{Binding TrianglesText}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                                 <Border Classes="weight-chip" Classes.light="{Binding IsLight}" Classes.medium="{Binding IsMedium}" Classes.heavy="{Binding IsHeavy}" Classes.veryheavy="{Binding IsVeryHeavy}">
                                                     <TextBlock Text="{Binding WeightText}"/>
@@ -673,6 +685,25 @@
 
                                             <TextBlock Grid.Row="2" Classes="fact-label" Text="{loc:Loc 'look_inside.lods'}" IsVisible="{Binding HasLods}" Margin="0,4"/>
                                             <TextBlock Grid.Row="2" Grid.Column="1" Classes="value" Text="{Binding LodsText}" IsVisible="{Binding HasLods}" TextWrapping="Wrap" Margin="0,3"/>
+
+                                            <WrapPanel Grid.Row="3" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,2">
+                                                <Button Classes="btn-action-sec" Margin="0,0,8,0"
+                                                        IsVisible="{Binding CanOptimize}" Click="OnOptimizeMeshClick"
+                                                        ToolTip.Tip="{loc:Loc 'optimizer.open_tip'}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <icon:PackIconBoxIcons Kind="RegularMagicWand"/>
+                                                        <TextBlock Text="{loc:Loc 'optimizer.open'}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Classes="btn-action-sec"
+                                                        IsVisible="{Binding IsOptimized}" Click="OnReverseOptimizationClick"
+                                                        ToolTip.Tip="{loc:Loc 'look_inside.reverse_tip'}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <icon:PackIconBoxIcons Kind="RegularUndo"/>
+                                                        <TextBlock Text="{loc:Loc 'look_inside.reverse'}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </WrapPanel>
                                         </Grid>
                                     </Border>
 

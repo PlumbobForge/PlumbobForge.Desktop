@@ -47,6 +47,11 @@ public sealed partial class LookInsideAllItems : ObservableObject
     public bool HasHeaviest => Heaviest.Count > 0;
     public string MeshSummaryText { get; private set; } = string.Empty;
 
+    public IReadOnlyList<LookInsideObjectItem> Optimizable { get; private set; } = Array.Empty<LookInsideObjectItem>();
+    public bool HasOptimizable => Optimizable.Count > 0;
+    public string OptimizeAllText => L("look_inside.optimize_all",
+        Optimizable.Count(o => o.IsCas) + Optimizable.Where(o => !o.IsCas).Select(o => o.Source?.ItemId).Distinct().Count());
+
     public void RefreshMesh()
     {
         var withMesh = _objects.Where(o => o.HasMeshData).OrderByDescending(o => o.Triangles).ToList();
@@ -58,6 +63,10 @@ public sealed partial class LookInsideAllItems : ObservableObject
         OnPropertyChanged(nameof(Heaviest));
         OnPropertyChanged(nameof(HasHeaviest));
         OnPropertyChanged(nameof(MeshSummaryText));
+        Optimizable = withMesh.Where(o => o.CanOptimize).ToList();
+        OnPropertyChanged(nameof(Optimizable));
+        OnPropertyChanged(nameof(HasOptimizable));
+        OnPropertyChanged(nameof(OptimizeAllText));
     }
 
     public LookInsideAllItems(IReadOnlyList<LookInsideObjectItem> objects)

@@ -30,6 +30,11 @@
 
             <!-- SECTION 5: MESH REPORT -->
             <health:MeshReportView IsVisible="{Binding IsMeshReportActive}"/>
+
+            <!-- SECTION 6: CC OPTIMIZER -->
+            <Panel IsVisible="{Binding IsOptimizerActive}">
+                <health:CcOptimizerView DataContext="{Binding Optimizer}"/>
+            </Panel>
         </Grid>
     </Grid>
 </UserControl>

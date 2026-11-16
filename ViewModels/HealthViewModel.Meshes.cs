@@ -104,12 +104,16 @@ public partial class MeshReportRowViewModel : ObservableObject
 
     public static Func<MeshReportRowViewModel, Task>? OnLookInsideRequested { get; set; }
     public static Action<MeshReportRowViewModel>? OnShowInLibraryRequested { get; set; }
+    public static Func<MeshReportRowViewModel, Task>? OnOptimizeRequested { get; set; }
 
     [RelayCommand]
     private Task LookInside() => OnLookInsideRequested?.Invoke(this) ?? Task.CompletedTask;
 
     [RelayCommand]
     private void ShowInLibrary() => OnShowInLibraryRequested?.Invoke(this);
+
+    [RelayCommand]
+    private Task Optimize() => OnOptimizeRequested?.Invoke(this) ?? Task.CompletedTask;
 }
 
 public partial class HealthViewModel
@@ -132,6 +136,7 @@ public partial class HealthViewModel
     private bool _isScanningMeshes;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowMeshList))]
     private bool _hasScannedMeshes;
 
     [ObservableProperty]
@@ -169,6 +174,7 @@ public partial class HealthViewModel
     public string MeshScanProgressText => LocalizationManager.Instance.GetString("tools.meshes.progress", MeshScanDone.ToString("N0"), MeshScanTotal.ToString("N0"));
 
     public bool ShowMeshEmpty => HasScannedMeshes && FilteredMeshRows.Count == 0;
+    public bool ShowMeshList => HasScannedMeshes && FilteredMeshRows.Count > 0;
     public string MeshEmptyTitle => LocalizationManager.Instance.GetString(IsMeshEmptyBecauseNoneHeavy ? "tools.meshes.healthy_title" : "tools.meshes.empty_title");
     public string MeshEmptyText => LocalizationManager.Instance.GetString(IsMeshEmptyBecauseNoneHeavy ? "tools.meshes.healthy_desc" : "tools.meshes.empty_desc");
     private bool IsMeshEmptyBecauseNoneHeavy => TotalMeshesCounted > 0 && HeavyMeshCount == 0 && IsMeshFilterHeavy && !HasMeshSearchQuery;
@@ -189,6 +195,7 @@ public partial class HealthViewModel
         OnPropertyChanged(nameof(IsMeshKindAll));
         OnPropertyChanged(nameof(IsMeshKindCas));
         OnPropertyChanged(nameof(IsMeshKindBuildBuy));
+        RaiseOptimizerCounts();
         ApplyMeshFilter();
     }
 
@@ -252,6 +259,7 @@ public partial class HealthViewModel
             _allMeshRows.AddRange(summary.Rows.Select(r => new MeshReportRowViewModel(r)));
             TotalMeshesCounted = _allMeshRows.Count;
             HeavyMeshCount = _allMeshRows.Count(r => r.IsHeavyOrWorse);
+            RaiseOptimizerCounts();
 
             var notes = new List<string>();
             if (summary.ExternalMeshObjects > 0)
@@ -299,6 +307,7 @@ public partial class HealthViewModel
 
         FilteredMeshRows.ReplaceAll(filtered);
         OnPropertyChanged(nameof(ShowMeshEmpty));
+        OnPropertyChanged(nameof(ShowMeshList));
         OnPropertyChanged(nameof(MeshEmptyTitle));
         OnPropertyChanged(nameof(MeshEmptyText));
     }
@@ -308,9 +317,34 @@ public partial class HealthViewModel
         MeshReportRowViewModel.OnShowInLibraryRequested = row => NavigateToPackageItem(row.Model.MetaEntityId, row.Model.SetId);
         MeshReportRowViewModel.OnLookInsideRequested = async row =>
         {
-            await DialogHelper.ShowLookInsideAsync(row.Model.MetaEntityId, row.FileName);
+            if (await DialogHelper.ShowLookInsideAsync(row.Model.MetaEntityId, row.FileName)) await RescanMeshItemAsync(row.Model.MetaEntityId);
             await RefreshMeshOffStateAsync(row.Model.MetaEntityId);
         };
+        MeshReportRowViewModel.OnOptimizeRequested = row =>
+        {
+            OpenInOptimizer(new[] { row.Model });
+            return Task.CompletedTask;
+        };
+    }
+
+    private async Task RescanMeshItemAsync(long metaEntityId)
+    {
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var rows = await scope.ServiceProvider.GetRequiredService<MeshReportService>().ScanItemAsync(metaEntityId);
+            if (rows == null) return;
+            _allMeshRows.RemoveAll(r => r.Model.MetaEntityId == metaEntityId);
+            _allMeshRows.AddRange(rows.Select(r => new MeshReportRowViewModel(r)));
+            _allMeshRows.Sort((a, b) => b.Triangles.CompareTo(a.Triangles));
+            TotalMeshesCounted = _allMeshRows.Count;
+            HeavyMeshCount = _allMeshRows.Count(r => r.IsHeavyOrWorse);
+            RaiseOptimizerCounts();
+            ApplyMeshFilter();
+        }
+        catch
+        {
+        }
     }
 
     // Look Inside can switch objects off; the report shows that without scanning everything again.
