@@ -423,11 +423,12 @@
       "category": "library", "section": "look-inside",
       "title": "See how many triangles an item has",
       "summary": "Look Inside counts the triangles of CAS parts and Build/Buy objects, so you can spot the ones that slow the game down.",
-      "keywords": ["triangles", "polygons", "poly count", "polycount", "high poly", "heavy", "lag", "slow", "performance", "mesh", "vertices", "lod", "geom"],
+      "keywords": ["triangles", "polygons", "poly count", "polycount", "high poly", "heavy", "lag", "slow", "performance", "mesh", "vertices", "lod", "geom", "3d", "3d preview", "model"],
       "questions": ["How many polygons does this item have?", "Which CC makes my game lag?", "How do I find high-poly CC?"],
       "steps": [
         "Open the item with **Look Inside**. Every object shows its triangle count in the list, and a **Heavy** tag when it is large.",
         "Pick an object to see its **Mesh size** card: triangles, vertices and every detail level.",
+        "Click **3D** on its thumbnail to look at the mesh itself, with its textures and every detail level.",
         "Click **Heaviest first** to sort by size, or **heavy** to show only the heavy ones.",
         "On **All items**, switch off the heaviest objects with their toggles."
       ],
@@ -612,7 +613,7 @@
         "Switch between **Before** and **After** over the model and turn it with the mouse to check it still looks right.",
         "Click **Save** to save every item in the list. Library items go to the Recycle Bin first, so you can get the old file back."
       ],
-      "tips": ["**Advanced** has the detail levels, **Keep open edges in place**, the wireframe and the textures. **Use these settings for all items** copies the selected item's settings to the rest.", "Items you haven't opened are saved at their starting amount, so check the ones you care about first.", "Hair keeps its inner layer: it is rebuilt from the reduced outer layer.", "An object is listed once with all of its colour variants, since they share the same meshes. Shadows are left as they are, and recolourable objects show without their texture.", "Optimizing can be undone. The original meshes are kept: open the item in the CC Optimizer again to see where its sliders stand and move them back to 100%, or use **Undo optimization** in Look Inside.", "Look Inside can send one part, or all of an item's parts, to the CC Optimizer too."],
+      "tips": ["**Advanced** has the detail levels (close-up, mid distance, far away), **Simplify distance versions automatically** and **Keep seams closed**. Each setting says when it's recommended. If one isn't, a note under the slider says so, and **Reset to recommended** puts them back. **Use these settings for all items** copies the selected item's settings to the rest.", "The bar under the preview switches between plain and in-game textures, picks a colour, shows the triangles and, under **Other**, the separate images a texture is made from. It only changes the preview, not the saved file.", "Items you haven't opened are saved at their starting amount, so check the ones you care about first.", "Hair keeps its inner layer: it is rebuilt from the reduced outer layer.", "An object is listed once with all of its colour variants, since they share the same meshes. Shadows are left as they are, and recolourable objects show without their texture.", "Optimizing can be undone. The original meshes are kept: open the item in the CC Optimizer again to see where its sliders stand and move them back to 100%, or use **Undo optimization** in Look Inside.", "Look Inside can send one part, or all of an item's parts, to the CC Optimizer too."],
       "related": ["mesh-report", "look-inside-triangles"],
       "showMe": { "target": "tools:Optimizer" }
     },

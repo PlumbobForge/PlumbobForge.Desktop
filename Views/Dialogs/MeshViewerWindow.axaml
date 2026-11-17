@@ -1,0 +1,203 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
+        xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+        xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+        xmlns:mp="using:PlumbobForge.Desktop.Controls.MeshPreview"
+        xmlns:media="using:Avalonia.Media"
+        x:Class="PlumbobForge.Desktop.Views.Dialogs.MeshViewerWindow"
+        x:DataType="vm:MeshViewerViewModel"
+        Title="{loc:Loc 'mesh_viewer.title'}"
+        Width="980" Height="660" MinWidth="640" MinHeight="420"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True"
+        WindowDecorations="BorderOnly"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        Background="{DynamicResource BgDark}">
+
+    <Window.Styles>
+        <Style Selector="TextBlock.label">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="LetterSpacing" Value="0.5"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        </Style>
+        <Style Selector="Button.lod-row">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.lod-row:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.lod-row.selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+    </Window.Styles>
+
+    <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" ClipToBounds="True" Background="{DynamicResource BgDark}">
+        <Grid RowDefinitions="Auto, *">
+            <!-- Title bar -->
+            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="42" Padding="18,0,0,0" PointerPressed="OnHeaderPointerPressed">
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularCube" Width="17" Height="17" Foreground="{DynamicResource AccentBrush}"/>
+                        <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Width="42" Height="42" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCloseClick" ToolTip.Tip="{loc:Loc 'common.close'}">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#ef4444"/>
+                            </Style>
+                            <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                <Setter Property="Foreground" Value="White"/>
+                            </Style>
+                        </Button.Styles>
+                        <icon:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="1" ColumnDefinitions="*, 260" Margin="16">
+                <!-- Preview -->
+                <Border Classes="card" Padding="0" ClipToBounds="True">
+                    <Panel>
+                        <mp:MeshPreviewControl Meshes="{Binding PreviewMeshes}" Texture="{Binding PreviewTexture}" ShowWireframe="{Binding ShowWireframe}"
+                                               Background="{DynamicResource BgSurface}" IsVisible="{Binding ShowViewer}"/>
+                        <ProgressBar IsIndeterminate="True" Width="60" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="16,20" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsWorking}"/>
+                        <TextBlock Text="{loc:Loc 'optimizer.controls_hint'}" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="14,10" VerticalAlignment="Bottom" HorizontalAlignment="Left" IsHitTestVisible="False" IsVisible="{Binding ShowViewer}"/>
+
+                        <StackPanel IsVisible="{Binding IsLoading}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+                            <ProgressBar IsIndeterminate="True" Width="160" Foreground="{DynamicResource AccentBrush}"/>
+                            <TextBlock Text="{loc:Loc 'optimizer.loading'}" FontSize="12.5" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel IsVisible="{Binding HasError}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" MaxWidth="460" Margin="24">
+                            <icon:PackIconBoxIcons Kind="RegularCube" Width="28" Height="28" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding ErrorMessage}" FontSize="13" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap" TextAlignment="Center"/>
+                        </StackPanel>
+                    </Panel>
+                </Border>
+
+                <!-- Options -->
+                <Grid Grid.Column="1" RowDefinitions="*, Auto" Margin="16,0,0,0" IsVisible="{Binding ShowViewer}">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Spacing="16" Margin="0,0,6,0">
+                            <TextBlock Text="{Binding TrianglesText}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+
+                            <StackPanel Spacing="6" IsVisible="{Binding HasSeveralLods}">
+                                <TextBlock Classes="label" Text="{loc:Loc 'optimizer.levels'}"/>
+                                <ItemsControl ItemsSource="{Binding Lods}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:CcLodOption">
+                                            <Button Classes="lod-row" Classes.selected="{Binding IsSelected}" Margin="0,0,0,2"
+                                                    Command="{Binding $parent[Window].((vm:MeshViewerViewModel)DataContext).SelectLodCommand}" CommandParameter="{Binding}">
+                                                <Grid ColumnDefinitions="*, Auto">
+                                                    <TextBlock Text="{Binding Name}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding CountText}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="label" Text="{loc:Loc 'optimizer.preview'}"/>
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBlock Text="{loc:Loc 'optimizer.wireframe'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowWireframe}" MinWidth="0" VerticalAlignment="Center" OnContent="" OffContent=""/>
+                                </Grid>
+                                <StackPanel Spacing="6" IsVisible="{Binding HasTextures}">
+                                    <TextBlock Text="{loc:Loc 'optimizer.texture'}" FontSize="12" Foreground="{DynamicResource TextMain}"/>
+                                    <ItemsControl ItemsSource="{Binding MainTextureOptions}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:CcTextureOption">
+                                                <Button Classes="filter-btn" Classes.active="{Binding IsSelected}" Content="{Binding Label}" Margin="0,0,6,6" Padding="10,5"
+                                                        Command="{Binding $parent[Window].((vm:MeshViewerViewModel)DataContext).SelectTextureCommand}" CommandParameter="{Binding}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <Grid ColumnDefinitions="*, Auto" IsVisible="{Binding HasTextureLayers}" ToolTip.Tip="{loc:Loc 'optimizer.texture_layers_note'}">
+                                        <TextBlock Text="{loc:Loc 'optimizer.show_texture_layers'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowLayers}" MinWidth="0" VerticalAlignment="Center" OnContent="" OffContent=""/>
+                                    </Grid>
+                                    <ItemsControl ItemsSource="{Binding TextureLayers}" IsVisible="{Binding ShowLayers}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:CcTextureOption">
+                                                <Button Classes="filter-btn" Classes.active="{Binding IsSelected}" Content="{Binding Label}" Margin="0,0,6,6" Padding="10,5"
+                                                        Command="{Binding $parent[Window].((vm:MeshViewerViewModel)DataContext).SelectTextureCommand}" CommandParameter="{Binding}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                                <StackPanel Spacing="6" IsVisible="{Binding HasPresetChoice}">
+                                    <TextBlock Text="{loc:Loc 'optimizer.preset'}" FontSize="12" Foreground="{DynamicResource TextMain}"/>
+                                    <ItemsControl ItemsSource="{Binding Presets}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:CcPresetOption">
+                                                <Button Classes="filter-btn" Classes.active="{Binding IsSelected}" Margin="0,0,6,6" Padding="10,6" MinWidth="34" HorizontalContentAlignment="Center" ToolTip.Tip="{Binding Tip}"
+                                                        Command="{Binding $parent[Window].((vm:MeshViewerViewModel)DataContext).SelectPresetCommand}" CommandParameter="{Binding}">
+                                                    <Panel>
+                                                        <ItemsControl ItemsSource="{Binding Swatches}" IsVisible="{Binding HasSwatches}" VerticalAlignment="Center">
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate>
+                                                                    <StackPanel Orientation="Horizontal" Spacing="2"/>
+                                                                </ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate x:DataType="media:IBrush">
+                                                                    <Ellipse Width="12" Height="12" Fill="{Binding}" Stroke="{DynamicResource BorderSubtle}" StrokeThickness="1"/>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                        <TextBlock Text="{Binding Label}" IsVisible="{Binding !HasSwatches}" HorizontalAlignment="Center"/>
+                                                    </Panel>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                                <Grid ColumnDefinitions="*, Auto" IsVisible="{Binding ShowTransparencyToggle}" ToolTip.Tip="{loc:Loc 'optimizer.transparency_tip'}">
+                                    <TextBlock Text="{loc:Loc 'optimizer.transparency'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding UseTransparency}" MinWidth="0" VerticalAlignment="Center" OnContent="" OffContent=""/>
+                                </Grid>
+                                <TextBlock Text="{loc:Loc 'optimizer.texture_note'}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" IsVisible="{Binding HasTextures}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <Button Grid.Row="1" Classes="btn-action-sec" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,12,0,0"
+                            Click="OnOpenInOptimizerClick" IsVisible="{Binding CanOpenInOptimizer}" ToolTip.Tip="{loc:Loc 'mesh_viewer.open_optimizer_tip'}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <icon:PackIconBoxIcons Kind="RegularSlider"/>
+                            <TextBlock Text="{loc:Loc 'mesh_viewer.open_optimizer'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

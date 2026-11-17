@@ -213,6 +213,14 @@ public partial class LookInsideWindow : Window
         if (sender is Button { DataContext: LookInsideObjectItem obj }) SendToOptimizer(new[] { obj });
     }
 
+    private async void OnPreview3dClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: LookInsideObjectItem { Source: { } source, Object: { } obj } item }) return;
+        var viewer = new MeshViewerWindow(new MeshViewerViewModel(source.Inspection, obj.Resource.Key, item.Title, item.CanOptimize));
+        await viewer.ShowDialog(this);
+        if (viewer.OpenInOptimizer) SendToOptimizer(new[] { item });
+    }
+
     private async void OnReverseOptimizationClick(object? sender, RoutedEventArgs e)
     {
         if (sender is Button { DataContext: LookInsideObjectItem obj } && ViewModel is { } vm) await vm.ReverseOptimizationAsync(obj);

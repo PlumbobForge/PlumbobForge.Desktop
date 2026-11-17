@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,9 +39,15 @@ public sealed partial class CcLodOption : ObservableObject
     public CcLodOption(int lod, int before)
     {
         Lod = lod;
-        Name = lod == CcMesh.Unlisted
-            ? LocalizationManager.Instance.GetString("optimizer.lod_unlisted")
-            : LocalizationManager.Instance.GetString("optimizer.lod_name", lod);
+        Name = lod switch
+        {
+            CcMesh.Unlisted => LocalizationManager.Instance.GetString("optimizer.lod_unlisted"),
+            0 => LocalizationManager.Instance.GetString("optimizer.lod_close"),
+            1 => LocalizationManager.Instance.GetString("optimizer.lod_mid"),
+            2 => LocalizationManager.Instance.GetString("optimizer.lod_far"),
+            3 => LocalizationManager.Instance.GetString("optimizer.lod_farthest"),
+            _ => LocalizationManager.Instance.GetString("optimizer.lod_name", lod)
+        };
         Before = before;
         _after = before;
     }
@@ -51,6 +58,8 @@ public sealed partial class CcTextureOption : ObservableObject
     public string Mode { get; }
     public string Label { get; }
     public bool IsClay => Mode == CcOptimizerViewModel.ClayMode;
+    // One of the package's raw images (Multiplier, Mask...), not a finished look.
+    public bool IsLayer => !IsClay && Mode != CcMaterial.InGame;
 
     [ObservableProperty]
     private bool _isSelected;
@@ -66,11 +75,18 @@ public sealed partial class CcPresetOption : ObservableObject
 {
     public int Index { get; }
     public string Label => (Index + 1).ToString();
+    public IReadOnlyList<IBrush> Swatches { get; }
+    public bool HasSwatches => Swatches.Count > 0;
+    public string Tip => LocalizationManager.Instance.GetString("optimizer.preset_tip", Index + 1);
 
     [ObservableProperty]
     private bool _isSelected;
 
-    public CcPresetOption(int index) => Index = index;
+    public CcPresetOption(int index, CasPreset? preset = null)
+    {
+        Index = index;
+        Swatches = preset == null ? Array.Empty<IBrush>() : CcPreview.Swatches(preset);
+    }
 }
 
 // One CAS part, or a package's objects, with the settings it will be saved with.
@@ -256,6 +272,9 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
     public ObservableCollection<CcQueueItem> Items { get; } = new();
     public ObservableCollection<CcLodOption> Lods { get; } = new();
     public ObservableCollection<CcTextureOption> TextureOptions { get; } = new();
+    // Plain and in-game looks, then the package's raw images behind "Texture layers".
+    public ObservableCollection<CcTextureOption> MainTextureOptions { get; } = new();
+    public ObservableCollection<CcTextureOption> TextureLayers { get; } = new();
     public ObservableCollection<CcPresetOption> Presets { get; } = new();
 
     [ObservableProperty]
@@ -289,7 +308,7 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
     private bool _isWorking;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(CanEditRatio), nameof(SelectedLodName), nameof(IsSelectedLinked))]
+    [NotifyPropertyChangedFor(nameof(CanEditRatio), nameof(IsSelectedLinked))]
     private CcLodOption? _selectedLod;
 
     [ObservableProperty]
@@ -313,6 +332,7 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
     private bool _useTransparency = true;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsLayerSelected), nameof(LayersText))]
     private CcTextureOption? _selectedTexture;
 
     [ObservableProperty]
@@ -350,11 +370,17 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
     public bool CanApplyToAll => SelectedItem != null && Items.Count > 1 && !IsSaving;
     public bool IsSelectedLinked => SelectedLod != null && _analysis != null && LinkSecondLod && _plan.IsLinked(_analysis, SelectedLod.Lod);
     public bool CanEditRatio => SelectedLod != null && !IsSaving && !IsSelectedLinked;
-    public string SelectedLodName => SelectedLod?.Name ?? string.Empty;
     public bool HasSeveralLods => Lods.Count > 1;
     public bool ShowingOriginal => !ShowOptimized;
     public bool HasLinkOption => Lods.Count >= 2;
-    public string LinkText => Lods.Count >= 2 ? L("optimizer.link_lod", Lods[1].Name, Lods[0].Name) : string.Empty;
+    public string LinkText => L(Lods.Count > 2 ? "optimizer.link_lods" : "optimizer.link_lod");
+    public string LinkNote => L(_analysis?.SuggestLinkSecondLod == true ? "optimizer.link_note_suggested" : "optimizer.link_note");
+    public string LockEdgesNote => L(_analysis?.SuggestLockEdges == false ? "optimizer.lock_edges_note_hair" : "optimizer.lock_edges_note");
+    public bool ShowResetSettings => _analysis != null
+        && (LockEdges != _analysis.SuggestLockEdges || (HasLinkOption && LinkSecondLod != _analysis.SuggestLinkSecondLod));
+    public bool HasTextureLayers => TextureLayers.Count > 0;
+    public bool IsLayerSelected => SelectedTexture is { IsLayer: true };
+    public string LayersText => IsLayerSelected ? SelectedTexture!.Label : L("optimizer.texture_layers");
     public bool HasTextures => TextureOptions.Count > 1;
     public bool HasPresetChoice => Presets.Count > 1;
     public bool ShowTransparencyToggle => TextureHasCutout;
@@ -571,11 +597,12 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
 
             foreach (int lod in analysis.EditableLods) Lods.Add(new CcLodOption(lod, analysis.RealTrianglesIn(lod)));
             OnPropertyChanged(nameof(HasLinkOption));
+            RaiseSettingNotes();
             OnPropertyChanged(nameof(LinkText));
             OnPropertyChanged(nameof(HasSeveralLods));
             if (Lods.Count > 0) item.Before = Lods[0].Before;
 
-            for (int i = 0; i < presets.Count; i++) Presets.Add(new CcPresetOption(i));
+            for (int i = 0; i < presets.Count; i++) Presets.Add(new CcPresetOption(i, presets[i]));
             OnPropertyChanged(nameof(HasPresetChoice));
             SelectPresetCore(Presets.FirstOrDefault());
             BuildTextureOptions();
@@ -626,6 +653,7 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
         ErrorMessage = null;
         OnPropertyChanged(nameof(HasSeveralLods));
         OnPropertyChanged(nameof(HasLinkOption));
+        RaiseSettingNotes();
         OnPropertyChanged(nameof(HasPresetChoice));
     }
 
@@ -633,28 +661,19 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
 
     private void BuildTextureOptions()
     {
-        string? previous = _chosenTexture;
+        var preset = SelectedPreset != null && SelectedPreset.Index < _presets.Count ? _presets[SelectedPreset.Index] : null;
+        var options = CcPreview.TextureOptions(_inspection, _analysis, preset);
         TextureOptions.Clear();
-        TextureOptions.Add(new CcTextureOption(ClayMode, L("optimizer.texture_clay")));
-        if (_analysis is { IsObject: true } objectAnalysis)
+        MainTextureOptions.Clear();
+        TextureLayers.Clear();
+        foreach (var o in options)
         {
-            if (objectAnalysis.Meshes.Any(m => m.Diffuse != null))
-                TextureOptions.Add(new CcTextureOption(CcMaterial.InGame, L("optimizer.texture_ingame")));
+            TextureOptions.Add(o);
+            (o.IsLayer ? TextureLayers : MainTextureOptions).Add(o);
         }
-        else if (_inspection != null && SelectedPreset != null && SelectedPreset.Index < _presets.Count)
-        {
-            var roles = CcMaterial.TextureRoles(_inspection, _presets[SelectedPreset.Index]);
-            if (roles.Count > 0)
-            {
-                TextureOptions.Add(new CcTextureOption(CcMaterial.InGame, L("optimizer.texture_ingame")));
-                foreach (var role in roles) TextureOptions.Add(new CcTextureOption(role, role));
-            }
-        }
+        OnPropertyChanged(nameof(HasTextureLayers));
         OnPropertyChanged(nameof(HasTextures));
-        var pick = TextureOptions.FirstOrDefault(t => t.Mode == previous)
-            ?? TextureOptions.FirstOrDefault(t => t.Mode == CcMaterial.InGame)
-            ?? TextureOptions[0];
-        SelectTextureCore(pick);
+        SelectTextureCore(CcPreview.Pick(options, _chosenTexture));
     }
 
     [RelayCommand]
@@ -696,6 +715,7 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
         _plan.LockEdges = value;
         _loaded?.SetLockEdges(value);
         OnPropertyChanged(nameof(LimitNoteText));
+        RaiseSettingNotes();
         _ = RefreshAsync();
     }
 
@@ -703,6 +723,7 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
     {
         _plan.LinkSecondLod = value;
         _loaded?.SetLinkSecondLod(value);
+        RaiseSettingNotes();
         foreach (var l in Lods) l.IsLinked = _analysis != null && _plan.IsLinked(_analysis, l.Lod);
         _ = RefreshAsync();
     }
@@ -728,6 +749,27 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
         SelectTextureCore(option);
         _ = UpdateTextureAsync();
     }
+
+    private void RaiseSettingNotes()
+    {
+        OnPropertyChanged(nameof(LinkNote));
+        OnPropertyChanged(nameof(LockEdgesNote));
+        OnPropertyChanged(nameof(ShowResetSettings));
+    }
+
+    [RelayCommand]
+    private void ResetSettings()
+    {
+        if (_analysis == null) return;
+        LockEdges = _analysis.SuggestLockEdges;
+        if (HasLinkOption) LinkSecondLod = _analysis.SuggestLinkSecondLod;
+    }
+
+    [RelayCommand]
+    private void ToggleWireframe() => ShowWireframe = !ShowWireframe;
+
+    [RelayCommand]
+    private void ToggleTransparency() => UseTransparency = !UseTransparency;
 
     private void SelectTextureCore(CcTextureOption? option)
     {
@@ -778,15 +820,14 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
                     double ratio = plan.RatioFor(analysis, selected.Lod);
                     var shown = analysis.MeshesIn(selected.Lod).Where(m => !m.IsPlaceholder).ToList();
                     var reduced = shown.Select(m => m.Reduce(ratio, plan.LockEdges)).ToList();
-                    // Only hair strands are cut out, not a hat.
                     bool hasStrands = shown.Any(m => m.Geom.IsHairShader);
                     var items = shown.Select((m, i) =>
                         {
-                            var own = objectTextures != null && objectTextures.TryGetValue(m, out var t) ? t : default;
-                            bool allowCutout = objectTextures != null ? own.Cutout : !hasStrands || m.Geom.IsHairShader;
+                            var own = CcPreview.OwnTexture(m, objectTextures);
+                            bool allowCutout = CcPreview.AllowCutout(m, hasStrands, objectTextures);
                             return showOptimized
-                                ? MeshPreviewItem.FromGeom(reduced[i].Geom, i, reduced[i].DoubleSided, allowCutout, own.Texture)
-                                : MeshPreviewItem.FromGeom(m.Geom, i, m.IsDoubleSided, allowCutout, own.Texture);
+                                ? MeshPreviewItem.FromGeom(reduced[i].Geom, i, reduced[i].DoubleSided, allowCutout, own)
+                                : MeshPreviewItem.FromGeom(m.Geom, i, m.IsDoubleSided, allowCutout, own);
                         })
                         .ToList();
                     int before = shown.Sum(m => m.Triangles), afterTris = reduced.Sum(r => r.Triangles);
@@ -876,31 +917,9 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
         var decoded = _decoded;
         try
         {
-            var built = await Task.Run(() =>
-            {
-                var textures = new Dictionary<InspectedResource, (RgbaImage Image, MeshPreviewTexture Shown)>();
-                var o = new Dictionary<CcMesh, (MeshPreviewTexture, bool)>();
-                foreach (var m in analysis.Meshes)
-                {
-                    if (m.Diffuse is not { } res) continue;
-                    if (!textures.TryGetValue(res, out var tex))
-                    {
-                        try
-                        {
-                            if (!decoded.TryGetValue(res, out var img)) decoded[res] = img = DdsDecoder.Decode(inspection.Read(res));
-                            tex = (img, new MeshPreviewTexture(img.Width, img.Height, img.Rgba, transparency));
-                        }
-                        catch (Exception ex)
-                        {
-                            AppLogger.LogWarning($"CC optimizer could not decode texture {res.Key}", ex, "CcOptimizerViewModel");
-                            continue;
-                        }
-                        textures[res] = tex;
-                    }
-                    o[m] = (tex.Shown, CcMaterial.UsesCutout(tex.Image, new[] { m.Geom }, wrap: true));
-                }
-                return o;
-            }, _cts.Token);
+            string mode = SelectedTexture!.Mode;
+            var colours = SelectedPreset != null && SelectedPreset.Index < _presets.Count ? _presets[SelectedPreset.Index] : null;
+            var built = await Task.Run(() => CcPreview.ObjectTextures(inspection, analysis, decoded, transparency, mode, colours), _cts.Token);
             if (analysis != _analysis) return;
             _objectTextures = built;
             TextureHasCutout = built.Values.Any(t => t.Item2);
@@ -935,14 +954,7 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
             {
                 var presetData = _presets[preset];
                 var decoded = _decoded;
-                entry = await Task.Run(() =>
-                {
-                    var top = analysis.TopMeshes.ToList();
-                    var img = CcMaterial.PreviewTexture(inspection, presetData, mode, decoded, top);
-                    var strands = top.Where(g => g.IsHairShader).ToList();
-                    bool cutout = img != null && mode == CcMaterial.InGame && CcMaterial.UsesCutout(img, strands.Count > 0 ? strands : top);
-                    return (img, cutout);
-                }, _cts.Token);
+                entry = await Task.Run(() => CcPreview.CasTexture(inspection, analysis, presetData, mode, decoded), _cts.Token);
                 if (analysis != _analysis) return;
                 _textures[(preset, mode)] = entry;
             }
