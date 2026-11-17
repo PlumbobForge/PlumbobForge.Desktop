@@ -21,7 +21,9 @@
                 "cache_optimization_message":  "PlumbobForge nie kompresuje już Twojego CC, co mogło spowalniać grę. Napraw bibliotekę jednorazowo, aby przywrócić pakiety do stanu, w jakim udostępnili je twórcy, a następnie przebuduj pamięć podręczną.",
                 "rebuild_now":  "Przebuduj teraz",
                 "repair_and_rebuild":  "Napraw i przebuduj",
-                "later":  "Później"
+                "later":  "Później",
+                "whats_new_title":  "Co nowego w v{0}",
+                "whats_new_updated":  "PlumbobForge zaktualizowano do v{0}."
             },
     "common":  {
                    "simple":  "Prosty",

@@ -1,0 +1,15 @@
+{
+  // Newest first. 2-4 short highlights per version; they show once after updating.
+  // Start a bullet with **Name:** to show that part in bold.
+  // Up to 5 bullets are shown, so skipped versions are merged newest first.
+  "versions": [
+    {
+      "version": "1.1.4",
+      "highlights": [
+        "**3D Previews in Look Inside:** Look at your CC without opening up the game!",
+        "**CC Optimizer tool:** Quickly fix up that heavy CC of yours!",
+        "Fixed issues regarding vault mode and conflict scanner accuracy"
+      ]
+    }
+  ]
+}

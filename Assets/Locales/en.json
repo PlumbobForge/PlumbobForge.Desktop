@@ -21,7 +21,9 @@
                 "cache_optimization_message":  "PlumbobForge no longer compresses your CC, which could slow down the game. Repair your library once to restore your packages to how their creators shipped them, then rebuild the cache.",
                 "rebuild_now":  "Rebuild Now",
                 "repair_and_rebuild":  "Repair & Rebuild",
-                "later":  "Later"
+                "later":  "Later",
+                "whats_new_title":  "What's new in v{0}",
+                "whats_new_updated":  "PlumbobForge was updated to v{0}."
             },
     "common":  {
                    "simple":  "Simple",

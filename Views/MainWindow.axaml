@@ -7,6 +7,7 @@
         xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
         xmlns:bx="using:PlumbobForge.Desktop.Controls.Icons"
         xmlns:controls="using:PlumbobForge.Desktop.Controls"
+        xmlns:services="using:PlumbobForge.Desktop.Services"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="PlumbobForge.Desktop.Views.MainWindow"
         x:DataType="vm:MainViewModel"
@@ -331,19 +332,70 @@
             <views:QuickSwitcherOverlayView Grid.RowSpan="2"
                                             DataContext="{Binding QuickSwitcher}"/>
 
+            <!-- Toasts stack in the bottom-right corner so several can show at once -->
+            <StackPanel Grid.Row="1"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom"
+                        Margin="0,0,24,24"
+                        Spacing="12"
+                        ZIndex="90">
+
+            <!-- What's New Toast (first launch after an update) -->
+            <Border HorizontalAlignment="Right"
+                    MaxWidth="420"
+                    Background="{DynamicResource BgSidebar}"
+                    BorderBrush="{DynamicResource AccentBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="16,14,16,14"
+                    BoxShadow="0 8 24 #66000000"
+                    IsVisible="{Binding IsWhatsNewToastVisible}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Spacing="6" VerticalAlignment="Center" Margin="0,0,8,0">
+                        <TextBlock Text="{Binding WhatsNewTitle}" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                        <TextBlock Text="{Binding WhatsNewSubtitle}" FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"
+                                   IsVisible="{Binding !HasWhatsNewHighlights}"/>
+                        <ItemsControl ItemsSource="{Binding WhatsNewHighlights}" IsVisible="{Binding HasWhatsNewHighlights}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Spacing="4"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="services:ChangelogHighlight">
+                                    <Grid ColumnDefinitions="Auto,*">
+                                        <TextBlock Grid.Column="0" Text="•" FontSize="12" Margin="0,0,8,0" Foreground="{DynamicResource AccentBrush}"/>
+                                        <TextBlock Grid.Column="1" FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap">
+                                            <Run Text="{Binding Lead}" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/><Run Text="{Binding Text}"/>
+                                        </TextBlock>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            Command="{Binding DismissWhatsNewToastCommand}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="6"
+                            CornerRadius="6"
+                            Cursor="Hand"
+                            VerticalAlignment="Top"
+                            ToolTip.Tip="{loc:Loc app.dismiss}">
+                        <bx:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+            </Border>
+
             <!-- Update Notification Toast -->
-            <Border Grid.Row="1"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom"
-                    Margin="0,0,24,24"
+            <Border HorizontalAlignment="Right"
                     Background="{DynamicResource BgSidebar}"
                     BorderBrush="{DynamicResource AccentBrush}"
                     BorderThickness="1"
                     CornerRadius="10"
                     Padding="16,12,16,12"
                     BoxShadow="0 8 24 #66000000"
-                    IsVisible="{Binding IsUpdateToastVisible}"
-                    ZIndex="90">
+                    IsVisible="{Binding IsUpdateToastVisible}">
                 <Grid ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center">
                     <Border Grid.Column="0"
                             Background="{DynamicResource AccentBadgeBgBrush}"
@@ -388,10 +440,7 @@
             </Border>
 
             <!-- Cache Optimization Notice Toast -->
-            <Border Grid.Row="1"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom"
-                    Margin="0,0,24,24"
+            <Border HorizontalAlignment="Right"
                     MaxWidth="480"
                     Background="{DynamicResource BgSidebar}"
                     BorderBrush="{DynamicResource AccentBrush}"
@@ -399,8 +448,7 @@
                     CornerRadius="10"
                     Padding="16,14,16,14"
                     BoxShadow="0 8 24 #66000000"
-                    IsVisible="{Binding IsCacheOptimizationToastVisible}"
-                    ZIndex="89">
+                    IsVisible="{Binding IsCacheOptimizationToastVisible}">
                 <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" VerticalAlignment="Center">
                     <Border Grid.Row="0" Grid.Column="0"
                             Background="{DynamicResource AccentBadgeBgBrush}"
@@ -458,6 +506,8 @@
                     </StackPanel>
                 </Grid>
             </Border>
+
+            </StackPanel>
 
             <!-- Global Modal Overlay Host (Background Task Progress) -->
             <Grid Grid.RowSpan="2"

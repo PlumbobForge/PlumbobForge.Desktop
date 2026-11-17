@@ -72,6 +72,20 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isCacheOptimizationToastVisible;
 
+    [ObservableProperty]
+    private bool _isWhatsNewToastVisible;
+
+    [ObservableProperty]
+    private string _whatsNewTitle = string.Empty;
+
+    [ObservableProperty]
+    private string _whatsNewSubtitle = string.Empty;
+
+    [ObservableProperty]
+    private bool _hasWhatsNewHighlights;
+
+    public ObservableCollection<ChangelogHighlight> WhatsNewHighlights { get; } = new();
+
     public bool IsContentManagerActive => ActiveTab == "ContentManager";
     public bool IsConfigurationsActive => ActiveTab == "Configurations";
     public bool IsHealthActive => ActiveTab == "Health" || ActiveTab == "Tools";
@@ -236,6 +250,7 @@ public partial class MainViewModel : ObservableObject
             NavigateToContentManager();
             _ = RefreshDirtyStateAsync();
             _ = CheckCacheOptimizationOnStartupAsync();
+            _ = CheckWhatsNewOnStartupAsync();
         }, DispatcherPriority.Loaded);
 
         _ = CheckForUpdatesOnStartupAsync();
@@ -338,16 +353,74 @@ public partial class MainViewModel : ObservableObject
         await RefreshDirtyStateAsync();
     }
 
+    private static string GetCurrentAppVersion()
+    {
+        Version? version = typeof(MainViewModel).Assembly.GetName().Version;
+        return version != null
+            ? (version.Revision > 0 ? version.ToString(4) : version.ToString(3))
+            : InstallerConstants.DisplayVersion;
+    }
+
+    // Shown once on the first launch after an update; fresh installs only record the version.
+    private async Task CheckWhatsNewOnStartupAsync()
+    {
+        try
+        {
+            await Task.Delay(1500);
+
+            string settingsPath = AppSettingsService.GetAppSettingsPath();
+            JsonObject root = File.Exists(settingsPath)
+                ? (JsonNode.Parse(await File.ReadAllTextAsync(settingsPath)) as JsonObject) ?? new JsonObject()
+                : new JsonObject();
+            if (root["PlumbobForge"] is not JsonObject pfNode)
+            {
+                pfNode = new JsonObject();
+                root["PlumbobForge"] = pfNode;
+            }
+
+            string current = GetCurrentAppVersion();
+            string? lastSeen = pfNode["LastSeenAppVersion"]?.GetValue<string>();
+            if (string.Equals(lastSeen, current, StringComparison.OrdinalIgnoreCase)) return;
+
+            pfNode["LastSeenAppVersion"] = current;
+            await File.WriteAllTextAsync(settingsPath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+
+            // No walkthrough yet means a fresh install, and an older current version means a downgrade.
+            bool hasSeenWalkthrough = pfNode["HasSeenWalkthrough"]?.GetValue<bool>() ?? false;
+            if (!hasSeenWalkthrough) return;
+            if (ChangelogService.Parse(lastSeen) is { } lastVer && ChangelogService.Parse(current) is { } curVer && lastVer >= curVer) return;
+
+            var loc = LocalizationManager.Instance;
+            var highlights = ChangelogService.GetHighlights(lastSeen, current, loc.EffectiveLanguage);
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                WhatsNewTitle = loc.GetString("app.whats_new_title", current);
+                WhatsNewSubtitle = highlights.Count == 0 ? loc.GetString("app.whats_new_updated", current) : string.Empty;
+                WhatsNewHighlights.Clear();
+                foreach (var h in highlights) WhatsNewHighlights.Add(h);
+                HasWhatsNewHighlights = highlights.Count > 0;
+                IsWhatsNewToastVisible = true;
+            });
+        }
+        catch
+        {
+        }
+    }
+
+    [RelayCommand]
+    public void DismissWhatsNewToast()
+    {
+        IsWhatsNewToastVisible = false;
+    }
+
     private async Task CheckForUpdatesOnStartupAsync()
     {
         try
         {
             await Task.Delay(2500);
             UpdateService requiredService = _serviceProvider.GetRequiredService<UpdateService>();
-            Version? version = typeof(MainViewModel).Assembly.GetName().Version;
-            string currentVersionString = version != null
-                ? (version.Revision > 0 ? version.ToString(4) : version.ToString(3))
-                : InstallerConstants.DisplayVersion;
+            string currentVersionString = GetCurrentAppVersion();
 
             UpdateCheckResult result = await requiredService.CheckForUpdatesAsync(currentVersionString);
             if (result.IsUpdateAvailable)
