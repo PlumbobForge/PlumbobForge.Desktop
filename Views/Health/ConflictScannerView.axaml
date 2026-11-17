@@ -336,6 +336,11 @@
                                                             <Border IsVisible="{Binding ShowOverriddenBadge}" Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="6,2">
                                                                 <TextBlock Text="{loc:Loc 'tools.conflicts.overridden_in_game'}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
                                                             </Border>
+
+                                                            <!-- Enabled but not loaded by the active configuration -->
+                                                            <Border IsVisible="{Binding ShowNotLoadedBadge}" Background="{DynamicResource BgDark}" BorderBrush="{DynamicResource BorderMain}" BorderThickness="1" CornerRadius="4" Padding="6,2">
+                                                                <TextBlock Text="{loc:Loc 'tools.conflicts.not_in_configuration'}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSubtle}"/>
+                                                            </Border>
                                                         </Panel>
                                                     </Border>
 

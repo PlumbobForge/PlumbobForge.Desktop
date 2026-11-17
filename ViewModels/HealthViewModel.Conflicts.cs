@@ -34,8 +34,11 @@ public partial class ConflictPackageItemViewModel : ObservableObject
     [ObservableProperty]
     private bool _isWinningInLoadOrder;
 
+    public bool IsLoadedByConfiguration => Model.IsLoadedByConfiguration;
+
     public bool ShowActiveBadge => IsEnabled && IsWinningInLoadOrder;
-    public bool ShowOverriddenBadge => IsEnabled && !IsWinningInLoadOrder;
+    public bool ShowOverriddenBadge => IsEnabled && IsLoadedByConfiguration && !IsWinningInLoadOrder;
+    public bool ShowNotLoadedBadge => IsEnabled && !IsLoadedByConfiguration;
     public bool ShowDisabledBadge => !IsEnabled;
 
     public bool CanKeepOnlyThis => _parentCard.Packages.Count > 1;
@@ -52,6 +55,7 @@ public partial class ConflictPackageItemViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(ShowActiveBadge));
         OnPropertyChanged(nameof(ShowOverriddenBadge));
+        OnPropertyChanged(nameof(ShowNotLoadedBadge));
         OnPropertyChanged(nameof(ShowDisabledBadge));
 
         if (Model.IsEnabled != value)
@@ -66,6 +70,7 @@ public partial class ConflictPackageItemViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(ShowActiveBadge));
         OnPropertyChanged(nameof(ShowOverriddenBadge));
+        OnPropertyChanged(nameof(ShowNotLoadedBadge));
         OnPropertyChanged(nameof(ShowDisabledBadge));
     }
 
@@ -195,22 +200,11 @@ public partial class SimpleConflictCardViewModel : ObservableObject
 
     public void RecalculateLoadOrder()
     {
-        var enabled = Packages.Where(p => p.IsEnabled).ToList();
+        // Same rule as the scan: the enabled, loaded package earliest in the game's load order wins.
+        Sims3HealthService.ComputeLoadOrderWinners(Packages.Select(p => p.Model));
         foreach (var p in Packages)
         {
-            p.IsWinningInLoadOrder = false;
-            p.Model.IsWinningInLoadOrder = false;
-        }
-
-        if (enabled.Count > 0)
-        {
-            var winner = enabled
-                .OrderByDescending(p => p.PackagePath.Contains("overrides", StringComparison.OrdinalIgnoreCase))
-                .ThenByDescending(p => p.PackageFileName, StringComparer.OrdinalIgnoreCase)
-                .First();
-
-            winner.IsWinningInLoadOrder = true;
-            winner.Model.IsWinningInLoadOrder = true;
+            p.IsWinningInLoadOrder = p.Model.IsWinningInLoadOrder;
         }
     }
 }
@@ -548,6 +542,16 @@ public partial class HealthViewModel
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
             var metas = await db.MetaEntities.Where(m => metaIds.Contains(m.Id)).ToListAsync();
+
+            // Vault items only reach the game once their shard index is rewritten; the vault service does that.
+            var vaultIds = metas.Where(m => m.IsVaultManaged).Select(m => m.Id).ToList();
+            if (vaultIds.Count > 0)
+            {
+                var vaultService = scope.ServiceProvider.GetRequiredService<VaultService>();
+                await vaultService.ToggleModsBatchAsync(vaultIds, isEnabled);
+                metas = metas.Where(m => !m.IsVaultManaged).ToList();
+            }
+
             var setIds = metas.Where(m => m.SetsEntityId.HasValue).Select(m => m.SetsEntityId!.Value).Distinct().ToList();
 
             foreach (var meta in metas)
@@ -593,10 +597,19 @@ public partial class HealthViewModel
             var meta = await db.MetaEntities.FindAsync(item.MetaEntityId.Value);
             if (meta != null)
             {
-                meta.Enabled = isEnabled;
                 item.IsEnabled = isEnabled;
 
-                if (meta.SetsEntityId.HasValue)
+                if (meta.IsVaultManaged)
+                {
+                    // Rewrites the shard index so the game picks up the change.
+                    await scope.ServiceProvider.GetRequiredService<VaultService>().ToggleModAsync(meta.Id, isEnabled);
+                }
+                else
+                {
+                    meta.Enabled = isEnabled;
+                }
+
+                if (!meta.IsVaultManaged && meta.SetsEntityId.HasValue)
                 {
                     var set = await db.SetsEntities.Include(s => s.MetaEntities).FirstOrDefaultAsync(s => s.Id == meta.SetsEntityId.Value);
                     if (set != null)

@@ -358,6 +358,7 @@
                                     "disable_duplicates":  "Disable Redundant Duplicates",
                                     "active_in_game":  "Active in Game",
                                     "overridden_in_game":  "Overridden",
+                                    "not_in_configuration":  "Not in configuration",
                                     "disabled":  "Disabled",
                                     "files_count":  "{0} files",
                                     "packages_scanned":  "Packages Scanned",

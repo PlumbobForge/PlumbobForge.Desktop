@@ -358,6 +358,7 @@
                                     "disable_duplicates":  "Wyłącz nadmiarowe duplikaty",
                                     "active_in_game":  "Aktywny w grze",
                                     "overridden_in_game":  "Nadpisany",
+                                    "not_in_configuration":  "Poza konfiguracją",
                                     "disabled":  "Wyłączony",
                                     "files_count":  "{0} plików",
                                     "packages_scanned":  "Przeskanowane pakiety",
