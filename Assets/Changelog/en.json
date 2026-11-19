@@ -4,6 +4,13 @@
   // Up to 5 bullets are shown, so skipped versions are merged newest first.
   "versions": [
     {
+      "version": "1.1.5",
+      "highlights": [
+        "Fixed a crash that could happen after adding several items to a collection at once",
+        "File sizes now show the right unit (KB, MB or GB) instead of always KB"
+      ]
+    },
+    {
       "version": "1.1.4",
       "highlights": [
         "**3D Previews in Look Inside:** Look at your CC without opening up the game!",

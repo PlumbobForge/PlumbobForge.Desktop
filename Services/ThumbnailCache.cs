@@ -110,25 +110,17 @@ public static class ThumbnailCache
         });
     }
 
+    // Bitmaps are never disposed here: a card, row or column entry may still show one after it leaves
+    // the cache, and drawing a disposed bitmap crashes the app. The GC frees them once nothing uses them.
     public static void Invalidate(long itemId)
     {
-        if (_cache.Remove(new CacheKey(itemId, false), out var colorBmp))
-        {
-            try { colorBmp?.Dispose(); } catch { }
-        }
-        if (_cache.Remove(new CacheKey(itemId, true), out var grayBmp))
-        {
-            try { grayBmp?.Dispose(); } catch { }
-        }
+        _cache.Remove(new CacheKey(itemId, false), out _);
+        _cache.Remove(new CacheKey(itemId, true), out _);
     }
 
     public static void Clear()
     {
-        var bitmaps = _cache.Clear();
-        foreach (var bmp in bitmaps)
-        {
-            try { bmp.Dispose(); } catch { }
-        }
+        _cache.Clear();
         _inFlight.Clear();
     }
 
@@ -188,10 +180,6 @@ public static class ThumbnailCache
                     {
                         _list.RemoveLast();
                         _map.Remove(oldest.Value.Key);
-                        if (oldest.Value.Value is IDisposable d)
-                        {
-                            try { d.Dispose(); } catch { }
-                        }
                     }
                 }
 

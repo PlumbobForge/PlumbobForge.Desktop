@@ -62,7 +62,10 @@ public partial class ItemViewModel : ObservableObject
         OnPropertyChanged(nameof(ThumbnailHeight));
     }
 
-    public string FileSizeFormatted => FileSize > 1024 * 1024 ? $"{FileSize / (1024.0 * 1024.0):F2} MB" : $"{FileSize / 1024.0:F2} KB";
+    // MetaEntity.FileSize is stored in KB, not bytes.
+    public string FileSizeFormatted => FileSize >= 1024 * 1024 ? $"{FileSize / (1024.0 * 1024.0):F2} GB"
+        : FileSize >= 1024 ? $"{FileSize / 1024.0:F2} MB"
+        : $"{FileSize:F2} KB";
     public string FileSizeText => FileSizeFormatted;
     public string StatusText => Enabled ? "Enabled" : "Disabled";
     public IBrush StatusColor => Enabled ? BrushGreen : BrushRed;
