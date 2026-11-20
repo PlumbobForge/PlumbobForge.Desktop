@@ -4,6 +4,12 @@
   // Up to 5 bullets are shown, so skipped versions are merged newest first.
   "versions": [
     {
+      "version": "1.1.6",
+      "highlights": [
+        "**CC Optimizer:** Optimized clothes no longer get stretched hands or legs when your Sim moves or poses. Re-optimize any clothes you already did to get the fix"
+      ]
+    },
+    {
       "version": "1.1.5",
       "highlights": [
         "Fixed a crash that could happen after adding several items to a collection at once",
