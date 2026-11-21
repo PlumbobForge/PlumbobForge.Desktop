@@ -754,7 +754,14 @@
                                           "save_as_preset":  "Zapisz jako wzorzec",
                                           "delete_preset":  "Usuń wzorzec",
                                           "pick_custom_color":  "Wybierz własny kolor",
-                                          "custom_preset_tip":  "Własny wzorzec koloru (Prawy przycisk myszy, aby usunąć)"
+                                          "custom_preset_tip":  "Własny wzorzec koloru (Prawy przycisk myszy, aby usunąć)",
+                                          "priority_label":  "Priorytet ładowania",
+                                          "priority_hint":  "Wyższe liczby ładują się później i wygrywają konflikty. Normalnie 500. Wszystko w tym zestawie dostaje ten sam priorytet.",
+                                          "priority_low":  "Niski",
+                                          "priority_normal":  "Normalny",
+                                          "priority_high":  "Wysoki",
+                                          "priority_override":  "Nadpisanie",
+                                          "priority_invalid":  "Priorytet musi być liczbą całkowitą od 0 do 99999."
                                       },
                     "set_conflict":  {
                                          "title":  "Wykryto konflikt zestawu",

@@ -510,6 +510,29 @@ public partial class App : Application
         if (userVersion < 10) ApplySchemaV10(db);
         if (userVersion < 11) ApplySchemaV11(db);
         if (userVersion < 13) ApplySchemaV13(db);
+        if (userVersion < 14) ApplySchemaV14(db);
+    }
+
+    // Per-set load priority, written as "Priority" lines into the cache Resource.cfg. Existing sets get the default,
+    // which is the priority every set was loaded at before.
+    private static void ApplySchemaV14(AppDbContext db)
+    {
+        try
+        {
+            db.Database.ExecuteSqlRaw("ALTER TABLE SetsEntities ADD COLUMN Priority INTEGER NOT NULL DEFAULT 500;");
+        }
+        catch
+        {
+            // Column already exists (fresh database created from the model).
+        }
+
+        try
+        {
+            db.Database.ExecuteSqlRaw("PRAGMA user_version = 14;");
+        }
+        catch
+        {
+        }
     }
 
     // MetaEntities.HasConfigOverrides used to be set by any configuration rule and now only by an exclude

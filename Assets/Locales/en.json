@@ -754,7 +754,14 @@
                                           "save_as_preset":  "Save as Preset",
                                           "delete_preset":  "Delete Preset",
                                           "pick_custom_color":  "Pick Custom Color",
-                                          "custom_preset_tip":  "Custom Color Preset (Right-click to delete)"
+                                          "custom_preset_tip":  "Custom Color Preset (Right-click to delete)",
+                                          "priority_label":  "Load Priority",
+                                          "priority_hint":  "Higher numbers load later and win conflicts. Normal is 500. Everything inside this set gets the same priority.",
+                                          "priority_low":  "Low",
+                                          "priority_normal":  "Normal",
+                                          "priority_high":  "High",
+                                          "priority_override":  "Override",
+                                          "priority_invalid":  "Priority must be a whole number from 0 to 99999."
                                       },
                     "set_conflict":  {
                                          "title":  "Set Collision Detected",

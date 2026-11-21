@@ -105,6 +105,13 @@
         <Style Selector="Button.color-pick-btn.selected">
             <Setter Property="BorderBrush" Value="{DynamicResource TextMain}"/>
         </Style>
+
+        <!-- Priority Preset Chips -->
+        <Style Selector="Button.filter-btn.priority-chip">
+            <Setter Property="Padding" Value="7,4"/>
+            <Setter Property="Margin" Value="0,0,4,4"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
     </Window.Styles>
 
     <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" ClipToBounds="True" Background="{DynamicResource BgDark}">
@@ -153,6 +160,18 @@
                         <TextBlock Text="{loc:Loc 'dialogs.customize_set.name_label'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="0.5"/>
                         <TextBox x:Name="SetNameTextBox" Classes="settings-input" PlaceholderText="{loc:Loc 'dialogs.customize_set.name_watermark'}" FontSize="12.5" TextChanged="OnSetNameChanged"/>
                         <TextBlock x:Name="ErrorTextBlock" Foreground="#ef4444" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap" IsVisible="False"/>
+                    </StackPanel>
+
+                    <!-- Load Priority Input -->
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="{loc:Loc 'dialogs.customize_set.priority_label'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="0.5"/>
+                        <Grid ColumnDefinitions="Auto, 8, *">
+                            <TextBox x:Name="PriorityTextBox" Grid.Column="0" Classes="settings-input" Width="76" MaxLength="5" FontSize="12.5" HorizontalContentAlignment="Center" TextChanged="OnPriorityChanged"/>
+                            <WrapPanel x:Name="PriorityPresetsPanel" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                <!-- Populated in code-behind -->
+                            </WrapPanel>
+                        </Grid>
+                        <TextBlock Text="{loc:Loc 'dialogs.customize_set.priority_hint'}" FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
                     </StackPanel>
 
                     <!-- Reset to Default Button -->
