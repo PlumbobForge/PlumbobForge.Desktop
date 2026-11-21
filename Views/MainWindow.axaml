@@ -265,6 +265,20 @@
                                    Margin="0,0,10,0"
                                    IsVisible="{Binding IsVaultActive}"/>
 
+                        <!-- Clear the five standard Sims 3 cache files -->
+                        <Button Classes="nav-action-btn rebuild-btn"
+                                Command="{Binding ClearStandardCachesCommand}"
+                                ToolTip.Tip="{loc:Loc nav.clear_caches}">
+                            <bx:PackIconBoxIcons Kind="RegularEraser" Width="15" Height="15" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+
+                        <!-- Reload what the app shows from the database and disk; rebuilds nothing -->
+                        <Button Classes="nav-action-btn rebuild-btn"
+                                Command="{Binding RefreshApplicationCommand}"
+                                ToolTip.Tip="{loc:Loc nav.refresh}">
+                            <bx:PackIconBoxIcons Kind="RegularRotateCw" Width="15" Height="15" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+
                         <!-- Rebuild Cache Button (Only when Vault is NOT active) -->
                         <Button Classes="nav-action-btn rebuild-btn"
                                 controls:GuideTarget.Id="titlebar.rebuild"
@@ -339,6 +353,25 @@
                         Margin="0,0,24,24"
                         Spacing="12"
                         ZIndex="90">
+
+            <!-- Result of the title bar's Clear standard caches button -->
+            <Border HorizontalAlignment="Right"
+                    MaxWidth="420"
+                    Background="{DynamicResource BgSidebar}"
+                    BorderBrush="{DynamicResource AccentBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="14,10"
+                    BoxShadow="0 8 24 #66000000"
+                    IsVisible="{Binding IsCacheClearToastVisible}">
+                <Grid ColumnDefinitions="Auto,*">
+                    <bx:PackIconBoxIcons Kind="RegularCheckCircle" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,10,0"
+                                         IsVisible="{Binding !IsCacheClearToastError}"/>
+                    <bx:PackIconBoxIcons Kind="RegularAlertCircle" Width="18" Height="18" Foreground="{DynamicResource StatusAmber}" VerticalAlignment="Center" Margin="0,0,10,0"
+                                         IsVisible="{Binding IsCacheClearToastError}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding CacheClearToastMessage}" Foreground="{DynamicResource TextMain}" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
 
             <!-- What's New Toast (first launch after an update) -->
             <Border HorizontalAlignment="Right"

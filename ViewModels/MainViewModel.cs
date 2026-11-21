@@ -526,6 +526,78 @@ public partial class MainViewModel : ObservableObject
         await RefreshDirtyStateAsync();
     }
 
+    [ObservableProperty]
+    private bool _isCacheClearToastVisible;
+
+    [ObservableProperty]
+    private bool _isCacheClearToastError;
+
+    [ObservableProperty]
+    private string _cacheClearToastMessage = string.Empty;
+
+    private void ShowCacheClearToast(string message, bool isError)
+    {
+        CacheClearToastMessage = message;
+        IsCacheClearToastError = isError;
+        IsCacheClearToastVisible = true;
+
+        Task.Delay(5000).ContinueWith(_ =>
+        {
+            IsCacheClearToastVisible = false;
+        }, TaskScheduler.FromCurrentSynchronizationContext());
+    }
+
+    // Title-bar shortcut for the Cache Cleaner's "Core Game Caches" group (the five standard cache files).
+    [RelayCommand]
+    public async Task ClearStandardCachesAsync()
+    {
+        var loc = LocalizationManager.Instance;
+        if (PlumbobForge.Backend.Services.Sims3GameProcess.IsGameRunning())
+        {
+            ShowCacheClearToast(loc.GetString("tools.cache.game_running"), isError: true);
+            return;
+        }
+
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var healthService = scope.ServiceProvider.GetRequiredService<PlumbobForge.Backend.Services.Sims3HealthService>();
+            var result = await healthService.ClearCachesAsync(new[] { "core_caches" });
+
+            if (result.Errors.Count > 0)
+            {
+                ShowCacheClearToast(loc.GetString("tools.cache.standard_failed", result.Errors.Count, result.Errors[0]), isError: true);
+            }
+            else if (result.FilesDeleted > 0)
+            {
+                ShowCacheClearToast(loc.GetString("tools.cache.standard_cleared", result.FilesDeleted, result.FormattedBytesReclaimed), isError: false);
+            }
+            else
+            {
+                ShowCacheClearToast(loc.GetString("tools.cache.standard_none"), isError: false);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowCacheClearToast(loc.GetString("tools.cache.standard_failed", 1, ex.Message), isError: true);
+        }
+
+        // Keep the Cache Cleaner's sizes in step with what was just deleted.
+        await HealthVm.ScanCachesAsync();
+    }
+
+    // Reloads what the app shows from the database and disk. It rebuilds nothing.
+    [RelayCommand]
+    public async Task RefreshApplicationAsync()
+    {
+        if (ActiveProgressModal?.IsRunning == true) return;
+
+        await ContentManagerVm.LoadDataAsync();
+        await ConfigurationsVm.LoadDataAsync();
+        if (IsHealthActive && HealthVm.IsCacheCleanerActive) await HealthVm.ScanCachesAsync();
+        await RefreshDirtyStateAsync();
+    }
+
     [RelayCommand]
     public void NavigateToContentManager()
     {
