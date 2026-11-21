@@ -1,3 +1,6 @@
+using System;
+using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -10,11 +13,71 @@ public partial class MainWindow : Window
 {
     private bool _isClosingForced;
 
+    // Last size and position while the window was neither maximized nor minimized.
+    private Size _normalSize;
+    private PixelPoint _normalPosition;
+    private bool _hasNormalBounds;
+
     private ViewModels.MainViewModel? _vm;
 
     public MainWindow()
     {
         InitializeComponent();
+        RestorePlacement();
+        Opened += (_, _) => CaptureNormalBoundsLater();
+        PositionChanged += (_, _) => CaptureNormalBoundsLater();
+    }
+
+    // Opens with the size, place and maximized state the window was closed with.
+    private void RestorePlacement()
+    {
+        var saved = Services.WindowPlacementStore.Load();
+        if (saved == null || saved.Width <= 0 || saved.Height <= 0) return;
+
+        var position = new PixelPoint(saved.X, saved.Y);
+        var screen = Screens?.All.FirstOrDefault(s => s.WorkingArea.Contains(position + new PixelPoint(40, 20)));
+        double width = Math.Max(MinWidth, saved.Width);
+        double height = Math.Max(MinHeight, saved.Height);
+
+        if (screen != null)
+        {
+            // Never larger than the screen it opens on.
+            width = Math.Min(width, screen.WorkingArea.Width / screen.Scaling);
+            height = Math.Min(height, screen.WorkingArea.Height / screen.Scaling);
+            WindowStartupLocation = WindowStartupLocation.Manual;
+            Position = position;
+        }
+        // Otherwise that screen is gone: keep the size and open centred as usual.
+
+        Width = width;
+        Height = height;
+        if (saved.IsMaximized) WindowState = WindowState.Maximized;
+    }
+
+    // Moving into maximized or minimized reports a position before the state changes,
+    // so the bounds are read once the state has settled.
+    private void CaptureNormalBoundsLater()
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            if (WindowState != WindowState.Normal) return;
+            _normalSize = ClientSize;
+            _normalPosition = Position;
+            _hasNormalBounds = true;
+        }, Avalonia.Threading.DispatcherPriority.Background);
+    }
+
+    private void SavePlacement()
+    {
+        if (!_hasNormalBounds) return;
+        Services.WindowPlacementStore.Save(new Services.WindowPlacement
+        {
+            Width = _normalSize.Width,
+            Height = _normalSize.Height,
+            X = _normalPosition.X,
+            Y = _normalPosition.Y,
+            IsMaximized = WindowState == WindowState.Maximized
+        });
     }
 
     protected override void OnDataContextChanged(System.EventArgs e)
@@ -74,6 +137,7 @@ public partial class MainWindow : Window
     protected override void OnPropertyChanged(Avalonia.AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == ClientSizeProperty) CaptureNormalBoundsLater();
         if (change.Property == WindowStateProperty && MaximizeIcon != null)
         {
             MaximizeIcon.Kind = WindowState == WindowState.Maximized 
@@ -113,6 +177,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        SavePlacement();
         base.OnClosing(e);
     }
 }
