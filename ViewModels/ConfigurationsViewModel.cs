@@ -34,10 +34,10 @@ public partial class ConfigurationsViewModel : ObservableObject
     private bool _isLoading = false;
 
     [ObservableProperty]
-    private string _configSortMode = "Date"; // "Date", "NameAsc", "NameDesc"
+    private string _configSortMode = "Date"; // "Date", "NameAsc", "NameDesc", "Manual"
 
     [ObservableProperty]
-    private string _setSortMode = "Date"; // "Date", "NameAsc", "NameDesc", "SubsetsDesc"
+    private string _setSortMode = "Date"; // "Date", "NameAsc", "NameDesc", "SubsetsDesc", "Manual"
 
     [ObservableProperty]
     private int _selectedSetsCount = 0;
@@ -125,6 +125,7 @@ public partial class ConfigurationsViewModel : ObservableObject
         "NameAsc" => LocalizationManager.Instance.GetString("library.sort_name_asc"),
         "NameDesc" => LocalizationManager.Instance.GetString("library.sort_name_desc"),
         "SubsetsDesc" => LocalizationManager.Instance.GetString("library.sort_subsets_count"),
+        "Manual" => LocalizationManager.Instance.GetString("configurations.sort_manual"),
         _ => LocalizationManager.Instance.GetString("library.sort_date")
     };
 
@@ -353,6 +354,7 @@ public partial class ConfigurationsViewModel : ObservableObject
         {
             "NameAsc" => list.OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase).ToList(),
             "NameDesc" => list.OrderByDescending(c => c.Name, StringComparer.OrdinalIgnoreCase).ToList(),
+            "Manual" => ApplyManualOrder(_manualConfigOrder, list.OrderBy(c => c.Id), c => c.Id),
             _ => list.OrderBy(c => c.Id).ToList()
         };
 
@@ -369,6 +371,8 @@ public partial class ConfigurationsViewModel : ObservableObject
         {
             EnabledSets.Clear();
             DisabledSets.Clear();
+            VisibleEnabledSets.Clear();
+            VisibleDisabledSets.Clear();
             OnPropertyChanged(nameof(TotalSetsCount));
             OnPropertyChanged(nameof(EnabledSetsCount));
             OnPropertyChanged(nameof(DisabledSetsCount));
@@ -418,6 +422,7 @@ public partial class ConfigurationsViewModel : ObservableObject
         DisabledSets.Clear();
         foreach (var item in disabledColumn) DisabledSets.Add(item);
 
+        RefreshVisibleColumns();
         UpdateSelectionState();
         OnPropertyChanged(nameof(TotalSetsCount));
         OnPropertyChanged(nameof(EnabledSetsCount));
@@ -431,6 +436,7 @@ public partial class ConfigurationsViewModel : ObservableObject
             "NameAsc" => list.OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase).ToList(),
             "NameDesc" => list.OrderByDescending(s => s.Name, StringComparer.OrdinalIgnoreCase).ToList(),
             "SubsetsDesc" => list.OrderByDescending(s => s.DescendantCount).ThenBy(s => s.Name).ToList(),
+            "Manual" => ApplyManualOrder(_manualSetOrder, list.OrderBy(s => s.Id), s => s.Id),
             _ => list.OrderBy(s => s.Id).ToList()
         };
     }
@@ -1086,26 +1092,17 @@ public partial class ConfigurationsViewModel : ObservableObject
         }
         else if (isShiftPressed)
         {
-            int firstSelected = -1;
-            int currentIndex = targetCollection.IndexOf(set);
-
-            for (int i = 0; i < targetCollection.Count; i++)
-            {
-                if (targetCollection[i].IsSelected)
-                {
-                    firstSelected = i;
-                    break;
-                }
-            }
+            var rows = (set.IsInEnabledColumn ? VisibleEnabledSets : VisibleDisabledSets)
+                .Where(r => r is not ConfigSetItemViewModel { IsGroupOnly: true }).ToList();
+            int firstSelected = rows.FindIndex(r => r.IsSelected);
+            int currentIndex = rows.IndexOf(set);
 
             if (firstSelected != -1 && currentIndex != -1)
             {
                 int start = Math.Min(firstSelected, currentIndex);
                 int end = Math.Max(firstSelected, currentIndex);
-                for (int i = 0; i < targetCollection.Count; i++)
-                {
-                    targetCollection[i].IsSelected = (i >= start && i <= end);
-                }
+                var range = rows.Skip(start).Take(end - start + 1).ToHashSet();
+                foreach (var item in targetCollection) item.IsSelected = range.Contains(item);
             }
             else
             {

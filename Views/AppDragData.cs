@@ -14,6 +14,8 @@ internal static class AppDragData
     public static readonly DataFormat<string> SetsDrag = DataFormat.CreateStringApplicationFormat("plumbob-sets-drag");
     // Configuration cards moving between the Enabled and Disabled columns (ConfigDragPayload).
     public static readonly DataFormat<string> ConfigCards = DataFormat.CreateStringApplicationFormat("plumbobforge-config-sets");
+    // A configuration being dragged up or down in the configurations sidebar: its id.
+    public static readonly DataFormat<string> ConfigOrder = DataFormat.CreateStringApplicationFormat("plumbobforge-config-order");
 
     // Avalonia 12 starts a system drag only from the press that began it; our drags start once the
     // pointer has moved a few pixels, so the latest press is remembered here.
