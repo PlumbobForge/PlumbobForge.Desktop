@@ -582,12 +582,18 @@ public partial class ContentManagerViewModel
             trimmed = chosen;
         }
 
+        // A sub-set starts with its parent's load priority; it can be changed under Customize Set.
+        int priority = parentId.HasValue
+            ? await _db.SetsEntities.Where(s => s.Id == parentId.Value).Select(s => s.Priority).FirstOrDefaultAsync()
+            : SetsEntity.DefaultPriority;
+
         var newSet = new SetsEntity
         {
             Name = trimmed,
             FolderName = trimmed,
             LongName = trimmed,
             ParentSetsEntityId = parentId,
+            Priority = priority,
             Dirty = true
         };
         _db.SetsEntities.Add(newSet);
@@ -604,11 +610,12 @@ public partial class ContentManagerViewModel
         var setEntity = await _db.SetsEntities.FindAsync(setNode.Id.Value);
         if (setEntity == null) return;
 
-        var result = await DialogHelper.ShowCustomizeSetAsync(setEntity.Name, setEntity.Icon, setEntity.Color);
+        var result = await DialogHelper.ShowCustomizeSetAsync(setEntity.Name, setEntity.Icon, setEntity.Color, setEntity.Priority);
         if (result == null || !result.Confirmed) return;
 
         bool hasChanged = false;
         bool nameChanged = false;
+        bool priorityChanged = false;
 
         if (!string.IsNullOrWhiteSpace(result.Name) && !result.Name.Trim().Equals(setEntity.Name, StringComparison.OrdinalIgnoreCase))
         {
@@ -653,6 +660,14 @@ public partial class ContentManagerViewModel
             hasChanged = true;
         }
 
+        if (result.Priority != setEntity.Priority)
+        {
+            setEntity.Priority = result.Priority;
+            await ApplyPriorityToSubSetsAsync(setEntity.Id, result.Priority);
+            priorityChanged = true;
+            hasChanged = true;
+        }
+
         if (hasChanged)
         {
             if (nameChanged)
@@ -661,6 +676,11 @@ public partial class ContentManagerViewModel
                 PlumbobForge.Backend.Services.SetDirtyTracker.UpdateDirtyState(setEntity);
             }
             await _db.SaveChangesAsync();
+            if (priorityChanged)
+            {
+                // The set's built files stay the same; only the Priority lines in Resource.cfg change.
+                await FreshScope.RunAsync<PKGManager>(pkg => pkg.SyncToSims3Async());
+            }
             await ReloadSetsTreeAsync(setEntity.Id);
             ApplyFilter();
             if (nameChanged)
@@ -672,6 +692,27 @@ public partial class ContentManagerViewModel
 
     [RelayCommand]
     public Task RenameSetAsync(SetNodeViewModel? setNode) => CustomizeSetAsync(setNode);
+
+    // A folder's load priority holds for everything inside it, so every sub-set follows at any depth.
+    private async Task ApplyPriorityToSubSetsAsync(long setId, int priority)
+    {
+        var childrenOf = (await _db.SetsEntities.ToListAsync())
+            .Where(s => s.ParentSetsEntityId.HasValue)
+            .ToLookup(s => s.ParentSetsEntityId!.Value);
+
+        var seen = new HashSet<long> { setId };
+        var queue = new Queue<long>();
+        queue.Enqueue(setId);
+        while (queue.Count > 0)
+        {
+            foreach (var child in childrenOf[queue.Dequeue()])
+            {
+                if (!seen.Add(child.Id)) continue;
+                child.Priority = priority;
+                queue.Enqueue(child.Id);
+            }
+        }
+    }
 
     [RelayCommand]
     public async Task DeleteSetAsync(SetNodeViewModel? setNode)

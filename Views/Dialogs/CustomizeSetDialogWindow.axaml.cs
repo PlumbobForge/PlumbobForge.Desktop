@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -7,6 +8,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using PlumbobForge.Backend.Database;
 using PlumbobForge.Desktop.Controls.Icons;
 using PlumbobForge.Desktop.Services;
 using PlumbobForge.Desktop.Services.Localization;
@@ -19,15 +21,28 @@ public partial class CustomizeSetDialogWindow : Window
     private string _setName;
     private string? _selectedColorHex;
     private string? _selectedIconName;
+    private int _originalPriority = SetsEntity.DefaultPriority;
 
     private readonly List<Button> _allIconButtons = new();
     private readonly List<Button> _colorButtons = new();
+    private readonly List<Button> _priorityButtons = new();
     private Button? _rainbowWheelButton;
     private PlumbobColorPicker? _flyoutColorPicker;
 
     public string ResultSetName => SetNameTextBox.Text?.Trim() ?? _setName;
     public string? ResultColorHex => _selectedColorHex;
     public string? ResultIconName => _selectedIconName;
+    public int ResultPriority => TryParsePriority(PriorityTextBox.Text, out var priority) ? priority : _originalPriority;
+
+    // Resource.cfg priorities: EA's own Mods/Resource.cfg loads Packages at 500 and Overrides at 1000.
+    private const int MaxPriority = 99999;
+    private static readonly (int Value, string LabelKey)[] PriorityPresets =
+    {
+        (400, "dialogs.customize_set.priority_low"),
+        (SetsEntity.DefaultPriority, "dialogs.customize_set.priority_normal"),
+        (1000, "dialogs.customize_set.priority_high"),
+        (1100, "dialogs.customize_set.priority_override")
+    };
 
     // Curated Sims 3 CC / Set Icons
     private static readonly List<PackIconBoxIconsKind> AvailableIcons = new()
@@ -243,21 +258,26 @@ public partial class CustomizeSetDialogWindow : Window
         _setName = string.Empty;
         PopulateIcons();
         PopulateColorPickers();
+        PopulatePriorityPresets();
+        PriorityTextBox.Text = _originalPriority.ToString(CultureInfo.InvariantCulture);
         CustomColorPresetsService.PresetsChanged += OnPresetsChanged;
         Closed += (s, e) => CustomColorPresetsService.PresetsChanged -= OnPresetsChanged;
     }
 
-    public CustomizeSetDialogWindow(string currentName, string? currentIconName, string? currentColorHex)
+    public CustomizeSetDialogWindow(string currentName, string? currentIconName, string? currentColorHex, int currentPriority = SetsEntity.DefaultPriority)
     {
         InitializeComponent();
 
         _setName = currentName ?? string.Empty;
         _selectedColorHex = currentColorHex;
         _selectedIconName = currentIconName;
+        _originalPriority = currentPriority;
 
         SetNameTextBox.Text = _setName;
         PopulateIcons();
         PopulateColorPickers();
+        PopulatePriorityPresets();
+        PriorityTextBox.Text = _originalPriority.ToString(CultureInfo.InvariantCulture);
         CustomColorPresetsService.PresetsChanged += OnPresetsChanged;
         Closed += (s, e) => CustomColorPresetsService.PresetsChanged -= OnPresetsChanged;
 
@@ -445,6 +465,52 @@ public partial class CustomizeSetDialogWindow : Window
         UpdateActiveSelections();
     }
 
+    private void PopulatePriorityPresets()
+    {
+        PriorityPresetsPanel.Children.Clear();
+        _priorityButtons.Clear();
+
+        foreach (var (value, labelKey) in PriorityPresets)
+        {
+            var text = value.ToString(CultureInfo.InvariantCulture);
+            var btn = new Button
+            {
+                Classes = { "filter-btn", "priority-chip" },
+                Tag = value,
+                Content = text
+            };
+            ToolTip.SetTip(btn, $"{LocalizationManager.Instance.GetString(labelKey)} ({text})");
+
+            btn.Click += (s, e) => PriorityTextBox.Text = text;
+
+            _priorityButtons.Add(btn);
+            PriorityPresetsPanel.Children.Add(btn);
+        }
+    }
+
+    private static bool TryParsePriority(string? text, out int priority)
+    {
+        return int.TryParse(text?.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out priority)
+            && priority >= 0 && priority <= MaxPriority;
+    }
+
+    private void OnPriorityChanged(object? sender, TextChangedEventArgs e)
+    {
+        bool valid = TryParsePriority(PriorityTextBox.Text, out var priority);
+        foreach (var btn in _priorityButtons)
+        {
+            if (valid && btn.Tag is int value && value == priority)
+            {
+                if (!btn.Classes.Contains("active")) btn.Classes.Add("active");
+            }
+            else
+            {
+                btn.Classes.Remove("active");
+            }
+        }
+        ValidateName();
+    }
+
     private void OnIconSearchChanged(object? sender, TextChangedEventArgs e)
     {
         FilterIcons(IconSearchBox.Text);
@@ -577,6 +643,14 @@ public partial class CustomizeSetDialogWindow : Window
             return false;
         }
 
+        if (PriorityTextBox != null && !TryParsePriority(PriorityTextBox.Text, out _))
+        {
+            ErrorTextBlock.Text = LocalizationManager.Instance.GetString("dialogs.customize_set.priority_invalid");
+            ErrorTextBlock.IsVisible = true;
+            SaveButton.IsEnabled = false;
+            return false;
+        }
+
         ErrorTextBlock.IsVisible = false;
         SaveButton.IsEnabled = true;
         return true;
@@ -594,12 +668,12 @@ public partial class CustomizeSetDialogWindow : Window
     private void OnSaveClick(object? sender, RoutedEventArgs e)
     {
         if (!ValidateName()) return;
-        Close(new CustomizeSetResult(true, ResultSetName, ResultIconName, ResultColorHex));
+        Close(new CustomizeSetResult(true, ResultSetName, ResultIconName, ResultColorHex, ResultPriority));
     }
 
     private void OnCancelClick(object? sender, RoutedEventArgs e)
     {
-        Close(new CustomizeSetResult(false, _setName, _selectedIconName, _selectedColorHex));
+        Close(new CustomizeSetResult(false, _setName, _selectedIconName, _selectedColorHex, _originalPriority));
     }
 
     private void OnHeaderPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -611,4 +685,4 @@ public partial class CustomizeSetDialogWindow : Window
     }
 }
 
-public record CustomizeSetResult(bool Confirmed, string Name, string? Icon, string? Color);
+public record CustomizeSetResult(bool Confirmed, string Name, string? Icon, string? Color, int Priority = SetsEntity.DefaultPriority);

@@ -136,10 +136,10 @@ public static class DialogHelper
         return parent != null ? await dialog.ShowDialog<MoveSetCollisionResult>(parent) : new MoveSetCollisionResult(MoveSetCollisionAction.Cancel, null);
     }
 
-    public static async Task<CustomizeSetResult?> ShowCustomizeSetAsync(string currentName, string? currentIcon, string? currentColor, Window? owner = null)
+    public static async Task<CustomizeSetResult?> ShowCustomizeSetAsync(string currentName, string? currentIcon, string? currentColor, int currentPriority, Window? owner = null)
     {
         var parent = owner ?? GetMainWindow();
-        var dialog = new CustomizeSetDialogWindow(currentName, currentIcon, currentColor);
+        var dialog = new CustomizeSetDialogWindow(currentName, currentIcon, currentColor, currentPriority);
         return parent != null ? await dialog.ShowDialog<CustomizeSetResult?>(parent) : null;
     }
 
