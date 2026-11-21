@@ -19,7 +19,7 @@
                 Padding="14,10">
             <Grid ColumnDefinitions="Auto, *">
                 <icon:PackIconBoxIcons Kind="RegularCheckCircle" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBlock Grid.Column="1" Text="{Binding CacheToastMessage}" Foreground="{DynamicResource TextMain}" FontSize="13" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{Binding CacheToastMessage}" Foreground="{DynamicResource TextMain}" FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap"/>
             </Grid>
         </Border>
 
@@ -71,6 +71,16 @@
 
                                  <!-- Size & Count Badges -->
                                  <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                     <!-- Core caches only: pick which of the five files to clear -->
+                                     <Button Classes="filter-btn"
+                                             IsVisible="{Binding CanChooseFiles}"
+                                             Command="{Binding $parent[UserControl].((vm:HealthViewModel)DataContext).ChooseCacheFilesCommand}"
+                                             ToolTip.Tip="{loc:Loc 'tools.cache.choose_files_tip'}">
+                                         <StackPanel Orientation="Horizontal" Spacing="6">
+                                             <icon:PackIconBoxIcons Kind="RegularCheckSquare" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                             <TextBlock Text="{loc:Loc 'tools.cache.choose_files'}" VerticalAlignment="Center"/>
+                                         </StackPanel>
+                                     </Button>
                                      <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="8,3">
                                          <TextBlock Text="{Binding FileCount, StringFormat='{}{0} files'}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
                                      </Border>

@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PlumbobForge.Backend.Services;
+using PlumbobForge.Desktop.Services.Localization;
+using PlumbobForge.Desktop.Views.Dialogs;
 
 namespace PlumbobForge.Desktop.ViewModels;
 
@@ -32,9 +34,13 @@ public partial class CacheCategoryItemViewModel : ObservableObject
     private int _fileCount;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FormattedSize))]
     private long _totalSizeBytes;
 
     public string FormattedSize => CacheGroupInfo.FormatBytes(TotalSizeBytes);
+
+    // The core group's five files can also be cleared one by one through the cache file picker.
+    public bool CanChooseFiles => Id == "core_caches";
 
     public CacheCategoryItemViewModel(CacheGroupInfo info)
     {
@@ -98,18 +104,29 @@ public partial class HealthViewModel
         try
         {
             var groups = await _healthService.GetCacheStatusAsync();
+
+            // Rescans run often (opening the section, game start and exit), so a known row keeps its tick and open info.
+            var known = CacheCategories.ToDictionary(c => c.Id);
             CacheCategories.Clear();
 
             foreach (var g in groups)
             {
-                var vm = new CacheCategoryItemViewModel(g);
-                vm.PropertyChanged += (s, e) =>
+                if (known.TryGetValue(g.Id, out var vm))
                 {
-                    if (e.PropertyName == nameof(CacheCategoryItemViewModel.IsSelected))
+                    vm.FileCount = g.FileCount;
+                    vm.TotalSizeBytes = g.TotalSizeBytes;
+                }
+                else
+                {
+                    vm = new CacheCategoryItemViewModel(g);
+                    vm.PropertyChanged += (s, e) =>
                     {
-                        RecalculateCacheTotals();
-                    }
-                };
+                        if (e.PropertyName == nameof(CacheCategoryItemViewModel.IsSelected))
+                        {
+                            RecalculateCacheTotals();
+                        }
+                    };
+                }
                 CacheCategories.Add(vm);
             }
 
@@ -188,10 +205,31 @@ public partial class HealthViewModel
     {
         if (IsCleaningCaches || IsScanningCaches) return;
 
-        var selectedIds = CacheCategories.Where(c => c.IsSelected && c.FileCount > 0).Select(c => c.Id).ToList();
-        if (selectedIds.Count == 0)
+        if (Sims3GameProcess.IsGameRunning())
+        {
+            ShowCacheToast(LocalizationManager.Instance.GetString("tools.cache.clean_game_running"), isError: true);
+            return;
+        }
+
+        // The list may be older than the files on disk, so count again before deciding what to clean.
+        await ScanCachesAsync();
+
+        var selected = CacheCategories.Where(c => c.IsSelected).ToList();
+        if (selected.Count == 0)
         {
             ShowCacheToast("No caches selected to clean.", isError: false);
+            return;
+        }
+
+        var selectedIds = selected.Where(c => c.FileCount > 0).Select(c => c.Id).ToList();
+        if (selectedIds.Count == 0)
+        {
+            string message = LocalizationManager.Instance.GetString("tools.cache.already_clear");
+            if (_options.Value.AutoClearGameCaches)
+            {
+                message += " " + LocalizationManager.Instance.GetString("tools.cache.already_clear_auto");
+            }
+            ShowCacheToast(message, isError: false);
             return;
         }
 
@@ -199,7 +237,11 @@ public partial class HealthViewModel
         try
         {
             var result = await _healthService.ClearCachesAsync(selectedIds);
-            if (result.FilesDeleted > 0)
+            if (result.Errors.Count > 0)
+            {
+                ShowCacheToast(LocalizationManager.Instance.GetString("tools.cache.clean_partial", result.FilesDeleted, result.Errors.Count, result.Errors[0]), isError: true);
+            }
+            else if (result.FilesDeleted > 0)
             {
                 ShowCacheToast($"Successfully cleaned {result.FilesDeleted} cache files ({result.FormattedBytesReclaimed} reclaimed)!", isError: false);
             }
@@ -217,6 +259,18 @@ public partial class HealthViewModel
             IsCleaningCaches = false;
         }
 
+        await ScanCachesAsync();
+    }
+
+    [RelayCommand]
+    public async Task ChooseCacheFilesAsync()
+    {
+        if (IsCleaningCaches) return;
+
+        await DialogHelper.ShowCacheFilePickerAsync(
+            _healthService.GetSims3FolderPath(),
+            _options.Value.DocumentBaseDir,
+            files => _healthService.ClearCachesAsync(new[] { "core_caches" }, files));
         await ScanCachesAsync();
     }
 

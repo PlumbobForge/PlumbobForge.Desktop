@@ -327,7 +327,13 @@
                                 "cat_thumbnails":  "Thumbnails Cache",
                                 "cat_featured":  "Featured Items Store Cache",
                                 "recommended":  "Recommended",
-                                "why_guide":  "Why clear cache?"
+                                "why_guide":  "Why clear cache?",
+                                "choose_files":  "Choose files",
+                                "choose_files_tip":  "Pick which of the five core cache files to clear. Files you untick are kept, also when PlumbobForge clears the caches by itself after mod changes.",
+                                "clean_game_running":  "Close The Sims 3 first. The game keeps its cache files open while it runs.",
+                                "already_clear":  "The selected caches are already clear.",
+                                "already_clear_auto":  "“Clear game caches after changes” in Settings removes them for you.",
+                                "clean_partial":  "Cleaned {0} cache files, {1} could not be removed. {2}"
                             },
                   "conflicts":  {
                                     "title":  "Conflict Scanner",
@@ -526,7 +532,7 @@
                      "performance":  {
                                          "title":  "In-Game Performance",
                                          "auto_clear_caches":  "Clear game caches after changes",
-                                         "auto_clear_caches_desc":  "Deletes CASPartCache and the other caches whenever the CC the game loads change, so it never starts with stale data."
+                                         "auto_clear_caches_desc":  "Deletes CASPartCache and the other caches whenever the CC the game loads change, so it never starts with stale data. Files you keep in the Core Game Caches file picker are left alone."
                                      },
                      "textures":  {
                                       "optimize":  "Optimise textures (experimental)",
@@ -777,6 +783,20 @@
                                           "rebuild_now":  "Rebuild Cache Now",
                                           "continue_anyway":  "Continue Anyway",
                                           "close_anyway":  "Close Anyway"
+                                      },
+                    "cache_files":  {
+                                          "title":  "Clear Core Game Caches",
+                                          "question":  "Which of the five core cache files should be deleted?",
+                                          "info":  "The game rebuilds deleted files the next time it starts. Unticked files are kept, here and when PlumbobForge clears the caches by itself after mod changes. Your mods, saves and PlumbobForge's own cache are not touched.",
+                                          "not_present":  "not present",
+                                          "game_running":  "The Sims 3 is running. Close the game first; it keeps these files open.",
+                                          "none_ticked":  "Tick at least one file to clear.",
+                                          "nothing_present":  "Nothing to clear: none of the ticked files were present.",
+                                          "cleared_one":  "Cleared 1 cache file ({0}).",
+                                          "cleared_many":  "Cleared {0} cache files ({1}).",
+                                          "failed":  "The caches could not be cleared: {0}",
+                                          "clear":  "Clear caches",
+                                          "done":  "Done"
                                       },
                     "recheck_types":  {
                                           "title":  "Recheck Package Types",
