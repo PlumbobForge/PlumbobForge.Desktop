@@ -512,7 +512,16 @@
                                      "sims3_user_dir_help":  "Lokalizacja folderu użytkownika The Sims 3 (w Dokumenty/Electronic Arts). Wykrywany automatycznie, jeśli pozostawiony pusty.",
                                      "browse":  "Przeglądaj...",
                                      "default":  "Domyślny",
-                                     "detect":  "Wykryj"
+                                     "detect":  "Wykryj",
+                                     "sims3_exe":  "Program The Sims 3 dla przycisku Graj",
+                                     "sims3_exe_placeholder":  "Game\\Bin\\TS3W.exe w folderze gry",
+                                     "sims3_exe_clear_tip":  "Użyj domyślnego programu",
+                                     "sims3_exe_custom":  "Graj uruchamia ten program.",
+                                     "sims3_exe_default":  "Pole jest puste, więc Graj uruchamia {0}",
+                                     "sims3_exe_not_found":  "Zostaw puste, aby użyć Game\\Bin\\TS3W.exe w folderze gry powyżej. Nie znaleziono go tam.",
+                                     "sims3_exe_pick_title":  "Wybierz program The Sims 3",
+                                     "sims3_exe_filter":  "Programy",
+                                     "sims3_exe_pick_error":  "Błąd podczas wybierania programu: {0}"
                                  },
                      "observed":  {
                                       "title":  "Monitorowane foldery i automatyczny import",
@@ -1335,6 +1344,25 @@
                 "send_feedback":  "Wyślij opinię lub zgłoś błąd",
                 "guide":  "Poradnik (F1)"
             },
+    "play":  {
+                 "title":  "Graj",
+                 "play_tip":  "Uruchom The Sims 3 z aktywną konfiguracją",
+                 "picker_tip":  "Wybierz konfigurację, której używa przycisk Graj",
+                 "choose_configuration":  "Wybierz konfigurację",
+                 "active_suffix":  "{0}  (aktywna)",
+                 "program_settings":  "Ustawienia programu gry…",
+                 "game_running":  "The Sims 3 jest już uruchomione.",
+                 "config_missing":  "Ta konfiguracja już nie istnieje.",
+                 "not_activated":  "Nie udało się aktywować '{0}', więc gra nie została uruchomiona.",
+                 "unbuilt_changes":  "Niektóre zestawy mają zmiany, które nie zostały jeszcze zbudowane.",
+                 "rebuild_first":  "Przebuduj przed grą",
+                 "rebuild_first_help":  "Zmiany w zestawach są aktualne w grze dopiero po przebudowie. Bez niej gra wczyta ostatnio zbudowaną wersję tych zestawów.",
+                 "continue":  "Kontynuuj",
+                 "rebuild_failed":  "Przebudowa nie została ukończona, więc gra nie została uruchomiona.",
+                 "exe_not_set":  "Zanim użyjesz przycisku Graj, wybierz program The Sims 3 w Ustawieniach.",
+                 "exe_not_exe":  "Podaj pełną ścieżkę do pliku .exe systemu Windows.",
+                 "exe_missing":  "Wybrany program już nie istnieje:\n{0}\nWybierz inny w Ustawieniach."
+             },
     "guide":  {
                   "search_placeholder":  "Zadaj pytanie lub szukaj...",
                   "for_this_tab":  "DLA TEJ KARTY",

@@ -810,6 +810,9 @@ public partial class ContentManagerViewModel : ObservableObject
         await RunRebuildAsync(forceRebuild, repairLegacyCompression: false);
     }
 
+    // Play waits for the result: the game is only started after a rebuild that finished.
+    public Task<bool> RebuildForPlayAsync() => RunRebuildAsync(forceRebuild: false, repairLegacyCompression: false);
+
     public Task<bool> RepairCompressionAndRebuildAsync(Func<Task>? onSucceeded = null)
         => RunRebuildAsync(forceRebuild: true, repairLegacyCompression: true, onSucceeded);
 

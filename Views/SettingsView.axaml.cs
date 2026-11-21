@@ -143,6 +143,15 @@ public partial class SettingsView : UserControl
         }
     }
 
+    private async void OnBrowseSims3ExecutableClick(object? sender, RoutedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.StorageProvider != null && DataContext is SettingsViewModel vm)
+        {
+            await vm.BrowseSims3ExecutableAsync(topLevel.StorageProvider);
+        }
+    }
+
     private async void OnBrowseGameFilesDirClick(object? sender, RoutedEventArgs e)
     {
         var topLevel = TopLevel.GetTopLevel(this);
