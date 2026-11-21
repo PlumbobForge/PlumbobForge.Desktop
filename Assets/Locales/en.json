@@ -129,6 +129,8 @@
                     "favorite_selected":  "Favorite Selected",
                     "original_textures_badge":  "Uses its original textures (texture optimisation is off for this item)",
                     "objects_off_badge":  "{0} object(s) turned off in Look Inside",
+                    "script_badge":  "Script",
+                    "core_mod_badge":  "Core mod",
                     "favorites_first":  "Favorites First"
                 },
     "filters":  {
@@ -142,6 +144,10 @@
                     "status":  "STATUS",
                     "enabled":  "Enabled",
                     "disabled":  "Disabled",
+                    "script_section":  "SCRIPT MODS",
+                    "script_mods":  "Script mods",
+                    "core_mods":  "Core mods",
+                    "no_script":  "No script",
                     "size":  "SIZE",
                     "category":  "CAS CATEGORY",
                     "categories":  {

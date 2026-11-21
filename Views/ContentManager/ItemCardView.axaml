@@ -103,10 +103,18 @@
 
                     <!-- Top Row: Category Tag on Left & Selection Checkbox on Right -->
                     <Grid ColumnDefinitions="Auto, *, Auto" Margin="8,8,8,0" VerticalAlignment="Top">
-                        <!-- Category Tag Pill -->
-                        <Border Grid.Column="0" IsHitTestVisible="False" Background="#75000000" CornerRadius="4" Padding="6,2,6,3" VerticalAlignment="Top">
-                            <TextBlock Text="{Binding CategoryTagDisplay}" FontSize="10" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" LineHeight="12"/>
-                        </Border>
+                        <!-- Category Tag Pill, then Script / Core mod Pills -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" IsHitTestVisible="False" VerticalAlignment="Top">
+                            <Border Background="#75000000" CornerRadius="4" Padding="6,2,6,3" VerticalAlignment="Top">
+                                <TextBlock Text="{Binding CategoryTagDisplay}" FontSize="10" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" LineHeight="12"/>
+                            </Border>
+                            <Border Background="#cc1e3a8a" CornerRadius="4" Padding="6,2,6,3" VerticalAlignment="Top" IsVisible="{Binding IsScriptMod}">
+                                <TextBlock Text="{loc:Loc 'library.script_badge'}" FontSize="10" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" LineHeight="12"/>
+                            </Border>
+                            <Border Background="#ccb45309" CornerRadius="4" Padding="6,2,6,3" VerticalAlignment="Top" IsVisible="{Binding IsCoreMod}">
+                                <TextBlock Text="{loc:Loc 'library.core_mod_badge'}" FontSize="10" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" LineHeight="12"/>
+                            </Border>
+                        </StackPanel>
 
                         <!-- Top Right Actions: Favorite & Selection Checkbox -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top" Margin="0,0,2,0">
