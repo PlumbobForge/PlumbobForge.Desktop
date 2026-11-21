@@ -512,7 +512,16 @@
                                      "sims3_user_dir_help":  "Location of your The Sims 3 user folder (inside Documents/Electronic Arts). Automatically detected if left empty.",
                                      "browse":  "Browse...",
                                      "default":  "Default",
-                                     "detect":  "Auto-Detect"
+                                     "detect":  "Auto-Detect",
+                                     "sims3_exe":  "The Sims 3 Program for Play",
+                                     "sims3_exe_placeholder":  "Game\\Bin\\TS3W.exe in the game folder",
+                                     "sims3_exe_clear_tip":  "Use the default program",
+                                     "sims3_exe_custom":  "Play starts this program.",
+                                     "sims3_exe_default":  "Empty, so Play starts {0}",
+                                     "sims3_exe_not_found":  "Leave empty to use Game\\Bin\\TS3W.exe in the game folder above. It wasn't found there.",
+                                     "sims3_exe_pick_title":  "Select The Sims 3 Program",
+                                     "sims3_exe_filter":  "Programs",
+                                     "sims3_exe_pick_error":  "Error selecting the program: {0}"
                                  },
                      "observed":  {
                                       "title":  "Monitored Folders \u0026 Auto-Import",
@@ -1335,6 +1344,25 @@
                 "send_feedback":  "Send Feedback or Report a Bug",
                 "guide":  "Guide (F1)"
             },
+    "play":  {
+                 "title":  "Play",
+                 "play_tip":  "Play The Sims 3 with the active configuration",
+                 "picker_tip":  "Choose the configuration Play uses",
+                 "choose_configuration":  "Choose configuration",
+                 "active_suffix":  "{0}  (active)",
+                 "program_settings":  "Game program settings…",
+                 "game_running":  "The Sims 3 is already running.",
+                 "config_missing":  "That configuration no longer exists.",
+                 "not_activated":  "'{0}' could not be activated, so the game was not started.",
+                 "unbuilt_changes":  "Some sets have changes that aren't built yet.",
+                 "rebuild_first":  "Rebuild before playing",
+                 "rebuild_first_help":  "Sets with changes are only up to date in the game after a rebuild. Without it, the game loads the last built version of those sets.",
+                 "continue":  "Continue",
+                 "rebuild_failed":  "The rebuild didn't finish, so the game was not started.",
+                 "exe_not_set":  "Choose your Sims 3 program in Settings before using Play.",
+                 "exe_not_exe":  "Choose the full path of a Windows .exe file.",
+                 "exe_missing":  "The chosen program no longer exists:\n{0}\nChoose another one in Settings."
+             },
     "guide":  {
                   "search_placeholder":  "Ask a question or search...",
                   "for_this_tab":  "FOR THIS TAB",

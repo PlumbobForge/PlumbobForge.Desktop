@@ -242,6 +242,7 @@ public partial class MainViewModel : ObservableObject
         LocalizationManager.Instance.LanguageChanged += _ =>
         {
             VaultStatusText = LocalizationManager.Instance.GetString("progress.vault_status_uptodate");
+            OnPropertyChanged(nameof(ConfigPickerText));
         };
 
         // Defer heavy content loading until after MainWindow renders its initial frame
@@ -474,10 +475,12 @@ public partial class MainViewModel : ObservableObject
 
             // Dirty flags only mean "rebuild pending" in library mode; the vault never rebuilds.
             bool dirty = !vaultActive && await db.SetsEntities.AsNoTracking().AnyAsync((SetsEntity s) => s.Dirty);
+            string activeName = await db.ConfigEntities.AsNoTracking().Where(c => c.Active).Select(c => c.Name).FirstOrDefaultAsync() ?? string.Empty;
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 HasDirtySets = dirty;
                 IsVaultActive = vaultActive;
+                ActiveConfigurationName = activeName;
             });
         }
         catch

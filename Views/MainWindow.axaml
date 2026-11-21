@@ -162,6 +162,32 @@
         <Style Selector="Button.nav-tab.active bx|PackIconBoxIcons">
             <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
         </Style>
+        <Style Selector="Button.nav-play">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="9,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.nav-play:pointerover /template/ Border">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+        <!-- The configuration list beside Play looks like a dropdown of its own -->
+        <Style Selector="Button.config-picker /template/ Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
         <!-- Titles only show as tooltips once the bar has dropped them. -->
         <Style Selector="Button.nav-tab">
             <Setter Property="ToolTip.ServiceEnabled" Value="False"/>
@@ -190,31 +216,58 @@
                     Padding="10,0,0,0"
                     PointerPressed="OnHeaderPointerPressed">
                 <Grid ColumnDefinitions="*,Auto">
-                    <!-- Left: Navigation Tabs (titles hide when they don't fit) -->
-                    <ItemsControl Grid.Column="0"
-                                  ItemsSource="{Binding NavTabs}"
-                                  HorizontalAlignment="Left"
-                                  VerticalAlignment="Center">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <controls:AdaptiveTabPanel Spacing="2" LabelSpacing="8"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vm:NavTabViewModel}">
-                                <Button Classes="nav-tab"
-                                        Classes.active="{Binding IsActive}"
-                                        IsVisible="{Binding IsShown}"
-                                        Command="{Binding Command}"
-                                        ToolTip.Tip="{Binding Title}">
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <bx:PackIconBoxIcons Kind="{Binding Icon}" Width="16" Height="16" VerticalAlignment="Center"/>
-                                        <TextBlock Classes="tab-label" Text="{Binding Title}" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <!-- Left: Navigation Tabs (titles hide when they don't fit), then Play and the configuration picker -->
+                    <controls:TabsWithTrailingPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <ItemsControl ItemsSource="{Binding NavTabs}"
+                                      HorizontalAlignment="Left"
+                                      VerticalAlignment="Center">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <controls:AdaptiveTabPanel Spacing="2" LabelSpacing="8"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:NavTabViewModel}">
+                                    <Button Classes="nav-tab"
+                                            Classes.active="{Binding IsActive}"
+                                            IsVisible="{Binding IsShown}"
+                                            Command="{Binding Command}"
+                                            ToolTip.Tip="{Binding Title}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <bx:PackIconBoxIcons Kind="{Binding Icon}" Width="16" Height="16" VerticalAlignment="Center"/>
+                                            <TextBlock Classes="tab-label" Text="{Binding Title}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- The Play icon is the only thing that starts The Sims 3; the list beside it only chooses the configuration -->
+                        <Button x:Name="PlayButton"
+                                Classes="nav-play"
+                                Margin="6,0,0,0"
+                                Click="OnPlayClick"
+                                ToolTip.Tip="{loc:Loc play.play_tip}">
+                            <bx:PackIconBoxIcons Kind="RegularPlay" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                        </Button>
+                        <Button x:Name="ConfigMenuButton"
+                                Classes="nav-play config-picker"
+                                Margin="4,0,0,0"
+                                Padding="10,4,8,4"
+                                VerticalAlignment="Center"
+                                Click="OnConfigMenuClick"
+                                ToolTip.Tip="{loc:Loc play.picker_tip}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="{Binding ConfigPickerText}"
+                                           FontSize="12"
+                                           FontWeight="Medium"
+                                           MaxWidth="180"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center"/>
+                                <bx:PackIconBoxIcons Kind="RegularChevronDown" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </controls:TabsWithTrailingPanel>
 
                     <!-- Right: Quick search, Rebuild button & Window controls -->
                     <StackPanel Grid.Column="1"

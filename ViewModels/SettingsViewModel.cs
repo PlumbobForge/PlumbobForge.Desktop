@@ -67,6 +67,7 @@ public partial class SettingsViewModel : ObservableObject
         _options.Language = lang.Code;
         _ = SaveSettingsInternalAsync(silent: true);
         OnPropertyChanged(nameof(CacheMethodDescription));
+        OnPropertyChanged(nameof(Sims3ExecutableHint));
     }
 
     [ObservableProperty]
@@ -709,6 +710,7 @@ public partial class SettingsViewModel : ObservableObject
 
             DocumentBaseDir = _options.DocumentBaseDir ?? string.Empty;
             GameFilesDir = _options.GameFilesDir ?? string.Empty;
+            Sims3Executable = _options.Sims3Executable ?? string.Empty;
             Sims3UserDir = _options.Sims3UserDir ?? string.Empty;
             CacheMethod = string.IsNullOrEmpty(_options.CacheMethod) ? "Dynamic" : _options.CacheMethod;
             AutoRebuildStaticCache = _options.AutoRebuildStaticCache;
@@ -758,6 +760,7 @@ public partial class SettingsViewModel : ObservableObject
             _options.Language = SelectedLanguageOption?.Code ?? "auto";
             _options.DocumentBaseDir = DocumentBaseDir;
             _options.GameFilesDir = GameFilesDir;
+            _options.Sims3Executable = Sims3Executable;
             _options.Sims3UserDir = Sims3UserDir;
             _options.CacheMethod = CacheMethod;
             _options.AutoRebuildStaticCache = AutoRebuildStaticCache;

@@ -20,6 +20,7 @@ public partial class SettingsViewModel
     private string _documentBaseDir = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Sims3ExecutableHint))]
     private string _gameFilesDir = string.Empty;
 
     partial void OnGameFilesDirChanged(string value)

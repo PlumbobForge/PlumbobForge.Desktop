@@ -1,7 +1,14 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Microsoft.Extensions.DependencyInjection;
+using PlumbobForge.Desktop.Controls.Icons;
+using PlumbobForge.Desktop.Services.Localization;
 using PlumbobForge.Desktop.Views.Dialogs;
 
 namespace PlumbobForge.Desktop.Views;
@@ -9,6 +16,7 @@ namespace PlumbobForge.Desktop.Views;
 public partial class MainWindow : Window
 {
     private bool _isClosingForced;
+    private bool _playStarting;
 
     private ViewModels.MainViewModel? _vm;
 
@@ -58,6 +66,88 @@ public partial class MainWindow : Window
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
             BeginMoveDrag(e);
+        }
+    }
+
+    // Starts the active configuration. With none active there is nothing to start, so it opens the list.
+    private async void OnPlayClick(object? sender, RoutedEventArgs e)
+    {
+        // A double click must not start the game twice.
+        if (_playStarting || DataContext is not ViewModels.MainViewModel vm) return;
+
+        _playStarting = true;
+        try
+        {
+            if (vm.ConfigurationsVm.Configurations.Count == 0) await vm.ConfigurationsVm.LoadDataAsync();
+            var active = vm.ConfigurationsVm.Configurations.FirstOrDefault(c => c.Active);
+            if (active != null) await vm.PlayAsync(this, active.Id);
+            else ShowConfigMenu(vm);
+        }
+        catch (Exception ex)
+        {
+            await DialogHelper.ShowErrorAsync(LocalizationManager.Instance.GetString("play.title"), ex.Message, this);
+        }
+        finally
+        {
+            _playStarting = false;
+        }
+    }
+
+    private async void OnConfigMenuClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not ViewModels.MainViewModel vm) return;
+
+        try
+        {
+            if (vm.ConfigurationsVm.Configurations.Count == 0) await vm.ConfigurationsVm.LoadDataAsync();
+            ShowConfigMenu(vm);
+        }
+        catch (Exception ex)
+        {
+            await DialogHelper.ShowErrorAsync(LocalizationManager.Instance.GetString("play.title"), ex.Message, this);
+        }
+    }
+
+    private void ShowConfigMenu(ViewModels.MainViewModel vm)
+    {
+        FlyoutBase.SetAttachedFlyout(ConfigMenuButton, BuildConfigMenu(vm));
+        FlyoutBase.ShowAttachedFlyout(ConfigMenuButton);
+    }
+
+    // Picking a configuration only activates it; the game starts from the Play button.
+    private MenuFlyout BuildConfigMenu(ViewModels.MainViewModel vm)
+    {
+        var menu = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedLeft };
+
+        foreach (var config in vm.ConfigurationsVm.Configurations)
+        {
+            long id = config.Id;
+            var item = new MenuItem
+            {
+                Header = config.Active ? LocalizationManager.Instance.GetString("play.active_suffix", config.Name) : config.Name,
+                FontWeight = config.Active ? FontWeight.SemiBold : FontWeight.Normal,
+                Icon = new PackIconBoxIcons { Kind = config.IconKind, Foreground = config.IconBrush, Width = 15, Height = 15 }
+            };
+            item.Click += async (_, _) => await SelectConfigurationAsync(vm, id);
+            menu.Items.Add(item);
+        }
+
+        menu.Items.Add(new Separator());
+        var settings = new MenuItem { Header = LocalizationManager.Instance.GetString("play.program_settings") };
+        settings.Click += (_, _) => vm.NavigateToSettingsSection("Storage");
+        menu.Items.Add(settings);
+        return menu;
+    }
+
+    private async Task SelectConfigurationAsync(ViewModels.MainViewModel vm, long configurationId)
+    {
+        try
+        {
+            await vm.SelectConfigurationAsync(this, configurationId);
+        }
+        catch (Exception ex)
+        {
+            await DialogHelper.ShowErrorAsync(LocalizationManager.Instance.GetString("play.title"), ex.Message, this);
         }
     }
 
