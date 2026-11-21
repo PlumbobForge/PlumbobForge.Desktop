@@ -327,7 +327,13 @@
                                 "cat_thumbnails":  "Pamięć miniatur",
                                 "cat_featured":  "Pamięć polecanych obiektów ze Store",
                                 "recommended":  "Zalecane",
-                                "why_guide":  "Dlaczego warto czyścić pamięć podręczną?"
+                                "why_guide":  "Dlaczego warto czyścić pamięć podręczną?",
+                                "choose_files":  "Wybierz pliki",
+                                "choose_files_tip":  "Wybierz, które z pięciu głównych plików pamięci podręcznej wyczyścić. Odznaczone pliki zostają, także gdy PlumbobForge sam czyści pamięć podręczną po zmianach w modach.",
+                                "clean_game_running":  "Najpierw zamknij The Sims 3. Gra trzyma pliki pamięci podręcznej otwarte, dopóki działa.",
+                                "already_clear":  "Zaznaczona pamięć podręczna jest już wyczyszczona.",
+                                "already_clear_auto":  "Opcja „Czyść pamięć podręczną gry po zmianach” w Ustawieniach usuwa ją za Ciebie.",
+                                "clean_partial":  "Wyczyszczone pliki pamięci podręcznej: {0}, nie udało się usunąć: {1}. {2}"
                             },
                   "conflicts":  {
                                     "title":  "Skaner konfliktów",
@@ -526,7 +532,7 @@
                      "performance":  {
                                          "title":  "Wydajność w grze",
                                          "auto_clear_caches":  "Czyść pamięć podręczną gry po zmianach",
-                                         "auto_clear_caches_desc":  "Usuwa CASPartCache i pozostałe główne pliki pamięci podręcznej za każdym razem, gdy zmieniają się mody wczytywane przez grę, aby nigdy nie startowała z nieaktualnymi danymi. Jeśli gra jest uruchomiona, nastąpi to po jej zamknięciu."
+                                         "auto_clear_caches_desc":  "Usuwa CASPartCache i pozostałe główne pliki pamięci podręcznej za każdym razem, gdy zmieniają się mody wczytywane przez grę, aby nigdy nie startowała z nieaktualnymi danymi. Jeśli gra jest uruchomiona, nastąpi to po jej zamknięciu. Pliki zachowane w wyborze plików głównej pamięci podręcznej nie są usuwane."
                                      },
                      "textures":  {
                                       "optimize":  "Optymalizuj tekstury (eksperymentalne)",
@@ -777,6 +783,20 @@
                                           "rebuild_now":  "Przebuduj pamięć podręczną teraz",
                                           "continue_anyway":  "Kontynuuj mimo to",
                                           "close_anyway":  "Zamknij mimo to"
+                                      },
+                    "cache_files":  {
+                                          "title":  "Wyczyść główną pamięć podręczną gry",
+                                          "question":  "Które z pięciu głównych plików pamięci podręcznej usunąć?",
+                                          "info":  "Gra odtworzy usunięte pliki przy następnym uruchomieniu. Odznaczone pliki zostają zachowane – tutaj i wtedy, gdy PlumbobForge sam czyści pamięć podręczną po zmianach w modach. Twoje mody, zapisy gry i własna pamięć podręczna PlumbobForge pozostają nietknięte.",
+                                          "not_present":  "brak",
+                                          "game_running":  "The Sims 3 jest uruchomione. Najpierw zamknij grę – trzyma te pliki otwarte.",
+                                          "none_ticked":  "Zaznacz co najmniej jeden plik do wyczyszczenia.",
+                                          "nothing_present":  "Nie ma czego czyścić: żadnego z zaznaczonych plików nie było.",
+                                          "cleared_one":  "Wyczyszczono 1 plik pamięci podręcznej ({0}).",
+                                          "cleared_many":  "Wyczyszczone pliki pamięci podręcznej: {0} ({1}).",
+                                          "failed":  "Nie udało się wyczyścić pamięci podręcznej: {0}",
+                                          "clear":  "Wyczyść",
+                                          "done":  "Gotowe"
                                       },
                     "recheck_types":  {
                                           "title":  "Sprawdź ponownie typy pakietów",

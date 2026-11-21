@@ -546,6 +546,7 @@ public partial class MainViewModel : ObservableObject
     {
         ActiveTab = "Tools";
         CurrentView = HealthVm;
+        if (HealthVm.IsCacheCleanerActive) _ = HealthVm.ScanCachesAsync();
     }
 
     [RelayCommand]
@@ -553,6 +554,7 @@ public partial class MainViewModel : ObservableObject
     {
         ActiveTab = "Tools";
         CurrentView = HealthVm;
+        if (HealthVm.IsCacheCleanerActive) _ = HealthVm.ScanCachesAsync();
     }
 
     [RelayCommand]

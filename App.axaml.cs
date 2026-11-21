@@ -451,7 +451,10 @@ public partial class App : Application
         while (await timer.WaitForNextTickAsync())
         {
             bool running = Sims3GameProcess.IsGameRunning();
-            if ((wasRunning && !running) || (!running && VaultService.HasPendingIndexSync))
+            // A cache file can stay locked for a moment after the game closes, so a failed clear is retried every tick.
+            bool cacheClearWaiting = Sims3GameProcess.HasPendingCacheClear(
+                Services!.GetRequiredService<IOptionsMonitor<PlumbobForgeOptions>>().CurrentValue.DocumentBaseDir);
+            if ((wasRunning && !running) || (!running && (VaultService.HasPendingIndexSync || cacheClearWaiting)))
             {
                 try
                 {
@@ -467,6 +470,11 @@ public partial class App : Application
                 {
                     AppLogger.LogError("Finishing deferred work after the game exited failed", ex);
                 }
+            }
+            // The game writes its caches while it runs, so the Cache Cleaner must not keep showing the old counts.
+            if (running != wasRunning || cacheClearWaiting)
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => _ = Services!.GetService<HealthViewModel>()?.ScanCachesAsync());
             }
             wasRunning = running;
         }

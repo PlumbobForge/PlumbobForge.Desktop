@@ -68,7 +68,11 @@ public partial class HealthViewModel : ObservableObject
             _ = AppSettingsService.SaveOptionsAsync(_options.Value);
         }
 
-        if (section == "Patterns" && !HasScannedPatterns && !IsScanningPatterns)
+        if (section == "Cache")
+        {
+            _ = ScanCachesAsync();
+        }
+        else if (section == "Patterns" && !HasScannedPatterns && !IsScanningPatterns)
         {
             _ = ScanPatternsAsync();
         }

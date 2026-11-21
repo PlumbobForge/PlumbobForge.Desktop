@@ -115,6 +115,16 @@ public static class DialogHelper
         return parent != null ? await dialog.ShowDialog<DeleteSetDialogResult>(parent) : new DeleteSetDialogResult(false, false, false);
     }
 
+    public static async Task ShowCacheFilePickerAsync(string sims3Folder, string appDataDir,
+        Func<IReadOnlyCollection<string>, Task<PlumbobForge.Backend.Services.CacheCleanResult>> clean, Window? owner = null)
+    {
+        var parent = owner ?? GetMainWindow();
+        if (parent != null)
+        {
+            await new CacheCleanConfirmWindow(sims3Folder, appDataDir, clean).ShowDialog(parent);
+        }
+    }
+
     public static async Task<string> ShowDuplicateAlertAsync(string title, string message, Window? owner = null)
     {
         var parent = owner ?? GetMainWindow();

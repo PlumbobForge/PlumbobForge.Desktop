@@ -1,0 +1,82 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
+        xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+        xmlns:dialogs="using:PlumbobForge.Desktop.Views.Dialogs"
+        x:Class="PlumbobForge.Desktop.Views.Dialogs.CacheCleanConfirmWindow"
+        Title="{loc:Loc 'dialogs.cache_files.title'}"
+        Width="500"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        WindowDecorations="BorderOnly"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        Background="{DynamicResource BgDark}">
+
+    <Border BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" ClipToBounds="True" Background="{DynamicResource BgDark}">
+        <Grid RowDefinitions="Auto, Auto, Auto">
+            <!-- Modal Title Bar Header -->
+            <Border Grid.Row="0" Background="{DynamicResource BgSidebar}" Height="42" Padding="18,0,0,0" PointerPressed="OnHeaderPointerPressed">
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularTrash" Width="17" Height="17" Foreground="{DynamicResource AccentBrush}"/>
+                        <TextBlock Text="{loc:Loc 'dialogs.cache_files.title'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Width="42" Height="42" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCloseClick" ToolTip.Tip="{loc:Loc 'common.close'}">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#ef4444"/>
+                            </Style>
+                            <Style Selector="Button:pointerover icon|PackIconBoxIcons">
+                                <Setter Property="Foreground" Value="White"/>
+                            </Style>
+                        </Button.Styles>
+                        <icon:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Body Content -->
+            <Border Grid.Row="1" Padding="22,18">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="{loc:Loc 'dialogs.cache_files.question'}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap"/>
+
+                    <!-- File List -->
+                    <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="14,10">
+                        <ItemsControl x:Name="FileList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="dialogs:CacheFileRow">
+                                    <Grid ColumnDefinitions="*, Auto" Margin="0,1">
+                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" Cursor="Hand" VerticalAlignment="Center" MinHeight="28">
+                                            <TextBlock Text="{Binding Name}" FontSize="12.5" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                        </CheckBox>
+                                        <TextBlock Grid.Column="1" Text="{Binding State}" FontSize="12" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+
+                    <!-- Info Banner -->
+                    <Border Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="12,10">
+                        <Grid ColumnDefinitions="Auto, *" VerticalAlignment="Center">
+                            <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularInfoCircle" Width="16" Height="16" Foreground="{DynamicResource StatusCyan}" Margin="0,1,10,0" VerticalAlignment="Top"/>
+                            <TextBlock Grid.Column="1" Text="{loc:Loc 'dialogs.cache_files.info'}" FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="17"/>
+                        </Grid>
+                    </Border>
+
+                    <TextBlock x:Name="StatusText" FontSize="12.5" FontWeight="SemiBold" TextWrapping="Wrap" IsVisible="False"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Footer Action Buttons -->
+            <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0" Padding="18,12">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                    <Button x:Name="CancelButton" Content="{loc:Loc 'common.cancel'}" Click="OnCloseClick" Background="Transparent" Foreground="{DynamicResource TextMain}" BorderThickness="1" BorderBrush="{DynamicResource BorderSubtle}" CornerRadius="7" Padding="16,7" FontSize="12.5" Cursor="Hand"/>
+                    <Button x:Name="ClearButton" Content="{loc:Loc 'dialogs.cache_files.clear'}" Click="OnClearClick" Background="{DynamicResource AccentBrush}" Foreground="White" FontWeight="SemiBold" BorderThickness="0" CornerRadius="7" Padding="18,7" FontSize="12.5" Cursor="Hand"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>
