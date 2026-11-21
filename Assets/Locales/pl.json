@@ -327,7 +327,11 @@
                                 "cat_thumbnails":  "Pamięć miniatur",
                                 "cat_featured":  "Pamięć polecanych obiektów ze Store",
                                 "recommended":  "Zalecane",
-                                "why_guide":  "Dlaczego warto czyścić pamięć podręczną?"
+                                "why_guide":  "Dlaczego warto czyścić pamięć podręczną?",
+                                "game_running":  "Zamknij The Sims 3 przed czyszczeniem pamięci podręcznej: gra trzyma te pliki otwarte.",
+                                "standard_cleared":  "Wyczyszczono standardowe pliki pamięci podręcznej: {0} (zwolniono {1}).",
+                                "standard_none":  "Brak standardowych plików pamięci podręcznej do wyczyszczenia.",
+                                "standard_failed":  "Nie udało się wyczyścić plików pamięci podręcznej ({0}): {1}"
                             },
                   "conflicts":  {
                                     "title":  "Skaner konfliktów",
@@ -1333,7 +1337,9 @@
                 "quick_jump":  "Szybki skok",
                 "places":  "Miejsca",
                 "send_feedback":  "Wyślij opinię lub zgłoś błąd",
-                "guide":  "Poradnik (F1)"
+                "guide":  "Poradnik (F1)",
+                "clear_caches":  "Wyczyść standardowe pliki pamięci podręcznej",
+                "refresh":  "Odśwież aplikację"
             },
     "guide":  {
                   "search_placeholder":  "Zadaj pytanie lub szukaj...",

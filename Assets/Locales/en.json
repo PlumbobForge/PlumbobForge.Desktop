@@ -327,7 +327,11 @@
                                 "cat_thumbnails":  "Thumbnails Cache",
                                 "cat_featured":  "Featured Items Store Cache",
                                 "recommended":  "Recommended",
-                                "why_guide":  "Why clear cache?"
+                                "why_guide":  "Why clear cache?",
+                                "game_running":  "Close The Sims 3 before clearing its caches: the game keeps them open.",
+                                "standard_cleared":  "Cleared {0} standard cache files ({1} freed).",
+                                "standard_none":  "No standard cache files to clear.",
+                                "standard_failed":  "Could not clear {0} cache file(s): {1}"
                             },
                   "conflicts":  {
                                     "title":  "Conflict Scanner",
@@ -1333,7 +1337,9 @@
                 "quick_jump":  "Quick Jump",
                 "places":  "Places",
                 "send_feedback":  "Send Feedback or Report a Bug",
-                "guide":  "Guide (F1)"
+                "guide":  "Guide (F1)",
+                "clear_caches":  "Clear standard caches",
+                "refresh":  "Refresh application"
             },
     "guide":  {
                   "search_placeholder":  "Ask a question or search...",
