@@ -18,6 +18,13 @@ public partial class ConfigurationsView : UserControl
     private Point? _dragStartPos;
     private ConfigColumnEntry? _dragCandidate;
     private bool _pendingSelectionNarrow = false;
+    private Point? _configDragStart;
+    private ConfigItemViewModel? _configDragCandidate;
+
+    private const double DragThreshold = 4;
+    private const double RowGapMiddle = 2;
+    private const double AutoScrollEdge = 28;
+    private const double AutoScrollStep = 10;
 
     // Rubberband Drag Selection State
     private bool _isRubberbanding = false;
@@ -33,6 +40,8 @@ public partial class ConfigurationsView : UserControl
     {
         InitializeComponent();
 
+        // Crossing onto another element raises Leave then Enter, not Over, so Enter has to keep the line up.
+        AddHandler(DragDrop.DragEnterEvent, OnDropZoneDragOver);
         AddHandler(DragDrop.DragOverEvent, OnDropZoneDragOver);
         AddHandler(DragDrop.DragLeaveEvent, OnDropZoneDragLeave);
         AddHandler(DragDrop.DropEvent, OnDropZoneDrop);
@@ -134,15 +143,189 @@ public partial class ConfigurationsView : UserControl
     }
 
     #region Configuration Sidebar Selection
+    // Selecting activates a configuration, so that waits for the release: dragging a row must not switch to it.
     private void OnConfigItemPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (sender is Border border && border.DataContext is ConfigItemViewModel config && DataContext is ConfigurationsViewModel vm)
+        if (sender is Border border && border.DataContext is ConfigItemViewModel config)
         {
-            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            var point = e.GetCurrentPoint(border);
+            if (point.Properties.IsLeftButtonPressed)
             {
-                _ = vm.SelectConfiguration(config);
+                _configDragStart = point.Position;
+                _configDragCandidate = config;
             }
         }
+    }
+
+    private async void OnConfigItemPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (_configDragStart is not { } start || _configDragCandidate is not { } candidate || sender is not Border border) return;
+
+        var point = e.GetCurrentPoint(border);
+        if (!point.Properties.IsLeftButtonPressed) return;
+
+        var delta = point.Position - start;
+        if (Math.Abs(delta.X) <= DragThreshold && Math.Abs(delta.Y) <= DragThreshold) return;
+
+        _configDragStart = null;
+        _configDragCandidate = null;
+        await AppDragData.StartAsync(AppDragData.Create(AppDragData.ConfigOrder, candidate.Id.ToString()), DragDropEffects.Move);
+        ClearConfigDrop();
+    }
+
+    private void OnConfigItemPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_configDragCandidate is { } config && DataContext is ConfigurationsViewModel vm)
+        {
+            _ = vm.SelectConfiguration(config);
+        }
+        _configDragStart = null;
+        _configDragCandidate = null;
+    }
+
+    private void OnConfigItemPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        _configDragStart = null;
+        _configDragCandidate = null;
+    }
+    #endregion
+
+    #region Drop Lines
+    private readonly record struct ConfigDropSpot(long? BeforeId, double LineX, double LineY);
+    private readonly record struct SetDropSpot(long? BeforeId, double LineX, double LineY);
+
+    private static List<(Border Row, Point Origin)> RowsIn(Control list, string rowClass, Visual relativeTo)
+    {
+        var rows = new List<(Border, Point)>();
+        foreach (var b in list.GetVisualDescendants().OfType<Border>())
+        {
+            if (b.Classes.Contains(rowClass) && b.IsEffectivelyVisible && b.TranslatePoint(new Point(0, 0), relativeTo) is { } origin)
+            {
+                rows.Add((b, origin));
+            }
+        }
+        return rows;
+    }
+
+    private ConfigDropSpot? FindConfigDropSpot(DragEventArgs e)
+    {
+        var rows = RowsIn(ConfigItemsControl, "config-node-row", ConfigListHost);
+        if (rows.Count == 0) return null;
+
+        double y = e.GetPosition(ConfigListHost).Y;
+        int index = rows.FindIndex(r => y <= r.Origin.Y + r.Row.Bounds.Height);
+        if (index < 0)
+        {
+            var last = rows[^1];
+            return new ConfigDropSpot(null, last.Origin.X, last.Origin.Y + last.Row.Bounds.Height + RowGapMiddle);
+        }
+
+        var (row, top) = rows[index];
+        bool upperHalf = y < top.Y + row.Bounds.Height / 2;
+        if (upperHalf) return new ConfigDropSpot(((ConfigItemViewModel)row.DataContext!).Id, top.X, top.Y - RowGapMiddle);
+
+        long? next = index + 1 < rows.Count ? ((ConfigItemViewModel)rows[index + 1].Row.DataContext!).Id : null;
+        return new ConfigDropSpot(next, top.X, top.Y + row.Bounds.Height + RowGapMiddle);
+    }
+
+    private void UpdateConfigDrop(DragEventArgs e)
+    {
+        e.Handled = true;
+        if (FindConfigDropSpot(e) is not { } spot || !IsPointerOverControl(ConfigListHost, e.GetPosition(this)))
+        {
+            e.DragEffects = DragDropEffects.None;
+            ClearConfigDrop();
+            return;
+        }
+
+        e.DragEffects = DragDropEffects.Move;
+        ShowDropLine(ConfigDropLine, ConfigListHost, spot.LineX, spot.LineY);
+        AutoScroll(ConfigScrollViewer, ConfigListHost, e.GetPosition(ConfigListHost).Y);
+    }
+
+    private void ClearConfigDrop() => ConfigDropLine.IsVisible = false;
+
+    // A set moves among its siblings only, so the line snaps to their level wherever the pointer is.
+    private SetDropSpot? FindSetDropSpot(DragEventArgs e, ConfigDragPayload payload)
+    {
+        var host = payload.SourceIsEnabled ? EnabledListHost : DisabledListHost;
+        var list = payload.SourceIsEnabled ? EnabledItemsControl : DisabledItemsControl;
+        // Item cards share the row style but are not part of the tree.
+        var rows = RowsIn(list, "config-set-card", host).Where(r => r.Row.DataContext is ConfigSetItemViewModel).ToList();
+        var shown = rows.Select(r => (ConfigSetItemViewModel)r.Row.DataContext!).ToList();
+
+        var moving = payload.OrderIds.ToHashSet();
+        var movingRows = shown.Where(r => moving.Contains(r.Id)).ToList();
+        if (movingRows.Count == 0) return null;
+        long? parent = movingRows[0].ParentSetsEntityId;
+        if (movingRows.Any(r => r.ParentSetsEntityId != parent)) return null;
+
+        double y = e.GetPosition(host).Y;
+        int hovered = rows.FindIndex(r => y <= r.Origin.Y + r.Row.Bounds.Height);
+        bool pastEnd = hovered < 0;
+        if (pastEnd) hovered = rows.Count - 1;
+
+        // Walk up from the row under the pointer to the sibling that holds it.
+        int anchor = hovered;
+        while (shown[anchor].ParentSetsEntityId != parent)
+        {
+            int depth = shown[anchor].Depth;
+            anchor--;
+            while (anchor >= 0 && shown[anchor].Depth >= depth) anchor--;
+            if (anchor < 0) return null;
+        }
+        if (moving.Contains(shown[anchor].Id)) return null;
+
+        var (row, top) = rows[hovered];
+        bool before = anchor == hovered && !pastEnd && y < top.Y + row.Bounds.Height / 2;
+        if (before) return new SetDropSpot(shown[anchor].Id, rows[anchor].Origin.X, rows[anchor].Origin.Y - RowGapMiddle);
+
+        // After the sibling and everything open under it.
+        int end = anchor + 1;
+        while (end < rows.Count && shown[end].Depth > shown[anchor].Depth) end++;
+        var nextSibling = shown.Skip(end).FirstOrDefault(r => r.ParentSetsEntityId == parent && !moving.Contains(r.Id));
+        var lastRow = rows[end - 1];
+        return new SetDropSpot(nextSibling?.Id, rows[anchor].Origin.X, lastRow.Origin.Y + lastRow.Row.Bounds.Height + RowGapMiddle);
+    }
+
+    private void UpdateSetDrop(DragEventArgs e, ConfigDragPayload payload)
+    {
+        var line = payload.SourceIsEnabled ? EnabledDropLine : DisabledDropLine;
+        var host = payload.SourceIsEnabled ? EnabledListHost : DisabledListHost;
+        if (FindSetDropSpot(e, payload) is { } spot)
+        {
+            e.DragEffects = DragDropEffects.Move;
+            ShowDropLine(line, host, spot.LineX, spot.LineY);
+        }
+        else
+        {
+            e.DragEffects = DragDropEffects.None;
+            line.IsVisible = false;
+        }
+        e.Handled = true;
+        AutoScroll(payload.SourceIsEnabled ? EnabledScrollViewer : DisabledScrollViewer, host, e.GetPosition(host).Y);
+    }
+
+    private void ClearSetDrop()
+    {
+        EnabledDropLine.IsVisible = false;
+        DisabledDropLine.IsVisible = false;
+    }
+
+    private static void ShowDropLine(Panel line, Control host, double x, double y)
+    {
+        Canvas.SetLeft(line, x);
+        Canvas.SetTop(line, y - line.Height / 2);
+        line.Width = Math.Max(0, host.Bounds.Width - x - 6);
+        line.IsVisible = true;
+    }
+
+    private static void AutoScroll(ScrollViewer scroller, Control host, double y)
+    {
+        double step = y < AutoScrollEdge ? -AutoScrollStep : y > host.Bounds.Height - AutoScrollEdge ? AutoScrollStep : 0;
+        if (step == 0) return;
+        double max = Math.Max(0, scroller.Extent.Height - scroller.Viewport.Height);
+        scroller.Offset = scroller.Offset.WithY(Math.Clamp(scroller.Offset.Y + step, 0, max));
     }
     #endregion
 
@@ -158,6 +341,14 @@ public partial class ConfigurationsView : UserControl
             {
                 _dragStartPos = point.Position;
                 _dragCandidate = set;
+
+                // A group row isn't in this column, so it can't be selected; it can still be dragged.
+                if (set is ConfigSetItemViewModel { IsGroupOnly: true })
+                {
+                    _pendingSelectionNarrow = false;
+                    e.Handled = true;
+                    return;
+                }
 
                 bool isCtrl = (e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Meta)) != 0;
                 bool isShift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
@@ -214,18 +405,23 @@ public partial class ConfigurationsView : UserControl
                     if (DataContext is ConfigurationsViewModel vm)
                     {
                         var collection = candidate.IsInEnabledColumn ? vm.EnabledSets : vm.DisabledSets;
+                        // A group row stands for its sub-sets in this column; it is never selected itself.
+                        var groupRow = candidate is ConfigSetItemViewModel { IsGroupOnly: true } g ? g : null;
                         var dragged = candidate.IsSelected
                             ? collection.Where(s => s.IsSelected).ToList()
                             : new List<ConfigColumnEntry> { candidate };
+                        var draggedSetIds = dragged.OfType<ConfigSetItemViewModel>().Select(s => s.Id).ToList();
 
                         var dragPayload = new ConfigDragPayload
                         {
                             SourceIsEnabled = candidate.IsInEnabledColumn,
-                            SetIds = dragged.OfType<ConfigSetItemViewModel>().Select(s => s.Id).ToList(),
-                            ItemIds = dragged.OfType<ConfigItemCardViewModel>().Select(i => i.ItemId).ToList()
+                            SetIds = groupRow != null ? vm.MembersUnder(groupRow) : draggedSetIds,
+                            ItemIds = groupRow != null ? new List<long>() : dragged.OfType<ConfigItemCardViewModel>().Select(i => i.ItemId).ToList(),
+                            OrderIds = groupRow != null ? new List<long> { groupRow.Id } : draggedSetIds
                         };
 
                         await AppDragData.StartAsync(AppDragData.Create(AppDragData.ConfigCards, dragPayload.Serialize()), DragDropEffects.Move);
+                        ClearSetDrop();
                     }
                 }
             }
@@ -261,9 +457,21 @@ public partial class ConfigurationsView : UserControl
         if (IsInteractiveControl(e.Source)) return;
         if (sender is Border border && DataContext is ConfigurationsViewModel vm)
         {
-            if (border.DataContext is ConfigSetItemViewModel set) _ = vm.ToggleSetEnabled(set);
+            if (border.DataContext is ConfigSetItemViewModel set)
+            {
+                if (set.IsGroupOnly) vm.ToggleColumnGroup(set);
+                else _ = vm.ToggleSetEnabled(set);
+            }
             else if (border.DataContext is ConfigItemCardViewModel item) _ = vm.ToggleItemCardAsync(item);
             e.Handled = true;
+        }
+    }
+
+    private void OnConfigGroupClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: ConfigSetItemViewModel set } && DataContext is ConfigurationsViewModel vm)
+        {
+            vm.ToggleColumnGroup(set);
         }
     }
     #endregion
@@ -271,6 +479,12 @@ public partial class ConfigurationsView : UserControl
     #region Drop Zones
     private void OnDropZoneDragOver(object? sender, DragEventArgs e)
     {
+        if (e.DataTransfer.Contains(AppDragData.ConfigOrder))
+        {
+            UpdateConfigDrop(e);
+            return;
+        }
+
         if (!e.DataTransfer.Contains(AppDragData.ConfigCards))
         {
             e.DragEffects = DragDropEffects.None;
@@ -288,24 +502,50 @@ public partial class ConfigurationsView : UserControl
 
                 if ((isOverEnabled && !payload.SourceIsEnabled) || (isOverDisabled && payload.SourceIsEnabled))
                 {
+                    ClearSetDrop();
                     e.DragEffects = DragDropEffects.Move;
                     e.Handled = true;
+                    return;
+                }
+
+                // Over its own column: drag up or down with a line.
+                if (isOverEnabled || isOverDisabled)
+                {
+                    UpdateSetDrop(e, payload);
                     return;
                 }
             }
         }
         catch { }
 
+        ClearSetDrop();
         e.DragEffects = DragDropEffects.None;
     }
 
     private void OnDropZoneDragLeave(object? sender, DragEventArgs e)
     {
+        ClearSetDrop();
+        ClearConfigDrop();
     }
 
     private async void OnDropZoneDrop(object? sender, DragEventArgs e)
     {
-        if (!e.DataTransfer.Contains(AppDragData.ConfigCards) || DataContext is not ConfigurationsViewModel vm) return;
+        if (DataContext is not ConfigurationsViewModel vm) return;
+
+        if (e.DataTransfer.Contains(AppDragData.ConfigOrder))
+        {
+            var spot = FindConfigDropSpot(e);
+            bool overList = IsPointerOverControl(ConfigListHost, e.GetPosition(this));
+            ClearConfigDrop();
+            e.Handled = true;
+            if (overList && spot.HasValue && long.TryParse(e.DataTransfer.TryGetValue(AppDragData.ConfigOrder), out var configId))
+            {
+                vm.PlaceConfiguration(configId, spot.Value.BeforeId);
+            }
+            return;
+        }
+
+        if (!e.DataTransfer.Contains(AppDragData.ConfigCards)) return;
 
         try
         {
@@ -326,9 +566,18 @@ public partial class ConfigurationsView : UserControl
                     if (payload.ItemIds.Count > 0) await vm.MoveItemsAsync(payload.ItemIds, toEnabled.Value);
                     if (payload.SetIds.Count > 0) await vm.RequestMoveSetsAsync(payload.SetIds, targetToEnabled: toEnabled.Value);
                 }
+                else if (isOverEnabled || isOverDisabled)
+                {
+                    e.Handled = true;
+                    if (FindSetDropSpot(e, payload) is { } spot)
+                    {
+                        vm.PlaceConfigSets(payload.OrderIds, spot.BeforeId, payload.SourceIsEnabled);
+                    }
+                }
             }
         }
         catch { }
+        ClearSetDrop();
     }
 
     private bool IsPointerOverControl(Control? control, Point rootPos)
@@ -419,7 +668,7 @@ public partial class ConfigurationsView : UserControl
 
         foreach (var card in _activeItemsControl.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("config-set-card")))
         {
-            if (card.DataContext is ConfigColumnEntry setVm)
+            if (card.DataContext is ConfigColumnEntry setVm && setVm is not ConfigSetItemViewModel { IsGroupOnly: true })
             {
                 var cardPos = card.TranslatePoint(new Point(0, 0), _activeRubberbandHost);
                 if (cardPos.HasValue)
@@ -483,9 +732,12 @@ public partial class ConfigurationsView : UserControl
         public List<long> SetIds { get; set; } = new();
         public List<long> ItemIds { get; set; } = new();
 
+        // The rows being dragged. Differs from SetIds for a group row, which stands for the sets under it.
+        public List<long> OrderIds { get; set; } = new();
+
         public string Serialize()
         {
-            return $"{(SourceIsEnabled ? "1" : "0")}:{string.Join(',', SetIds)};{string.Join(',', ItemIds)}";
+            return $"{(SourceIsEnabled ? "1" : "0")}:{string.Join(',', SetIds)};{string.Join(',', ItemIds)}|{string.Join(',', OrderIds)}";
         }
 
         public static ConfigDragPayload? Deserialize(string? text)
@@ -494,12 +746,16 @@ public partial class ConfigurationsView : UserControl
             var colonIdx = text.IndexOf(':');
             if (colonIdx <= 0) return null;
 
-            var parts = text.Substring(colonIdx + 1).Split(';');
+            // "<sets>;<items>|<order ids>": the order ids are the rows that move when dragged up or down.
+            var lists = text.Substring(colonIdx + 1).Split('|');
+            var parts = lists[0].Split(';');
+            var setIds = ParseIds(parts[0]);
             return new ConfigDragPayload
             {
                 SourceIsEnabled = text.Substring(0, colonIdx) == "1",
-                SetIds = ParseIds(parts[0]),
-                ItemIds = parts.Length > 1 ? ParseIds(parts[1]) : new List<long>()
+                SetIds = setIds,
+                ItemIds = parts.Length > 1 ? ParseIds(parts[1]) : new List<long>(),
+                OrderIds = lists.Length > 1 ? ParseIds(lists[1]) : setIds
             };
         }
 

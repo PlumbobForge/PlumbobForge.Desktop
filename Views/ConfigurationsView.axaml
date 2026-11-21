@@ -7,7 +7,71 @@
              x:Class="PlumbobForge.Desktop.Views.ConfigurationsView"
              x:DataType="vm:ConfigurationsViewModel">
 
+    <UserControl.DataTemplates>
+        <!-- One row of the set tree in the Enabled and Disabled columns -->
+        <DataTemplate DataType="{x:Type vm:ConfigSetItemViewModel}">
+            <Border Classes="config-set-card"
+                    Classes.selected="{Binding IsSelected}"
+                    Classes.group-only="{Binding IsGroupOnly}"
+                    Margin="{Binding RowMargin}"
+                    DoubleTapped="OnSetCardDoubleTapped"
+                    PointerPressed="OnSetCardPointerPressed"
+                    PointerMoved="OnSetCardPointerMoved"
+                    PointerReleased="OnSetCardPointerReleased"
+                    PointerCaptureLost="OnSetCardPointerCaptureLost">
+                <Grid ColumnDefinitions="22, 24, *, Auto" MinHeight="22" VerticalAlignment="Center">
+                    <Button Grid.Column="0" Click="OnConfigGroupClick" IsVisible="{Binding HasVisibleChildren}"
+                            Background="Transparent" BorderThickness="0" Padding="0" Width="20" Height="22" CornerRadius="4"
+                            ToolTip.Tip="{loc:Loc 'configurations.toggle_group'}">
+                        <Panel>
+                            <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsExpanded}"/>
+                            <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !IsExpanded}"/>
+                        </Panel>
+                    </Button>
+                    <icon:PackIconBoxIcons Grid.Column="1" Classes="config-set-icon" Kind="{Binding IconKind}" Foreground="{Binding IconBrush}" Width="16" Height="16" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Classes="config-set-name" Text="{Binding Name}" Margin="2,0,0,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="3" Text="{Binding VisibleChildCount}" IsVisible="{Binding HasVisibleChildren}" Margin="6,0,0,0" FontSize="10.5" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+        <!-- An item the configuration includes or excludes on its own, listed after the set tree -->
+        <DataTemplate DataType="{x:Type vm:ConfigItemCardViewModel}">
+            <Border Classes="config-set-card"
+                    Classes.selected="{Binding IsSelected}"
+                    Classes.excluded="{Binding !Include}"
+                    ToolTip.Tip="{Binding RuleTooltip}"
+                    DoubleTapped="OnSetCardDoubleTapped"
+                    PointerPressed="OnSetCardPointerPressed"
+                    PointerMoved="OnSetCardPointerMoved"
+                    PointerReleased="OnSetCardPointerReleased"
+                    PointerCaptureLost="OnSetCardPointerCaptureLost">
+                <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                    <Border Grid.Column="0" Width="26" Height="26" CornerRadius="5" ClipToBounds="True" Background="{DynamicResource BgCardAlt}" VerticalAlignment="Center" Margin="0,0,10,0">
+                        <Panel>
+                            <icon:PackIconBoxIcons Kind="RegularPackage" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"/>
+                        </Panel>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Text="{Binding Location}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding HasLocation}" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Classes="item-name" Text="{Binding FileName}" FontSize="12.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                    <Button Grid.Column="2" Classes="config-card-remove"
+                            Command="{Binding $parent[UserControl].((vm:ConfigurationsViewModel)DataContext).RemoveItemRuleCommand}"
+                            CommandParameter="{Binding}"
+                            ToolTip.Tip="{loc:Loc 'configurations.item_remove'}">
+                        <icon:PackIconBoxIcons Kind="RegularX" Width="13" Height="13"/>
+                    </Button>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </UserControl.DataTemplates>
+
     <UserControl.Styles>
+        <!-- Item cards of the Disabled column look muted, like the set rows there -->
+        <Style Selector="Border.config-set-card.excluded TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        </Style>
         <!-- Config Sidebar Item Row Styles -->
         <Style Selector="Border.config-node-row">
             <Setter Property="Background" Value="#00182234"/>
@@ -45,14 +109,13 @@
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
         </Style>
 
-        <!-- Set Card Item Styles (Two-Column Panel) -->
+        <!-- Set Row Styles (tree in both columns, same look as the Sets list) -->
         <Style Selector="Border.config-set-card">
-            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtle}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="12,10"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="4,4,8,4"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Transitions">
                 <Transitions>
@@ -63,12 +126,22 @@
         </Style>
         <Style Selector="Border.config-set-card:pointerover">
             <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderActive}"/>
         </Style>
         <Style Selector="Border.config-set-card.selected">
             <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+        <Style Selector="Border.config-set-card TextBlock.config-set-name">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <Style Selector="Border.config-set-card.group-only TextBlock.config-set-name">
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        </Style>
+        <Style Selector="Border.config-set-card.group-only icon|PackIconBoxIcons.config-set-icon">
+            <Setter Property="Opacity" Value="0.55"/>
         </Style>
 
         <!-- X on item cards: removes the item from the configuration -->
@@ -223,7 +296,8 @@
                 </Grid>
 
                 <!-- Configurations List -->
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <Panel Grid.Row="1" x:Name="ConfigListHost" Background="Transparent" DragDrop.AllowDrop="True">
+                <ScrollViewer x:Name="ConfigScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <ScrollViewer.OpacityMask>
                         <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
                             <GradientStop Color="#FFFFFFFF" Offset="0.0"/>
@@ -231,12 +305,15 @@
                             <GradientStop Color="#00FFFFFF" Offset="1.0"/>
                         </LinearGradientBrush>
                     </ScrollViewer.OpacityMask>
-                    <ItemsControl ItemsSource="{Binding Configurations}" Margin="0,0,4,48">
+                    <ItemsControl x:Name="ConfigItemsControl" ItemsSource="{Binding Configurations}" Margin="0,0,4,48">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:ConfigItemViewModel}">
                                 <Border Classes="config-node-row"
                                         Classes.active-selected="{Binding IsSelected}"
                                         PointerPressed="OnConfigItemPointerPressed"
+                                        PointerMoved="OnConfigItemPointerMoved"
+                                        PointerReleased="OnConfigItemPointerReleased"
+                                        PointerCaptureLost="OnConfigItemPointerCaptureLost"
                                         Margin="0,0,0,4">
                                     <Border.ContextMenu>
                                         <ContextMenu>
@@ -308,6 +385,15 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </ScrollViewer>
+
+                <!-- Shows where a dragged configuration will land -->
+                <Canvas IsHitTestVisible="False">
+                    <Panel x:Name="ConfigDropLine" Height="8" IsVisible="False">
+                        <Border Height="2" Margin="4,0,0,0" CornerRadius="1" VerticalAlignment="Center" Background="{DynamicResource AccentBrush}"/>
+                        <Ellipse Width="8" Height="8" HorizontalAlignment="Left" Fill="{DynamicResource AccentBrush}"/>
+                    </Panel>
+                </Canvas>
+                </Panel>
             </Grid>
         </Border>
 
@@ -524,80 +610,16 @@
                                         <GradientStop Color="#00FFFFFF" Offset="1.0"/>
                                     </LinearGradientBrush>
                                 </ScrollViewer.OpacityMask>
-                                <ItemsControl x:Name="EnabledItemsControl" ItemsSource="{Binding EnabledSets}" Margin="0,0,4,48">
-                                    <ItemsControl.DataTemplates>
-                                        <!-- An item the configuration includes on its own -->
-                                        <DataTemplate DataType="{x:Type vm:ConfigItemCardViewModel}">
-                                            <Border Classes="config-set-card"
-                                                    Classes.selected="{Binding IsSelected}"
-                                                    ToolTip.Tip="{Binding RuleTooltip}"
-                                                    DoubleTapped="OnSetCardDoubleTapped"
-                                                    PointerPressed="OnSetCardPointerPressed"
-                                                    PointerMoved="OnSetCardPointerMoved"
-                                                    PointerReleased="OnSetCardPointerReleased"
-                                                    PointerCaptureLost="OnSetCardPointerCaptureLost">
-                                                <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
-                                                    <Border Grid.Column="0" Width="26" Height="26" CornerRadius="5" ClipToBounds="True" Background="{DynamicResource BgCardAlt}" VerticalAlignment="Center" Margin="0,0,10,0">
-                                                        <Panel>
-                                                            <icon:PackIconBoxIcons Kind="RegularPackage" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"/>
-                                                        </Panel>
-                                                    </Border>
-                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                                        <TextBlock Text="{Binding Location}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding HasLocation}" TextTrimming="CharacterEllipsis"/>
-                                                        <TextBlock Text="{Binding FileName}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"/>
-                                                    </StackPanel>
-                                                    <Button Grid.Column="2" Classes="config-card-remove"
-                                                            Command="{Binding $parent[UserControl].((vm:ConfigurationsViewModel)DataContext).RemoveItemRuleCommand}"
-                                                            CommandParameter="{Binding}"
-                                                            ToolTip.Tip="{loc:Loc 'configurations.item_remove'}">
-                                                        <icon:PackIconBoxIcons Kind="RegularX" Width="13" Height="13"/>
-                                                    </Button>
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                        <DataTemplate DataType="{x:Type vm:ConfigSetItemViewModel}">
-                                            <Border Classes="config-set-card"
-                                                    Classes.selected="{Binding IsSelected}"
-                                                    DoubleTapped="OnSetCardDoubleTapped"
-                                                    PointerPressed="OnSetCardPointerPressed"
-                                                    PointerMoved="OnSetCardPointerMoved"
-                                                    PointerReleased="OnSetCardPointerReleased"
-                                                    PointerCaptureLost="OnSetCardPointerCaptureLost">
-                                                <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
-                                                    <!-- Icon -->
-                                                    <icon:PackIconBoxIcons Grid.Column="0" Kind="{Binding IconKind}" Foreground="{Binding IconBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
-
-                                                    <!-- Text: Breadcrumb + Set Name -->
-                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                                        <TextBlock Text="{Binding BreadcrumbPath}"
-                                                                   FontSize="10.5"
-                                                                   Foreground="{DynamicResource TextMuted}"
-                                                                   IsVisible="{Binding HasBreadcrumb}"
-                                                                   TextTrimming="CharacterEllipsis"/>
-                                                        <TextBlock Text="{Binding Name}"
-                                                                   FontSize="12.5"
-                                                                   FontWeight="SemiBold"
-                                                                   Foreground="{DynamicResource TextMain}"
-                                                                   TextTrimming="CharacterEllipsis"/>
-                                                    </StackPanel>
-
-                                                    <!-- Right: Sub-set count badge -->
-                                                    <Border Grid.Column="2" IsVisible="{Binding HasDescendants}"
-                                                            Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
-                                                            CornerRadius="6" Padding="7,2.5" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding DescendantCount, StringFormat='{}{0} sub-sets'}"
-                                                                   FontSize="10.5" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
-                                                    </Border>
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.DataTemplates>
-                                </ItemsControl>
+                                <ItemsControl x:Name="EnabledItemsControl" ItemsSource="{Binding VisibleEnabledSets}" Margin="0,0,4,48"/>
                             </ScrollViewer>
 
                             <!-- Rubberband Canvas for Enabled Column -->
                             <Canvas x:Name="EnabledRubberbandCanvas" IsHitTestVisible="False">
+                                <!-- Shows where a dragged set will land -->
+                                <Panel x:Name="EnabledDropLine" Height="8" IsVisible="False">
+                                    <Border Height="2" Margin="4,0,0,0" CornerRadius="1" VerticalAlignment="Center" Background="{DynamicResource AccentBrush}"/>
+                                    <Ellipse Width="8" Height="8" HorizontalAlignment="Left" Fill="{DynamicResource AccentBrush}"/>
+                                </Panel>
                                 <Border x:Name="EnabledRubberbandBorder"
                                         Background="{DynamicResource AccentRubberbandBgBrush}"
                                         BorderBrush="{DynamicResource AccentBrush}"
@@ -698,80 +720,16 @@
                                         <GradientStop Color="#00FFFFFF" Offset="1.0"/>
                                     </LinearGradientBrush>
                                 </ScrollViewer.OpacityMask>
-                                <ItemsControl x:Name="DisabledItemsControl" ItemsSource="{Binding DisabledSets}" Margin="0,0,4,48">
-                                    <ItemsControl.DataTemplates>
-                                        <!-- An item the configuration excludes on its own -->
-                                        <DataTemplate DataType="{x:Type vm:ConfigItemCardViewModel}">
-                                            <Border Classes="config-set-card"
-                                                    Classes.selected="{Binding IsSelected}"
-                                                    ToolTip.Tip="{Binding RuleTooltip}"
-                                                    DoubleTapped="OnSetCardDoubleTapped"
-                                                    PointerPressed="OnSetCardPointerPressed"
-                                                    PointerMoved="OnSetCardPointerMoved"
-                                                    PointerReleased="OnSetCardPointerReleased"
-                                                    PointerCaptureLost="OnSetCardPointerCaptureLost">
-                                                <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
-                                                    <Border Grid.Column="0" Width="26" Height="26" CornerRadius="5" ClipToBounds="True" Background="{DynamicResource BgCardAlt}" VerticalAlignment="Center" Margin="0,0,10,0" Opacity="0.6">
-                                                        <Panel>
-                                                            <icon:PackIconBoxIcons Kind="RegularPackage" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"/>
-                                                        </Panel>
-                                                    </Border>
-                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                                        <TextBlock Text="{Binding Location}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding HasLocation}" TextTrimming="CharacterEllipsis"/>
-                                                        <TextBlock Text="{Binding FileName}" FontSize="12.5" FontWeight="Medium" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis"/>
-                                                    </StackPanel>
-                                                    <Button Grid.Column="2" Classes="config-card-remove"
-                                                            Command="{Binding $parent[UserControl].((vm:ConfigurationsViewModel)DataContext).RemoveItemRuleCommand}"
-                                                            CommandParameter="{Binding}"
-                                                            ToolTip.Tip="{loc:Loc 'configurations.item_remove'}">
-                                                        <icon:PackIconBoxIcons Kind="RegularX" Width="13" Height="13"/>
-                                                    </Button>
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                        <DataTemplate DataType="{x:Type vm:ConfigSetItemViewModel}">
-                                            <Border Classes="config-set-card"
-                                                    Classes.selected="{Binding IsSelected}"
-                                                    DoubleTapped="OnSetCardDoubleTapped"
-                                                    PointerPressed="OnSetCardPointerPressed"
-                                                    PointerMoved="OnSetCardPointerMoved"
-                                                    PointerReleased="OnSetCardPointerReleased"
-                                                    PointerCaptureLost="OnSetCardPointerCaptureLost">
-                                                <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
-                                                    <!-- Icon -->
-                                                    <icon:PackIconBoxIcons Grid.Column="0" Kind="{Binding IconKind}" Foreground="{Binding IconBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
-
-                                                    <!-- Text: Breadcrumb + Set Name -->
-                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                                        <TextBlock Text="{Binding BreadcrumbPath}"
-                                                                   FontSize="10.5"
-                                                                   Foreground="{DynamicResource TextMuted}"
-                                                                   IsVisible="{Binding HasBreadcrumb}"
-                                                                   TextTrimming="CharacterEllipsis"/>
-                                                        <TextBlock Text="{Binding Name}"
-                                                                   FontSize="12.5"
-                                                                   FontWeight="Medium"
-                                                                   Foreground="{DynamicResource TextMuted}"
-                                                                   TextTrimming="CharacterEllipsis"/>
-                                                    </StackPanel>
-
-                                                    <!-- Right: Sub-set count badge -->
-                                                    <Border Grid.Column="2" IsVisible="{Binding HasDescendants}"
-                                                            Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
-                                                            CornerRadius="6" Padding="7,2.5" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding DescendantCount, StringFormat='{}{0} sub-sets'}"
-                                                                   FontSize="10.5" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
-                                                    </Border>
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.DataTemplates>
-                                </ItemsControl>
+                                <ItemsControl x:Name="DisabledItemsControl" ItemsSource="{Binding VisibleDisabledSets}" Margin="0,0,4,48"/>
                             </ScrollViewer>
 
                             <!-- Rubberband Canvas for Disabled Column -->
                             <Canvas x:Name="DisabledRubberbandCanvas" IsHitTestVisible="False">
+                                <!-- Shows where a dragged set will land -->
+                                <Panel x:Name="DisabledDropLine" Height="8" IsVisible="False">
+                                    <Border Height="2" Margin="4,0,0,0" CornerRadius="1" VerticalAlignment="Center" Background="{DynamicResource AccentBrush}"/>
+                                    <Ellipse Width="8" Height="8" HorizontalAlignment="Left" Fill="{DynamicResource AccentBrush}"/>
+                                </Panel>
                                 <Border x:Name="DisabledRubberbandBorder"
                                         Background="{DynamicResource AccentRubberbandBgBrush}"
                                         BorderBrush="{DynamicResource AccentBrush}"

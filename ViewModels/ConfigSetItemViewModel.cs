@@ -1,4 +1,5 @@
 using System;
+using Avalonia;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using PlumbobForge.Desktop.Controls.Icons;
@@ -16,7 +17,8 @@ public partial class ConfigSetItemViewModel : ConfigColumnEntry
     public long? ParentSetsEntityId => _entity.ParentSetsEntityId;
     public SetsEntity Entity => _entity;
 
-    public override bool IsInEnabledColumn => IsEnabledInConfig;
+    // A group row is shown in a column it has no membership of: it belongs to the column that shows it.
+    public override bool IsInEnabledColumn => IsGroupOnly ? ColumnEnabled : IsEnabledInConfig;
     public override string SortName => Name;
     public override string SearchText => $"{Name} {BreadcrumbPath}";
 
@@ -48,6 +50,25 @@ public partial class ConfigSetItemViewModel : ConfigColumnEntry
         HasCustomColor
             ? Brush.Parse(Color!)
             : (IsEnabledInConfig ? ThemeService.GetCurrentAccentBrush() : Brush.Parse("#94a3b8"));
+
+    // Place in the column's tree.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(RowMargin))]
+    private int _depth;
+
+    [ObservableProperty]
+    private bool _isGroupOnly;
+
+    [ObservableProperty]
+    private bool _isExpanded = true;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasVisibleChildren))]
+    private int _visibleChildCount;
+
+    public bool ColumnEnabled { get; set; }
+    public bool HasVisibleChildren => VisibleChildCount > 0;
+    public Thickness RowMargin => new(Depth * 16, 0, 0, 2);
 
     public bool HasBreadcrumb => !string.IsNullOrWhiteSpace(BreadcrumbPath);
     public bool HasDescendants => DescendantCount > 0;

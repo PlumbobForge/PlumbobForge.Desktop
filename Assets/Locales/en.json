@@ -296,6 +296,8 @@
                            "item_included_tip":  "Included on its own. Drag it to Disabled to exclude it instead.",
                            "item_excluded_tip":  "Excluded on its own. Drag it to Enabled to include it instead.",
                            "item_remove":  "Remove from this configuration (the item follows its set again)",
+                           "sort_manual":  "Manual Order",
+                           "toggle_group":  "Open or close this set",
                            "items_saved":  "Saved.",
                            "items_rebuild_needed":  "Saved. {0} set(s) need a rebuild to apply it in the game.",
                            "items_static_rebuild":  "Saved. Rebuild the cache to apply it in the game.",

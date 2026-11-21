@@ -296,6 +296,8 @@
                            "item_included_tip":  "Uwzględniony pojedynczo. Przeciągnij go do Wyłączonych, aby go wykluczyć.",
                            "item_excluded_tip":  "Wykluczony pojedynczo. Przeciągnij go do Włączonych, aby go uwzględnić.",
                            "item_remove":  "Usuń z tej konfiguracji (element znów podąża za swoim zestawem)",
+                           "sort_manual":  "Kolejność ręczna",
+                           "toggle_group":  "Rozwiń lub zwiń ten zestaw",
                            "items_saved":  "Zapisano.",
                            "items_rebuild_needed":  "Zapisano. Zestawy do przebudowania: {0}, aby zastosować zmianę w grze.",
                            "items_static_rebuild":  "Zapisano. Przebuduj pamięć podręczną, aby zastosować zmianę w grze.",
