@@ -379,6 +379,11 @@ public partial class ContentManagerViewModel : ObservableObject
             FilterModeEnabled = state.FilterModeEnabled;
             FilterModeDisabled = state.FilterModeDisabled;
 
+            // Script mods
+            FilterScriptMods = state.FilterScriptMods;
+            FilterCoreMods = state.FilterCoreMods;
+            FilterNoScript = state.FilterNoScript;
+
             // Accordion Expansion States
             IsTypeExpanded = state.IsTypeExpanded;
             IsCasSubFiltersExpanded = state.IsCasSubFiltersExpanded;
@@ -393,6 +398,7 @@ public partial class ContentManagerViewModel : ObservableObject
             IsBBPriceExpanded = state.IsBBPriceExpanded;
             IsOtherSubExpanded = state.IsOtherSubExpanded;
             IsModeExpanded = state.IsModeExpanded;
+            IsScriptExpanded = state.IsScriptExpanded;
 
             ItemViewModel.GlobalThumbnailHeight = CardThumbnailHeight;
         }
@@ -499,6 +505,10 @@ public partial class ContentManagerViewModel : ObservableObject
             FilterModeEnabled = FilterModeEnabled,
             FilterModeDisabled = FilterModeDisabled,
 
+            FilterScriptMods = FilterScriptMods,
+            FilterCoreMods = FilterCoreMods,
+            FilterNoScript = FilterNoScript,
+
             IsTypeExpanded = IsTypeExpanded,
             IsCasSubFiltersExpanded = IsCasSubFiltersExpanded,
             IsCasCategoryExpanded = IsCasCategoryExpanded,
@@ -511,7 +521,8 @@ public partial class ContentManagerViewModel : ObservableObject
             IsBBFunctionExpanded = IsBBFunctionExpanded,
             IsBBPriceExpanded = IsBBPriceExpanded,
             IsOtherSubExpanded = IsOtherSubExpanded,
-            IsModeExpanded = IsModeExpanded
+            IsModeExpanded = IsModeExpanded,
+            IsScriptExpanded = IsScriptExpanded
         };
 
         _uiStateService?.SaveState(state, immediate);

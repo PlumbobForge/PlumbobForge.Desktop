@@ -129,6 +129,8 @@
                     "favorite_selected":  "Ulubione zaznaczone",
                     "original_textures_badge":  "Używa oryginalnych tekstur (optymalizacja tekstur jest dla tego elementu wyłączona)",
                     "objects_off_badge":  "Obiekty wyłączone w „Zajrzyj do środka”: {0}",
+                    "script_badge":  "Skrypt",
+                    "core_mod_badge":  "Mod rdzenia",
                     "favorites_first":  "Ulubione na początku"
                 },
     "filters":  {
@@ -142,6 +144,10 @@
                     "status":  "STATUS",
                     "enabled":  "Włączone",
                     "disabled":  "Wyłączone",
+                    "script_section":  "MODY SKRYPTOWE",
+                    "script_mods":  "Mody skryptowe",
+                    "core_mods":  "Mody rdzenia",
+                    "no_script":  "Bez skryptu",
                     "size":  "ROZMIAR",
                     "category":  "KATEGORIA CAS",
                     "categories":  {

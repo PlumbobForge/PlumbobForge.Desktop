@@ -190,6 +190,14 @@
 
             <!-- 6. Category & Package Type Badges -->
             <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="6" Margin="0,0,10,0" VerticalAlignment="Center">
+                <!-- Script / Core mod Pills -->
+                <Border Background="{DynamicResource StatusBlueBg}" BorderBrush="{DynamicResource StatusBlue}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" IsVisible="{Binding IsScriptMod}">
+                    <TextBlock Text="{loc:Loc 'library.script_badge'}" FontSize="10" FontWeight="Bold" Foreground="#60a5fa" VerticalAlignment="Center"/>
+                </Border>
+                <Border Background="{DynamicResource StatusAmberBg}" BorderBrush="{DynamicResource StatusAmber}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" IsVisible="{Binding IsCoreMod}">
+                    <TextBlock Text="{loc:Loc 'library.core_mod_badge'}" FontSize="10" FontWeight="Bold" Foreground="#fbbf24" VerticalAlignment="Center"/>
+                </Border>
+
                 <!-- Category Pill -->
                 <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" IsVisible="{Binding CategoryTagDisplay, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                     <TextBlock Text="{Binding CategoryTagDisplay}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
