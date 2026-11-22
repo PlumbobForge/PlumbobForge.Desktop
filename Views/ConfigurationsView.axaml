@@ -247,26 +247,15 @@
                                                     <icon:PackIconBoxIcons Kind="RegularPlay" Width="14" Height="14" Foreground="{DynamicResource AccentBrush}"/>
                                                 </MenuItem.Icon>
                                             </MenuItem>
+                                            <Separator IsVisible="{Binding !Active}"/>
                                             <MenuItem Header="{loc:Loc 'configurations.edit_configuration'}"
-                                                      Click="OnEditConfigClick">
-                                                <MenuItem.Icon>
-                                                    <icon:PackIconBoxIcons Kind="RegularPalette" Width="14" Height="14"/>
-                                                </MenuItem.Icon>
-                                            </MenuItem>
+                                                      Click="OnEditConfigClick"/>
                                             <MenuItem Header="{loc:Loc 'common.duplicate'}"
-                                                      Click="OnDuplicateConfigClick">
-                                                <MenuItem.Icon>
-                                                    <icon:PackIconBoxIcons Kind="RegularCopy" Width="14" Height="14"/>
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <Separator/>
-                                            <MenuItem Header="{loc:Loc 'common.delete'}"
+                                                      Click="OnDuplicateConfigClick"/>
+                                            <Separator IsVisible="{Binding !Default}"/>
+                                            <MenuItem Classes="danger" Header="{loc:Loc 'common.delete'}"
                                                       Click="OnDeleteConfigClick"
-                                                      IsEnabled="{Binding !Default}">
-                                                <MenuItem.Icon>
-                                                    <icon:PackIconBoxIcons Kind="RegularTrash" Width="14" Height="14" Foreground="#ef4444"/>
-                                                </MenuItem.Icon>
-                                            </MenuItem>
+                                                      IsVisible="{Binding !Default}"/>
                                         </ContextMenu>
                                     </Border.ContextMenu>
 
@@ -380,6 +369,26 @@
 
                     <!-- Right: Sets Sort Flyout Button -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <!-- All / Sets / Mods, shared by both lists -->
+                        <Border IsVisible="{Binding ShowSourceFilter}" Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="3" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="2">
+                                <Button Classes="segment-btn" Classes.active="{Binding IsSourceAll}" Command="{Binding SetSourceFilterCommand}" CommandParameter="All" Padding="12,5">
+                                    <TextBlock Text="{loc:Loc 'configurations.source_all'}"/>
+                                </Button>
+                                <Button Classes="segment-btn" Classes.active="{Binding IsSourceSets}" Command="{Binding SetSourceFilterCommand}" CommandParameter="Sets" Padding="12,5">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="{loc:Loc 'configurations.source_sets'}"/>
+                                        <TextBlock Text="{Binding SetsSourceCount}" Opacity="0.7"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="segment-btn" Classes.active="{Binding IsSourceMods}" Command="{Binding SetSourceFilterCommand}" CommandParameter="Mods" Padding="12,5">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="{loc:Loc 'configurations.source_mods'}"/>
+                                        <TextBlock Text="{Binding ModsSourceCount}" Opacity="0.7"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
                         <Button Background="{DynamicResource BgSurface}" Foreground="{DynamicResource TextMuted}" CornerRadius="7" Padding="10,6" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'library.sort_sets'}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <icon:PackIconBoxIcons Kind="RegularFilter" Width="14" Height="14" VerticalAlignment="Center"/>
@@ -477,7 +486,7 @@
                     <Grid RowDefinitions="Auto, Auto, *">
                         <!-- Clean Header (No icon, background, color, badge) -->
                         <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto" Margin="0,0,0,12">
-                            <TextBlock Grid.Column="0" Text="{loc:Loc 'configurations.enabled_sets'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="0" Text="{Binding EnabledListTitle}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" Text="{loc:Loc 'configurations.drag_to_move'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                             <Button Grid.Column="2" Classes="btn-action-sec" Margin="10,0,0,0" VerticalAlignment="Center"
                                     ctrl:GuideTarget.Id="configurations.include"
@@ -493,7 +502,7 @@
                         <!-- Sets Search Input -->
                         <TextBox Grid.Row="1" Classes="capsule-search config-search" Margin="0,0,0,10"
                                  Text="{Binding EnabledSetsSearchQuery, Mode=TwoWay}"
-                                 PlaceholderText="{loc:Loc 'configurations.search_sets_placeholder'}">
+                                 PlaceholderText="{Binding ListSearchPlaceholder}">
                             <TextBox.InnerLeftContent>
                                 <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="10,0,4,0" VerticalAlignment="Center"/>
                             </TextBox.InnerLeftContent>
@@ -556,7 +565,8 @@
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
-                                        <DataTemplate DataType="{x:Type vm:ConfigSetItemViewModel}">
+                                        <!-- A set or a Mods folder -->
+                                        <DataTemplate DataType="{x:Type vm:ConfigGroupEntry}">
                                             <Border Classes="config-set-card"
                                                     Classes.selected="{Binding IsSelected}"
                                                     DoubleTapped="OnSetCardDoubleTapped"
@@ -586,7 +596,7 @@
                                                     <Border Grid.Column="2" IsVisible="{Binding HasDescendants}"
                                                             Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
                                                             CornerRadius="6" Padding="7,2.5" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding DescendantCount, StringFormat='{}{0} sub-sets'}"
+                                                        <TextBlock Text="{Binding DescendantText}"
                                                                    FontSize="10.5" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
                                                     </Border>
                                                 </Grid>
@@ -595,6 +605,9 @@
                                     </ItemsControl.DataTemplates>
                                 </ItemsControl>
                             </ScrollViewer>
+                            <TextBlock Text="{Binding EnabledEmptyText}" IsVisible="{Binding EnabledEmptyText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                       FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" TextAlignment="Center"
+                                       HorizontalAlignment="Center" VerticalAlignment="Top" Margin="24,32,24,0" MaxWidth="300" IsHitTestVisible="False"/>
 
                             <!-- Rubberband Canvas for Enabled Column -->
                             <Canvas x:Name="EnabledRubberbandCanvas" IsHitTestVisible="False">
@@ -652,7 +665,7 @@
                     <Grid RowDefinitions="Auto, Auto, *">
                         <!-- Clean Header (No icon, background, color, badge) -->
                         <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto" Margin="0,0,0,12">
-                            <TextBlock Grid.Column="0" Text="{loc:Loc 'configurations.disabled_sets'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="0" Text="{Binding DisabledListTitle}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" Text="{loc:Loc 'configurations.drag_to_move'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                             <Button Grid.Column="2" Classes="btn-action-sec" Margin="10,0,0,0" VerticalAlignment="Center"
                                     Command="{Binding ExcludeItemsCommand}"
@@ -667,7 +680,7 @@
                         <!-- Sets Search Input -->
                         <TextBox Grid.Row="1" Classes="capsule-search config-search" Margin="0,0,0,10"
                                  Text="{Binding DisabledSetsSearchQuery, Mode=TwoWay}"
-                                 PlaceholderText="{loc:Loc 'configurations.search_sets_placeholder'}">
+                                 PlaceholderText="{Binding ListSearchPlaceholder}">
                             <TextBox.InnerLeftContent>
                                 <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="10,0,4,0" VerticalAlignment="Center"/>
                             </TextBox.InnerLeftContent>
@@ -730,7 +743,8 @@
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
-                                        <DataTemplate DataType="{x:Type vm:ConfigSetItemViewModel}">
+                                        <!-- A set or a Mods folder -->
+                                        <DataTemplate DataType="{x:Type vm:ConfigGroupEntry}">
                                             <Border Classes="config-set-card"
                                                     Classes.selected="{Binding IsSelected}"
                                                     DoubleTapped="OnSetCardDoubleTapped"
@@ -760,7 +774,7 @@
                                                     <Border Grid.Column="2" IsVisible="{Binding HasDescendants}"
                                                             Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
                                                             CornerRadius="6" Padding="7,2.5" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding DescendantCount, StringFormat='{}{0} sub-sets'}"
+                                                        <TextBlock Text="{Binding DescendantText}"
                                                                    FontSize="10.5" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
                                                     </Border>
                                                 </Grid>
@@ -769,6 +783,9 @@
                                     </ItemsControl.DataTemplates>
                                 </ItemsControl>
                             </ScrollViewer>
+                            <TextBlock Text="{Binding DisabledEmptyText}" IsVisible="{Binding DisabledEmptyText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                       FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" TextAlignment="Center"
+                                       HorizontalAlignment="Center" VerticalAlignment="Top" Margin="24,32,24,0" MaxWidth="300" IsHitTestVisible="False"/>
 
                             <!-- Rubberband Canvas for Disabled Column -->
                             <Canvas x:Name="DisabledRubberbandCanvas" IsHitTestVisible="False">
@@ -810,7 +827,7 @@
                         </Border>
                         <StackPanel Spacing="2" VerticalAlignment="Center">
                             <TextBlock Text="{Binding CascadeModalTitle}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
-                            <TextBlock Text="Nested Sub-Sets Detected" FontSize="11.5" Foreground="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="{Binding CascadeSubtitle}" FontSize="11.5" Foreground="{DynamicResource TextMuted}"/>
                         </StackPanel>
                     </StackPanel>
 
@@ -824,11 +841,11 @@
                     <!-- Action Buttons Grid -->
                     <Grid ColumnDefinitions="*, 8, *, 8, Auto" Margin="0,6,0,0">
                         <Button Grid.Column="0" Classes="btn-action-primary" Command="{Binding CascadeIncludeSubSetsCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
-                            <TextBlock Text="Move All (With Sub-Sets)" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding CascadeAllText}" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </Button>
 
                         <Button Grid.Column="2" Classes="btn-action-sec" Command="{Binding CascadeSingleSetOnlyCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
-                            <TextBlock Text="This Set Only" FontSize="11.5" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding CascadeOnlyText}" FontSize="11.5" VerticalAlignment="Center"/>
                         </Button>
 
                         <Button Grid.Column="4" Classes="btn-action-sec" Command="{Binding CascadeCancelCommand}">

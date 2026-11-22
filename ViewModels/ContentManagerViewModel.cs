@@ -117,6 +117,25 @@ public partial class ContentManagerViewModel : ObservableObject
     [ObservableProperty]
     private bool _isSetsSidebarCollapsed = false;
 
+    // The sidebar's open width; its right edge can be dragged between these limits.
+    public const double SetsSidebarDefaultWidth = 260;
+    public const double SetsSidebarMinWidth = 220;
+    public const double SetsSidebarMaxWidth = 480;
+
+    private double _setsSidebarWidth = SetsSidebarDefaultWidth;
+
+    public double SetsSidebarWidth
+    {
+        get => _setsSidebarWidth;
+        set
+        {
+            if (SetProperty(ref _setsSidebarWidth, ClampSetsSidebarWidth(value))) SaveCurrentUiState();
+        }
+    }
+
+    public static double ClampSetsSidebarWidth(double width) =>
+        double.IsFinite(width) ? Math.Clamp(Math.Round(width), SetsSidebarMinWidth, SetsSidebarMaxWidth) : SetsSidebarDefaultWidth;
+
     [ObservableProperty]
     private bool _isFiltersSidebarCollapsed = false;
 
@@ -235,7 +254,7 @@ public partial class ContentManagerViewModel : ObservableObject
         _uiStateService = uiStateService;
         _notificationService = notificationService;
         _optionsMonitor = optionsMonitor ?? App.Services?.GetService<Microsoft.Extensions.Options.IOptionsMonitor<PlumbobForge.Backend.Configuration.PlumbobForgeOptions>>();
-        _optionsMonitor?.OnChange((_, _) => Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => OnPropertyChanged(nameof(IsVaultActive))));
+        _optionsMonitor?.OnChange((_, _) => Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => { OnPropertyChanged(nameof(IsVaultActive)); OnPropertyChanged(nameof(ShowVaultItemActions)); }));
         ItemViewModel.GlobalThumbnailService = thumbnailService;
         ItemViewModel.GlobalThumbnailDirectory = thumbnailService.GetThumbnailDirectory();
         ItemViewModel.OnRenameRequested = item => _ = RenameItemAsync(item);
@@ -245,6 +264,8 @@ public partial class ContentManagerViewModel : ObservableObject
         ItemViewModel.OnNoteChangedCallback = (item, note) => _ = SaveItemNoteAsync(item, note);
         ItemViewModel.OnToggleFavoriteRequested = item => _ = ToggleFavoriteItemAsync(item);
         ItemViewModel.OnRefreshRequested = item => _ = RefreshSingleItemAsync(item);
+        ItemViewModel.AvailableSets = FlatSets;
+        ItemViewModel.OnMoveToSetRequested = MoveModsItemToSetAsync;
 
         LocalizationManager.Instance.LanguageChanged += _ =>
         {
@@ -281,6 +302,14 @@ public partial class ContentManagerViewModel : ObservableObject
             GridZoomLevel = state.GridZoomLevel;
             _savedSetId = state.SelectedSetId;
             IsSetsSidebarCollapsed = state.IsSetsSidebarCollapsed;
+            _setsSectionCollapsed = state.IsSetsSectionCollapsed;
+            _modsSectionCollapsed = state.IsModsSectionCollapsed;
+            SetsSidebarWidth = state.SetsSidebarWidth;
+            _recentMoveSetIds = state.RecentMoveSetIds?.ToList() ?? new();
+            _smartSets = state.SmartSets?.Where(s => !string.IsNullOrEmpty(s.Id)).ToList() ?? new();
+            _savedSmartSetId = state.SelectedSmartSetId;
+            _filtersBeforeSmart = state.SelectedSmartSetId != null ? state.FiltersBeforeSmartSet : null;
+            _smartSectionCollapsed = state.IsSmartSectionCollapsed;
             IsFiltersSidebarCollapsed = state.IsFiltersSidebarCollapsed;
             if (!string.IsNullOrEmpty(state.CurrentItemSort)) CurrentItemSort = state.CurrentItemSort;
             if (!string.IsNullOrEmpty(state.CurrentSetSort)) CurrentSetSort = state.CurrentSetSort;
@@ -378,6 +407,7 @@ public partial class ContentManagerViewModel : ObservableObject
             // Mode
             FilterModeEnabled = state.FilterModeEnabled;
             FilterModeDisabled = state.FilterModeDisabled;
+            FilterModeOptimizedOnly = state.FilterModeOptimizedOnly;
 
             // Accordion Expansion States
             IsTypeExpanded = state.IsTypeExpanded;
@@ -412,6 +442,14 @@ public partial class ContentManagerViewModel : ObservableObject
             GridZoomLevel = GridZoomLevel,
             SelectedSetId = SelectedSetNode?.Id ?? _savedSetId,
             IsSetsSidebarCollapsed = IsSetsSidebarCollapsed,
+            IsSetsSectionCollapsed = _setsSectionCollapsed,
+            IsModsSectionCollapsed = _modsSectionCollapsed,
+            SetsSidebarWidth = SetsSidebarWidth,
+            RecentMoveSetIds = _recentMoveSetIds.ToList(),
+            SmartSets = _smartSets.ToList(),
+            SelectedSmartSetId = SelectedSetNode?.SmartSetId ?? _savedSmartSetId,
+            FiltersBeforeSmartSet = _appliedSmartNode != null ? _filtersBeforeSmart : null,
+            IsSmartSectionCollapsed = _smartSectionCollapsed,
             IsFiltersSidebarCollapsed = IsFiltersSidebarCollapsed,
             CurrentItemSort = CurrentItemSort,
             CurrentSetSort = CurrentSetSort,
@@ -498,6 +536,7 @@ public partial class ContentManagerViewModel : ObservableObject
 
             FilterModeEnabled = FilterModeEnabled,
             FilterModeDisabled = FilterModeDisabled,
+            FilterModeOptimizedOnly = FilterModeOptimizedOnly,
 
             IsTypeExpanded = IsTypeExpanded,
             IsCasSubFiltersExpanded = IsCasSubFiltersExpanded,
@@ -563,6 +602,7 @@ public partial class ContentManagerViewModel : ObservableObject
         if (_isDataLoading) return;
         _isDataLoading = true;
         IsLoading = true;
+        IsModsOnly = PlumbobForge.Backend.Configuration.ModsFolderSupport.ModsOnly;
         try
         {
             // 1. Instant: Load & build Set hierarchy first
@@ -576,6 +616,7 @@ public partial class ContentManagerViewModel : ObservableObject
                 FlatSets.Add(set);
             }
 
+            var modsSelectionBefore = SelectedSetNode?.IsModsNode == true ? SelectedSetNode : null;
             RootSets.Clear();
             var allItemsNode = new SetNodeViewModel(LocalizationManager.Instance.GetString("library.all_items"), null);
             RootSets.Add(allItemsNode);
@@ -618,22 +659,27 @@ public partial class ContentManagerViewModel : ObservableObject
             // 2. Allow UI frame to render window, header, and loading animation on screen
             await Task.Delay(150);
 
+            _modsFolders = await LoadModsFoldersAsync(db);
+
             // 3. Background: Load items from database off the UI thread
             var (items, counts, totalCount) = await Task.Run(async () =>
             {
                 using var scope = App.Services?.CreateScope();
                 var db = scope != null ? scope.ServiceProvider.GetRequiredService<AppDbContext>() : _db;
-                var itemsList = await db.MetaEntities.AsNoTracking().ToListAsync();
+                // Mods folder files are items too; MetaEntities leaves them out.
+                var itemsList = await db.AllMetaEntities.AsNoTracking().ToListAsync();
                 _thumbnailService.RefreshStalePreviews(itemsList);
 
                 var itemVms = new List<ItemViewModel>(itemsList.Count);
                 var itemCounts = new Dictionary<long, int>();
+                var optimized = OptimizedItemsSafe();
 
                 foreach (var item in itemsList)
                 {
                     var vm = new ItemViewModel(item)
                     {
-                        OnSelectionChanged = UpdateSelectionState
+                        OnSelectionChanged = UpdateSelectionState,
+                        OptimizedAt = optimized.TryGetValue(item.Id, out var at) ? at : null
                     };
                     itemVms.Add(vm);
 
@@ -658,6 +704,9 @@ public partial class ContentManagerViewModel : ObservableObject
             }
 
             Items.ReplaceAll(items);
+            PlaceModsNode(items.Any(i => i.Entity.IsModsItem), modsSelectionBefore);
+            _ = RefreshConfigurationStateAsync();
+            RecalculateModsCounts();
 
             UpdateSelectionState();
             ApplyFilter();
@@ -728,6 +777,9 @@ public partial class ContentManagerViewModel : ObservableObject
                 rootNode.CalculateItemCount(itemCounts);
             }
         }
+
+        RecalculateModsCounts();
+        UpdateSetsHeaderCount();
     }
 
     [RelayCommand]
@@ -767,6 +819,9 @@ public partial class ContentManagerViewModel : ObservableObject
         try
         {
             long? targetSetId = SelectedSetNode?.Id;
+            // Dropped on a Mods folder (or the Mods Folder node: Mods/Packages), the files go into the Mods folder.
+            long? targetModsFolderId = SelectedSetNode?.ModsFolder?.Id
+                ?? (SelectedSetNode?.IsModsRoot == true ? DefaultModsImportFolderId() : null);
             await Task.Run(async () =>
             {
                 await _pkgManager.ImportFilesAsync(filePaths, msg =>
@@ -775,7 +830,7 @@ public partial class ContentManagerViewModel : ObservableObject
                     {
                         ImportStatusText = msg;
                     });
-                }, duplicateAction, targetSetId);
+                }, duplicateAction, targetSetId, targetModsFolderId);
             });
 
             await LoadDataAsync();
@@ -791,7 +846,7 @@ public partial class ContentManagerViewModel : ObservableObject
     {
         try
         {
-            var meta = await _db.MetaEntities.FindAsync(item.Id);
+            var meta = await _db.AllMetaEntities.FirstOrDefaultAsync(m => m.Id == item.Id);
             if (meta != null)
             {
                 meta.Description = string.IsNullOrWhiteSpace(note) ? null : note.Trim();

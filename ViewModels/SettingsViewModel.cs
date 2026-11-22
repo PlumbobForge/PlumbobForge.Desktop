@@ -720,6 +720,7 @@ public partial class SettingsViewModel : ObservableObject
                 _ = SaveSettingsInternalAsync(silent: true);
             }
             EnableAutoScan = _options.EnableAutoScan;
+            LoadModsOptions();
             AutoClearGameCaches = _options.AutoClearGameCaches;
             OptimizeTextures = _options.OptimizeTextures;
             TextureMaxDimension = _options.TextureMaxDimension;

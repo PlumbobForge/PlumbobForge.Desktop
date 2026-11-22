@@ -828,13 +828,13 @@
                     </StackPanel>
 
                     <!-- ========== 5. STORAGE MODE ========== -->
-                    <StackPanel Spacing="14" VerticalAlignment="Top" Margin="0,8,0,0">
+                    <StackPanel Spacing="10" VerticalAlignment="Top" Margin="0,8,0,0">
                         <StackPanel Classes="reveal" Spacing="6">
                             <TextBlock Classes="page-title" Text="{loc:Loc 'dialogs.walkthrough.mode_title'}"/>
                             <TextBlock Classes="page-desc" Text="{loc:Loc 'dialogs.walkthrough.mode_desc'}"/>
                         </StackPanel>
 
-                        <StackPanel Spacing="8">
+                        <StackPanel Spacing="6">
                             <Button Classes="choice-card reveal" Classes.selected="{Binding IsDynamicMode}"
                                     Command="{Binding SelectModeCommand}" CommandParameter="Dynamic">
                                 <Grid ColumnDefinitions="Auto, *, Auto">
@@ -892,10 +892,26 @@
                                     </Border>
                                 </Grid>
                             </Button>
+
+                            <Button Classes="choice-card reveal" Classes.selected="{Binding IsModsOnlyMode}"
+                                    Command="{Binding SelectModeCommand}" CommandParameter="ModsOnly">
+                                <Grid ColumnDefinitions="Auto, *, Auto">
+                                    <Border Classes="icon-tile" Background="{DynamicResource StatusGreenBg}">
+                                        <icon:PackIconBoxIcons Kind="RegularJoystick" Width="18" Height="18" Foreground="{DynamicResource StatusGreen}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="3" Margin="13,0,12,0">
+                                        <TextBlock Classes="feat-title" FontSize="13" Text="{loc:Loc 'dialogs.walkthrough.mode_mods_title'}"/>
+                                        <TextBlock Classes="feat-desc" Text="{loc:Loc 'dialogs.walkthrough.mode_mods_desc'}"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="2" Classes="radio-dot">
+                                        <icon:PackIconBoxIcons Kind="RegularCheck" Width="12" Height="12" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </Grid>
+                            </Button>
                         </StackPanel>
 
                         <!-- At-a-glance comparison for the selected mode -->
-                        <Border Classes="reveal" Background="{DynamicResource BgSurface}" CornerRadius="10" Padding="16,12">
+                        <Border Classes="reveal" Background="{DynamicResource BgSurface}" CornerRadius="10" Padding="16,12" IsVisible="{Binding !IsModsOnlyMode}">
                             <Grid ColumnDefinitions="*, *, *">
                                 <StackPanel Grid.Column="0" Spacing="3">
                                     <StackPanel Orientation="Horizontal" Spacing="5">
@@ -969,6 +985,16 @@
                             </Button>
                         </UniformGrid>
 
+                        <!-- CC already in the game's Mods folder (library and vault modes; Mods-only always manages it) -->
+                        <Border Classes="reveal" Background="{DynamicResource BgSurface}" CornerRadius="10" Padding="14,12" IsVisible="{Binding !IsModsOnlyMode}">
+                            <StackPanel Spacing="2">
+                                <CheckBox IsChecked="{Binding ManageModsFolder, Mode=TwoWay}"
+                                          Content="{loc:Loc 'dialogs.walkthrough.manage_mods'}"
+                                          FontWeight="Medium" FontSize="12.5" Cursor="Hand"/>
+                                <TextBlock Classes="feat-desc" Text="{loc:Loc 'dialogs.walkthrough.manage_mods_desc'}" Margin="28,-2,0,0"/>
+                            </StackPanel>
+                        </Border>
+
                         <!-- Importing -->
                         <Border Background="{DynamicResource BgSurface}" CornerRadius="10" Padding="22,26" IsVisible="{Binding IsImporting}">
                             <StackPanel Spacing="12" HorizontalAlignment="Center">
@@ -1016,6 +1042,10 @@
                             <Grid ColumnDefinitions="Auto, *" IsVisible="{Binding IsVaultMode}">
                                 <icon:PackIconBoxIcons Kind="RegularInfoCircle" Width="14" Height="14" Foreground="{DynamicResource TextSubtle}" VerticalAlignment="Top" Margin="0,1,0,0"/>
                                 <TextBlock Grid.Column="1" Text="{loc:Loc 'dialogs.walkthrough.import_vault_note'}" FontSize="11.5" Foreground="{DynamicResource TextSubtle}" TextWrapping="Wrap" Margin="8,0,0,0"/>
+                            </Grid>
+                            <Grid ColumnDefinitions="Auto, *" IsVisible="{Binding IsModsOnlyMode}">
+                                <icon:PackIconBoxIcons Kind="RegularInfoCircle" Width="14" Height="14" Foreground="{DynamicResource TextSubtle}" VerticalAlignment="Top" Margin="0,1,0,0"/>
+                                <TextBlock Grid.Column="1" Text="{loc:Loc 'dialogs.walkthrough.import_mods_note'}" FontSize="11.5" Foreground="{DynamicResource TextSubtle}" TextWrapping="Wrap" Margin="8,0,0,0"/>
                             </Grid>
                         </StackPanel>
                     </StackPanel>

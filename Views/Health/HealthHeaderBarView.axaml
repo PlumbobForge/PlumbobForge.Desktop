@@ -403,12 +403,26 @@
                 </Button>
             </StackPanel>
 
-            <!-- 6. CC Optimizer Controls -->
+            <!-- 6. CC Optimizer: the list being worked on, or everything optimized before -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" Margin="14,0,0,0" VerticalAlignment="Center" IsVisible="{Binding IsOptimizerActive}">
+                <Button x:Name="OptimizerQueueTab" Classes="filter-btn" Classes.active="{Binding Optimizer.ShowQueue}" Command="{Binding Optimizer.ShowQueueViewCommand}">
+                    <TextBlock Text="{loc:Loc 'optimizer.queue_tab'}"/>
+                </Button>
+                <Button x:Name="OptimizerHistoryTab" Classes="filter-btn" Classes.active="{Binding Optimizer.ShowHistory}" Command="{Binding Optimizer.ShowHistoryViewCommand}">
+                    <TextBlock Text="{Binding Optimizer.HistoryTabText}"/>
+                </Button>
+            </StackPanel>
+
             <StackPanel Grid.Column="2"
                         Orientation="Horizontal"
                         Spacing="16"
-                        VerticalAlignment="Center"
-                        IsVisible="{Binding IsOptimizerActive}">
+                        VerticalAlignment="Center">
+                <StackPanel.IsVisible>
+                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                        <Binding Path="IsOptimizerActive"/>
+                        <Binding Path="Optimizer.ShowQueue"/>
+                    </MultiBinding>
+                </StackPanel.IsVisible>
                 <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="12,8" VerticalAlignment="Center" IsVisible="{Binding Optimizer.HasItems}">
                     <StackPanel Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
                         <StackPanel Spacing="1" VerticalAlignment="Center">

@@ -284,4 +284,19 @@
     <Style Selector="ListBox.card-list ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="Transparent"/>
     </Style>
+
+    <!-- Typography: body text uses AppFontBody by default (Styles/Fonts.axaml).
+         Buttons, toggles, checkboxes, menus, tabs and combo boxes use the UI roundness. -->
+    <Style Selector=":is(Button), MenuItem, TabItem, ComboBox, ComboBoxItem">
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontUi}"/>
+    </Style>
+    <!-- Headings: the title classes, plus any bold TextBlock at 14px or larger (dialog and section titles). -->
+    <Style Selector="TextBlock.page-title, TextBlock.card-title, TextBlock.feat-title,
+                     TextBlock[FontWeight=Bold][FontSize=14], TextBlock[FontWeight=Bold][FontSize=15],
+                     TextBlock[FontWeight=Bold][FontSize=16], TextBlock[FontWeight=Bold][FontSize=17],
+                     TextBlock[FontWeight=Bold][FontSize=18], TextBlock[FontWeight=Bold][FontSize=20],
+                     TextBlock[FontWeight=Bold][FontSize=21], TextBlock[FontWeight=Bold][FontSize=22],
+                     TextBlock[FontWeight=Bold][FontSize=24], TextBlock[FontWeight=Bold][FontSize=27]">
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontHeading}"/>
+    </Style>
 </Styles>

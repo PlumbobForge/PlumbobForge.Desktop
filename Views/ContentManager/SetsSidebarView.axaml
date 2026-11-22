@@ -9,29 +9,38 @@
 
     <UserControl.Styles>
         <!-- Outer Floating Container Width & Animation -->
+        <!-- Widths and the slide are set from code: the open width is the user's (drag the right edge) -->
         <Style Selector="Border.sets-floating-panel">
-            <Setter Property="Width" Value="260"/>
             <Setter Property="Transitions">
                 <Transitions>
                     <DoubleTransition Property="Width" Duration="0:0:0.25" Easing="CubicEaseOut"/>
                 </Transitions>
             </Setter>
         </Style>
-        <Style Selector="Border.sets-floating-panel.collapsed">
-            <Setter Property="Width" Value="48"/>
-        </Style>
 
         <!-- Inner Content Slide Animation -->
         <Style Selector="Border.sets-inner-content">
-            <Setter Property="RenderTransform" Value="translateX(0px)"/>
             <Setter Property="Transitions">
                 <Transitions>
                     <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25" Easing="CubicEaseOut"/>
                 </Transitions>
             </Setter>
         </Style>
-        <Style Selector="Border.sets-inner-content.collapsed">
-            <Setter Property="RenderTransform" Value="translateX(-212px)"/>
+        <!-- Resize grip on the sidebar's right edge: a thin accent line on hover and while dragging -->
+        <Style Selector="Border.resize-grip">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Cursor" Value="SizeWestEast"/>
+        </Style>
+        <Style Selector="Border.resize-grip > Border">
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.12"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.resize-grip:pointerover > Border, Border.resize-grip.dragging > Border">
+            <Setter Property="Opacity" Value="1"/>
         </Style>
 
         <!-- Dimmable Body & Header Content Transition -->
@@ -51,6 +60,7 @@
         <!-- Custom TreeViewItem Style & Template -->
         <Style Selector="TreeViewItem" x:DataType="vm:SetNodeViewModel">
             <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+            <Setter Property="IsVisible" Value="{Binding !IsHiddenBySection}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Margin" Value="0,1"/>
@@ -59,6 +69,7 @@
                 <ControlTemplate>
                     <StackPanel HorizontalAlignment="Stretch">
                         <Border x:Name="LayoutRoot"
+                                IsVisible="{Binding !IsRowHidden}"
                                 Background="Transparent"
                                 CornerRadius="8"
                                 Padding="0"
@@ -75,7 +86,7 @@
                         <ItemsPresenter x:Name="PART_ItemsPresenter"
                                         IsVisible="{TemplateBinding IsExpanded}"
                                         ItemsPanel="{TemplateBinding ItemsPanel}"
-                                        Margin="16,0,0,0"/>
+                                        Margin="{Binding ChildrenIndent}"/>
                     </StackPanel>
                 </ControlTemplate>
             </Setter>
@@ -137,6 +148,71 @@
         <Style Selector="Button.accordion-header:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="Transparent"/>
         </Style>
+        <!-- Section headers ("Sets", "Mods Folder") when both are listed -->
+        <Style Selector="Border.section-header">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Border.section-header.selectable:pointerover">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+        <Style Selector="Border.section-header.set-node-selected">
+            <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+        <Style Selector="Border.section-header TextBlock.section-title">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        </Style>
+        <Style Selector="Border.section-header.selectable:pointerover TextBlock.section-title, Border.section-header.set-node-selected TextBlock.section-title">
+            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+        </Style>
+        <Style Selector="Button.section-action">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="2,0,0,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.section-action:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+
+        <!-- Inline rename box: sits where the name was, same size -->
+        <Style Selector="TextBox.rename-box">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="Padding" Value="4,1"/>
+            <Setter Property="Margin" Value="-5,-2,0,-2"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="TextBox.rename-box /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource BgSurface}"/>
+        </Style>
+        <Style Selector="TextBox.rename-box.error /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="#ef4444"/>
+        </Style>
+
+        <!-- Left out by the active configuration: crossed out and slightly dimmed -->
+        <Style Selector="Border.set-node-row.config-off TextBlock.set-title">
+            <Setter Property="TextDecorations" Value="Strikethrough"/>
+            <Setter Property="Opacity" Value="0.7"/>
+        </Style>
+        <Style Selector="Border.set-node-row.config-off Panel.node-icon">
+            <Setter Property="Opacity" Value="0.7"/>
+        </Style>
+
         <Style Selector="TreeView#SetsTreeView">
             <Setter Property="Template">
                 <ControlTemplate>
@@ -160,7 +236,8 @@
     </UserControl.Styles>
 
     <!-- Outer Floating Shell with Drop Shadow -->
-    <Border Classes="sets-floating-panel" Classes.collapsed="{Binding IsSetsSidebarCollapsed}"
+    <Border x:Name="SidebarShell" Classes="sets-floating-panel" Classes.collapsed="{Binding IsSetsSidebarCollapsed}"
+            Width="260"
             HorizontalAlignment="Left"
             VerticalAlignment="Stretch"
             Margin="12, 12, 0, 12"
@@ -174,7 +251,7 @@
 
         <Panel HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <!-- Inner Content Border (Slides horizontally during collapse) -->
-            <Border Classes="sets-inner-content" Classes.collapsed="{Binding IsSetsSidebarCollapsed}"
+            <Border x:Name="SidebarContent" Classes="sets-inner-content" Classes.collapsed="{Binding IsSetsSidebarCollapsed}"
                     Width="260"
                     Padding="14"
                     HorizontalAlignment="Left"
@@ -185,14 +262,16 @@
                     <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
                         <Grid Grid.Column="0" ColumnDefinitions="*, Auto, Auto" Classes="dimmable-content" Classes.collapsed="{Binding IsSetsSidebarCollapsed}" VerticalAlignment="Center">
                             <!-- Sets Title -->
-                            <TextBlock Grid.Column="0" Text="{loc:Loc 'library.sets'}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="0" Text="{loc:Loc 'library.title'}" IsVisible="{Binding ShowSectionHeaders}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="0" Text="{loc:Loc 'library.sets'}" IsVisible="{Binding ShowSetsTopBar}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="0" Text="{loc:Loc 'library.mods'}" IsVisible="{Binding IsModsOnly}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
 
                             <!-- Sort Sets Flyout Button -->
-                            <Button Grid.Column="1" Background="{DynamicResource BgSurface}" Foreground="{DynamicResource TextMuted}" CornerRadius="6" Padding="8,6" Margin="0,0,6,0" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'library.sort_sets'}">
+                            <Button Grid.Column="1" x:Name="SortSetsButton" IsVisible="{Binding ShowSetsTopBar}" Background="{DynamicResource BgSurface}" Foreground="{DynamicResource TextMuted}" CornerRadius="6" Padding="8,6" Margin="0,0,6,0" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'library.sort_sets'}">
                                 <icon:PackIconBoxIcons Kind="RegularFilter" Width="14" Height="14" VerticalAlignment="Center"/>
                                 <Button.Flyout>
                                     <Flyout Placement="Bottom">
-                                        <Border Padding="6" Width="180">
+                                        <Border x:Name="SortSetsFlyoutContent" Padding="6" Width="180">
                                             <StackPanel Spacing="4">
                                                 <TextBlock Text="{loc:Loc 'library.sort_sets'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="6,4"/>
                                                 <Button Command="{Binding SetSortModeCommand}" CommandParameter="DateCreated" Background="Transparent" HorizontalAlignment="Stretch" Padding="8,6" CornerRadius="4">
@@ -235,8 +314,12 @@
                             </Button>
 
                             <!-- Create Set (+) Button -->
-                            <Button Grid.Column="2" ctrl:GuideTarget.Id="library.new-set" Command="{Binding CreateTopLevelSetCommand}" Background="{DynamicResource AccentBrush}" Foreground="White" CornerRadius="6" Padding="8,6" Margin="0,0,6,0" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'library.add_set'}">
+                            <Button Grid.Column="2" ctrl:GuideTarget.Id="library.new-set" IsVisible="{Binding ShowSetsTopBar}" Command="{Binding CreateTopLevelSetCommand}" Background="{DynamicResource AccentBrush}" Foreground="White" CornerRadius="6" Padding="8,6" Margin="0,0,6,0" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'library.add_set'}">
                                 <icon:PackIconBoxIcons Kind="RegularPlus" Width="14" Height="14" VerticalAlignment="Center"/>
+                            </Button>
+                            <!-- Mods-only: new folder in Packages -->
+                            <Button Grid.Column="2" IsVisible="{Binding IsModsOnly}" Command="{Binding AddPackagesFolderCommand}" Background="{DynamicResource AccentBrush}" Foreground="White" CornerRadius="6" Padding="8,6" Margin="0,0,6,0" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'library.mods_new_folder_in_packages'}">
+                                <icon:PackIconBoxIcons Kind="RegularFolderPlus" Width="14" Height="14" VerticalAlignment="Center"/>
                             </Button>
                         </Grid>
 
@@ -277,8 +360,48 @@
                                   Margin="0">
                             <TreeView.ItemTemplate>
                                 <TreeDataTemplate DataType="{x:Type vm:SetNodeViewModel}" ItemsSource="{Binding Children}">
-                                    <Border Classes="set-node-row"
+                                    <Panel>
+                                    <!-- Section header: chevron, name, count, actions -->
+                                    <Border Classes="section-header"
+                                            Classes.selectable="{Binding IsSectionHeader}"
                                             Classes.set-node-selected="{Binding IsSelected}"
+                                            IsVisible="{Binding IsSectionHeader}"
+                                            CornerRadius="8"
+                                            Padding="4,4,4,4"
+                                            Margin="0,10,0,2"
+                                            Cursor="Hand"
+                                            PointerPressed="OnSectionHeaderPointerPressed"
+                                            ContextRequested="OnSectionHeaderContextRequested">
+                                        <Border.ContextMenu>
+                                            <!-- Mods Folder header only (OnSectionHeaderContextRequested) -->
+                                            <ContextMenu>
+                                                <Separator/>
+                                            </ContextMenu>
+                                        </Border.ContextMenu>
+                                        <Grid ColumnDefinitions="Auto, Auto, Auto, *, Auto, Auto" VerticalAlignment="Center">
+                                            <Button Grid.Column="0" Classes="accordion-header" Command="{Binding ToggleExpandCommand}" Width="20" Height="20" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'library.toggle_section'}">
+                                                <Panel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding IsExpanded}"/>
+                                                    <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding !IsExpanded}"/>
+                                                </Panel>
+                                            </Button>
+                                            <TextBlock Grid.Column="1" Classes="section-title" Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Margin="4,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding ItemCount}" FontSize="11" Foreground="{DynamicResource TextMuted}" Opacity="0.7" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="4" Classes="section-action" IsVisible="{Binding IsSetsHeader}" Click="OnSectionSortClick" ToolTip.Tip="{loc:Loc 'library.sort_sets'}">
+                                                <icon:PackIconBoxIcons Kind="RegularFilter" Width="14" Height="14"/>
+                                            </Button>
+                                            <Button Grid.Column="5" Classes="section-action" Click="OnSectionAddClick" ToolTip.Tip="{Binding SectionAddToolTip}">
+                                                <Panel>
+                                                    <icon:PackIconBoxIcons Kind="RegularPlus" Width="14" Height="14" IsVisible="{Binding ShowsPlusAdd}"/>
+                                                    <icon:PackIconBoxIcons Kind="RegularFolderPlus" Width="14" Height="14" IsVisible="{Binding !ShowsPlusAdd}"/>
+                                                </Panel>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="set-node-row"
+                                            IsVisible="{Binding !IsSectionHeader}"
+                                            Classes.set-node-selected="{Binding IsSelected}"
+                                            Classes.config-off="{Binding IsOffInConfiguration}"
                                             CornerRadius="8"
                                             Padding="10,6,8,6"
                                             Margin="0,1"
@@ -293,36 +416,32 @@
                                             PointerCaptureLost="OnSetRowPointerCaptureLost"
                                             ContextRequested="OnSetRowContextRequested">
                                         <Border.ContextMenu>
+                                            <!-- Built on right-click (OnSetRowContextRequested): sets and Mods folders differ -->
                                             <ContextMenu>
-                                                <MenuItem Header="{loc:Loc 'library.add_subset'}" Click="OnAddSubSetClick" IsVisible="{Binding CanAddSubSet}">
-                                                    <MenuItem.Icon>
-                                                        <icon:PackIconBoxIcons Kind="RegularFolderPlus" Width="16" Height="16"/>
-                                                    </MenuItem.Icon>
-                                                </MenuItem>
-                                                <MenuItem Header="{loc:Loc 'library.customize_set'}" Click="OnCustomizeSetClick" IsVisible="{Binding CanCustomize}">
-                                                    <MenuItem.Icon>
-                                                        <icon:PackIconBoxIcons Kind="RegularPalette" Width="16" Height="16"/>
-                                                    </MenuItem.Icon>
-                                                </MenuItem>
-                                                <Separator IsVisible="{Binding CanDelete}"/>
-                                                <MenuItem Header="{loc:Loc 'common.delete'}" Click="OnDeleteSetClick" IsVisible="{Binding CanDelete}">
-                                                    <MenuItem.Icon>
-                                                        <icon:PackIconBoxIcons Kind="RegularTrash" Width="16" Height="16" Foreground="#ef4444"/>
-                                                    </MenuItem.Icon>
-                                                </MenuItem>
+                                                <Separator/>
                                             </ContextMenu>
                                         </Border.ContextMenu>
 
                                         <Grid ColumnDefinitions="Auto, *, Auto, Auto" VerticalAlignment="Center" HorizontalAlignment="Stretch">
                                             <!-- Node Icon -->
-                                            <Panel Grid.Column="0" Margin="0,0,8,0" VerticalAlignment="Center">
+                                            <Panel Grid.Column="0" Classes="node-icon" Margin="0,0,8,0" VerticalAlignment="Center">
                                                 <icon:PackIconBoxIcons Classes="set-icon" Kind="RegularLayers" Width="16" Height="16" IsVisible="{Binding IsAllItems}"/>
                                                 <icon:PackIconBoxIcons Kind="SolidStar" Foreground="#f59e0b" Width="16" Height="16" IsVisible="{Binding IsFavorites}"/>
-                                                <icon:PackIconBoxIcons Kind="{Binding IconKind}" Foreground="{Binding IconBrush}" Width="16" Height="16" IsVisible="{Binding !IsSpecialNode}"/>
+                                                <icon:PackIconBoxIcons Kind="{Binding IconKind}" Foreground="{Binding IconBrush}" Width="16" Height="16" IsVisible="{Binding ShowsOwnIcon}"/>
                                             </Panel>
 
                                             <!-- Set Name -->
-                                            <TextBlock Grid.Column="1" Classes="set-title" Text="{Binding Name}" VerticalAlignment="Center" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Column="1" Classes="set-title" Text="{Binding Name}" ToolTip.Tip="{Binding ConfigurationOffToolTip}" VerticalAlignment="Center" FontSize="12" TextTrimming="CharacterEllipsis" IsVisible="{Binding !IsRenaming}"/>
+
+                                            <!-- Inline rename (F2 or a slow second click on the selected name) -->
+                                            <TextBox Grid.Column="1" Classes="rename-box" Classes.error="{Binding HasRenameError}"
+                                                     IsVisible="{Binding IsRenaming}"
+                                                     Text="{Binding RenameText, Mode=TwoWay}"
+                                                     ToolTip.Tip="{Binding RenameError}"
+                                                     ToolTip.IsOpen="{Binding HasRenameError}"
+                                                     ToolTip.Placement="Bottom"
+                                                     KeyDown="OnRenameBoxKeyDown"
+                                                     LostFocus="OnRenameBoxLostFocus"/>
 
                                             <!-- Item Count Badge -->
                                             <Border Grid.Column="2" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" Padding="7,2" Margin="6,0,4,0" VerticalAlignment="Center">
@@ -330,7 +449,7 @@
                                             </Border>
 
                                             <!-- Chevron Expand/Collapse Toggle on Far Right -->
-                                            <Button Grid.Column="3" Command="{Binding ToggleExpandCommand}" Classes="accordion-header" Width="20" Height="20" Padding="0" Margin="4,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" IsVisible="{Binding HasChildren}" ToolTip.Tip="Toggle Sub-Sets">
+                                            <Button Grid.Column="3" Command="{Binding ToggleExpandCommand}" Classes="accordion-header" Width="20" Height="20" Padding="0" Margin="4,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" IsVisible="{Binding HasChildren}" ToolTip.Tip="{Binding ExpandToolTip}">
                                                 <Panel HorizontalAlignment="Center" VerticalAlignment="Center">
                                                     <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding IsExpanded}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding !IsExpanded}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -338,6 +457,7 @@
                                             </Button>
                                         </Grid>
                                     </Border>
+                                    </Panel>
                                 </TreeDataTemplate>
                             </TreeView.ItemTemplate>
                         </TreeView>
@@ -353,6 +473,19 @@
                         </Canvas>
                     </Grid>
                 </Grid>
+            </Border>
+
+            <!-- Drag to resize; double-click for the default width -->
+            <Border x:Name="ResizeGrip" Classes="resize-grip"
+                    Width="8" HorizontalAlignment="Right" VerticalAlignment="Stretch" Margin="0,16"
+                    IsVisible="{Binding !IsSetsSidebarCollapsed}"
+                    ToolTip.Tip="{loc:Loc 'library.resize_sidebar'}"
+                    PointerPressed="OnResizeGripPointerPressed"
+                    PointerMoved="OnResizeGripPointerMoved"
+                    PointerReleased="OnResizeGripPointerReleased"
+                    PointerCaptureLost="OnResizeGripPointerCaptureLost"
+                    DoubleTapped="OnResizeGripDoubleTapped">
+                <Border Width="2" HorizontalAlignment="Right" CornerRadius="1" Background="{DynamicResource AccentBrush}"/>
             </Border>
         </Panel>
     </Border>

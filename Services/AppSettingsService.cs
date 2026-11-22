@@ -77,6 +77,9 @@ public static class AppSettingsService
             plumbobNode["CacheMethod"] = options.CacheMethod ?? "Dynamic";
             plumbobNode["AutoRebuildStaticCache"] = options.AutoRebuildStaticCache;
             plumbobNode["EnableSingleSourceVault"] = options.EnableSingleSourceVault;
+            plumbobNode["EnableModsFolder"] = options.EnableModsFolder;
+            plumbobNode["ModsOnly"] = options.ModsOnly;
+            plumbobNode["HasAnsweredModsSupport"] = options.HasAnsweredModsSupport;
             plumbobNode["EnableAutoScan"] = options.EnableAutoScan;
             plumbobNode["AutoClearGameCaches"] = options.AutoClearGameCaches;
             plumbobNode["OptimizeTextures"] = options.OptimizeTextures;

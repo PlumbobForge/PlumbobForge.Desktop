@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:db="using:PlumbobForge.Backend.Database"
              xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
              xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
              mc:Ignorable="d" d:DesignWidth="220" d:DesignHeight="300"
@@ -110,12 +111,54 @@
 
                         <!-- Top Right Actions: Favorite & Selection Checkbox -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top" Margin="0,0,2,0">
+                            <!-- Mods folder file the game doesn't load; a Sims3Pack can be moved into a set from here -->
+                            <Button Width="20" Height="20" CornerRadius="10" Padding="0"
+                                    Background="#C0B45309" BorderThickness="0" Cursor="Hand"
+                                    IsVisible="{Binding HasModsWarning}"
+                                    ToolTip.Tip="{Binding ModsWarningText}">
+                                <icon:PackIconBoxIcons Kind="RegularInfoCircle" Width="12" Height="12" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Button.Flyout>
+                                    <Flyout Placement="Bottom">
+                                        <StackPanel Width="250" Spacing="8" Margin="4">
+                                            <TextBlock Text="{Binding ModsWarningText}" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource TextMain}"/>
+                                            <StackPanel Spacing="4" IsVisible="{Binding IsModsSims3Pack}">
+                                                <TextBlock Text="{loc:Loc 'library.mods_move_to_set'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/>
+                                                <ScrollViewer MaxHeight="220">
+                                                    <ItemsControl ItemsSource="{Binding SetChoices}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="db:SetsEntity">
+                                                                <Button Classes="btn-action-sec" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Margin="0,1"
+                                                                        Command="{Binding $parent[ItemsControl].((vm:ItemViewModel)DataContext).MoveToSetCommand}"
+                                                                        CommandParameter="{Binding}">
+                                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                        <icon:PackIconBoxIcons Kind="RegularFolder" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                                        <TextBlock Text="{Binding Name}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                                    </StackPanel>
+                                                                </Button>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </ScrollViewer>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Flyout>
+                                </Button.Flyout>
+                            </Button>
+
                             <!-- Keeps original textures (texture optimisation opt-out) -->
                             <Border Width="20" Height="20" CornerRadius="10"
                                     Background="#60000000"
                                     IsVisible="{Binding ShowsOriginalTexturesBadge}"
                                     ToolTip.Tip="{loc:Loc 'library.original_textures_badge'}">
                                 <icon:PackIconBoxIcons Kind="RegularImage" Width="12" Height="12" Foreground="White" Opacity="0.85" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+
+                            <!-- Meshes reduced by the CC Optimizer -->
+                            <Border Width="20" Height="20" CornerRadius="10"
+                                    Background="#60000000"
+                                    IsVisible="{Binding IsOptimized}"
+                                    ToolTip.Tip="{Binding OptimizedTip}">
+                                <icon:PackIconBoxIcons Kind="RegularMagicWand" Width="12" Height="12" Foreground="White" Opacity="0.85" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
 
                             <!-- Some objects turned off in Look Inside -->

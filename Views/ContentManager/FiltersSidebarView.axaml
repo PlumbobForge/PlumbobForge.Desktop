@@ -111,7 +111,7 @@
             <Border Classes="filters-inner-content" Classes.collapsed="{Binding IsFiltersSidebarCollapsed}" Width="280" Padding="14">
                 <Grid RowDefinitions="Auto, *">
                     <!-- Header -->
-                    <Grid Grid.Row="0" ColumnDefinitions="Auto, *" Margin="0,0,0,12">
+                    <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto" Margin="0,0,0,12">
                         <!-- Leftmost Collapse/Expand Toggle Button (Always bright & 100% clickable) -->
                         <Button Grid.Column="0" Command="{Binding ToggleFiltersSidebarCommand}" ZIndex="20" Background="Transparent" Foreground="{DynamicResource TextMain}" CornerRadius="6" Padding="6" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip.Tip="Toggle Filters Sidebar">
                             <Panel>
@@ -124,12 +124,30 @@
                         <Grid Grid.Column="1" Classes="dimmable-content" Classes.collapsed="{Binding IsFiltersSidebarCollapsed}" VerticalAlignment="Center">
                             <TextBlock Text="{loc:Loc 'filters.title'}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
                         </Grid>
+
+                        <!-- Smart sets: save these filters as one, or save changes into the open one. Up here so
+                             nothing below moves when it shows up. -->
+                        <Button Grid.Column="2" x:Name="SaveSmartSetButton" Classes="btn-action-sec" Padding="10,5" FontSize="12"
+                                Command="{Binding SaveOrUpdateSmartSetCommand}"
+                                ToolTip.Tip="{Binding SmartSaveButtonTip}">
+                            <Button.IsVisible>
+                                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                    <Binding Path="ShowSmartSaveButton"/>
+                                    <Binding Path="!IsFiltersSidebarCollapsed"/>
+                                </MultiBinding>
+                            </Button.IsVisible>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <icon:PackIconBoxIcons Kind="RegularFilter" Width="13" Height="13" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding SmartSaveButtonLabel}" VerticalAlignment="Center" MaxWidth="120" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </Button>
                     </Grid>
 
                     <!-- Filters Body Panel (Search & Accordions, Dims when collapsed) -->
                     <Grid Grid.Row="1" RowDefinitions="Auto, *" Classes="dimmable-content" Classes.collapsed="{Binding IsFiltersSidebarCollapsed}">
+
                         <!-- Capsule Search Input -->
-                        <TextBox Grid.Row="0" Classes="capsule-search" Margin="0,0,0,16" Text="{Binding SearchQuery}" PlaceholderText="{loc:Loc 'filters.search_placeholder'}">
+                        <TextBox Grid.Row="0" x:Name="LibrarySearchBox" Classes="capsule-search" Margin="0,0,0,16" Text="{Binding SearchQuery}" PlaceholderText="{loc:Loc 'filters.search_placeholder'}">
                             <TextBox.InnerLeftContent>
                                 <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="10,0,4,0" VerticalAlignment="Center"/>
                             </TextBox.InnerLeftContent>
@@ -158,7 +176,7 @@
                         </TextBox>
 
                         <!-- Accordion Filter Categories -->
-                        <ScrollViewer Grid.Row="1" Padding="0,0,4,0">
+                        <ScrollViewer Grid.Row="1" x:Name="FiltersScroll" Padding="0,0,4,0">
                             <ScrollViewer.OpacityMask>
                                 <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
                                     <GradientStop Color="#FFFFFFFF" Offset="0.0"/>
@@ -966,6 +984,8 @@
                                     <WrapPanel IsVisible="{Binding IsModeExpanded}">
                                         <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.enabled'}" IsChecked="{Binding FilterModeEnabled, Mode=TwoWay}"/>
                                         <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.disabled'}" IsChecked="{Binding FilterModeDisabled, Mode=TwoWay}"/>
+                                        <ToggleButton x:Name="OptimizedOnlyFilter" Classes="filter-pill" Content="{loc:Loc 'filters.optimized_only'}" IsChecked="{Binding FilterModeOptimizedOnly, Mode=TwoWay}"
+                                                      ToolTip.Tip="{loc:Loc 'filters.optimized_only_tip'}"/>
                                     </WrapPanel>
                                 </StackPanel>
                             </StackPanel>

@@ -107,6 +107,7 @@ public partial class App : Application
         CustomColorPresetsService.Initialize(options);
         LocalizationManager.Instance.Initialize(options.Language);
         LocalizationService.SetExternalProvider((key, args) => LocalizationManager.Instance.GetString(key, args ?? Array.Empty<object>()));
+        ModsFolderSupport.Apply(options);
 
         bool shouldShowUpgradeWizard = false;
         bool shouldShowWalkthrough = false;
@@ -142,11 +143,14 @@ public partial class App : Application
             };
             desktop.MainWindow = mainWindow;
 
+            // Existing users are asked once whether to turn on Mods folder support (new users choose in the walkthrough).
+            bool shouldAskModsSupport = appSettingsExistedBefore && !options.HasAnsweredModsSupport && !options.ModsOnly;
             if (shouldShowUpgradeWizard)
             {
                 mainWindow.Loaded += async (_, _) =>
                 {
                     await DialogHelper.ShowUpgradeWizardAsync(Services.GetRequiredService<UpgradeWizardViewModel>(), mainWindow);
+                    if (shouldAskModsSupport) await DialogHelper.AskModsSupportAsync(Services.GetRequiredService<SettingsViewModel>(), mainWindow);
                 };
             }
             else if (shouldShowWalkthrough)
@@ -154,6 +158,13 @@ public partial class App : Application
                 mainWindow.Loaded += async (_, _) =>
                 {
                     await DialogHelper.ShowNewUserWalkthroughAsync(Services.GetRequiredService<NewUserWalkthroughViewModel>(), mainWindow);
+                };
+            }
+            else if (shouldAskModsSupport)
+            {
+                mainWindow.Loaded += async (_, _) =>
+                {
+                    await DialogHelper.AskModsSupportAsync(Services.GetRequiredService<SettingsViewModel>(), mainWindow);
                 };
             }
 
@@ -239,6 +250,15 @@ public partial class App : Application
                     }
 
                     await scope.ServiceProvider.GetRequiredService<PKGManager>().ScanLibraryDiskAsync();
+
+                    try
+                    {
+                        await scope.ServiceProvider.GetRequiredService<ModsFolderService>().ScanAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        AppLogger.LogError("Mods folder scan failed", ex);
+                    }
 
                     var contentVm = Services?.GetService<ContentManagerViewModel>();
                     if (contentVm != null)
@@ -383,12 +403,14 @@ public partial class App : Application
         services.AddScoped<Sims3HealthService>();
         services.AddScoped<Sims3HiderService>();
         services.AddScoped<Sims3CollectionService>();
+        services.AddScoped<ModsFolderService>();
 
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<QuickSwitcherViewModel>();
         services.AddSingleton<ContentManagerViewModel>();
         services.AddSingleton<ConfigurationsViewModel>();
         services.AddSingleton<HealthViewModel>();
+        services.AddSingleton<PlumbobForge.Desktop.Services.ActionToastService>();
         services.AddSingleton<SettingsViewModel>();
         services.AddTransient<UpgradeWizardViewModel>();
         services.AddTransient<NewUserWalkthroughViewModel>();
@@ -510,6 +532,93 @@ public partial class App : Application
         if (userVersion < 10) ApplySchemaV10(db);
         if (userVersion < 11) ApplySchemaV11(db);
         if (userVersion < 13) ApplySchemaV13(db);
+        if (userVersion < 14) ApplySchemaV14(db);
+        if (userVersion < 15) ApplySchemaV15(db);
+    }
+
+    // Configurations can turn Mods folders off (ConfigModsFoldersOff); everything not listed stays on.
+    private static void ApplySchemaV15(AppDbContext db)
+    {
+        string[] migrations =
+        {
+            @"
+CREATE TABLE IF NOT EXISTS ConfigModsFoldersOff (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    ConfigEntityId INTEGER NOT NULL,
+    ModsFolderId INTEGER NOT NULL,
+    FOREIGN KEY (ConfigEntityId) REFERENCES ConfigEntities(Id) ON DELETE CASCADE,
+    FOREIGN KEY (ModsFolderId) REFERENCES ModsFolders(Id) ON DELETE CASCADE
+);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS IX_ConfigModsFoldersOff_ConfigEntityId_ModsFolderId ON ConfigModsFoldersOff (ConfigEntityId, ModsFolderId);",
+            "CREATE INDEX IF NOT EXISTS IX_ConfigModsFoldersOff_ModsFolderId ON ConfigModsFoldersOff (ModsFolderId);"
+        };
+
+        foreach (var sql in migrations)
+        {
+            try
+            {
+                db.Database.ExecuteSqlRaw(sql);
+            }
+            catch
+            {
+                // Already there (fresh database created from the model).
+            }
+        }
+
+        try
+        {
+            db.Database.ExecuteSqlRaw("PRAGMA user_version = 15;");
+        }
+        catch
+        {
+        }
+    }
+
+    // Mods folder support: files in the game's Mods folder become items (MetaEntities.IsModsItem) grouped by the
+    // real folder they sit in (ModsFolders).
+    private static void ApplySchemaV14(AppDbContext db)
+    {
+        string[] migrations =
+        {
+            @"
+CREATE TABLE IF NOT EXISTS ModsFolders (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    RelativePath TEXT NOT NULL COLLATE NOCASE,
+    Name TEXT NOT NULL,
+    Description TEXT NULL,
+    Icon TEXT NULL,
+    Color TEXT NULL,
+    IsExpanded INTEGER NOT NULL DEFAULT 1,
+    ParentModsFolderId INTEGER NULL,
+    FOREIGN KEY (ParentModsFolderId) REFERENCES ModsFolders(Id) ON DELETE RESTRICT
+);",
+            "ALTER TABLE MetaEntities ADD COLUMN IsModsItem INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE MetaEntities ADD COLUMN ModsFolderId INTEGER NULL REFERENCES ModsFolders(Id) ON DELETE SET NULL;",
+            "ALTER TABLE MetaEntities ADD COLUMN ModsPriority INTEGER NULL;",
+            "CREATE UNIQUE INDEX IF NOT EXISTS IX_ModsFolders_RelativePath ON ModsFolders (RelativePath);",
+            "CREATE INDEX IF NOT EXISTS IX_ModsFolders_ParentModsFolderId ON ModsFolders (ParentModsFolderId);",
+            "CREATE INDEX IF NOT EXISTS IX_MetaEntities_ModsFolderId ON MetaEntities (ModsFolderId);"
+        };
+
+        foreach (var sql in migrations)
+        {
+            try
+            {
+                db.Database.ExecuteSqlRaw(sql);
+            }
+            catch
+            {
+                // Already there (fresh database created from the model).
+            }
+        }
+
+        try
+        {
+            db.Database.ExecuteSqlRaw("PRAGMA user_version = 14;");
+        }
+        catch
+        {
+        }
     }
 
     // MetaEntities.HasConfigOverrides used to be set by any configuration rule and now only by an exclude

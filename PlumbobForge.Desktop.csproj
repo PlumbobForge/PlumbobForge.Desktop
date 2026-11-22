@@ -42,6 +42,10 @@
       <Link>Guides\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Assets\Fonts\OFL.txt">
+      <Link>Licenses\Allo-OFL.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Assets\Changelog\*.json">
       <Link>Changelog\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -55,48 +59,5 @@
     <ProjectReference Include="..\S3ForgeTools.Utils\S3ForgeTools.Utils.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="s3pi.Interfaces">
-      <HintPath>..\libs\s3pi.Interfaces.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="s3pi.Settings">
-      <HintPath>..\libs\s3pi.Settings.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="s3pi.CatalogResource">
-      <HintPath>..\libs\s3pi.CatalogResource.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="s3pi.CASPartResource">
-      <HintPath>..\libs\s3pi.CASPartResource.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="s3pi.Package">
-      <HintPath>..\libs\s3pi.Package.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="s3pi.WrapperDealer">
-      <HintPath>..\libs\s3pi.WrapperDealer.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="s3pi.CustomForms">
-      <HintPath>..\libs\s3pi.CustomForms.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="s3pi.NameMapResource">
-      <HintPath>..\libs\s3pi.NameMapResource.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="s3pi.ObjKeyResource">
-      <HintPath>..\libs\s3pi.ObjKeyResource.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <!-- Needed at runtime by the s3pi wrappers above -->
-    <Reference Include="System.Custom">
-      <HintPath>..\libs\System.Custom.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-  </ItemGroup>
 
 </Project>

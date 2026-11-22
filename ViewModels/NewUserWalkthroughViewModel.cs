@@ -49,8 +49,15 @@ public partial class NewUserWalkthroughViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsDynamicMode))]
     [NotifyPropertyChangedFor(nameof(IsStaticMode))]
     [NotifyPropertyChangedFor(nameof(IsVaultMode))]
+    [NotifyPropertyChangedFor(nameof(IsModsOnlyMode))]
+    [NotifyPropertyChangedFor(nameof(ShowImportChoices))]
     [NotifyPropertyChangedFor(nameof(ModeSummary))]
     private string _selectedMode = "Dynamic";
+
+    // Library and vault users: also manage the game's Mods folder (on by default). Mods-only always does.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ModeSummary))]
+    private bool _manageModsFolder = true;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanNavigate))]
@@ -83,15 +90,27 @@ public partial class NewUserWalkthroughViewModel : ObservableObject
     public bool IsDynamicMode => SelectedMode == "Dynamic";
     public bool IsStaticMode => SelectedMode == "Static";
     public bool IsVaultMode => SelectedMode == "Vault";
+    public bool IsModsOnlyMode => SelectedMode == "ModsOnly";
 
-    public bool ShowImportChoices => !IsImporting && !HasImported;
+    // Other managers' CC goes into the library, which Mods-only storage does not have.
+    public bool ShowImportChoices => !IsImporting && !HasImported && !IsModsOnlyMode;
 
-    public string ModeSummary => LocalizationManager.Instance.GetString(SelectedMode switch
+    public string ModeSummary
     {
-        "Static" => "dialogs.walkthrough.mode_static_title",
-        "Vault" => "dialogs.walkthrough.mode_vault_title",
-        _ => "dialogs.walkthrough.mode_dynamic_title"
-    });
+        get
+        {
+            string mode = LocalizationManager.Instance.GetString(SelectedMode switch
+            {
+                "Static" => "dialogs.walkthrough.mode_static_title",
+                "Vault" => "dialogs.walkthrough.mode_vault_title",
+                "ModsOnly" => "dialogs.walkthrough.mode_mods_title",
+                _ => "dialogs.walkthrough.mode_dynamic_title"
+            });
+            return !IsModsOnlyMode && ManageModsFolder
+                ? mode + " · " + LocalizationManager.Instance.GetString("dialogs.walkthrough.summary_with_mods")
+                : mode;
+        }
+    }
 
     public string ImportSummary
     {
@@ -321,6 +340,9 @@ public partial class NewUserWalkthroughViewModel : ObservableObject
         await AppSettingsService.SaveOptionsAsync(_options.Value);
         Detach();
         RequestClose?.Invoke(true);
+
+        // Saves the Mods choice too, then scans the Mods folder (Mods-only also gets a Resource.cfg if it has none).
+        await Settings.SetModsSupportAsync(ManageModsFolder, IsModsOnlyMode);
 
         // After the walkthrough has closed: with packages already in the library (an import just now) this asks
         // how to back them up and migrates them, otherwise it only switches the mode on.

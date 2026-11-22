@@ -389,6 +389,8 @@ internal sealed class ItemDragSession
         {
             if (v is Border b && b.Classes.Contains("set-node-row") && b.DataContext is SetNodeViewModel node)
             {
+                // The Mods section header is no folder: nothing can be dropped on it.
+                if (node.IsModsRoot) break;
                 row = b;
                 set = node;
                 break;
@@ -483,6 +485,7 @@ internal sealed class ItemDragSession
             if (_vm != null)
             {
                 if (set?.IsFavorites == true) await _vm.FavoriteSelectedItemsAsync(true);
+                else if (set?.IsModsFolder == true) await _vm.MoveSelectedToModsFolderAsync(set);
                 else await _vm.MoveSelectedToSetAsync(set?.Entity);
             }
         }

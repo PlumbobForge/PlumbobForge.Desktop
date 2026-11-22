@@ -340,6 +340,35 @@
                         Spacing="12"
                         ZIndex="90">
 
+            <!-- Library action toast: what just happened, with Undo when it can be taken back -->
+            <Border HorizontalAlignment="Right"
+                    MaxWidth="460"
+                    Background="{DynamicResource BgSidebar}"
+                    BorderBrush="{DynamicResource BorderSubtle}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="14,8,8,8"
+                    BoxShadow="0 8 24 #66000000"
+                    IsVisible="{Binding ActionToast.IsVisible}">
+                <Grid ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center">
+                    <bx:PackIconBoxIcons Grid.Column="0" Kind="RegularCheckCircle" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Grid.Column="1" Text="{Binding ActionToast.Message}" FontSize="12.5" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                    <Button Grid.Column="2" Classes="btn-action-sec" Command="{Binding ActionToast.UndoCommand}" IsVisible="{Binding ActionToast.CanUndo}"
+                            Content="{loc:Loc library.toast_undo}" Margin="12,0,4,0" Padding="12,5" VerticalAlignment="Center"/>
+                    <Button Grid.Column="3"
+                            Command="{Binding ActionToast.DismissCommand}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="6"
+                            CornerRadius="6"
+                            Cursor="Hand"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{loc:Loc app.dismiss}">
+                        <bx:PackIconBoxIcons Kind="RegularX" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+            </Border>
+
             <!-- What's New Toast (first launch after an update) -->
             <Border HorizontalAlignment="Right"
                     MaxWidth="420"

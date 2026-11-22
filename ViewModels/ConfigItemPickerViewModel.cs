@@ -23,6 +23,8 @@ public partial class ConfigItemPickerViewModel : ObservableObject
 
     private readonly IReadOnlyDictionary<long, bool> _existingRules;
     private readonly Dictionary<long, SetsEntity> _setsById;
+    // Given only by configurations: Mods items take rules too, listed under a "Mods Folder" row.
+    private readonly Dictionary<long, ModsFolderEntity>? _modsFoldersById;
     private List<PickerItemRow> _allItems = new();
 
     public bool Include { get; }
@@ -69,7 +71,8 @@ public partial class ConfigItemPickerViewModel : ObservableObject
 
     public IReadOnlyList<long> Result { get; private set; } = Array.Empty<long>();
 
-    public ConfigItemPickerViewModel(bool include, string configName, IReadOnlyList<SetsEntity> sets, IReadOnlyDictionary<long, bool> existingRules, bool forCollection = false, bool forOptimizer = false)
+    public ConfigItemPickerViewModel(bool include, string configName, IReadOnlyList<SetsEntity> sets, IReadOnlyDictionary<long, bool> existingRules, bool forCollection = false, bool forOptimizer = false,
+        IReadOnlyList<ModsFolderEntity>? modsFolders = null)
     {
         Include = include;
         ForCollection = forCollection;
@@ -83,6 +86,14 @@ public partial class ConfigItemPickerViewModel : ObservableObject
         Sets.Add(new PickerSetRow(null, L("library.favorites"), null, null) { IsFavorites = true });
         _allSetRows.AddRange(Sets);
         AddSetRows(sets, parentId: null, Sets, new HashSet<long>());
+        if (modsFolders != null && modsFolders.Count > 0)
+        {
+            _modsFoldersById = modsFolders.ToDictionary(f => f.Id);
+            var modsRoot = new PickerSetRow(null, L("library.mods"), "RegularJoystick", null) { IsModsRoot = true };
+            Sets.Add(modsRoot);
+            _allSetRows.Add(modsRoot);
+            AddModsRows(modsFolders, parentId: null, modsRoot.Children, new HashSet<long>());
+        }
         _selectedSet = Sets[0];
         _selectedSet.IsSelected = true;
     }
@@ -100,6 +111,19 @@ public partial class ConfigItemPickerViewModel : ObservableObject
         }
     }
 
+    private void AddModsRows(IReadOnlyList<ModsFolderEntity> folders, long? parentId, List<PickerSetRow> target, HashSet<long> visited)
+    {
+        foreach (var folder in folders.Where(f => f.ParentModsFolderId == parentId || (parentId == null && f.ParentModsFolderId.HasValue && !_modsFoldersById!.ContainsKey(f.ParentModsFolderId.Value)))
+                                      .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            if (!visited.Add(folder.Id)) continue;
+            var row = new PickerSetRow(null, folder.Name, folder.Icon, folder.Color) { ModsFolderId = folder.Id };
+            target.Add(row);
+            _allSetRows.Add(row);
+            AddModsRows(folders, folder.Id, row.Children, visited);
+        }
+    }
+
     public async Task LoadAsync()
     {
         IsLoading = true;
@@ -108,12 +132,13 @@ public partial class ConfigItemPickerViewModel : ObservableObject
             var services = App.Services ?? throw new InvalidOperationException("Services are not available");
             bool forCollection = ForCollection;
             bool forOptimizer = ForOptimizer;
+            bool withMods = _modsFoldersById != null;
             var rows = await Task.Run(async () =>
             {
                 using var scope = services.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 // Rules apply to whole items: a Sims3Pack's parts follow the pack, so only top-level items are listed.
-                var query = db.MetaEntities.AsNoTracking().Where(m => m.ParentMetaEntityId == null);
+                var query = (withMods ? db.AllMetaEntities : db.MetaEntities).AsNoTracking().Where(m => m.ParentMetaEntityId == null);
                 if (forCollection)
                 {
                     // A collection only holds Build/Buy objects (a Sims3Pack counts when one of its parts is one).
@@ -128,7 +153,7 @@ public partial class ConfigItemPickerViewModel : ObservableObject
                         db.MetaEntities.Any(c => c.ParentMetaEntityId == m.Id && types.Contains(c.PackageType)));
                 }
                 return await query
-                    .Select(m => new { m.Id, m.FileName, m.SetsEntityId, m.IsFavorite })
+                    .Select(m => new { m.Id, m.FileName, m.SetsEntityId, m.IsFavorite, m.IsModsItem, m.ModsFolderId })
                     .ToListAsync();
             });
 
@@ -137,17 +162,25 @@ public partial class ConfigItemPickerViewModel : ObservableObject
                 .Select(r =>
                 {
                     bool? rule = _existingRules.TryGetValue(r.Id, out bool inc) ? inc : null;
-                    var row = new PickerItemRow(r.Id, r.FileName, r.SetsEntityId, r.IsFavorite, GetLocation(r.SetsEntityId), rule, Include, ForOptimizer);
+                    var row = new PickerItemRow(r.Id, r.FileName, r.SetsEntityId, r.IsFavorite,
+                        r.IsModsItem ? GetModsLocation(r.ModsFolderId) : GetLocation(r.SetsEntityId), rule, Include, ForOptimizer)
+                    {
+                        IsModsItem = r.IsModsItem,
+                        ModsFolderId = r.ModsFolderId
+                    };
                     row.CheckedChanged += () => PickedCount = _allItems.Count(i => i.IsChecked);
                     return row;
                 })
                 .ToList();
 
             var counts = _allItems.Where(i => i.SetId.HasValue).GroupBy(i => i.SetId!.Value).ToDictionary(g => g.Key, g => g.Count());
+            var folderCounts = _allItems.Where(i => i.ModsFolderId.HasValue).GroupBy(i => i.ModsFolderId!.Value).ToDictionary(g => g.Key, g => g.Count());
             foreach (var setRow in _allSetRows)
             {
                 setRow.ItemCount = setRow.IsAllItems ? _allItems.Count
                     : setRow.IsFavorites ? _allItems.Count(i => i.IsFavorite)
+                    : setRow.IsModsRoot ? _allItems.Count(i => i.IsModsItem)
+                    : setRow.ModsFolderId is long folderId ? folderCounts.GetValueOrDefault(folderId)
                     : counts.GetValueOrDefault(setRow.Id!.Value);
             }
         }
@@ -175,6 +208,20 @@ public partial class ConfigItemPickerViewModel : ObservableObject
         return string.Join("  ›  ", names);
     }
 
+    private string GetModsLocation(long? folderId)
+    {
+        var names = new List<string>();
+        var visited = new HashSet<long>();
+        long? current = folderId;
+        while (current.HasValue && visited.Add(current.Value) && _modsFoldersById != null && _modsFoldersById.TryGetValue(current.Value, out var folder))
+        {
+            names.Insert(0, folder.Name);
+            current = folder.ParentModsFolderId;
+        }
+        names.Insert(0, L("library.mods"));
+        return string.Join("  ›  ", names);
+    }
+
     partial void OnSelectedSetChanged(PickerSetRow? oldValue, PickerSetRow? newValue)
     {
         if (oldValue != null) oldValue.IsSelected = false;
@@ -189,6 +236,8 @@ public partial class ConfigItemPickerViewModel : ObservableObject
     {
         IEnumerable<PickerItemRow> items = _allItems;
         if (SelectedSet?.IsFavorites == true) items = items.Where(i => i.IsFavorite);
+        else if (SelectedSet?.IsModsRoot == true) items = items.Where(i => i.IsModsItem);
+        else if (SelectedSet?.ModsFolderId is long folderId) items = items.Where(i => i.ModsFolderId == folderId);
         else if (SelectedSet?.Id is long setId) items = items.Where(i => i.SetId == setId);
         if (HasSearchQuery)
         {
@@ -211,8 +260,11 @@ public sealed partial class PickerSetRow : ObservableObject
     public PackIconBoxIconsKind IconKind { get; }
     public IBrush IconBrush { get; }
     public bool IsFavorites { get; init; }
-    public bool IsAllItems => Id == null && !IsFavorites;
-    public bool IsSpecialNode => Id == null;
+    public bool IsModsRoot { get; init; }
+    public long? ModsFolderId { get; init; }
+    public bool IsMods => IsModsRoot || ModsFolderId.HasValue;
+    public bool IsAllItems => Id == null && !IsFavorites && !IsMods;
+    public bool IsSpecialNode => Id == null && !IsMods;
 
     public List<PickerSetRow> Children { get; } = new();
     public bool HasChildren => Children.Count > 0;
@@ -246,6 +298,8 @@ public sealed partial class PickerItemRow : ObservableObject
     public string FileName { get; }
     public long? SetId { get; }
     public bool IsFavorite { get; }
+    public bool IsModsItem { get; init; }
+    public long? ModsFolderId { get; init; }
     public string Location { get; }
     public bool HasLocation => !string.IsNullOrEmpty(Location);
     public bool CanPick { get; }

@@ -1,0 +1,15 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Allo (OFL, Assets/Fonts/OFL.txt), same font as the website.
+         Avalonia can't set the roundness axis, so each roundness is baked into its own family
+         (Regular, Medium, SemiBold, Bold): Heading = 80, UI = 60, Text = 30.
+         Allo is Latin-only, so Inter (then the system) covers Cyrillic, CJK and so on. -->
+    <FontFamily x:Key="AppFontHeading">avares://PlumbobForge.Desktop/Assets/Fonts#Allo Heading, fonts:Inter#Inter</FontFamily>
+    <FontFamily x:Key="AppFontUi">avares://PlumbobForge.Desktop/Assets/Fonts#Allo UI, fonts:Inter#Inter</FontFamily>
+    <FontFamily x:Key="AppFontBody">avares://PlumbobForge.Desktop/Assets/Fonts#Allo Text, fonts:Inter#Inter</FontFamily>
+
+    <!-- Fluent uses this for windows, popups, text boxes and so on, so body text is the default everywhere. -->
+    <FontFamily x:Key="ContentControlThemeFontFamily">avares://PlumbobForge.Desktop/Assets/Fonts#Allo Text, fonts:Inter#Inter</FontFamily>
+
+</ResourceDictionary>

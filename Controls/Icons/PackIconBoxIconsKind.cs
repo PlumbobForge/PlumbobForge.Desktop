@@ -16,6 +16,8 @@ public enum PackIconBoxIconsKind
     RegularArrowToLeftStroke,
     RegularArrowToRightStroke,
     RegularArrowUp,
+    RegularArrowUpStroke,
+    RegularArrowDownStroke,
     RegularBadgeExclamation,
     RegularBandAid,
     RegularBasketball,

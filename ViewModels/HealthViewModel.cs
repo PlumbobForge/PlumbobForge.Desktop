@@ -219,7 +219,7 @@ public partial class HealthViewModel : ObservableObject
 
         PatternIssueItemViewModel.OnNavigateRequested = (item) =>
         {
-            NavigateToPackageItem(item.MetaEntityId, item.SetId);
+            NavigateToPackageItem(item.Model.IsModsItem ? null : item.MetaEntityId, item.SetId, item.MetaEntityId);
         };
 
         Sims3FolderPath = _healthService.GetSims3FolderPath();

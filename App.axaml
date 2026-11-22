@@ -11,6 +11,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceInclude Source="avares://PlumbobForge.Desktop/Styles/Colors.axaml" />
+                <ResourceInclude Source="avares://PlumbobForge.Desktop/Styles/Fonts.axaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
@@ -39,9 +40,10 @@
         <StyleInclude Source="avares://PlumbobForge.Desktop/Styles/Controls.axaml" />
 
         <!-- Fully Custom ScrollBar Control Template -->
+        <!-- Faint while idle so long lists show they scroll; full strength when the pointer is over the list -->
         <Style Selector="ScrollBar">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="Opacity" Value="0.35"/>
             <Setter Property="Transitions">
                 <Transitions>
                     <DoubleTransition Property="Opacity" Duration="0:0:0.2"/>
@@ -160,6 +162,22 @@
             <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
         </Style>
         <Style Selector="MenuItem icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        </Style>
+
+        <!-- Destructive entries: red text instead of an icon -->
+        <Style Selector="MenuItem.danger">
+            <Setter Property="Foreground" Value="#ef4444"/>
+        </Style>
+        <Style Selector="MenuItem.danger /template/ ContentPresenter#PART_HeaderPresenter">
+            <Setter Property="Foreground" Value="#ef4444"/>
+        </Style>
+        <!-- Submenu chevrons and shortcut hints stay quiet -->
+        <Style Selector="MenuItem /template/ Path#PART_ChevronPath">
+            <Setter Property="RenderTransform" Value="scale(0.7)"/>
+            <Setter Property="Opacity" Value="0.55"/>
+        </Style>
+        <Style Selector="MenuItem /template/ TextBlock#PART_InputGestureText">
             <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
         </Style>
 

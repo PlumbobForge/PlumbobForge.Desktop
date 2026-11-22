@@ -43,6 +43,39 @@ public partial class ItemViewModel : ObservableObject
     public static bool TextureOptimizationActive { get; set; }
     public bool ShowsOriginalTexturesBadge => TextureOptimizationActive && _entity.SkipTextureOptimization;
     public bool HasDisabledObjects => _entity.DisabledObjectCount > 0;
+
+    // Set from the CC optimizer's backups; null when the item is as its creator made it.
+    private DateTime? _optimizedAt;
+    public DateTime? OptimizedAt
+    {
+        get => _optimizedAt;
+        set
+        {
+            if (_optimizedAt == value) return;
+            _optimizedAt = value;
+            OnPropertyChanged(nameof(OptimizedAt));
+            OnPropertyChanged(nameof(IsOptimized));
+            OnPropertyChanged(nameof(OptimizedTip));
+        }
+    }
+    public bool IsOptimized => _optimizedAt != null;
+    public string OptimizedTip => _optimizedAt is { } at
+        ? LocalizationManager.Instance.GetString("library.optimized_badge_tip", CcOptimizedEntry.FormatDate(at))
+        : string.Empty;
+
+    // A Mods folder file the game doesn't load: Resource.cfg doesn't reach it, or it is a Sims3Pack (which the game
+    // only installs through the launcher). Sims3Packs can be moved into a set, which converts them.
+    public bool IsModsSims3Pack => _entity.IsModsItem && ModsResourceCfg.StripDisabled(_entity.CompleteFileName).EndsWith(".sims3pack", StringComparison.OrdinalIgnoreCase);
+    public bool HasModsWarning => _entity.IsModsItem && (_entity.ModsPriority == null || IsModsSims3Pack);
+    public string ModsWarningText => LocalizationManager.Instance.GetString(IsModsSims3Pack ? "library.mods_warn_sims3pack" : "library.mods_warn_not_loaded");
+
+    // The sets a Mods Sims3Pack can be moved into; the library view fills it.
+    public static System.Collections.ObjectModel.ObservableCollection<SetsEntity>? AvailableSets { get; set; }
+    public System.Collections.ObjectModel.ObservableCollection<SetsEntity>? SetChoices => AvailableSets;
+    public static Func<ItemViewModel, SetsEntity, Task>? OnMoveToSetRequested { get; set; }
+
+    [RelayCommand]
+    private Task MoveToSet(SetsEntity? set) => set == null || OnMoveToSetRequested == null ? Task.CompletedTask : OnMoveToSetRequested(this, set);
     public int DisabledObjectCount => _entity.DisabledObjectCount;
     public string DisabledObjectsTooltip => LocalizationManager.Instance.GetString("library.objects_off_badge", _entity.DisabledObjectCount);
 
@@ -301,6 +334,8 @@ public partial class ItemViewModel : ObservableObject
 
     public void NotifyEntityChanged()
     {
+        // The tags may have been edited: re-split them on the next read.
+        _cachedTagsList = null;
         OnPropertyChanged(nameof(Enabled));
         OnPropertyChanged(nameof(PackageType));
         OnPropertyChanged(nameof(UserTags));
@@ -329,6 +364,9 @@ public partial class ItemViewModel : ObservableObject
         OnPropertyChanged(nameof(FavoriteStarForeground));
         OnPropertyChanged(nameof(ShowsOriginalTexturesBadge));
         OnPropertyChanged(nameof(HasDisabledObjects));
+        OnPropertyChanged(nameof(HasModsWarning));
+        OnPropertyChanged(nameof(IsModsSims3Pack));
+        OnPropertyChanged(nameof(ModsWarningText));
         OnPropertyChanged(nameof(DisabledObjectCount));
         OnPropertyChanged(nameof(DisabledObjectsTooltip));
         Note =_entity.Description ?? string.Empty;

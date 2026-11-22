@@ -7,6 +7,7 @@
              xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
              xmlns:mp="using:PlumbobForge.Desktop.Controls.MeshPreview"
              xmlns:media="using:Avalonia.Media"
+             xmlns:health="using:PlumbobForge.Desktop.Views.Health"
              mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="800"
              x:Class="PlumbobForge.Desktop.Views.Health.CcOptimizerView"
              x:DataType="vm:CcOptimizerViewModel">
@@ -82,7 +83,10 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid ColumnDefinitions="290, 16, *">
+    <Panel>
+    <health:CcOptimizedListView IsVisible="{Binding ShowHistory}"/>
+
+    <Grid ColumnDefinitions="290, 16, *" IsVisible="{Binding ShowQueue}">
 
         <!-- Sidebar -->
         <Border Grid.Column="0" Classes="card" Padding="0">
@@ -373,4 +377,5 @@
             </Border>
         </Grid>
     </Grid>
+    </Panel>
 </UserControl>

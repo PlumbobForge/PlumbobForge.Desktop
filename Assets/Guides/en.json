@@ -317,6 +317,56 @@
     },
 
     {
+      "id": "shortcuts",
+      "category": "library",
+      "section": "items",
+      "title": "Keyboard shortcuts",
+      "summary": "Work through your library without the mouse: open, switch on or off, favorite and find items with a key.",
+      "keywords": [
+        "keyboard",
+        "shortcuts",
+        "hotkeys",
+        "keys",
+        "enter",
+        "space",
+        "ctrl+a",
+        "ctrl+f",
+        "f2",
+        "delete",
+        "arrows",
+        "select all",
+        "search"
+      ],
+      "questions": [
+        "Are there keyboard shortcuts?",
+        "How do I select all items?",
+        "How do I rename a set quickly?"
+      ],
+      "steps": [
+        "Click an item first, so the keys go to the item list.",
+        "**Enter** opens the selected items with **Look Inside**.",
+        "**Space** switches the selected items on or off.",
+        "**F** adds them to Favorites, or takes them out.",
+        "**Delete** deletes them, after asking.",
+        "**Ctrl+A** selects every item in the list, and **Ctrl+F** jumps to the search box.",
+        "In the sidebar, **Up** and **Down** move between sets, **Right** and **Left** open and close a set with subsets, and **F2** renames the selected set."
+      ],
+      "related": [
+        "select-items",
+        "toggle-items",
+        "favorites"
+      ],
+      "showMe": {
+        "target": "library",
+        "highlight": "library.items"
+      },
+      "tips": [
+        "The keys are also shown next to their entries when you right-click an item.",
+        "Keys do nothing while you're typing in a box."
+      ]
+    },
+
+    {
       "id": "filters",
       "category": "library", "section": "filters",
       "title": "Find items with filters",

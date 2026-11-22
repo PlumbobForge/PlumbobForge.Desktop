@@ -1,0 +1,221 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
+             xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
+             xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
+             x:Class="PlumbobForge.Desktop.Views.Health.CcOptimizedListView"
+             x:DataType="vm:CcOptimizerViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.col">
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="LetterSpacing" Value="0.5"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.btn-action-sec icon|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="Width" Value="13"/>
+            <Setter Property="Height" Value="13"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Border.history-row">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,8"/>
+        </Style>
+        <Style Selector="Border.history-row:pointerover">
+            <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+        </Style>
+        <Style Selector="Button.sort-option">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border Classes="card" Padding="0">
+        <Grid RowDefinitions="Auto, Auto, *, Auto">
+
+            <!-- Search, sort and total -->
+            <StackPanel Grid.Row="0" Spacing="12" Margin="18,16,18,10">
+                <TextBlock Text="{loc:Loc 'optimizer.history_intro'}" FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                <Grid ColumnDefinitions="280, Auto, *">
+                    <TextBox x:Name="HistorySearchBox" Classes="capsule-search" Text="{Binding HistorySearch, Mode=TwoWay}" PlaceholderText="{loc:Loc 'optimizer.history_search'}">
+                        <TextBox.InnerLeftContent>
+                            <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" Margin="10,0,4,0" VerticalAlignment="Center"/>
+                        </TextBox.InnerLeftContent>
+                        <TextBox.InnerRightContent>
+                            <Button Command="{Binding ClearHistorySearchCommand}" Background="Transparent" BorderThickness="0" Padding="4" Margin="0,0,4,0" Cursor="Hand"
+                                    IsVisible="{Binding HasHistorySearch}" ToolTip.Tip="{loc:Loc 'common.clear_search'}">
+                                <icon:PackIconBoxIcons Kind="RegularX" Width="12" Height="12" Foreground="{DynamicResource TextMuted}"/>
+                            </Button>
+                        </TextBox.InnerRightContent>
+                    </TextBox>
+
+                    <Button x:Name="SortButton" Grid.Column="1" Classes="btn-action-sec" Margin="10,0,0,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <icon:PackIconBoxIcons Kind="RegularFilter"/>
+                            <TextBlock Text="{Binding HistorySortText}" VerticalAlignment="Center"/>
+                            <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="12" Height="12"/>
+                        </StackPanel>
+                        <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedLeft">
+                                <Border Padding="6" MinWidth="220" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8">
+                                    <StackPanel Spacing="2">
+                                        <Button Classes="sort-option" Command="{Binding SetHistorySortCommand}" CommandParameter="newest" Click="OnSortClick">
+                                            <Grid ColumnDefinitions="18, *">
+                                                <icon:PackIconBoxIcons Kind="RegularCheck" Width="13" Height="13" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" IsVisible="{Binding IsSortNewest}"/>
+                                                <TextBlock Grid.Column="1" Text="{loc:Loc 'optimizer.history_sort_newest'}" FontSize="12.5" Foreground="{DynamicResource TextMain}"/>
+                                            </Grid>
+                                        </Button>
+                                        <Button Classes="sort-option" Command="{Binding SetHistorySortCommand}" CommandParameter="saved" Click="OnSortClick">
+                                            <Grid ColumnDefinitions="18, *">
+                                                <icon:PackIconBoxIcons Kind="RegularCheck" Width="13" Height="13" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" IsVisible="{Binding IsSortMostSaved}"/>
+                                                <TextBlock Grid.Column="1" Text="{loc:Loc 'optimizer.history_sort_saved'}" FontSize="12.5" Foreground="{DynamicResource TextMain}"/>
+                                            </Grid>
+                                        </Button>
+                                        <Button Classes="sort-option" Command="{Binding SetHistorySortCommand}" CommandParameter="name" Click="OnSortClick">
+                                            <Grid ColumnDefinitions="18, *">
+                                                <icon:PackIconBoxIcons Kind="RegularCheck" Width="13" Height="13" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" IsVisible="{Binding IsSortName}"/>
+                                                <TextBlock Grid.Column="1" Text="{loc:Loc 'optimizer.history_sort_name'}" FontSize="12.5" Foreground="{DynamicResource TextMain}"/>
+                                            </Grid>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+
+                    <TextBlock x:Name="HistoryTotal" Grid.Column="2" Text="{Binding HistoryTotalText}" IsVisible="{Binding HasHistoryTotal}" FontSize="12.5" FontWeight="SemiBold"
+                               Foreground="{DynamicResource StatusGreen}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                </Grid>
+            </StackPanel>
+
+            <!-- Column names -->
+            <Grid Grid.Row="1" ColumnDefinitions="50, *, 130, 130, 330" Margin="18,4,18,4" IsVisible="{Binding ShowHistoryList}">
+                <TextBlock Grid.Column="1" Classes="col" Text="{loc:Loc 'optimizer.history_col_item'}"/>
+                <TextBlock Grid.Column="2" Classes="col" Text="{loc:Loc 'optimizer.history_col_date'}"/>
+                <TextBlock Grid.Column="3" Classes="col" Text="{loc:Loc 'optimizer.history_col_triangles'}"/>
+            </Grid>
+
+            <Panel Grid.Row="2">
+                <StackPanel IsVisible="{Binding IsLoadingHistory}" Spacing="8" Margin="18,10" VerticalAlignment="Top" HorizontalAlignment="Center" Width="280">
+                    <ProgressBar IsIndeterminate="True" Foreground="{DynamicResource AccentBrush}"/>
+                    <TextBlock Text="{Binding HistoryProgressText}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel IsVisible="{Binding ShowHistoryEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" MaxWidth="420" Margin="24">
+                    <icon:PackIconBoxIcons Kind="RegularMagicWand" Width="36" Height="36" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{loc:Loc 'optimizer.history_empty_title'}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextMain}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                    <TextBlock Text="{loc:Loc 'optimizer.history_empty_text'}" FontSize="12.5" Foreground="{DynamicResource TextMuted}" TextAlignment="Center" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <TextBlock IsVisible="{Binding ShowHistoryNoMatch}" Text="{loc:Loc 'optimizer.history_no_match'}" FontSize="12.5" Foreground="{DynamicResource TextMuted}"
+                           HorizontalAlignment="Center" VerticalAlignment="Top" Margin="24,30"/>
+
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled" IsVisible="{Binding ShowHistoryList}">
+                    <ItemsControl x:Name="HistoryList" ItemsSource="{Binding HistoryItems}" Margin="8,0,8,10">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:CcOptimizedEntry">
+                                <Border Classes="history-row" Margin="0,0,0,2" ContextRequested="OnRowContextRequested">
+                                    <Border.ContextMenu>
+                                        <ContextMenu/>
+                                    </Border.ContextMenu>
+                                    <Grid ColumnDefinitions="50, *, 130, 130, 330">
+                                        <Border Width="40" Height="40" CornerRadius="8" ClipToBounds="True" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                                                HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <Panel>
+                                                <Panel IsVisible="{Binding Row.ShowKindIcon}">
+                                                    <icon:PackIconBoxIcons Kind="RegularHanger" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding Row.IsCas}"/>
+                                                    <icon:PackIconBoxIcons Kind="RegularChair" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding Row.IsBuildBuy}"/>
+                                                </Panel>
+                                                <Image Source="{Binding Row.Thumbnail}" Stretch="UniformToFill" IsVisible="{Binding !Row.ShowKindIcon}"/>
+                                            </Panel>
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center" Margin="0,0,12,0">
+                                            <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="{Binding Subtitle}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="•" FontSize="11" Foreground="{DynamicResource BorderSubtle}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding Location}" FontSize="11" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <TextBlock Grid.Column="2" Text="{Binding DateText}" ToolTip.Tip="{Binding DateTip}" FontSize="12" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" IsVisible="{Binding HasCounts}" ToolTip.Tip="{Binding CountsTip}"
+                                                    Background="Transparent">
+                                            <TextBlock Text="{Binding BeforeText}" FontSize="12.5" Foreground="{DynamicResource TextMain}"/>
+                                            <TextBlock Text="→" FontSize="12.5" Foreground="{DynamicResource TextMuted}"/>
+                                            <TextBlock Text="{Binding AfterText}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource StatusGreen}"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="3" Text="—" FontSize="12.5" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" IsVisible="{Binding !HasCounts}"/>
+
+                                        <!-- Actions -->
+                                        <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Center" IsVisible="{Binding ShowActions}">
+                                            <Button Classes="btn-action-sec" Padding="10,5" ToolTip.Tip="{loc:Loc 'optimizer.history_retune_tip'}"
+                                                    Command="{Binding $parent[UserControl].((vm:CcOptimizerViewModel)DataContext).RetuneEntryCommand}" CommandParameter="{Binding}">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <icon:PackIconBoxIcons Kind="RegularMagicWand"/>
+                                                    <TextBlock Text="{loc:Loc 'optimizer.history_retune'}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Classes="btn-action-sec" Padding="10,5" ToolTip.Tip="{loc:Loc 'optimizer.history_restore_tip'}"
+                                                    Command="{Binding $parent[UserControl].((vm:CcOptimizerViewModel)DataContext).AskRestoreEntryCommand}" CommandParameter="{Binding}">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <icon:PackIconBoxIcons Kind="RegularUndo"/>
+                                                    <TextBlock Text="{loc:Loc 'optimizer.history_restore'}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Classes="btn-action-sec" Padding="8,5" Click="OnMoreClick" ToolTip.Tip="{loc:Loc 'optimizer.history_more'}">
+                                                <Button.ContextMenu>
+                                                    <ContextMenu/>
+                                                </Button.ContextMenu>
+                                                <icon:PackIconBoxIcons Kind="RegularDotsHorizontal"/>
+                                            </Button>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Center" IsVisible="{Binding IsConfirmingRestore}">
+                                            <TextBlock Text="{loc:Loc 'optimizer.history_restore_ask'}" FontSize="12" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                            <Button Classes="btn-action-primary" Padding="10,5"
+                                                    Command="{Binding $parent[UserControl].((vm:CcOptimizerViewModel)DataContext).RestoreEntryCommand}" CommandParameter="{Binding}">
+                                                <TextBlock Text="{loc:Loc 'optimizer.history_restore_confirm'}"/>
+                                            </Button>
+                                            <Button Classes="btn-action-sec" Padding="10,5"
+                                                    Command="{Binding $parent[UserControl].((vm:CcOptimizerViewModel)DataContext).CancelRestoreEntryCommand}" CommandParameter="{Binding}">
+                                                <TextBlock Text="{loc:Loc 'optimizer.history_cancel'}"/>
+                                            </Button>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center" IsVisible="{Binding IsRestoring}">
+                                            <ProgressBar IsIndeterminate="True" Width="80" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'optimizer.history_restoring'}" FontSize="12" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Panel>
+
+            <Border Grid.Row="3" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0" Padding="18,10" IsVisible="{Binding HasHistoryStatus}">
+                <TextBlock x:Name="HistoryStatusText" Text="{Binding HistoryStatus}" FontSize="12" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap"/>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

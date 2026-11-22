@@ -513,13 +513,19 @@ public partial class HealthViewModel
     public void NavigateToPackageItem(PackageConflictItem? item)
     {
         if (item == null) return;
-        NavigateToPackageItem(item.MetaEntityId, item.SetId);
+        NavigateToPackageItem(item.IsModsItem ? null : item.MetaEntityId, item.SetId, item.IsModsItem ? item.MetaEntityId : null);
     }
 
-    public void NavigateToPackageItem(long? metaEntityId, long? setId)
+    // A Mods folder file (modsItemId) opens in its Mods folder.
+    public void NavigateToPackageItem(long? metaEntityId, long? setId, long? modsItemId = null)
     {
         var mainVm = _serviceProvider.GetService<MainViewModel>();
         if (mainVm == null) return;
+        if (modsItemId.HasValue)
+        {
+            mainVm.NavigateToItem(modsItemId.Value);
+            return;
+        }
 
         if (setId.HasValue && metaEntityId.HasValue)
         {
@@ -533,7 +539,11 @@ public partial class HealthViewModel
 
     public async Task BatchUpdatePackagesEnabledAsync(IEnumerable<PackageConflictItem> items, bool isEnabled)
     {
-        var metaIds = items.Where(i => i.MetaEntityId.HasValue).Select(i => i.MetaEntityId!.Value).Distinct().ToList();
+        var list = items.ToList();
+        var modsIds = list.Where(i => i.IsModsItem && i.MetaEntityId.HasValue).Select(i => i.MetaEntityId!.Value).Distinct().ToList();
+        if (modsIds.Count > 0) await SetModsPackagesEnabledAsync(modsIds, isEnabled);
+
+        var metaIds = list.Where(i => !i.IsModsItem && i.MetaEntityId.HasValue).Select(i => i.MetaEntityId!.Value).Distinct().ToList();
         if (metaIds.Count == 0) return;
 
         try
@@ -588,6 +598,16 @@ public partial class HealthViewModel
     public async Task SetPackageEnabledAsync(PackageConflictItem? item, bool isEnabled)
     {
         if (item == null || !item.MetaEntityId.HasValue) return;
+
+        if (item.IsModsItem)
+        {
+            var done = await SetModsPackagesEnabledAsync(new[] { item.MetaEntityId.Value }, isEnabled);
+            if (done.Count > 0)
+                ShowCacheToast($"Updated status for '{item.PackageFileName}': {(isEnabled ? "Enabled" : "Disabled")}", isError: false);
+            else
+                ShowCacheToast($"Failed to update package: {item.PackageFileName}", isError: true);
+            return;
+        }
 
         try
         {
@@ -646,6 +666,67 @@ public partial class HealthViewModel
         {
             ShowCacheToast($"Failed to update package: {ex.Message}", isError: true);
         }
+    }
+
+    // Mods files are switched by renaming them; returns the ids that switched. Cards and the library follow.
+    private async Task<List<long>> SetModsPackagesEnabledAsync(IReadOnlyCollection<long> ids, bool isEnabled)
+    {
+        var done = new List<long>();
+        try
+        {
+            var paths = await Task.Run(async () =>
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var service = scope.ServiceProvider.GetRequiredService<ModsFolderService>();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var result = new Dictionary<long, string>();
+                foreach (long id in ids)
+                {
+                    if (await service.SetEnabledAsync(id, isEnabled) == ModsFolderService.ToggleOutcome.Failed) continue;
+                    result[id] = await db.AllMetaEntities.AsNoTracking().Where(m => m.Id == id)
+                        .Select(m => m.CompleteFileName).FirstOrDefaultAsync() ?? string.Empty;
+                }
+                return result;
+            });
+            done.AddRange(paths.Keys);
+
+            // A file that couldn't be renamed keeps its old state on every card.
+            foreach (var card in AllConflictCards)
+            {
+                bool changed = false;
+                foreach (var package in card.Packages)
+                {
+                    if (package.MetaEntityId is not long id || !ids.Contains(id)) continue;
+                    bool ok = paths.TryGetValue(id, out var path);
+                    bool state = ok ? isEnabled : !isEnabled;
+                    package.Model.IsEnabled = state;
+                    if (package.IsEnabled != state) { package.IsEnabled = state; changed = true; }
+                    if (ok && path!.Length > 0) package.Model.PackagePath = path;
+                    if (!ok) changed = true;
+                }
+                if (changed) card.RecalculateLoadOrder();
+            }
+
+            var contentVm = _serviceProvider.GetService<ContentManagerViewModel>();
+            if (contentVm != null && paths.Count > 0)
+            {
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    foreach (var libraryItem in contentVm.Items.Where(i => paths.ContainsKey(i.Entity.Id)))
+                    {
+                        libraryItem.Entity.Enabled = isEnabled;
+                        if (paths[libraryItem.Entity.Id].Length > 0) libraryItem.Entity.CompleteFileName = paths[libraryItem.Entity.Id];
+                        libraryItem.NotifyEntityChanged();
+                    }
+                    contentVm.ApplyFilter();
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError("Failed to switch Mods files", ex, "HealthViewModel.Conflicts");
+        }
+        return done;
     }
 
     private async Task SyncContentManagerItemStatesAsync(IReadOnlyCollection<long> metaIds, bool isEnabled)

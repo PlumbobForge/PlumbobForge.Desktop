@@ -161,6 +161,14 @@ public partial class HealthViewModel
     public RangeObservableCollection<CollectionIncludedItemViewModel> IncludedItems { get; } = new();
     public bool HasIncludedItems => IncludedItems.Count > 0;
     private List<SetsEntity> _collectionSets = new();
+    private List<ModsFolderEntity> _collectionModsFolders = new();
+
+    private string GetCollectionModsLocation(long? folderId)
+    {
+        string root = LocalizationManager.Instance.GetString("library.mods");
+        var folder = _collectionModsFolders.FirstOrDefault(f => f.Id == folderId);
+        return folder == null ? root : $"{root}  ›  {folder.RelativePath.Replace("/", "  ›  ")}";
+    }
 
     private string GetCollectionSetLocation(long? setId)
     {
@@ -181,25 +189,29 @@ public partial class HealthViewModel
         var services = App.Services;
         if (services == null) return;
         var ids = itemIds.Distinct().ToList();
-        var (sets, rows) = await Task.Run(async () =>
+        var (sets, folders, rows) = await Task.Run(async () =>
         {
             using var scope = services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var s = await db.SetsEntities.AsNoTracking().ToListAsync();
+            var f = PlumbobForge.Backend.Configuration.ModsFolderSupport.IsEnabled ? await db.ModsFolders.AsNoTracking().ToListAsync() : new List<ModsFolderEntity>();
+            // Items picked one by one may be Mods folder files.
             var r = ids.Count == 0
-                ? new List<(long Id, string FileName, long? SetId)>()
-                : (await db.MetaEntities.AsNoTracking()
+                ? new List<(long Id, string FileName, long? SetId, bool IsMods, long? FolderId)>()
+                : (await db.AllMetaEntities.AsNoTracking()
                     .Where(m => ids.Contains(m.Id))
-                    .Select(m => new { m.Id, m.FileName, m.SetsEntityId })
+                    .Select(m => new { m.Id, m.FileName, m.SetsEntityId, m.IsModsItem, m.ModsFolderId })
                     .ToListAsync())
-                    .Select(m => (Id: m.Id, FileName: m.FileName, SetId: m.SetsEntityId))
+                    .Select(m => (Id: m.Id, FileName: m.FileName, SetId: m.SetsEntityId, IsMods: m.IsModsItem, FolderId: m.ModsFolderId))
                     .ToList();
-            return (s, r);
+            return (s, f, r);
         });
         _collectionSets = sets;
+        _collectionModsFolders = folders;
         IncludedItems.ReplaceAll(rows
             .OrderBy(r => r.FileName, StringComparer.OrdinalIgnoreCase)
-            .Select(r => new CollectionIncludedItemViewModel(r.Id, r.FileName, r.SetId, GetCollectionSetLocation(r.SetId))));
+            .Select(r => new CollectionIncludedItemViewModel(r.Id, r.FileName, r.SetId,
+                r.IsMods ? GetCollectionModsLocation(r.FolderId) : GetCollectionSetLocation(r.SetId))));
         OnIncludedItemsChanged();
     }
 
@@ -219,7 +231,7 @@ public partial class HealthViewModel
                 ? LocalizationManager.Instance.GetString("tools.collections.this_collection")
                 : EditingCollectionName.Trim();
             var existing = IncludedItems.ToDictionary(i => i.ItemId, _ => true);
-            var picked = await DialogHelper.ShowConfigItemPickerAsync(true, name, _collectionSets, existing, forCollection: true);
+            var picked = await DialogHelper.ShowConfigItemPickerAsync(true, name, _collectionSets, existing, forCollection: true, modsFolders: _collectionModsFolders);
             if (picked.Count == 0) return;
             await LoadIncludedItemsAsync(IncludedItems.Select(i => i.ItemId).Concat(picked).ToList());
         }
@@ -556,6 +568,14 @@ public partial class HealthViewModel
 
         await LoadAvailableSetOptionsAsync();
         await LoadIncludedItemsSafeAsync(Array.Empty<long>());
+    }
+
+    // "New Collection…" from a library menu: the editor opens with those sets and items already in it.
+    public async Task CreateNewCollectionWithAsync(IReadOnlyCollection<long> setIds, IReadOnlyCollection<long> itemIds)
+    {
+        await CreateNewCollectionAsync();
+        await LoadAvailableSetOptionsAsync(setIds.ToList());
+        await LoadIncludedItemsSafeAsync(itemIds);
     }
 
     private async Task LoadIncludedItemsSafeAsync(IReadOnlyCollection<long> itemIds)

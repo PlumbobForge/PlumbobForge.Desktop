@@ -21,7 +21,18 @@ public partial class ContentManagerViewModel
     {
         SelectedCount = Items.Count(i => i.IsSelected);
         HasSelectedItems = SelectedCount > 0;
+        bool notAllMods = SelectedCount == 0 || Items.Any(i => i.IsSelected && !i.Entity.IsModsItem);
+        if (notAllMods != SelectionNotAllMods)
+        {
+            SelectionNotAllMods = notAllMods;
+            OnPropertyChanged(nameof(SelectionNotAllMods));
+            OnPropertyChanged(nameof(ShowVaultItemActions));
+        }
     }
+
+    // Look Inside, export and replace don't handle Mods folder files yet: hidden when only those are selected.
+    public bool SelectionNotAllMods { get; private set; } = true;
+    public bool ShowVaultItemActions => IsVaultActive && SelectionNotAllMods;
 
 
     // Vault mods have no file of their own, so a non-permanent delete exports them first and recycles the export.
@@ -67,6 +78,13 @@ public partial class ContentManagerViewModel
     public async Task ToggleEnableItemAsync(ItemViewModel? item)
     {
         if (item == null) return;
+        if (item.Entity.IsModsItem)
+        {
+            var failed = await SetModsItemsEnabledAsync(new[] { item }, !item.Entity.Enabled);
+            ApplyFilter();
+            await ShowModsToggleFailedAsync(failed);
+            return;
+        }
         item.Entity.Enabled = !item.Entity.Enabled;
 
         if (item.Entity.IsVaultManaged)
@@ -113,7 +131,7 @@ public partial class ContentManagerViewModel
     {
         if (item == null) return;
 
-        var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
+        var meta = await _db.AllMetaEntities.FirstOrDefaultAsync(m => m.Id == item.Entity.Id);
         if (meta != null)
         {
             meta.IsFavorite = item.IsFavorite;
@@ -138,9 +156,10 @@ public partial class ContentManagerViewModel
     {
         var selected = Items.Where(i => i.IsSelected).ToList();
         if (selected.Count == 0) return;
+        var changed = selected.Where(i => i.IsFavorite != isFavorite).ToList();
 
         var ids = selected.Select(i => i.Entity.Id).ToList();
-        var metas = await _db.MetaEntities.Where(m => ids.Contains(m.Id)).ToListAsync();
+        var metas = await _db.AllMetaEntities.Where(m => ids.Contains(m.Id)).ToListAsync();
         foreach (var meta in metas)
         {
             meta.IsFavorite = isFavorite;
@@ -155,6 +174,12 @@ public partial class ContentManagerViewModel
 
         RecalculateSetCounts();
         ApplyFilter();
+        if (changed.Count > 0)
+        {
+            var changedIds = changed.Select(i => i.Entity.Id).ToList();
+            ShowToast(string.Format(L(isFavorite ? "library.toast_favorited" : "library.toast_unfavorited"), ItemsPhrase(changed)),
+                () => RunOnItemsAsync(changedIds, () => FavoriteSelectedItemsAsync(!isFavorite)));
+        }
     }
 
     public bool IsTextureOptimizationActive => _optionsMonitor?.CurrentValue?.OptimizeTextures ?? false;
@@ -169,7 +194,8 @@ public partial class ContentManagerViewModel
     [RelayCommand]
     public async Task ToggleOriginalTexturesSelectedAsync()
     {
-        var selected = Items.Where(i => i.IsSelected).ToList();
+        // Mods folder files are left out: these actions only handle library and vault items.
+        var selected = Items.Where(i => i.IsSelected && !i.Entity.IsModsItem).ToList();
         if (selected.Count == 0) return;
 
         bool skip = selected.Any(i => !i.Entity.SkipTextureOptimization);
@@ -213,6 +239,11 @@ public partial class ContentManagerViewModel
     public async Task RenameItemAsync(ItemViewModel? item)
     {
         if (item == null) return;
+        if (item.Entity.IsModsItem)
+        {
+            await RenameModsItemAsync(item);
+            return;
+        }
 
         var extension = Path.GetExtension(item.FileName);
         if (string.IsNullOrEmpty(extension) && !string.IsNullOrEmpty(item.Entity.CompleteFileName))
@@ -326,7 +357,7 @@ public partial class ContentManagerViewModel
         }
 
         Apply(item.Entity, result);
-        var meta = await _db.MetaEntities.FindAsync(item.Entity.Id);
+        var meta = await _db.AllMetaEntities.FirstOrDefaultAsync(m => m.Id == item.Entity.Id);
         if (meta != null && !ReferenceEquals(meta, item.Entity)) Apply(meta, result);
         item.NotifyEntityChanged();
     }
@@ -338,6 +369,14 @@ public partial class ContentManagerViewModel
 
         var result = await DialogHelper.ShowDeleteConfirmAsync($"Are you sure you want to delete '{item.FileName}'?");
         if (!result.Confirmed) return;
+
+        if (item.Entity.IsModsItem)
+        {
+            // A Mods file goes to the Recycle Bin.
+            await DeleteModsItemsAsync(new List<ItemViewModel> { item });
+            await LoadDataAsync();
+            return;
+        }
 
         try
         {
@@ -520,9 +559,13 @@ public partial class ContentManagerViewModel
 
         // If all selected are enabled, disable them; otherwise enable them
         bool targetState = !selected.All(i => i.Enabled);
+        var changedItems = selected.Where(i => i.Enabled != targetState).ToList();
 
+        var modsItems = selected.Where(i => i.Entity.IsModsItem).ToList();
         var vaultItems = selected.Where(i => i.Entity.IsVaultManaged).ToList();
-        var defaultItems = selected.Where(i => !i.Entity.IsVaultManaged).ToList();
+        var defaultItems = selected.Where(i => !i.Entity.IsVaultManaged && !i.Entity.IsModsItem).ToList();
+
+        var modsFailed = await SetModsItemsEnabledAsync(modsItems, targetState);
 
         if (vaultItems.Count > 0)
         {
@@ -572,16 +615,45 @@ public partial class ContentManagerViewModel
         }
 
         DeselectAll();
+        if (changedItems.Count > 0)
+        {
+            // Undo toggles back only what this changed; those are all in the new state now.
+            var changedIds = changedItems.Select(i => i.Entity.Id).ToList();
+            ShowToast(string.Format(L(targetState ? "library.toast_enabled" : "library.toast_disabled"), ItemsPhrase(changedItems)),
+                () => RunOnItemsAsync(changedIds, ToggleEnableSelectedAsync));
+        }
+        await ShowModsToggleFailedAsync(modsFailed);
     }
 
     [RelayCommand]
     public async Task MoveSelectedToSetAsync(SetsEntity? targetSet)
     {
-        var selected = Items.Where(i => i.IsSelected).ToList();
-        if (selected.Count == 0) return;
+        // Mods folder files are imported into the set; the rest move between sets as before.
+        // Only a drop on a real set imports Mods files; "All Items" or empty sidebar space leaves them in Mods.
+        var modsIds = targetSet == null ? new List<long>() : Items.Where(i => i.IsSelected && i.Entity.IsModsItem).Select(i => i.Entity.Id).ToList();
+        var selected = Items.Where(i => i.IsSelected && !i.Entity.IsModsItem).ToList();
+        if (selected.Count == 0 && modsIds.Count == 0) return;
+        var movedAll = Items.Where(i => i.IsSelected && (!i.Entity.IsModsItem || targetSet != null)).ToList();
+        // Where each library item was, for Undo. Mods files imported into a set can't simply go back.
+        var previousSets = selected.Where(i => i.Entity.SetsEntityId.HasValue).GroupBy(i => i.Entity.SetsEntityId!.Value)
+            .ToDictionary(g => g.Key, g => g.Select(i => i.Entity.Id).ToList());
 
         // Items always live in a set; "no set" means the Default set (an item without a set is in no cache or shard).
         targetSet ??= await _db.SetsEntities.FirstOrDefaultAsync(s => s.Name == "Default" || s.IsDefault) ?? await _db.SetsEntities.FirstOrDefaultAsync();
+
+        if (modsIds.Count > 0 && targetSet != null)
+        {
+            var modsResult = await MoveModsItemsToSetAsync(modsIds, targetSet.Id);
+            if (selected.Count == 0)
+            {
+                await LoadDataAsync();
+                NotifyDirtyStateChanged();
+                ShowToast(string.Format(L("library.toast_moved"), ItemsPhrase(movedAll), targetSet.Name));
+                await ShowModsSkippedAsync(modsResult);
+                return;
+            }
+            _ = ShowModsSkippedAsync(modsResult);
+        }
         long? targetSetId = targetSet?.Id;
         var setIdsToDirty = new HashSet<long>();
         if (targetSetId.HasValue)
@@ -655,6 +727,20 @@ public partial class ContentManagerViewModel
         DeselectAll();
         ApplyFilter();
         NotifyDirtyStateChanged();
+        if (modsIds.Count > 0) await LoadDataAsync();
+        if (targetSet != null)
+        {
+            if (!(Toast?.IsUndoing ?? false)) NoteMoveTarget(targetSet.Id);
+            Func<Task>? undo = modsIds.Count > 0 || previousSets.Keys.All(k => k == targetSet.Id) ? null : async () =>
+            {
+                foreach (var (setId, ids) in previousSets.Where(p => p.Key != targetSet.Id))
+                {
+                    var back = await _db.SetsEntities.FindAsync(setId);
+                    if (back != null) await RunOnItemsAsync(ids, () => MoveSelectedToSetAsync(back));
+                }
+            };
+            ShowToast(string.Format(L("library.toast_moved"), ItemsPhrase(movedAll), targetSet.Name), undo);
+        }
     }
 
     [RelayCommand]
@@ -684,15 +770,28 @@ public partial class ContentManagerViewModel
     [RelayCommand]
     public async Task DeleteSelectedAsync()
     {
-        var selected = Items.Where(i => i.IsSelected).ToList();
-        if (selected.Count == 0) return;
+        var allSelected = Items.Where(i => i.IsSelected).ToList();
+        if (allSelected.Count == 0) return;
 
-        string message = selected.Count == 1
-            ? $"Are you sure you want to delete '{selected[0].FileName}'?"
-            : $"Are you sure you want to delete {selected.Count} selected items?";
+        string message = allSelected.Count == 1
+            ? $"Are you sure you want to delete '{allSelected[0].FileName}'?"
+            : $"Are you sure you want to delete {allSelected.Count} selected items?";
 
         var result = await DialogHelper.ShowDeleteConfirmAsync(message);
         if (!result.Confirmed) return;
+
+        // Mods files go to the Recycle Bin; library and vault items are deleted as before.
+        var modsSelected = allSelected.Where(i => i.Entity.IsModsItem).ToList();
+        var selected = allSelected.Where(i => !i.Entity.IsModsItem).ToList();
+        if (modsSelected.Count > 0)
+        {
+            await DeleteModsItemsAsync(modsSelected);
+            if (selected.Count == 0)
+            {
+                await LoadDataAsync();
+                return;
+            }
+        }
 
         var setIdsToDirty = new HashSet<long>();
         foreach (var item in selected)
@@ -833,7 +932,8 @@ public partial class ContentManagerViewModel
     [RelayCommand]
     public async Task ExportSelectedAsync()
     {
-        var selected = Items.Where(i => i.IsSelected).ToList();
+        // Mods folder files are left out: these actions only handle library and vault items.
+        var selected = Items.Where(i => i.IsSelected && !i.Entity.IsModsItem).ToList();
         if (selected.Count == 0) return;
 
         var topLevel = TopLevel.GetTopLevel(App.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null);
@@ -932,7 +1032,7 @@ public partial class ContentManagerViewModel
         {
             var item = Items.FirstOrDefault(i => i.Id == id);
             if (item == null) continue;
-            var updatedMeta = await _db.MetaEntities.AsNoTracking().FirstOrDefaultAsync(m => m.Id == id);
+            var updatedMeta = await _db.AllMetaEntities.AsNoTracking().FirstOrDefaultAsync(m => m.Id == id);
             if (updatedMeta != null) item.UpdateFromEntity(updatedMeta);
             await item.ReloadThumbnailAsync(forceDiskExtraction: false);
         }
@@ -943,7 +1043,8 @@ public partial class ContentManagerViewModel
     [RelayCommand]
     public async Task ReplaceSelectedAsync()
     {
-        var selected = Items.Where(i => i.IsSelected).ToList();
+        // Mods folder files are left out: these actions only handle library and vault items.
+        var selected = Items.Where(i => i.IsSelected && !i.Entity.IsModsItem).ToList();
         if (selected.Count != 1) return;
 
         var targetItem = selected[0];

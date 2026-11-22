@@ -17,6 +17,9 @@ public abstract partial class ConfigColumnEntry : ObservableObject
     public abstract bool IsInEnabledColumn { get; }
     public abstract string SortName { get; }
     public abstract string SearchText { get; }
+
+    // A Mods folder or Mods file, for the All / Sets / Mods filter.
+    public virtual bool IsModsEntry => false;
 }
 
 public sealed partial class ConfigItemCardViewModel : ConfigColumnEntry
@@ -28,6 +31,8 @@ public sealed partial class ConfigItemCardViewModel : ConfigColumnEntry
     public string FileName { get; }
     public string Location { get; }
     public bool Include { get; }
+    public bool IsModsItem { get; init; }
+    public override bool IsModsEntry => IsModsItem;
 
     public bool HasLocation => !string.IsNullOrEmpty(Location);
     public override bool IsInEnabledColumn => Include;

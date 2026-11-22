@@ -203,6 +203,10 @@ public partial class MainViewModel : ObservableObject
     public ContentManagerViewModel ContentManagerVm { get; }
     public ConfigurationsViewModel ConfigurationsVm { get; }
     public HealthViewModel HealthVm { get; }
+
+    // The library's "what just happened" toast with Undo (bottom right, with the other toasts).
+    public PlumbobForge.Desktop.Services.ActionToastService ActionToast => _actionToast ??= _serviceProvider.GetRequiredService<PlumbobForge.Desktop.Services.ActionToastService>();
+    private PlumbobForge.Desktop.Services.ActionToastService? _actionToast;
     public SettingsViewModel SettingsVm { get; }
 
     public MainViewModel(IServiceProvider serviceProvider)

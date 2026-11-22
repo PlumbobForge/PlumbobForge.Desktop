@@ -668,7 +668,8 @@ public partial class LookInsideViewModel : ObservableObject, IDisposable
         }
 
         int count = saves.Sum(s => s.ThumbnailCount + s.CasCount + s.Toggles.Count);
-        bool needsRebuild = saves.Any(s => (s.Toggles.Count > 0 || s.CasCount > 0) && !s.Source.Inspection.IsVault);
+        // Vault and Mods files change in place; library files reach the game with the next rebuild.
+        bool needsRebuild = saves.Any(s => (s.Toggles.Count > 0 || s.CasCount > 0) && !s.Source.Inspection.IsVault && !s.Source.Inspection.IsModsFile);
         bool thumbnailsSaved = false;
         string? selectedKey = SelectedObject?.KeyText;
 
@@ -1123,7 +1124,8 @@ public sealed class LookInsideObjectItem : ObservableObject
         }
     }
 
-    public bool CanToggle => Object != null;
+    // The game doesn't load Sims3Packs from Mods, so their objects have nothing to turn off.
+    public bool CanToggle => Object != null && Source?.Inspection is not { IsModsFile: true, IsSims3Pack: true };
     public bool IsOff => Object != null && !IsEnabledInGame;
     public bool HasToggleChange => Object != null && IsEnabledInGame == Object.IsDisabled;
     public bool ShowOffNote => IsOff;

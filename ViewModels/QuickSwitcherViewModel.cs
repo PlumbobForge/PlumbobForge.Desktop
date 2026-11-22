@@ -253,9 +253,11 @@ public partial class QuickSwitcherViewModel : ObservableObject
         // 3. ITEMS
         if (includeItems && !string.IsNullOrEmpty(trimmed))
         {
-            var items = await db.MetaEntities
+            // Mods folder files too; they open in their Mods folder.
+            var items = await db.AllMetaEntities
                 .AsNoTracking()
                 .Include(i => i.SetsEntity)
+                .Include(i => i.ModsFolder)
                 .Where(i => EF.Functions.Like(i.FileName, $"%{trimmed}%")
                          || (i.Description != null && EF.Functions.Like(i.Description, $"%{trimmed}%"))
                          || (i.UserTags != null && EF.Functions.Like(i.UserTags, $"%{trimmed}%")))
@@ -265,15 +267,20 @@ public partial class QuickSwitcherViewModel : ObservableObject
             foreach (var item in items)
             {
                 var setName = item.SetsEntity?.Name ?? "Unassigned";
-                var subtitle = !string.IsNullOrWhiteSpace(item.UserTags)
-                    ? $"In set: {setName}  •  Tags: {item.UserTags}"
+                var location = item.IsModsItem
+                    ? (string.IsNullOrEmpty(item.ModsFolder?.RelativePath)
+                        ? LocalizationManager.Instance.GetString("library.mods")
+                        : $"{LocalizationManager.Instance.GetString("library.mods")}: {item.ModsFolder!.RelativePath}")
                     : $"In set: {setName}";
+                var subtitle = !string.IsNullOrWhiteSpace(item.UserTags)
+                    ? $"{location}  •  Tags: {item.UserTags}"
+                    : location;
 
                 list.Add(new QuickSwitcherItemViewModel
                 {
                     Type = QuickSwitcherItemType.Item,
                     TargetId = item.Id,
-                    SecondaryId = item.SetsEntityId,
+                    SecondaryId = item.IsModsItem ? null : item.SetsEntityId,
                     Title = item.FileName,
                     Subtitle = subtitle,
                     IconKind = PackIconBoxIconsKind.RegularPackage,

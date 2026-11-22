@@ -11,6 +11,8 @@ using Avalonia.VisualTree;
 using PlumbobForge.Backend.Services;
 using PlumbobForge.Desktop.ViewModels;
 using PlumbobForge.Desktop.Views.ContentManager;
+using PlumbobForge.Desktop.Views.Controls;
+using PlumbobForge.Desktop.Services.Localization;
 
 namespace PlumbobForge.Desktop.Views;
 
@@ -450,6 +452,174 @@ public partial class ContentManagerView : UserControl
     #endregion
 
     #region Quick Jump Scroll Support
+    #region Item context menu
+    private static string L(string key) => LocalizationManager.Instance.GetString(key);
+
+    private void OnItemsMenuOpening(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        if (DataContext is not ContentManagerViewModel vm || vm.GetItemMenuState() is not { } state)
+        {
+            e.Cancel = true;
+            return;
+        }
+        BuildItemsMenu(ItemsContextMenu, vm, state);
+    }
+
+    // Open, organize, state, edit, delete; icons only on the open group.
+    public static void BuildItemsMenu(ItemsControl menu, ContentManagerViewModel vm, ContentManagerViewModel.ItemMenuState state)
+    {
+        var ids = state.Selected.Select(i => i.Entity.Id).ToList();
+        var libraryIds = state.Selected.Where(i => !i.Entity.IsModsItem).Select(i => i.Entity.Id).ToList();
+        bool many = state.Count > 1;
+
+        var openIn = MenuBuilder.Sub(L("library.menu_open_in"), new Control?[]
+        {
+            MenuBuilder.Item(L("library.menu_cc_optimizer"), () => _ = vm.OpenInOptimizerAsync(ids)),
+            MenuBuilder.Item(L("library.menu_mesh_report"), () => _ = vm.OpenInMeshReportAsync(ids,
+                many ? string.Format(L("library.menu_scope_items"), state.Count) : state.Selected[0].FileName)),
+            state.RevealPath != null ? MenuBuilder.Item(L("library.menu_file_explorer"), () => ContentManagerViewModel.RevealInExplorer(state.RevealPath, true)) : null,
+        }, "RegularWindow");
+
+        // Moving only offers the kind of place the selection comes from; a mix gets both.
+        (string, Action) SetPlace(ContentManagerViewModel.MenuTarget t) => (t.Label, () => _ = vm.MoveSelectedToSetIdAsync(t.Id));
+        var moveToSet = state.AnyLibrary || !state.AnyMods
+            ? MenuBuilder.PlaceSub(L("library.menu_move_to_set"), state.Sets.Select(SetPlace).ToList(), vm.RecentMoveTargets(state.Sets).Select(SetPlace).ToList(),
+                L("library.menu_filter_sets"), L("library.menu_no_match"))
+            : null;
+        var moveToFolder = state.AnyMods
+            ? MenuBuilder.PlaceSub(L("library.menu_move_to_folder"),
+                state.Folders.Select(n => (vm.ModsFolderLabel(n), (Action)(() => _ = vm.MoveSelectedToModsFolderAsync(n)))).ToList(),
+                Array.Empty<(string, Action)>(), L("library.menu_filter_folders"), L("library.menu_no_match"))
+            : null;
+        var collections = state.Collections.Count == 0 ? null : MenuBuilder.Sub(L("library.menu_collections"),
+            state.Collections.Select(c => (Control?)MenuBuilder.Check(c.Name, c.State, () => _ = vm.ToggleCollectionMembershipAsync(c, libraryIds, Array.Empty<long>())))
+                .Append(MenuBuilder.Divider())
+                .Append(MenuBuilder.Item(L("library.menu_new_collection"), () => _ = vm.NewCollectionWithAsync(Array.Empty<long>(), libraryIds))));
+
+        string enable = state.AllEnabled
+            ? (many ? string.Format(L("library.menu_disable_items"), state.Count) : L("library.menu_disable_item"))
+            : (many ? string.Format(L("library.menu_enable_items"), state.Count) : L("library.menu_enable_item"));
+        bool vaultActions = vm.ShowVaultItemActions;
+
+        MenuBuilder.Fill(menu,
+            new Control?[]
+            {
+                MenuBuilder.Item(L("library.look_inside"), () => vm.LookInsideSelectedCommand.Execute(null), "RegularSearch", "Enter"),
+                openIn,
+            },
+            new Control?[]
+            {
+                moveToSet,
+                moveToFolder,
+                collections,
+                MenuBuilder.Item(L(state.AnyNotFavorite ? "library.menu_add_favorites" : "library.menu_remove_favorites"), () => vm.ToggleFavoriteSelectedCommand.Execute(null), gesture: "F"),
+            },
+            new Control?[] { MenuBuilder.Item(enable, () => vm.ToggleEnableSelectedCommand.Execute(null), gesture: "Space") },
+            new Control?[]
+            {
+                MenuBuilder.Item(L("library.retag_selected"), () => vm.EditTagsSelectedCommand.Execute(null)),
+                vaultActions && !many ? MenuBuilder.Item(L("library.menu_replace"), () => vm.ReplaceSelectedCommand.Execute(null)) : null,
+                vaultActions ? MenuBuilder.Item(vm.ExportItemsMenuHeader, () => vm.ExportSelectedCommand.Execute(null)) : null,
+            },
+            new Control?[]
+            {
+                MenuBuilder.Danger(many ? string.Format(L("library.menu_delete_items"), state.Count) : L("library.menu_delete_item"),
+                    () => vm.DeleteSelectedCommand.Execute(null), "Delete"),
+            });
+    }
+
+    // Delete removes the selected items (with the usual confirmation) when the last click was in the item list
+    // and nothing is being typed. Rows and cards swallow presses, so focus alone can't tell.
+    private TopLevel? _keyTopLevel;
+    private bool _itemsAreaActive;
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _keyTopLevel = TopLevel.GetTopLevel(this);
+        _keyTopLevel?.AddHandler(KeyDownEvent, OnWindowKeyDown, RoutingStrategies.Bubble);
+        _keyTopLevel?.AddHandler(PointerPressedEvent, OnWindowPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        _keyTopLevel?.RemoveHandler(KeyDownEvent, OnWindowKeyDown);
+        _keyTopLevel?.RemoveHandler(PointerPressedEvent, OnWindowPointerPressed);
+        _keyTopLevel = null;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OnWindowPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        _itemsAreaActive = e.Source is Visual v && (ReferenceEquals(v, ItemsGridContainer) || v.GetVisualAncestors().Contains(ItemsGridContainer));
+        // Rows swallow presses, so without this a toolbar button clicked earlier keeps focus and Space would press it.
+        if (_itemsAreaActive && e.Source is not TextBox) ItemsGridContainer.Focus();
+    }
+
+    // Library shortcuts. Ctrl+F works anywhere in the library; the rest only after a click in the item list, and
+    // never while something is being typed. The same keys are shown next to the matching context menu entries.
+    private void OnWindowKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Handled || !IsEffectivelyVisible || DataContext is not ContentManagerViewModel vm) return;
+        if (e.Source is TextBox || _keyTopLevel?.FocusManager?.GetFocusedElement() is TextBox) return;
+
+        if (e.Key == Key.F && e.KeyModifiers == KeyModifiers.Control)
+        {
+            e.Handled = true;
+            FocusSearch(vm);
+            return;
+        }
+        if (!_itemsAreaActive) return;
+
+        if (e.Key == Key.A && e.KeyModifiers == KeyModifiers.Control)
+        {
+            e.Handled = true;
+            vm.SelectAllCommand.Execute(null);
+            return;
+        }
+        if (e.KeyModifiers != KeyModifiers.None || !vm.HasSelectedItems) return;
+        switch (e.Key)
+        {
+            case Key.Delete:
+                vm.DeleteSelectedCommand.Execute(null);
+                break;
+            case Key.Enter:
+                vm.LookInsideSelectedCommand.Execute(null);
+                break;
+            case Key.Space:
+                vm.ToggleEnableSelectedCommand.Execute(null);
+                break;
+            case Key.F:
+                vm.ToggleFavoriteSelectedCommand.Execute(null);
+                break;
+            default:
+                return;
+        }
+        e.Handled = true;
+    }
+
+    // Edit Filters on a smart set: the filter panel open, scrolled to the top, the cursor in the search box.
+    private void OnRequestEditFilters()
+    {
+        if (DataContext is not ContentManagerViewModel vm || !IsEffectivelyVisible) return;
+        var scroll = this.GetVisualDescendants().OfType<ScrollViewer>().FirstOrDefault(s => s.Name == "FiltersScroll");
+        scroll?.ScrollToHome();
+        FocusSearch(vm);
+    }
+
+    public void FocusSearch(ContentManagerViewModel vm)
+    {
+        if (vm.IsFiltersSidebarCollapsed) vm.IsFiltersSidebarCollapsed = false;
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            var box = this.GetVisualDescendants().OfType<TextBox>().FirstOrDefault(t => t.Name == "LibrarySearchBox");
+            if (box == null) return;
+            box.Focus();
+            box.SelectAll();
+        }, Avalonia.Threading.DispatcherPriority.Loaded);
+    }
+    #endregion
+
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
@@ -457,6 +627,8 @@ public partial class ContentManagerView : UserControl
         {
             vm.RequestScrollToItem -= OnRequestScrollToItem;
             vm.RequestScrollToItem += OnRequestScrollToItem;
+            vm.RequestEditFilters -= OnRequestEditFilters;
+            vm.RequestEditFilters += OnRequestEditFilters;
         }
     }
 

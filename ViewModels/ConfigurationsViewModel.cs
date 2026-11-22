@@ -68,6 +68,17 @@ public partial class ConfigurationsViewModel : ObservableObject
     private List<long> _pendingTargetSetIds = new();
     private List<long> _pendingDescendantSetIds = new();
     private bool _pendingTargetToEnabled = false;
+    // The cascade question is about Mods folders instead of sets.
+    private bool _pendingIsModsFolders = false;
+
+    [ObservableProperty]
+    private string _cascadeAllText = "Move All (With Sub-Sets)";
+
+    [ObservableProperty]
+    private string _cascadeOnlyText = "This Set Only";
+
+    [ObservableProperty]
+    private string _cascadeSubtitle = "Nested Sub-Sets Detected";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasEnabledSetsSearchQuery))]
@@ -193,6 +204,7 @@ public partial class ConfigurationsViewModel : ObservableObject
                 .ToListAsync();
 
             _setsById = _allSets.ToDictionary(s => s.Id);
+            await LoadModsFoldersAsync(db);
 
             long? currentSelectedId = SelectedConfiguration?.Id;
 
@@ -254,15 +266,18 @@ public partial class ConfigurationsViewModel : ObservableObject
             {
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var rules = await db.ConfigItemOverrides.AsNoTracking()
+                // Rules can name Mods items, which the default item filter hides.
+                var rules = await db.ConfigItemOverrides.AsNoTracking().IgnoreQueryFilters()
                     .Where(o => o.ConfigEntityId == configId.Value)
-                    .Select(o => new { o.Id, o.MetaEntityId, o.Include, o.MetaEntity!.FileName, o.MetaEntity.CompleteFileName, o.MetaEntity.SetsEntityId })
+                    .Select(o => new { o.Id, o.MetaEntityId, o.Include, o.MetaEntity!.FileName, o.MetaEntity.CompleteFileName, o.MetaEntity.SetsEntityId, o.MetaEntity.IsModsItem, o.MetaEntity.ModsFolderId })
                     .ToListAsync();
                 var selectedIds = _itemCards.Where(c => c.IsSelected).Select(c => c.ItemId).ToHashSet();
                 cards = rules
-                    .Select(r => new ConfigItemCardViewModel(r.MetaEntityId, r.Id, r.FileName, r.CompleteFileName, GetSetLocation(r.SetsEntityId), r.Include)
+                    .Select(r => new ConfigItemCardViewModel(r.MetaEntityId, r.Id, r.FileName, r.CompleteFileName,
+                        r.IsModsItem ? GetModsLocation(r.ModsFolderId) : GetSetLocation(r.SetsEntityId), r.Include)
                     {
-                        IsSelected = selectedIds.Contains(r.MetaEntityId)
+                        IsSelected = selectedIds.Contains(r.MetaEntityId),
+                        IsModsItem = r.IsModsItem
                     })
                     .ToList();
             }
@@ -290,7 +305,7 @@ public partial class ConfigurationsViewModel : ObservableObject
     {
         if (card == null) return;
         var ids = card.IsSelected
-            ? _itemCards.Where(c => c.IsSelected && c.Include == card.Include).Select(c => c.ItemId).ToList()
+            ? (card.Include ? EnabledSets : DisabledSets).OfType<ConfigItemCardViewModel>().Where(c => c.IsSelected).Select(c => c.ItemId).ToList()
             : new List<long> { card.ItemId };
         await SaveItemRulesAsync(ids, null);
     }
@@ -307,7 +322,7 @@ public partial class ConfigurationsViewModel : ObservableObject
     {
         if (SelectedConfiguration == null) return;
         var existing = _itemCards.ToDictionary(c => c.ItemId, c => c.Include);
-        var picked = await DialogHelper.ShowConfigItemPickerAsync(include, SelectedConfiguration.Name, _allSets, existing);
+        var picked = await DialogHelper.ShowConfigItemPickerAsync(include, SelectedConfiguration.Name, _allSets, existing, modsFolders: _modsFolders);
         if (picked.Count > 0) await SaveItemRulesAsync(picked, include);
     }
 
@@ -365,10 +380,13 @@ public partial class ConfigurationsViewModel : ObservableObject
 
     private void RefreshSetsColumns()
     {
+        // The library sidebar crosses out what the active configuration leaves out.
+        _ = App.Services?.GetService<ContentManagerViewModel>()?.RefreshConfigurationStateAsync();
         if (SelectedConfiguration == null)
         {
             EnabledSets.Clear();
             DisabledSets.Clear();
+            UpdateEmptyTexts();
             OnPropertyChanged(nameof(TotalSetsCount));
             OnPropertyChanged(nameof(EnabledSetsCount));
             OnPropertyChanged(nameof(DisabledSetsCount));
@@ -397,8 +415,12 @@ public partial class ConfigurationsViewModel : ObservableObject
             }
         }
 
-        var enabledColumn = MergeColumn(SortSetsList(enabledList), _itemCards.Where(c => c.Include));
-        var disabledColumn = MergeColumn(SortSetsList(disabledList), _itemCards.Where(c => !c.Include));
+        var (enabledFolders, disabledFolders) = BuildModsFolderEntries(SelectedConfiguration.Id);
+        var enabledColumn = MergeColumn(SortSetsList(enabledList).Concat<ConfigGroupEntry>(enabledFolders).ToList(), _itemCards.Where(c => c.Include));
+        var disabledColumn = MergeColumn(SortSetsList(disabledList).Concat<ConfigGroupEntry>(disabledFolders).ToList(), _itemCards.Where(c => !c.Include));
+        UpdateSourceCounts(enabledColumn, disabledColumn);
+        enabledColumn = ApplySourceFilter(enabledColumn);
+        disabledColumn = ApplySourceFilter(disabledColumn);
 
         if (!string.IsNullOrWhiteSpace(EnabledSetsSearchQuery))
         {
@@ -418,6 +440,7 @@ public partial class ConfigurationsViewModel : ObservableObject
         DisabledSets.Clear();
         foreach (var item in disabledColumn) DisabledSets.Add(item);
 
+        UpdateEmptyTexts();
         UpdateSelectionState();
         OnPropertyChanged(nameof(TotalSetsCount));
         OnPropertyChanged(nameof(EnabledSetsCount));
@@ -435,7 +458,7 @@ public partial class ConfigurationsViewModel : ObservableObject
         };
     }
 
-    private List<ConfigColumnEntry> MergeColumn(List<ConfigSetItemViewModel> sortedSets, IEnumerable<ConfigItemCardViewModel> items)
+    private List<ConfigColumnEntry> MergeColumn(List<ConfigGroupEntry> sortedSets, IEnumerable<ConfigItemCardViewModel> items)
     {
         var sortedItems = SetSortMode switch
         {
@@ -609,6 +632,7 @@ public partial class ConfigurationsViewModel : ObservableObject
             using (var scope = _serviceProvider.CreateScope())
             {
                 await scope.ServiceProvider.GetRequiredService<ConfigItemOverrideService>().CopyRulesAsync(config.Id, duplicate.Id);
+                await scope.ServiceProvider.GetRequiredService<ModsFolderService>().CopyFolderStatesAsync(config.Id, duplicate.Id);
             }
 
             await LoadDataAsync();
@@ -770,6 +794,9 @@ public partial class ConfigurationsViewModel : ObservableObject
                 // In static mode without auto-rebuild, mark all sets dirty so user can rebuild when ready
                 await MarkAllSetsDirtyAsync();
 
+                // Mods files don't wait for a rebuild: they are only renamed.
+                string? modsFailure = await ApplyModsConfigurationAsync();
+
                 foreach (var c in Configurations)
                 {
                     c.Active = (c.Id == config.Id);
@@ -777,7 +804,8 @@ public partial class ConfigurationsViewModel : ObservableObject
                 config.Active = true;
 
                 _ = App.Services?.GetService<MainViewModel>()?.RefreshDirtyStateAsync();
-                ShowStatusToast($"'{config.Name}' is now active. Rebuild cache when ready.", isError: false);
+                _ = App.Services?.GetService<ContentManagerViewModel>()?.RefreshConfigurationStateAsync();
+                ShowStatusToast(modsFailure ?? $"'{config.Name}' is now active. Rebuild cache when ready.", isError: modsFailure != null);
             }
             catch (Exception ex)
             {
@@ -827,7 +855,9 @@ public partial class ConfigurationsViewModel : ObservableObject
 
             modal.Finish(success: true);
             _ = App.Services?.GetService<MainViewModel>()?.RefreshDirtyStateAsync();
-            ShowStatusToast($"'{config.Name}' is now the active configuration. Game files updated!", isError: false);
+            _ = App.Services?.GetService<ContentManagerViewModel>()?.RefreshConfigurationStateAsync();
+            string? modsFailed = ModsApplyFailureMessage();
+            ShowStatusToast(modsFailed ?? $"'{config.Name}' is now the active configuration. Game files updated!", isError: modsFailed != null);
         }
         catch (Exception ex)
         {
@@ -869,6 +899,10 @@ public partial class ConfigurationsViewModel : ObservableObject
             _pendingTargetSetIds = targetSetIds;
             _pendingDescendantSetIds = descendants.ToList();
             _pendingTargetToEnabled = targetToEnabled;
+            _pendingIsModsFolders = false;
+            CascadeAllText = "Move All (With Sub-Sets)";
+            CascadeOnlyText = "This Set Only";
+            CascadeSubtitle = "Nested Sub-Sets Detected";
 
             string firstSetName = _setsById.TryGetValue(targetSetIds[0], out var s) ? s.Name : "Set";
 
@@ -907,14 +941,16 @@ public partial class ConfigurationsViewModel : ObservableObject
         var allIds = new HashSet<long>(_pendingTargetSetIds);
         foreach (var d in _pendingDescendantSetIds) allIds.Add(d);
 
-        await ApplyMoveSetsAsync(allIds.ToList(), _pendingTargetToEnabled);
+        if (_pendingIsModsFolders) await ApplyModsFoldersAsync(allIds.ToList(), _pendingTargetToEnabled);
+        else await ApplyMoveSetsAsync(allIds.ToList(), _pendingTargetToEnabled);
     }
 
     [RelayCommand]
     public async Task CascadeSingleSetOnlyAsync()
     {
         IsCascadeModalVisible = false;
-        await ApplyMoveSetsAsync(_pendingTargetSetIds, _pendingTargetToEnabled);
+        if (_pendingIsModsFolders) await ApplyModsFoldersAsync(_pendingTargetSetIds, _pendingTargetToEnabled);
+        else await ApplyMoveSetsAsync(_pendingTargetSetIds, _pendingTargetToEnabled);
     }
 
     [RelayCommand]
@@ -923,11 +959,12 @@ public partial class ConfigurationsViewModel : ObservableObject
         IsCascadeModalVisible = false;
     }
 
-    public async Task ApplyMoveSetsAsync(List<long> setIds, bool toEnabled)
+    // target: the configuration to change (the library sidebar passes the active one); default the selected one.
+    public async Task ApplyMoveSetsAsync(List<long> setIds, bool toEnabled, ConfigItemViewModel? target = null)
     {
-        if (SelectedConfiguration == null || setIds.Count == 0) return;
+        var config = target ?? SelectedConfiguration;
+        if (config == null || setIds.Count == 0) return;
 
-        var config = SelectedConfiguration;
         var currentSetIds = config.SetIds.ToHashSet();
 
         if (toEnabled)
@@ -1037,6 +1074,7 @@ public partial class ConfigurationsViewModel : ObservableObject
                 }
             }
 
+            if (await SwapModsFoldersAsync()) return;
             RefreshSetsColumns();
             _ = App.Services?.GetService<MainViewModel>()?.RefreshDirtyStateAsync();
             ShowStatusToast("Swapped enabled and disabled sets.", isError: false);
@@ -1053,6 +1091,7 @@ public partial class ConfigurationsViewModel : ObservableObject
         if (SelectedConfiguration == null) return;
         var allIds = _allSets.Select(s => s.Id).ToList();
         await ApplyMoveSetsAsync(allIds, toEnabled: true);
+        if (await ApplyModsFoldersAsync(_modsFolders.Select(f => f.Id).ToList(), true)) return;
         ShowStatusToast("All sets enabled in configuration.", isError: false);
     }
 
@@ -1062,6 +1101,7 @@ public partial class ConfigurationsViewModel : ObservableObject
         if (SelectedConfiguration == null) return;
         var allIds = _allSets.Select(s => s.Id).ToList();
         await ApplyMoveSetsAsync(allIds, toEnabled: false);
+        if (await ApplyModsFoldersAsync(_modsFolders.Select(f => f.Id).ToList(), false)) return;
         ShowStatusToast("All sets disabled in configuration.", isError: false);
     }
 

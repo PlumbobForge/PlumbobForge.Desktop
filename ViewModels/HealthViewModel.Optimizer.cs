@@ -24,9 +24,9 @@ public partial class HealthViewModel
 
     private IEnumerable<MeshReportRowViewModel> OptimizerRows => MeshKindFilter switch
     {
-        MeshKindCas => _allMeshRows.Where(r => r.IsCas),
-        MeshKindBuildBuy => _allMeshRows.Where(r => r.IsBuildBuy),
-        _ => _allMeshRows,
+        MeshKindCas => ScopedMeshRows.Where(r => r.IsCas),
+        MeshKindBuildBuy => ScopedMeshRows.Where(r => r.IsBuildBuy),
+        _ => ScopedMeshRows,
     };
     public bool HasHeavy => HeavyCount > 0;
     public string OptimizeVeryHeavyText => LocalizationManager.Instance.GetString("tools.meshes.optimize_very_heavy", VeryHeavyCount);
@@ -51,6 +51,7 @@ public partial class HealthViewModel
     {
         Optimizer.ItemsSaved += ids =>
         {
+            App.Services?.GetService<ContentManagerViewModel>()?.RefreshOptimizedFlags();
             if (!HasScannedMeshes) return;
             foreach (long id in ids) _ = RescanMeshItemAsync(id);
         };
@@ -68,7 +69,7 @@ public partial class HealthViewModel
             {
                 using var scope = _serviceProvider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var ids = (await db.MetaEntities.AsNoTracking().Select(m => m.Id).ToListAsync()).ToHashSet();
+                var ids = (await db.AllMetaEntities.AsNoTracking().Select(m => m.Id).ToListAsync()).ToHashSet();
                 if (ids.Count > 0) MeshBackupStore.Prune(ids);
             });
         }
@@ -111,13 +112,15 @@ public partial class HealthViewModel
         try
         {
             List<SetsEntity> sets;
+            List<ModsFolderEntity> modsFolders;
             using (var scope = _serviceProvider.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 sets = await db.SetsEntities.AsNoTracking().ToListAsync();
+                modsFolders = PlumbobForge.Backend.Configuration.ModsFolderSupport.IsEnabled ? await db.ModsFolders.AsNoTracking().ToListAsync() : new();
             }
             var existing = Optimizer.Items.Select(i => i.ItemId).Distinct().ToDictionary(id => id, _ => true);
-            var picked = await DialogHelper.ShowConfigItemPickerAsync(true, string.Empty, sets, existing, forOptimizer: true);
+            var picked = await DialogHelper.ShowConfigItemPickerAsync(true, string.Empty, sets, existing, forOptimizer: true, modsFolders: modsFolders);
             if (picked.Count > 0) await Optimizer.AddItemsAsync(picked);
         }
         catch (Exception ex)

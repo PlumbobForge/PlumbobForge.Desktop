@@ -267,6 +267,56 @@
     },
 
     {
+      "id": "shortcuts",
+      "title": "Skróty klawiszowe",
+      "summary": "Pracuj z biblioteką bez myszy: otwieraj, włączaj i wyłączaj, dodawaj do ulubionych i szukaj elementów jednym klawiszem.",
+      "keywords": [
+        "klawiatura",
+        "skróty",
+        "skróty klawiszowe",
+        "klawisze",
+        "enter",
+        "spacja",
+        "ctrl+a",
+        "ctrl+f",
+        "f2",
+        "delete",
+        "strzałki",
+        "zaznacz wszystko",
+        "szukaj"
+      ],
+      "questions": [
+        "Czy są skróty klawiszowe?",
+        "Jak zaznaczyć wszystkie elementy?",
+        "Jak szybko zmienić nazwę zestawu?"
+      ],
+      "steps": [
+        "Najpierw kliknij element, żeby klawisze trafiały do listy elementów.",
+        "**Enter** otwiera zaznaczone elementy w **Zajrzyj do środka**.",
+        "**Spacja** włącza lub wyłącza zaznaczone elementy.",
+        "**F** dodaje je do Ulubionych albo je z nich usuwa.",
+        "**Delete** usuwa je, po potwierdzeniu.",
+        "**Ctrl+A** zaznacza wszystkie elementy na liście, a **Ctrl+F** przenosi do pola wyszukiwania.",
+        "Na pasku bocznym **strzałki w górę i w dół** przechodzą między zestawami, **w prawo i w lewo** rozwijają i zwijają zestaw z podzestawami, a **F2** zmienia nazwę zaznaczonego zestawu."
+      ],
+      "category": "library",
+      "section": "items",
+      "tips": [
+        "Klawisze widać też obok pozycji w menu po kliknięciu elementu prawym przyciskiem.",
+        "Podczas pisania w polu tekstowym klawisze nic nie robią."
+      ],
+      "related": [
+        "select-items",
+        "toggle-items",
+        "favorites"
+      ],
+      "showMe": {
+        "target": "library",
+        "highlight": "library.items"
+      }
+    },
+
+    {
       "id": "filters",
       "title": "Wyszukuj przedmioty filtrami",
       "summary": "Zawęź bibliotekę według typu, kategorii, wieku, pomieszczenia i więcej.",

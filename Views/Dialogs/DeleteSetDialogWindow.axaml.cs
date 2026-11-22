@@ -12,9 +12,9 @@ public partial class DeleteSetDialogWindow : Window
         InitializeComponent();
     }
 
-    public DeleteSetDialogWindow(string setName) : this()
+    public DeleteSetDialogWindow(string setName, string? message = null) : this()
     {
-        MessageTextBlock.Text = $"Are you sure you want to delete set '{setName}'?";
+        MessageTextBlock.Text = message ?? $"Are you sure you want to delete set '{setName}'?";
     }
 
     private void OnHeaderPointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)

@@ -28,6 +28,7 @@ public partial class ContentManagerViewModel
 
         var allItemsNode = RootSets.FirstOrDefault(n => n.IsAllItems);
         var favoritesNode = RootSets.FirstOrDefault(n => n.IsFavorites);
+        var modsNode = RootSets.FirstOrDefault(n => n.IsModsRoot);
         var otherNodes = RootSets.Where(n => !n.IsSpecialNode).ToList();
 
         otherNodes = SortNodeList(otherNodes);
@@ -46,6 +47,12 @@ public partial class ContentManagerViewModel
             SortChildNodesRecursive(node);
             RootSets.Add(node);
         }
+        // The Mods folder section always comes after the sets.
+        if (modsNode != null)
+        {
+            RootSets.Add(modsNode);
+        }
+        PlaceSectionHeaders();
     }
 
     private List<SetNodeViewModel> SortNodeList(List<SetNodeViewModel> nodes)
@@ -108,6 +115,8 @@ public partial class ContentManagerViewModel
         }
 
         SortSetsTree();
+        PlaceModsNode(_modsRootNode != null);
+        _ = RefreshConfigurationStateAsync();
         RecalculateSetCounts();
 
         foreach (var root in RootSets)
@@ -121,6 +130,10 @@ public partial class ContentManagerViewModel
         if (wasFavoritesSelected)
         {
             SelectedSetNode = favoritesNode;
+        }
+        else if (selectedSetIdToRestore == null && SelectedSetNode?.IsModsNode == true)
+        {
+            // PlaceModsNode already selected the rebuilt Mods node.
         }
         else if (targetId.HasValue)
         {
@@ -184,6 +197,9 @@ public partial class ContentManagerViewModel
         {
             _pendingNavigateToItem = (selectItemId, null);
         }
+
+        // Mods items live under the Mods section, not All Items.
+        if (TrySelectModsItem(selectItemId)) return;
 
         var allItemsNode = RootSets.FirstOrDefault(n => n.IsAllItems);
         if (allItemsNode != null)
@@ -251,7 +267,7 @@ public partial class ContentManagerViewModel
         {
             foreach (var node in nodes)
             {
-                if (!node.IsAllItems && node.IsSelected)
+                if (!node.IsAllItems && !node.IsModsNode && !node.IsSetsHeader && !node.IsSmartSet && !node.IsSmartHeader && node.IsSelected)
                 {
                     result.Add(node);
                 }
@@ -275,7 +291,7 @@ public partial class ContentManagerViewModel
 
         static void CollectVisible(SetNodeViewModel node, List<SetNodeViewModel> list)
         {
-            if (!node.IsAllItems)
+            if (!node.IsAllItems && !node.IsModsNode)
             {
                 list.Add(node);
             }
@@ -291,6 +307,18 @@ public partial class ContentManagerViewModel
 
     public void SelectSetNode(SetNodeViewModel setNode, bool isCtrlPressed, bool isShiftPressed)
     {
+        // Sets and Mods folders are never selected together.
+        if (!setNode.IsModsNode) ClearModsHighlight();
+
+        // A smart set is always picked on its own.
+        if (setNode.IsSmartSet)
+        {
+            DeselectAllSets();
+            SelectedSetNode = setNode;
+            setNode.IsSelected = true;
+            return;
+        }
+
         if (setNode.IsAllItems)
         {
             SelectedSetNode = setNode;
@@ -547,6 +575,7 @@ public partial class ContentManagerViewModel
     [RelayCommand]
     public async Task CreateTopLevelSetAsync()
     {
+        ExpandSetsSection();
         var name = await DialogHelper.ShowInputAsync("Create New Set", "Enter set folder name:", "");
         if (string.IsNullOrWhiteSpace(name)) return;
 
@@ -623,20 +652,7 @@ public partial class ContentManagerViewModel
                 newName = chosen;
             }
 
-            // Vault shards live in Set_{id} folders that do not depend on the name. Shards still in an old
-            // name-based folder are resolved by the current name, so move them before the name changes.
-            var vaultService = App.Services?.GetService<VaultService>();
-            if (vaultService != null && await _db.VaultShards.AnyAsync(s => s.SetsEntityId == setEntity.Id))
-            {
-                if (await vaultService.MigrateLegacyShardsAsync(setEntity.Id) > 0)
-                {
-                    await FreshScope.RunAsync<PKGManager>(pkg => pkg.SyncToSims3Async());
-                }
-            }
-
-            setEntity.Name = newName;
-            setEntity.FolderName = newName;
-            setEntity.LongName = newName;
+            await SetNewSetNameAsync(setEntity, newName);
             nameChanged = true;
             hasChanged = true;
         }
@@ -670,6 +686,25 @@ public partial class ContentManagerViewModel
         }
     }
 
+    // The rename itself, shared by Customize and the sidebar's inline rename (which have checked the name already).
+    private async Task SetNewSetNameAsync(SetsEntity setEntity, string newName)
+    {
+        // Vault shards live in Set_{id} folders that do not depend on the name. Shards still in an old
+        // name-based folder are resolved by the current name, so move them before the name changes.
+        var vaultService = App.Services?.GetService<VaultService>();
+        if (vaultService != null && await _db.VaultShards.AnyAsync(s => s.SetsEntityId == setEntity.Id))
+        {
+            if (await vaultService.MigrateLegacyShardsAsync(setEntity.Id) > 0)
+            {
+                await FreshScope.RunAsync<PKGManager>(pkg => pkg.SyncToSims3Async());
+            }
+        }
+
+        setEntity.Name = newName;
+        setEntity.FolderName = newName;
+        setEntity.LongName = newName;
+    }
+
     [RelayCommand]
     public Task RenameSetAsync(SetNodeViewModel? setNode) => CustomizeSetAsync(setNode);
 
@@ -678,12 +713,27 @@ public partial class ContentManagerViewModel
     {
         if (setNode == null || !setNode.Id.HasValue || setNode.IsDefault) return;
 
-        var result = await DialogHelper.ShowDeleteSetConfirmAsync(setNode.Name);
+        // Right-clicking one of several selected sets deletes them all, after one confirmation.
+        var targets = SetMenuTargets(setNode).Where(n => n.Id.HasValue && !n.IsDefault && !n.IsModsFolder).ToList();
+        var result = await DialogHelper.ShowDeleteSetConfirmAsync(setNode.Name,
+            message: targets.Count > 1 ? string.Format(LocalizationManager.Instance.GetString("library.delete_sets_confirm"), targets.Count) : null);
         if (!result.Confirmed) return;
 
+        foreach (var target in targets) await DeleteSetCoreAsync(target.Id!.Value, result);
+    }
+
+    // The sets a sidebar menu acts on: every selected set when the clicked one is part of a selection, else just it.
+    public List<SetNodeViewModel> SetMenuTargets(SetNodeViewModel node)
+    {
+        var selected = GetSelectedSetNodes();
+        return selected.Count > 1 && selected.Contains(node) ? selected : new List<SetNodeViewModel> { node };
+    }
+
+    private async Task DeleteSetCoreAsync(long setId, DeleteSetDialogResult result)
+    {
         try
         {
-            var setEntity = await _db.SetsEntities.FindAsync(setNode.Id.Value);
+            var setEntity = await _db.SetsEntities.FindAsync(setId);
             if (setEntity != null)
             {
                 var defaultSet = await _db.SetsEntities.FirstOrDefaultAsync(s => s.Id != setEntity.Id && (s.Name == "Default" || s.IsDefault))

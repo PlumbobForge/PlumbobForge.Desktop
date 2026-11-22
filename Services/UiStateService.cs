@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading;
@@ -6,12 +7,31 @@ using System.Threading.Tasks;
 
 namespace PlumbobForge.Desktop.Services;
 
+public class SmartSetState
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    // Filter-panel values that differ from an untouched panel, by property name.
+    public Dictionary<string, string> Filters { get; set; } = new();
+}
+
 public class ContentManagerUiState
 {
     public bool IsCompactListView { get; set; } = false;
     public int GridZoomLevel { get; set; } = 3;
     public long? SelectedSetId { get; set; } = null;
     public bool IsSetsSidebarCollapsed { get; set; } = false;
+    // The sidebar's Sets and Mods Folder sections, when both are shown.
+    public bool IsSetsSectionCollapsed { get; set; } = false;
+    public bool IsModsSectionCollapsed { get; set; } = false;
+    public double SetsSidebarWidth { get; set; } = 260;
+    // Sets items were last moved to, newest first (the top of Move to Set).
+    public List<long> RecentMoveSetIds { get; set; } = new();
+    // Smart sets (saved filters), the one that was open, and the filters from before it was opened.
+    public List<SmartSetState> SmartSets { get; set; } = new();
+    public string? SelectedSmartSetId { get; set; }
+    public Dictionary<string, string>? FiltersBeforeSmartSet { get; set; }
+    public bool IsSmartSectionCollapsed { get; set; } = false;
     public bool IsFiltersSidebarCollapsed { get; set; } = false;
     public string CurrentItemSort { get; set; } = "DateAdded";
     public bool SortFavoritesFirst { get; set; } = true;
@@ -109,6 +129,7 @@ public class ContentManagerUiState
     // Mode
     public bool FilterModeEnabled { get; set; } = true;
     public bool FilterModeDisabled { get; set; } = true;
+    public bool FilterModeOptimizedOnly { get; set; }
 
     // Accordion Expansion States
     public bool IsTypeExpanded { get; set; } = true;
@@ -124,6 +145,40 @@ public class ContentManagerUiState
     public bool IsBBPriceExpanded { get; set; } = true;
     public bool IsOtherSubExpanded { get; set; } = true;
     public bool IsModeExpanded { get; set; } = true;
+}
+
+// The Configurations tab's own UI state, kept apart so the library's state file never overwrites it.
+public class ConfigurationsUiState
+{
+    public string SourceFilter { get; set; } = "All";
+
+    private static string FilePath => Path.Combine(PlumbobForge.Backend.Configuration.AppPaths.AppDataDir, "configurations-ui-state.json");
+
+    public static ConfigurationsUiState Load()
+    {
+        try
+        {
+            if (File.Exists(FilePath)) return JsonSerializer.Deserialize<ConfigurationsUiState>(File.ReadAllText(FilePath)) ?? new();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ConfigurationsUiState] Error loading state: {ex.Message}");
+        }
+        return new ConfigurationsUiState();
+    }
+
+    public static void Save(ConfigurationsUiState state)
+    {
+        try
+        {
+            Directory.CreateDirectory(PlumbobForge.Backend.Configuration.AppPaths.AppDataDir);
+            File.WriteAllText(FilePath, JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ConfigurationsUiState] Error saving state: {ex.Message}");
+        }
+    }
 }
 
 public class UiStateService

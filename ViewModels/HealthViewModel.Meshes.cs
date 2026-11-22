@@ -170,7 +170,7 @@ public partial class HealthViewModel
     public bool IsMeshKindBuildBuy => MeshKindFilter == MeshKindBuildBuy;
     public bool HasMeshSearchQuery => !string.IsNullOrEmpty(MeshSearchQuery);
     public bool HasMeshNotes => !string.IsNullOrEmpty(MeshNotes);
-    public bool HasMeshKinds => _allMeshRows.Any(r => r.IsCas) && _allMeshRows.Any(r => r.IsBuildBuy);
+    public bool HasMeshKinds => ScopedMeshRows.Any(r => r.IsCas) && ScopedMeshRows.Any(r => r.IsBuildBuy);
     public string MeshScanProgressText => LocalizationManager.Instance.GetString("tools.meshes.progress", MeshScanDone.ToString("N0"), MeshScanTotal.ToString("N0"));
 
     public bool ShowMeshEmpty => HasScannedMeshes && FilteredMeshRows.Count == 0;
@@ -233,7 +233,9 @@ public partial class HealthViewModel
     public void ClearMeshSearch() => MeshSearchQuery = string.Empty;
 
     [RelayCommand]
-    public async Task ScanMeshesAsync()
+    public Task ScanMeshesAsync() => ScanMeshesCoreAsync(null);
+
+    private async Task ScanMeshesCoreAsync(IReadOnlyCollection<long>? onlyItems)
     {
         if (IsScanningMeshes) return;
         IsScanningMeshes = true;
@@ -253,13 +255,12 @@ public partial class HealthViewModel
                 MeshScanDone = p.Done;
             });
 
-            var summary = await service.ScanAsync(progress, ct);
+            var summary = await service.ScanAsync(progress, ct, onlyItems);
+            _meshRowsArePartial = onlyItems != null;
 
             _allMeshRows.Clear();
             _allMeshRows.AddRange(summary.Rows.Select(r => new MeshReportRowViewModel(r)));
-            TotalMeshesCounted = _allMeshRows.Count;
-            HeavyMeshCount = _allMeshRows.Count(r => r.IsHeavyOrWorse);
-            RaiseOptimizerCounts();
+            RecountMeshes();
 
             var notes = new List<string>();
             if (summary.ExternalMeshObjects > 0)
@@ -293,7 +294,7 @@ public partial class HealthViewModel
     private void ApplyMeshFilter()
     {
         string query = MeshSearchQuery.Trim();
-        var filtered = _allMeshRows.Where(r =>
+        var filtered = ScopedMeshRows.Where(r =>
         {
             if (MeshWeightFilter == MeshFilterHeavy && !r.IsHeavyOrWorse) return false;
             if (MeshKindFilter == MeshKindCas && !r.IsCas) return false;
@@ -312,9 +313,76 @@ public partial class HealthViewModel
         OnPropertyChanged(nameof(MeshEmptyText));
     }
 
+    #region Scope: the report for some items only (Open In > Mesh Report in the library)
+    private HashSet<long>? _meshScope;
+    // The rows came from a scan of the scope alone, so without the scope there is no full report to show.
+    private bool _meshRowsArePartial;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasMeshScope))]
+    private string? _meshScopeLabel;
+
+    public bool HasMeshScope => _meshScope != null;
+
+    private IEnumerable<MeshReportRowViewModel> ScopedMeshRows =>
+        _meshScope == null ? _allMeshRows : _allMeshRows.Where(r => _meshScope.Contains(r.Model.MetaEntityId));
+
+    private void RecountMeshes()
+    {
+        var rows = ScopedMeshRows.ToList();
+        TotalMeshesCounted = rows.Count;
+        HeavyMeshCount = rows.Count(r => r.IsHeavyOrWorse);
+        OnPropertyChanged(nameof(HasMeshKinds));
+        RaiseOptimizerCounts();
+    }
+
+    // Shows the report for these items: filtered from a full scan if there is one, otherwise scanned on their own.
+    // It starts on All, since the point is to see these items, light ones included.
+    public async Task ShowMeshesForAsync(IReadOnlyCollection<long> itemIds, string label)
+    {
+        SelectSection("Meshes");
+        _meshScope = itemIds.ToHashSet();
+        MeshScopeLabel = label;
+        MeshSearchQuery = string.Empty;
+        MeshWeightFilter = MeshFilterAll;
+        if (HasScannedMeshes && !_meshRowsArePartial)
+        {
+            RecountMeshes();
+            ApplyMeshFilter();
+            return;
+        }
+        if (IsScanningMeshes) _meshScanCts?.Cancel();
+        await WaitForMeshScanToStopAsync();
+        await ScanMeshesCoreAsync(itemIds);
+    }
+
+    [RelayCommand]
+    public void ClearMeshScope()
+    {
+        _meshScope = null;
+        MeshScopeLabel = null;
+        MeshWeightFilter = MeshFilterHeavy;
+        if (_meshRowsArePartial)
+        {
+            _allMeshRows.Clear();
+            _meshRowsArePartial = false;
+            HasScannedMeshes = false;
+            MeshNotes = string.Empty;
+        }
+        RecountMeshes();
+        ApplyMeshFilter();
+    }
+
+    private async Task WaitForMeshScanToStopAsync()
+    {
+        for (int i = 0; i < 100 && IsScanningMeshes; i++) await Task.Delay(50);
+    }
+    #endregion
+
     private void InitMeshReport()
     {
-        MeshReportRowViewModel.OnShowInLibraryRequested = row => NavigateToPackageItem(row.Model.MetaEntityId, row.Model.SetId);
+        MeshReportRowViewModel.OnShowInLibraryRequested = row =>
+            NavigateToPackageItem(row.Model.MetaEntityId, row.Model.SetId, row.Model.IsModsItem ? row.Model.MetaEntityId : null);
         MeshReportRowViewModel.OnLookInsideRequested = async row =>
         {
             if (await DialogHelper.ShowLookInsideAsync(row.Model.MetaEntityId, row.FileName)) await RescanMeshItemAsync(row.Model.MetaEntityId);
@@ -337,9 +405,7 @@ public partial class HealthViewModel
             _allMeshRows.RemoveAll(r => r.Model.MetaEntityId == metaEntityId);
             _allMeshRows.AddRange(rows.Select(r => new MeshReportRowViewModel(r)));
             _allMeshRows.Sort((a, b) => b.Triangles.CompareTo(a.Triangles));
-            TotalMeshesCounted = _allMeshRows.Count;
-            HeavyMeshCount = _allMeshRows.Count(r => r.IsHeavyOrWorse);
-            RaiseOptimizerCounts();
+            RecountMeshes();
             ApplyMeshFilter();
         }
         catch

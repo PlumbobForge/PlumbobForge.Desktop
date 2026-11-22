@@ -15,6 +15,15 @@
         <Grid Grid.Row="0" RowDefinitions="Auto, Auto" Margin="0,0,0,16" IsVisible="{Binding HasScannedMeshes}">
             <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
                 <WrapPanel Grid.Column="0" Orientation="Horizontal">
+                    <!-- Scope from a library menu (Open In > Mesh Report): what is shown, and a way back to everything -->
+                    <Button Classes="filter-btn active" Command="{Binding ClearMeshScopeCommand}" IsVisible="{Binding HasMeshScope}"
+                            Margin="0,0,8,0" ToolTip.Tip="{loc:Loc 'tools.meshes.scope_clear_tip'}">
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding MeshScopeLabel}" MaxWidth="220" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            <icon:PackIconBoxIcons Kind="RegularX" Width="11" Height="11" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Border Width="1" Height="20" Background="{DynamicResource BorderSubtle}" Margin="4,0,12,0" VerticalAlignment="Center" IsVisible="{Binding HasMeshScope}"/>
                     <Button Classes="filter-btn" Classes.active="{Binding IsMeshFilterHeavy}" Command="{Binding SetMeshWeightFilterCommand}" CommandParameter="Heavy" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                             <icon:PackIconBoxIcons Kind="RegularTachometer" Width="13" Height="13" Foreground="{DynamicResource StatusAmber}" VerticalAlignment="Center"/>

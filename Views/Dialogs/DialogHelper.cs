@@ -85,15 +85,17 @@ public static class DialogHelper
         {
             await dialog.ShowDialog(parent);
         }
+        // Reversing an optimization there changes what is optimized.
+        if (viewModel.SavedItemIds.Count > 0 && App.Services?.GetService(typeof(ContentManagerViewModel)) is ContentManagerViewModel library) library.RefreshOptimizedFlags();
         return viewModel.SavedItemIds.ToList();
     }
 
     public static async Task<IReadOnlyList<long>> ShowConfigItemPickerAsync(bool include, string configName,
         IReadOnlyList<PlumbobForge.Backend.Database.SetsEntity> sets, IReadOnlyDictionary<long, bool> existingRules, Window? owner = null,
-        bool forCollection = false, bool forOptimizer = false)
+        bool forCollection = false, bool forOptimizer = false, IReadOnlyList<PlumbobForge.Backend.Database.ModsFolderEntity>? modsFolders = null)
     {
         var parent = owner ?? GetMainWindow();
-        var viewModel = new ConfigItemPickerViewModel(include, configName, sets, existingRules, forCollection, forOptimizer);
+        var viewModel = new ConfigItemPickerViewModel(include, configName, sets, existingRules, forCollection, forOptimizer, modsFolders);
         if (parent != null)
         {
             await new ConfigItemPickerWindow(viewModel).ShowDialog(parent);
@@ -108,11 +110,19 @@ public static class DialogHelper
         return parent != null ? await dialog.ShowDialog<DeleteDialogResult>(parent) : new DeleteDialogResult(false, false);
     }
 
-    public static async Task<DeleteSetDialogResult> ShowDeleteSetConfirmAsync(string setName, Window? owner = null)
+    public static async Task<DeleteSetDialogResult> ShowDeleteSetConfirmAsync(string setName, Window? owner = null, string? message = null)
     {
         var parent = owner ?? GetMainWindow();
-        var dialog = new DeleteSetDialogWindow(setName);
+        var dialog = new DeleteSetDialogWindow(setName, message);
         return parent != null ? await dialog.ShowDialog<DeleteSetDialogResult>(parent) : new DeleteSetDialogResult(false, false, false);
+    }
+
+    public static async Task<List<PlumbobForge.Desktop.ViewModels.ContentManagerViewModel.TidyChoice>?> ShowTidyByTypeAsync(
+        IReadOnlyList<PlumbobForge.Desktop.ViewModels.ContentManagerViewModel.TidyGroup> groups, Window? owner = null)
+    {
+        var parent = owner ?? GetMainWindow();
+        var dialog = new TidyByTypeDialogWindow(groups);
+        return parent != null ? await dialog.ShowDialog<List<PlumbobForge.Desktop.ViewModels.ContentManagerViewModel.TidyChoice>?>(parent) : null;
     }
 
     public static async Task<string> ShowDuplicateAlertAsync(string title, string message, Window? owner = null)
@@ -136,10 +146,10 @@ public static class DialogHelper
         return parent != null ? await dialog.ShowDialog<MoveSetCollisionResult>(parent) : new MoveSetCollisionResult(MoveSetCollisionAction.Cancel, null);
     }
 
-    public static async Task<CustomizeSetResult?> ShowCustomizeSetAsync(string currentName, string? currentIcon, string? currentColor, Window? owner = null)
+    public static async Task<CustomizeSetResult?> ShowCustomizeSetAsync(string currentName, string? currentIcon, string? currentColor, Window? owner = null, bool nameEditable = true, bool isModsFolder = false)
     {
         var parent = owner ?? GetMainWindow();
-        var dialog = new CustomizeSetDialogWindow(currentName, currentIcon, currentColor);
+        var dialog = new CustomizeSetDialogWindow(currentName, currentIcon, currentColor, nameEditable, isModsFolder);
         return parent != null ? await dialog.ShowDialog<CustomizeSetResult?>(parent) : null;
     }
 
@@ -190,6 +200,15 @@ public static class DialogHelper
         {
             await dialog.ShowDialog(parent);
         }
+    }
+
+    // Existing users, once after updating: turn on Mods folder support? Any answer (closing too) counts, so it is not asked again.
+    public static async Task AskModsSupportAsync(SettingsViewModel settings, Window? owner = null)
+    {
+        var parent = owner ?? GetMainWindow();
+        if (parent == null) return;
+        bool turnOn = await new ModsSupportPromptWindow().ShowDialog<bool>(parent);
+        await settings.SetModsSupportAsync(turnOn, false);
     }
 
     public static async Task<PlumbobForge.Backend.Services.VaultMigrationBackupMode?> ShowVaultMigrationChoiceDialogAsync(Window? owner = null)

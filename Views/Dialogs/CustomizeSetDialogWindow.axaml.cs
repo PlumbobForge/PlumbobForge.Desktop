@@ -247,9 +247,20 @@ public partial class CustomizeSetDialogWindow : Window
         Closed += (s, e) => CustomColorPresetsService.PresetsChanged -= OnPresetsChanged;
     }
 
-    public CustomizeSetDialogWindow(string currentName, string? currentIconName, string? currentColorHex)
+    // isModsFolder: a folder in the game's Mods folder, so the dialog talks about folders, not sets.
+    // nameEditable false: a folder Resource.cfg names, which can't be renamed.
+    public CustomizeSetDialogWindow(string currentName, string? currentIconName, string? currentColorHex, bool nameEditable = true, bool isModsFolder = false)
     {
         InitializeComponent();
+        NamePanel.IsVisible = nameEditable;
+        _isModsFolder = isModsFolder;
+        if (isModsFolder)
+        {
+            Title = L("dialogs.customize_set.title_folder");
+            HeaderTitle.Text = Title;
+            NameLabel.Text = L("dialogs.customize_set.name_label_folder");
+            SetNameTextBox.PlaceholderText = L("dialogs.customize_set.name_watermark_folder");
+        }
 
         _setName = currentName ?? string.Empty;
         _selectedColorHex = currentColorHex;
@@ -540,9 +551,15 @@ public partial class CustomizeSetDialogWindow : Window
         }
     }
 
+    private readonly bool _isModsFolder;
+
+    private static string L(string key) => PlumbobForge.Desktop.Services.Localization.LocalizationManager.Instance.GetString(key);
+
     private void UpdatePreview()
     {
-        var displayName = string.IsNullOrWhiteSpace(SetNameTextBox.Text) ? "Set Name" : SetNameTextBox.Text.Trim();
+        var displayName = string.IsNullOrWhiteSpace(SetNameTextBox.Text)
+            ? L(_isModsFolder ? "dialogs.customize_set.name_label_folder" : "dialogs.customize_set.name_label")
+            : SetNameTextBox.Text.Trim();
         PreviewName.Text = displayName;
 
         // Update Icon
@@ -571,7 +588,7 @@ public partial class CustomizeSetDialogWindow : Window
         var text = SetNameTextBox.Text?.Trim();
         if (string.IsNullOrEmpty(text))
         {
-            ErrorTextBlock.Text = "Set name cannot be empty.";
+            ErrorTextBlock.Text = L(_isModsFolder ? "dialogs.customize_set.name_empty_folder" : "dialogs.customize_set.name_empty");
             ErrorTextBlock.IsVisible = true;
             SaveButton.IsEnabled = false;
             return false;

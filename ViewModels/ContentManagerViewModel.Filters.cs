@@ -104,6 +104,7 @@ public partial class ContentManagerViewModel
     // Mode
     [ObservableProperty] private bool _filterModeEnabled = true;
     [ObservableProperty] private bool _filterModeDisabled = true;
+    [ObservableProperty] private bool _filterModeOptimizedOnly;
 
     // Collapsible Accordion Section States
     [ObservableProperty] private bool _isTypeExpanded = true;
@@ -185,6 +186,7 @@ public partial class ContentManagerViewModel
 
         FilterModeEnabled = true;
         FilterModeDisabled = true;
+        FilterModeOptimizedOnly = false;
 
         RequestFilterUpdate(0);
     }
@@ -240,6 +242,7 @@ public partial class ContentManagerViewModel
 
         FilterModeEnabled = false;
         FilterModeDisabled = false;
+        FilterModeOptimizedOnly = false;
 
         RequestFilterUpdate(0);
     }
@@ -595,11 +598,13 @@ public partial class ContentManagerViewModel
 
     partial void OnFilterModeEnabledChanged(bool value) { OnPropertyChanged(nameof(IsAllModeSelected)); RequestFilterUpdate(); }
     partial void OnFilterModeDisabledChanged(bool value) { OnPropertyChanged(nameof(IsAllModeSelected)); RequestFilterUpdate(); }
+    partial void OnFilterModeOptimizedOnlyChanged(bool value) => RequestFilterUpdate();
 
     partial void OnSelectedSetNodeChanged(SetNodeViewModel? value)
     {
         _savedSetId = value?.Id;
         OnPropertyChanged(nameof(CanShowSortFavoritesFirst));
+        SyncSmartFilters(value);
         SaveCurrentUiState();
         RequestFilterUpdate(0);
     }
@@ -609,6 +614,7 @@ public partial class ContentManagerViewModel
     private void RequestFilterUpdate(int debounceMs = 30)
     {
         SaveCurrentUiState();
+        RaiseSmartState();
 
         if (debounceMs <= 0)
         {
@@ -646,9 +652,21 @@ public partial class ContentManagerViewModel
     {
         var query = Items.AsEnumerable();
 
-        if (SelectedSetNode != null && SelectedSetNode.IsFavorites)
+        if (SelectedSetNode != null && (SelectedSetNode.IsSmartSet || SelectedSetNode.IsSmartHeader))
+        {
+            // A smart set is its filters over everything.
+        }
+        else if (SelectedSetNode != null && SelectedSetNode.IsFavorites)
         {
             query = query.Where(i => i.IsFavorite);
+        }
+        else if (SelectedSetNode != null && SelectedSetNode.IsModsNode)
+        {
+            query = FilterByModsNode(query, SelectedSetNode);
+        }
+        else if (SelectedSetNode != null && SelectedSetNode.IsSetsHeader)
+        {
+            query = FilterBySetsHeader(query);
         }
         else
         {
@@ -665,6 +683,39 @@ public partial class ContentManagerViewModel
             }
         }
 
+        query = FilterByPanel(query);
+
+        query = (CurrentItemSort, SortFavoritesFirst) switch
+        {
+            ("NameAsc", true) => query.OrderByDescending(i => i.IsFavorite).ThenBy(i => i.FileName, StringComparer.OrdinalIgnoreCase),
+            ("NameAsc", false) => query.OrderBy(i => i.FileName, StringComparer.OrdinalIgnoreCase),
+            ("NameDesc", true) => query.OrderByDescending(i => i.IsFavorite).ThenByDescending(i => i.FileName, StringComparer.OrdinalIgnoreCase),
+            ("NameDesc", false) => query.OrderByDescending(i => i.FileName, StringComparer.OrdinalIgnoreCase),
+            (_, true) => query.OrderByDescending(i => i.IsFavorite).ThenByDescending(i => i.Id),
+            (_, false) => query.OrderByDescending(i => i.Id)
+        };
+
+        var newMatchingList = query.ToList();
+        var newMatchingSet = new HashSet<ItemViewModel>(newMatchingList);
+
+        // Smart thumbnail cache preservation: only unload thumbnails for items NO LONGER matching
+        foreach (var oldItem in FilteredItems)
+        {
+            if (!newMatchingSet.Contains(oldItem))
+            {
+                oldItem.UnloadThumbnail();
+            }
+        }
+
+        _allMatchingItems = newMatchingList;
+        FilteredItems.ReplaceAll(_allMatchingItems);
+        RebuildRows();
+        RecountSmartSets();
+    }
+
+    // The filter panel (search, on/off, type and its sub-filters) over a set of items. Smart sets count with it too.
+    private IEnumerable<ItemViewModel> FilterByPanel(IEnumerable<ItemViewModel> query)
+    {
         if (!string.IsNullOrWhiteSpace(SearchQuery))
         {
             var q = SearchQuery.Trim().ToLowerInvariant();
@@ -674,6 +725,7 @@ public partial class ContentManagerViewModel
 
         // Mode filter
         query = query.Where(i => (i.Enabled && FilterModeEnabled) || (!i.Enabled && FilterModeDisabled));
+        if (FilterModeOptimizedOnly) query = query.Where(i => i.IsOptimized);
 
         // Type filter
         query = query.Where(i =>
@@ -711,32 +763,7 @@ public partial class ContentManagerViewModel
 
             return false;
         });
-
-        query = (CurrentItemSort, SortFavoritesFirst) switch
-        {
-            ("NameAsc", true) => query.OrderByDescending(i => i.IsFavorite).ThenBy(i => i.FileName, StringComparer.OrdinalIgnoreCase),
-            ("NameAsc", false) => query.OrderBy(i => i.FileName, StringComparer.OrdinalIgnoreCase),
-            ("NameDesc", true) => query.OrderByDescending(i => i.IsFavorite).ThenByDescending(i => i.FileName, StringComparer.OrdinalIgnoreCase),
-            ("NameDesc", false) => query.OrderByDescending(i => i.FileName, StringComparer.OrdinalIgnoreCase),
-            (_, true) => query.OrderByDescending(i => i.IsFavorite).ThenByDescending(i => i.Id),
-            (_, false) => query.OrderByDescending(i => i.Id)
-        };
-
-        var newMatchingList = query.ToList();
-        var newMatchingSet = new HashSet<ItemViewModel>(newMatchingList);
-
-        // Smart thumbnail cache preservation: only unload thumbnails for items NO LONGER matching
-        foreach (var oldItem in FilteredItems)
-        {
-            if (!newMatchingSet.Contains(oldItem))
-            {
-                oldItem.UnloadThumbnail();
-            }
-        }
-
-        _allMatchingItems = newMatchingList;
-        FilteredItems.ReplaceAll(_allMatchingItems);
-        RebuildRows();
+        return query;
     }
 
     private bool MatchCasCategory(ItemViewModel item)

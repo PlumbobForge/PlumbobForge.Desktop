@@ -402,6 +402,8 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
     public CcOptimizerViewModel()
     {
         Items.CollectionChanged += (_, _) => RaiseListProperties();
+        HistoryItems.CollectionChanged += (_, _) => RaiseHistoryList();
+        CountHistory();
     }
 
     private void RaiseListProperties()
@@ -1044,7 +1046,11 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
 
         string summary = stop ?? (failed > 0 ? L("optimizer.saved_some", saved, failed) : L("optimizer.saved_items", saved));
         StatusMessage = saved > 0 && needsRebuild && stop == null ? $"{summary} {L("optimizer.saved_rebuild")}" : summary;
-        if (savedIds.Count > 0) ItemsSaved?.Invoke(savedIds);
+        if (savedIds.Count > 0)
+        {
+            ItemsSaved?.Invoke(savedIds);
+            OnHistoryChanged();
+        }
 
         if (selected != null && Items.Contains(selected))
         {

@@ -387,12 +387,8 @@
                                                             ToolTip.Tip="{Binding DisplayName}">
                                                         <Button.ContextMenu>
                                                             <ContextMenu>
-                                                                <MenuItem Header="{loc:Loc 'tools.collections.delete_custom_icon'}"
-                                                                          Click="OnDeleteCustomIconClick">
-                                                                    <MenuItem.Icon>
-                                                                        <icon:PackIconBoxIcons Kind="RegularTrash" Width="13" Height="13" Foreground="#ef4444"/>
-                                                                    </MenuItem.Icon>
-                                                                </MenuItem>
+                                                                <MenuItem Classes="danger" Header="{loc:Loc 'tools.collections.delete_custom_icon'}"
+                                                                          Click="OnDeleteCustomIconClick"/>
                                                             </ContextMenu>
                                                         </Button.ContextMenu>
                                                         <Button.Styles>

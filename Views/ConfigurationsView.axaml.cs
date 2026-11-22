@@ -222,7 +222,8 @@ public partial class ConfigurationsView : UserControl
                         {
                             SourceIsEnabled = candidate.IsInEnabledColumn,
                             SetIds = dragged.OfType<ConfigSetItemViewModel>().Select(s => s.Id).ToList(),
-                            ItemIds = dragged.OfType<ConfigItemCardViewModel>().Select(i => i.ItemId).ToList()
+                            ItemIds = dragged.OfType<ConfigItemCardViewModel>().Select(i => i.ItemId).ToList(),
+                            FolderIds = dragged.OfType<ConfigModsFolderViewModel>().Select(f => f.Id).ToList()
                         };
 
                         await AppDragData.StartAsync(AppDragData.Create(AppDragData.ConfigCards, dragPayload.Serialize()), DragDropEffects.Move);
@@ -263,6 +264,7 @@ public partial class ConfigurationsView : UserControl
         {
             if (border.DataContext is ConfigSetItemViewModel set) _ = vm.ToggleSetEnabled(set);
             else if (border.DataContext is ConfigItemCardViewModel item) _ = vm.ToggleItemCardAsync(item);
+            else if (border.DataContext is ConfigModsFolderViewModel folder) _ = vm.ToggleModsFolderAsync(folder);
             e.Handled = true;
         }
     }
@@ -311,7 +313,7 @@ public partial class ConfigurationsView : UserControl
         {
             var payload = ConfigDragPayload.Deserialize(e.DataTransfer.TryGetValue(AppDragData.ConfigCards));
 
-            if (payload != null && (payload.SetIds.Count > 0 || payload.ItemIds.Count > 0))
+            if (payload != null && (payload.SetIds.Count > 0 || payload.ItemIds.Count > 0 || payload.FolderIds.Count > 0))
             {
                 bool isOverEnabled = IsPointerOverControl(EnabledColumnBorder, e.GetPosition(this));
                 bool isOverDisabled = IsPointerOverControl(DisabledColumnBorder, e.GetPosition(this));
@@ -324,6 +326,7 @@ public partial class ConfigurationsView : UserControl
                     e.Handled = true;
                     // Items flip between included and excluded; sets move as before (may ask about sub-sets).
                     if (payload.ItemIds.Count > 0) await vm.MoveItemsAsync(payload.ItemIds, toEnabled.Value);
+                    if (payload.FolderIds.Count > 0) await vm.RequestMoveModsFoldersAsync(payload.FolderIds, toEnabled.Value);
                     if (payload.SetIds.Count > 0) await vm.RequestMoveSetsAsync(payload.SetIds, targetToEnabled: toEnabled.Value);
                 }
             }
@@ -476,16 +479,17 @@ public partial class ConfigurationsView : UserControl
     }
     #endregion
 
-    // Format: "enabled:setIds;itemIds", e.g. "1:3,4;120".
+    // Format: "enabled:setIds;itemIds;modsFolderIds", e.g. "1:3,4;120;7".
     private class ConfigDragPayload
     {
         public bool SourceIsEnabled { get; set; }
         public List<long> SetIds { get; set; } = new();
         public List<long> ItemIds { get; set; } = new();
+        public List<long> FolderIds { get; set; } = new();
 
         public string Serialize()
         {
-            return $"{(SourceIsEnabled ? "1" : "0")}:{string.Join(',', SetIds)};{string.Join(',', ItemIds)}";
+            return $"{(SourceIsEnabled ? "1" : "0")}:{string.Join(',', SetIds)};{string.Join(',', ItemIds)};{string.Join(',', FolderIds)}";
         }
 
         public static ConfigDragPayload? Deserialize(string? text)
@@ -499,7 +503,8 @@ public partial class ConfigurationsView : UserControl
             {
                 SourceIsEnabled = text.Substring(0, colonIdx) == "1",
                 SetIds = ParseIds(parts[0]),
-                ItemIds = parts.Length > 1 ? ParseIds(parts[1]) : new List<long>()
+                ItemIds = parts.Length > 1 ? ParseIds(parts[1]) : new List<long>(),
+                FolderIds = parts.Length > 2 ? ParseIds(parts[2]) : new List<long>()
             };
         }
 

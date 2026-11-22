@@ -54,6 +54,10 @@ public static class ConfigItemRules
                 }
             });
             if (isStatic && !opts.AutoRebuildStaticCache) message = L("configurations.items_static_rebuild");
+
+            // Mods files don't wait for a rebuild (the sync above only covers them when it ran).
+            string? modsFailure = await ConfigurationsViewModel.ApplyModsConfigurationAsync();
+            if (modsFailure != null) message = modsFailure;
         }
 
         if (!vault && !isStatic && librarySetsNeedingRebuild > 0)
