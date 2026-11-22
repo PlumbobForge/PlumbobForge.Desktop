@@ -147,14 +147,15 @@
       "keywords": ["rebuild", "apply", "sync", "update game", "refresh", "pending", "orange", "amber", "force rebuild"],
       "questions": ["My changes don't show in the game", "What does the orange button mean?", "How do I apply changes?"],
       "steps": [
-        "When something changes, the **Rebuild** button in the title bar (the circular arrows) turns orange.",
+        "When something changes, the **Play** button in the title bar turns orange and says **Rebuild & Play**.",
         "Close The Sims 3. The game keeps the cache files open, so a rebuild can't run while it's open.",
-        "Click the **Rebuild** button and wait for it to finish.",
-        "If things still look wrong, right-click the button and choose **Force Rebuild** to rebuild everything from scratch."
+        "Click **Rebuild & Play**: your changes go into the game, then The Sims 3 starts.",
+        "To rebuild without starting the game, open the menu next to Play and choose **Rebuild Without Playing**.",
+        "If things still look wrong, right-click **Play** and choose **Force Rebuild** to rebuild everything from scratch."
       ],
-      "tips": ["In Vault mode there's nothing to rebuild: the title bar shows the vault status instead."],
+      "tips": ["In Vault mode there's nothing to rebuild: Play always starts the game straight away, and its menu shows the vault status."],
       "related": ["storage-mode", "cache-mode", "cc-not-in-game"],
-      "showMe": { "target": "library", "highlight": "titlebar.rebuild" }
+      "showMe": { "target": "library", "highlight": "titlebar.play" }
     },
     {
       "id": "quick-jump",
@@ -164,7 +165,7 @@
       "keywords": ["quick jump", "ctrl+k", "ctrl k", "shortcut", "keyboard", "go to", "navigate"],
       "questions": ["Is there a keyboard shortcut to search?", "How do I find a set quickly?"],
       "steps": [
-        "Press **Ctrl+K**, or click **Quick Jump** in the title bar.",
+        "Press **Ctrl+K**, or click the magnifying glass in the title bar.",
         "Start typing a name.",
         "Use the arrow keys and press **Enter**, or click a result to go there."
       ],
@@ -819,7 +820,7 @@
       "steps": [
         "Check the item is turned on in the Library, and that no object is turned off in **Look Inside**.",
         "Check its set is under **Enabled Sets** in the active configuration.",
-        "In Library mode, close the game and click **Rebuild** if the button is orange.",
+        "In Library mode, close the game and click **Rebuild & Play** if the Play button is orange.",
         "Check your game folders in **Settings** → **Storage & Paths**.",
         "Clean the caches with **Tools** → **Cache Cleaner**."
       ],
@@ -838,7 +839,7 @@
         "Run **Tools** → **Conflict Scanner** and fix any **Corrupt Packages** and duplicates.",
         "Clean the caches with **Tools** → **Cache Cleaner**.",
         "Duplicate your configuration, disable the sets you added most recently, and test again to narrow it down.",
-        "Still crashing? Send a bug report with the bug button in the title bar and tick the Sims 3 logs."
+        "Still crashing? Send a bug report from the **?** button in the title bar and tick the Sims 3 logs."
       ],
       "related": ["conflicts", "clean-cache", "send-feedback"],
       "showMe": { "target": "tools:Conflicts" }
@@ -883,11 +884,11 @@
       "steps": [
         "Make sure The Sims 3 is fully closed, then try again.",
         "Skipped files are usually damaged or incomplete downloads. Download them again or delete them.",
-        "Try **Force Rebuild** (right-click the Rebuild button).",
+        "Try **Force Rebuild** (right-click the Play button).",
         "Still failing? Run **Auto-Fix** in **Settings** → **Maintenance & Diagnostics**."
       ],
       "related": ["rebuild", "autofix", "conflicts"],
-      "showMe": { "target": "library", "highlight": "titlebar.rebuild" }
+      "showMe": { "target": "library", "highlight": "titlebar.play" }
     },
     {
       "id": "send-feedback",
@@ -897,13 +898,13 @@
       "keywords": ["bug", "report", "feedback", "contact", "help", "question", "support", "suggestion", "idea"],
       "questions": ["How do I report a bug?", "Who do I contact?", "I have an idea for a feature"],
       "steps": [
-        "Click the **bug button** in the title bar.",
+        "Click the **?** button in the title bar and choose **Send Feedback or Report a Bug**.",
         "Pick what it's about and describe what happened.",
         "Leave your Tumblr username or email if you'd like a reply.",
         "Keep the logs ticked for bugs. Your Windows username is removed from them."
       ],
       "related": ["game-crash"],
-      "showMe": { "target": "library", "highlight": "titlebar.feedback" }
+      "showMe": { "target": "library", "highlight": "titlebar.help" }
     }
   ],
 

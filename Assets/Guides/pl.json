@@ -117,12 +117,13 @@
       "keywords": ["przebuduj", "przebudowa", "zastosuj", "synchronizuj", "odśwież", "oczekujące", "pomarańczowy", "wymuś przebudowę"],
       "questions": ["Moje zmiany nie widać w grze", "Co oznacza pomarańczowy przycisk?", "Jak zastosować zmiany?"],
       "steps": [
-        "Gdy coś się zmieni, przycisk **Przebuduj** na pasku tytułu (okrągłe strzałki) zmienia kolor na pomarańczowy.",
+        "Gdy coś się zmieni, przycisk **Graj** na pasku tytułu zmienia kolor na pomarańczowy i pokazuje **Przebuduj i graj**.",
         "Zamknij The Sims 3. Gra trzyma pliki pamięci podręcznej otwarte, więc przebudowa nie zadziała, gdy jest włączona.",
-        "Kliknij **Przebuduj** i poczekaj do końca.",
-        "Jeśli coś nadal jest nie tak, kliknij przycisk prawym przyciskiem i wybierz **Wymuś przebudowę**, aby zbudować wszystko od nowa."
+        "Kliknij **Przebuduj i graj**: zmiany trafią do gry, a potem uruchomi się The Sims 3.",
+        "Aby przebudować bez uruchamiania gry, otwórz menu obok przycisku Graj i wybierz **Przebuduj bez grania**.",
+        "Jeśli coś nadal jest nie tak, kliknij **Graj** prawym przyciskiem i wybierz **Wymuś przebudowę**, aby zbudować wszystko od nowa."
       ],
-      "tips": ["W trybie skarbca nie ma czego przebudowywać: pasek tytułu pokazuje wtedy stan skarbca."]
+      "tips": ["W trybie skarbca nie ma czego przebudowywać: Graj od razu uruchamia grę, a jego menu pokazuje stan skarbca."]
     },
     {
       "id": "quick-jump",
@@ -131,7 +132,7 @@
       "keywords": ["szybki skok", "ctrl+k", "skrót", "klawiatura", "przejdź do"],
       "questions": ["Czy jest skrót do wyszukiwania?", "Jak szybko znaleźć zestaw?"],
       "steps": [
-        "Naciśnij **Ctrl+K** lub kliknij **Szybki skok** na pasku tytułu.",
+        "Naciśnij **Ctrl+K** lub kliknij lupę na pasku tytułu.",
         "Zacznij wpisywać nazwę.",
         "Wybierz wynik strzałkami i naciśnij **Enter** lub kliknij go."
       ]
@@ -674,7 +675,7 @@
       "steps": [
         "Sprawdź, czy przedmiot jest włączony w Bibliotece i czy żaden obiekt nie jest wyłączony w **Zajrzyj do środka**.",
         "Sprawdź, czy jego zestaw jest we **Włączonych zestawach** aktywnej konfiguracji.",
-        "W trybie biblioteki zamknij grę i kliknij **Przebuduj**, jeśli przycisk jest pomarańczowy.",
+        "W trybie biblioteki zamknij grę i kliknij **Przebuduj i graj**, jeśli przycisk Graj jest pomarańczowy.",
         "Sprawdź foldery gry w **Ustawienia** → **Dane i ścieżki**.",
         "Wyczyść pamięć podręczną w **Narzędzia** → **Czyszczenie pamięci podręcznej**."
       ],
@@ -690,7 +691,7 @@
         "Uruchom **Narzędzia** → **Skaner konfliktów** i usuń **Uszkodzone pakiety** oraz duplikaty.",
         "Wyczyść pamięć podręczną w **Narzędzia** → **Czyszczenie pamięci podręcznej**.",
         "Zduplikuj konfigurację, wyłącz ostatnio dodane zestawy i sprawdź ponownie, aby zawęzić problem.",
-        "Nadal się wywala? Wyślij zgłoszenie przyciskiem z robakiem na pasku tytułu i zaznacz logi Sims 3."
+        "Nadal się wywala? Wyślij zgłoszenie przyciskiem **?** na pasku tytułu i zaznacz logi Sims 3."
       ]
     },
     {
@@ -726,7 +727,7 @@
       "steps": [
         "Upewnij się, że The Sims 3 jest całkiem zamknięte, i spróbuj ponownie.",
         "Pominięte pliki to zwykle uszkodzone lub niedokończone pobrania. Pobierz je ponownie lub usuń.",
-        "Spróbuj **Wymuś przebudowę** (prawy przycisk na przycisku Przebuduj).",
+        "Spróbuj **Wymuś przebudowę** (prawy przycisk na przycisku Graj).",
         "Nadal nie działa? Uruchom automatyczną naprawę w **Ustawienia** → **Diagnostyka**."
       ]
     },
@@ -737,7 +738,7 @@
       "keywords": ["błąd", "bug", "zgłoś", "opinia", "kontakt", "pomoc", "pytanie", "wsparcie", "sugestia", "pomysł"],
       "questions": ["Jak zgłosić błąd?", "Z kim się skontaktować?", "Mam pomysł na funkcję"],
       "steps": [
-        "Kliknij **przycisk z robakiem** na pasku tytułu.",
+        "Kliknij przycisk **?** na pasku tytułu i wybierz **Wyślij opinię lub zgłoś błąd**.",
         "Wybierz, czego dotyczy zgłoszenie, i opisz, co się stało.",
         "Zostaw nazwę na Tumblrze lub e-mail, jeśli chcesz dostać odpowiedź.",
         "Przy błędach zostaw zaznaczone logi. Twoja nazwa użytkownika Windows jest z nich usuwana."

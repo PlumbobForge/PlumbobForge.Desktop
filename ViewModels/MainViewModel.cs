@@ -22,7 +22,6 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly IServiceProvider _serviceProvider;
     // 2: compression removed; libraries compressed by older versions need a one-time repair + rebuild.
-    public const int CurrentCacheOptimizationMilestone = 2;
 
     [ObservableProperty]
     private ObservableObject? _currentView;
@@ -54,6 +53,7 @@ public partial class MainViewModel : ObservableObject
             VaultStatusText = isUpdating
                 ? (customText ?? LocalizationManager.Instance.GetString("progress.vault_status_updating"))
                 : LocalizationManager.Instance.GetString("progress.vault_status_uptodate");
+            IsVaultUpdating = isUpdating;
         });
     }
 
@@ -68,9 +68,6 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private string _updateToastMessage = string.Empty;
-
-    [ObservableProperty]
-    private bool _isCacheOptimizationToastVisible;
 
     [ObservableProperty]
     private bool _isWhatsNewToastVisible;
@@ -253,108 +250,11 @@ public partial class MainViewModel : ObservableObject
         {
             NavigateToContentManager();
             _ = RefreshDirtyStateAsync();
-            _ = CheckCacheOptimizationOnStartupAsync();
             _ = CheckWhatsNewOnStartupAsync();
+            StartGameWatch();
         }, DispatcherPriority.Loaded);
 
         _ = CheckForUpdatesOnStartupAsync();
-    }
-
-    private async Task CheckCacheOptimizationOnStartupAsync()
-    {
-        try
-        {
-            await Task.Delay(1000);
-
-            string settingsPath = AppSettingsService.GetAppSettingsPath();
-            if (!File.Exists(settingsPath)) return;
-
-            string json = await File.ReadAllTextAsync(settingsPath);
-            var node = JsonNode.Parse(json);
-            var pfNode = node?["PlumbobForge"];
-            if (pfNode == null) return;
-
-            bool hasSeen = pfNode["HasSeenWalkthrough"]?.GetValue<bool>() ?? false;
-            if (!hasSeen) return;
-
-            int lastMilestone = pfNode["LastOptimizedCacheMilestone"]?.GetValue<int>() ?? 0;
-            // Backward compatibility: If LastOptimizedCacheVersion was already recorded,
-            // milestone 1 is already completed so the toast will not reappear when updating to future versions.
-            if (lastMilestone == 0 && !string.IsNullOrEmpty(pfNode["LastOptimizedCacheVersion"]?.GetValue<string>()))
-            {
-                lastMilestone = 1;
-            }
-
-            if (lastMilestone < CurrentCacheOptimizationMilestone)
-            {
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    IsCacheOptimizationToastVisible = true;
-                });
-            }
-        }
-        catch
-        {
-        }
-    }
-
-    private async Task MarkCacheOptimizedVersionAsync()
-    {
-        try
-        {
-            string settingsPath = AppSettingsService.GetAppSettingsPath();
-            JsonObject root;
-            if (File.Exists(settingsPath))
-            {
-                root = (JsonNode.Parse(await File.ReadAllTextAsync(settingsPath)) as JsonObject) ?? new JsonObject();
-            }
-            else
-            {
-                root = new JsonObject();
-            }
-
-            var pfNode = root["PlumbobForge"] as JsonObject;
-            if (pfNode == null)
-            {
-                pfNode = new JsonObject();
-                root["PlumbobForge"] = pfNode;
-            }
-
-            var asmVersion = typeof(MainViewModel).Assembly.GetName().Version;
-            string currentVer = asmVersion != null ? asmVersion.ToString(3) : InstallerConstants.DisplayVersion;
-            pfNode["LastOptimizedCacheVersion"] = currentVer;
-            pfNode["LastOptimizedCacheMilestone"] = CurrentCacheOptimizationMilestone;
-
-            var opts = new JsonSerializerOptions { WriteIndented = true };
-            await File.WriteAllTextAsync(settingsPath, root.ToJsonString(opts));
-        }
-        catch
-        {
-        }
-    }
-
-    [RelayCommand]
-    public async Task DismissCacheOptimizationToastAsync()
-    {
-        IsCacheOptimizationToastVisible = false;
-        await MarkCacheOptimizedVersionAsync();
-    }
-
-    // "Later" only hides the toast for this session so the repair is offered again next launch.
-    [RelayCommand]
-    public void HideCacheOptimizationToast()
-    {
-        IsCacheOptimizationToastVisible = false;
-    }
-
-    [RelayCommand]
-    public async Task ForceRebuildFromToastAsync()
-    {
-        IsCacheOptimizationToastVisible = false;
-        // Only record the milestone once repair and rebuild succeed, so a failed run is offered again.
-        await _serviceProvider.GetRequiredService<ContentManagerViewModel>()
-            .RepairCompressionAndRebuildAsync(onSucceeded: MarkCacheOptimizedVersionAsync);
-        await RefreshDirtyStateAsync();
     }
 
     private static string GetCurrentAppVersion()
@@ -391,6 +291,7 @@ public partial class MainViewModel : ObservableObject
 
             // No walkthrough yet means a fresh install, and an older current version means a downgrade.
             bool hasSeenWalkthrough = pfNode["HasSeenWalkthrough"]?.GetValue<bool>() ?? false;
+            await Dispatcher.UIThread.InvokeAsync(() => ShowHelpMoveTipOnce(isUpdate: hasSeenWalkthrough));
             if (!hasSeenWalkthrough) return;
             if (ChangelogService.Parse(lastSeen) is { } lastVer && ChangelogService.Parse(current) is { } curVer && lastVer >= curVer) return;
 
@@ -410,6 +311,21 @@ public partial class MainViewModel : ObservableObject
         catch
         {
         }
+    }
+
+    // From the Help menu: the latest notes, whenever asked.
+    [RelayCommand]
+    public void ShowWhatsNew()
+    {
+        var loc = LocalizationManager.Instance;
+        string current = GetCurrentAppVersion();
+        var highlights = ChangelogService.GetHighlights(null, current, loc.EffectiveLanguage);
+        WhatsNewTitle = loc.GetString("app.whats_new_title", current);
+        WhatsNewSubtitle = highlights.Count == 0 ? loc.GetString("app.whats_new_updated", current) : string.Empty;
+        WhatsNewHighlights.Clear();
+        foreach (var h in highlights) WhatsNewHighlights.Add(h);
+        HasWhatsNewHighlights = highlights.Count > 0;
+        IsWhatsNewToastVisible = true;
     }
 
     [RelayCommand]
@@ -478,6 +394,7 @@ public partial class MainViewModel : ObservableObject
 
             // Dirty flags only mean "rebuild pending" in library mode; the vault never rebuilds.
             bool dirty = !vaultActive && await db.SetsEntities.AsNoTracking().AnyAsync((SetsEntity s) => s.Dirty);
+            await RefreshActiveConfigNameAsync(db);
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 HasDirtySets = dirty;
@@ -490,9 +407,10 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public async Task OpenQuickSwitcherAsync()
+    // The title bar button passes "click", so Quick Jump can teach the shortcut.
+    public async Task OpenQuickSwitcherAsync(string? source = null)
     {
-        await QuickSwitcher.OpenAsync();
+        await QuickSwitcher.OpenAsync(fromClick: source == "click");
     }
 
     [RelayCommand]

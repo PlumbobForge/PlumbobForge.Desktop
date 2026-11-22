@@ -59,8 +59,32 @@ public partial class QuickSwitcherViewModel : ObservableObject
         _serviceProvider = serviceProvider;
     }
 
-    public async Task OpenAsync()
+    // Discord-style tip under the results. Opened by a click: the shortcut; opened by keyboard: other tips in turn.
+    private static readonly (string Before, string Key, string After)[] KeyboardTips =
     {
+        ("nav.qj_tip_command_before", "/", "nav.qj_tip_command_after"),
+        ("nav.qj_tip_search_before", "Ctrl+F", "nav.qj_tip_search_after"),
+    };
+    private int _tipTurn;
+
+    [ObservableProperty] private string _tipBefore = string.Empty;
+    [ObservableProperty] private string _tipKey = string.Empty;
+    [ObservableProperty] private string _tipAfter = string.Empty;
+
+    private void PickTip(bool fromClick)
+    {
+        var loc = Services.Localization.LocalizationManager.Instance;
+        var tip = fromClick
+            ? ("nav.qj_tip_shortcut_before", "Ctrl+K", "nav.qj_tip_shortcut_after")
+            : KeyboardTips[_tipTurn++ % KeyboardTips.Length];
+        TipBefore = loc.GetString(tip.Item1);
+        TipKey = tip.Item2;
+        TipAfter = loc.GetString(tip.Item3);
+    }
+
+    public async Task OpenAsync(bool fromClick = false)
+    {
+        PickTip(fromClick);
         IsOpen = true;
         SearchQuery = string.Empty;
         SelectedCategory = "All";

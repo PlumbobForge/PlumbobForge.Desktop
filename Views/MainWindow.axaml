@@ -91,36 +91,70 @@
         <Style Selector="Button.nav-action-btn.active bx|PackIconBoxIcons">
             <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
         </Style>
-        <Style Selector="Button.quick-search-trigger-btn">
-            <Setter Property="Width" Value="NaN"/>
-            <Setter Property="Padding" Value="8,4,8,4"/>
+        <!-- Play split button: accent normally, amber when a rebuild waits, quiet while the game runs -->
+        <Style Selector="Border.play-group">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="ClipToBounds" Value="True"/>
         </Style>
-        <Style Selector="Button.rebuild-btn">
-            <Setter Property="Background" Value="Transparent"/>
+        <Style Selector="Border.play-group.dirty">
+            <Setter Property="Background" Value="#E5A93C"/>
         </Style>
-        <Style Selector="Button.rebuild-btn bx|PackIconBoxIcons">
-            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
-        </Style>
-        <Style Selector="Button.rebuild-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Style Selector="Border.play-group.running">
             <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
         </Style>
-        <Style Selector="Button.rebuild-btn:pointerover bx|PackIconBoxIcons">
+        <Style Selector="Border.play-divider">
+            <Setter Property="Width" Value="1"/>
+            <Setter Property="Margin" Value="0,7"/>
+            <Setter Property="Background" Value="#40FFFFFF"/>
+        </Style>
+        <Style Selector="Border.play-group.running Border.play-divider">
+            <Setter Property="Background" Value="{DynamicResource BorderSubtle}"/>
+        </Style>
+        <Style Selector="Button.play-main, Button.play-menu">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.play-main">
+            <Setter Property="Padding" Value="12,0,12,0"/>
+        </Style>
+        <Style Selector="Button.play-menu">
+            <Setter Property="Padding" Value="10,0,9,0"/>
+        </Style>
+        <Style Selector="Button.play-main /template/ ContentPresenter#PART_ContentPresenter, Button.play-menu /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+        </Style>
+        <Style Selector="Button.play-main:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.play-menu:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#22FFFFFF"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+        </Style>
+        <Style Selector="Button.play-main:pressed /template/ ContentPresenter#PART_ContentPresenter, Button.play-menu:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#33000000"/>
+        </Style>
+        <Style Selector="Button.play-main:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#D0FFFFFF"/>
+        </Style>
+        <Style Selector="Button.play-main bx|PackIconBoxIcons, Button.play-menu bx|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+        </Style>
+        <Style Selector="Border.play-group.running Button.play-main /template/ ContentPresenter#PART_ContentPresenter, Border.play-group.running Button.play-menu /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        </Style>
+        <Style Selector="Border.play-group.running Button.play-menu:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource BgSurfaceHover}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
         </Style>
-        <Style Selector="Button.rebuild-btn.dirty">
-            <Setter Property="Background" Value="#E5A93C"/>
-        </Style>
-        <Style Selector="Button.rebuild-btn.dirty /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="#E5A93C"/>
-        </Style>
-        <Style Selector="Button.rebuild-btn.dirty:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="#F5B94C"/>
-        </Style>
-        <Style Selector="Button.rebuild-btn.dirty bx|PackIconBoxIcons">
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-        </Style>
-        <Style Selector="Button.rebuild-btn.dirty:pointerover bx|PackIconBoxIcons">
-            <Setter Property="Foreground" Value="#FFFFFF"/>
+        <Style Selector="Border.play-group.running bx|PackIconBoxIcons">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
         </Style>
         <Style Selector="Button.nav-tab">
             <Setter Property="Background" Value="Transparent"/>
@@ -222,68 +256,92 @@
                                 VerticalAlignment="Stretch"
                                 HorizontalAlignment="Right">
                         <!-- Quick Jump Search Trigger Button -->
-                        <Button Classes="nav-action-btn quick-search-trigger-btn"
+                        <Button x:Name="QuickJumpButton"
+                                Classes="nav-action-btn"
                                 controls:GuideTarget.Id="titlebar.quick-jump"
                                 Command="{Binding OpenQuickSwitcherCommand}"
+                                CommandParameter="click"
                                 ToolTip.Tip="{loc:Loc common.quick_jump}">
-                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                <bx:PackIconBoxIcons Kind="RegularSearch" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{loc:Loc nav.quick_jump}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
-                                <Border Background="{DynamicResource BgCardAlt}"
-                                        BorderBrush="{DynamicResource BorderSubtle}"
-                                        BorderThickness="1"
-                                        CornerRadius="3"
-                                        Padding="5,1,5,1"
-                                        VerticalAlignment="Center">
-                                    <TextBlock Text="{loc:Loc nav.ctrl_k}" FontSize="9" FontWeight="DemiBold" Foreground="{DynamicResource TextMuted}"/>
-                                </Border>
-                            </StackPanel>
+                            <bx:PackIconBoxIcons Kind="RegularSearch" Width="15" Height="15" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
 
-                        <!-- Send Feedback / Bug Report -->
-                        <Button Classes="nav-action-btn"
-                                controls:GuideTarget.Id="titlebar.feedback"
-                                Command="{Binding OpenFeedbackCommand}"
-                                ToolTip.Tip="{loc:Loc nav.send_feedback}">
-                            <bx:PackIconBoxIcons Kind="RegularBug" Width="15" Height="15" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Button>
-
-                        <!-- Guide (F1) -->
-                        <Button Classes="nav-action-btn"
+                        <!-- Help: the guide, What's New and bug reports -->
+                        <Button x:Name="HelpButton"
+                                Classes="nav-action-btn"
                                 Classes.active="{Binding IsGuideOpen}"
-                                Command="{Binding ToggleGuideCommand}"
-                                ToolTip.Tip="{loc:Loc nav.guide}">
-                            <bx:PackIconBoxIcons Kind="RegularHelpCircle" Width="16" Height="16" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Button>
-
-                        <!-- Vault Status Regular Text (When Vault is active) -->
-                        <TextBlock Text="{Binding VaultStatusText}"
-                                   FontSize="11.5"
-                                   FontWeight="Medium"
-                                   Foreground="{DynamicResource TextMuted}"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,10,0"
-                                   IsVisible="{Binding IsVaultActive}"/>
-
-                        <!-- Rebuild Cache Button (Only when Vault is NOT active) -->
-                        <Button Classes="nav-action-btn rebuild-btn"
-                                controls:GuideTarget.Id="titlebar.rebuild"
-                                Classes.dirty="{Binding HasDirtySets}"
-                                Command="{Binding RebuildCacheCommand}"
-                                ToolTip.Tip="{loc:Loc common.rebuild_cache}"
-                                IsVisible="{Binding !IsVaultActive}">
+                                controls:GuideTarget.Id="titlebar.help"
+                                Click="OnHelpClick"
+                                ToolTip.Tip="{Binding HelpTip}">
                             <Button.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem Header="{loc:Loc common.force_rebuild}"
-                                              Command="{Binding ForceRebuildCacheCommand}">
-                                        <MenuItem.Icon>
-                                            <bx:PackIconBoxIcons Kind="RegularRefreshCwDot" Width="16" Height="16" Foreground="{DynamicResource StatusAmber}"/>
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                </ContextMenu>
+                                <ContextMenu Placement="BottomEdgeAlignedRight"/>
                             </Button.ContextMenu>
-                            <bx:PackIconBoxIcons Kind="RegularRefreshCw" Width="15" Height="15" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Panel>
+                                <bx:PackIconBoxIcons Kind="RegularHelpCircle" Width="16" Height="16" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <!-- New-spot dot while the moved-feedback callout is up -->
+                                <Ellipse Width="7" Height="7" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                         Margin="0,-3,-4,0" IsVisible="{Binding IsHelpMoveTipVisible}"/>
+                            </Panel>
                         </Button>
+
+                        <!-- One-time callout for users who had the old bug button -->
+                        <Popup x:Name="HelpMoveTip"
+                               PlacementTarget="{Binding #HelpButton}"
+                               Placement="BottomEdgeAlignedRight"
+                               VerticalOffset="8"
+                               ShouldUseOverlayLayer="True"
+                               IsLightDismissEnabled="False"
+                               IsOpen="{Binding IsHelpMoveTipVisible}">
+                            <Border Classes="card" Width="280" Padding="14,12" BorderThickness="1" BorderBrush="{DynamicResource AccentBrush}"
+                                    Background="{DynamicResource BgCard}" CornerRadius="10" BoxShadow="0 6 18 0 #55000000">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="{loc:Loc nav.help_moved_title}" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
+                                    <TextBlock Text="{loc:Loc nav.help_moved_body}" FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,6,0,0">
+                                        <Button x:Name="HelpMoveTipOk" Classes="btn-action-sec" Content="{loc:Loc nav.help_moved_ok}" Command="{Binding DismissHelpMoveTipCommand}"/>
+                                        <Button x:Name="HelpMoveTipShow" Classes="btn-action-primary" Content="{loc:Loc nav.help_moved_show}" Click="OnHelpMoveTipShowClick"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </Popup>
+
+                        <!-- Play: starts the game (rebuilding first when needed); the right half switches the configuration -->
+                        <Border x:Name="PlayGroup"
+                                Classes="play-group"
+                                Classes.dirty="{Binding NeedsRebuildToPlay}"
+                                Classes.running="{Binding IsGameRunning}"
+                                controls:GuideTarget.Id="titlebar.play"
+                                Margin="2,0,8,0">
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="PlayButton"
+                                        Classes="play-main"
+                                        Command="{Binding PlayCommand}"
+                                        IsEnabled="{Binding CanPlay}"
+                                        ToolTip.Tip="{Binding PlayTip}">
+                                    <Button.ContextMenu>
+                                        <ContextMenu IsVisible="{Binding !IsVaultActive}">
+                                            <MenuItem Header="{loc:Loc common.force_rebuild}" Command="{Binding ForceRebuildCacheCommand}"/>
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <bx:PackIconBoxIcons Kind="RegularPlay" Width="14" Height="14" VerticalAlignment="Center" IsVisible="{Binding ShowPlayIcon}"/>
+                                        <TextBlock Text="{Binding PlayText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Border Classes="play-divider"/>
+                                <Button x:Name="PlayMenuButton"
+                                        Classes="play-menu"
+                                        Click="OnPlayMenuClick"
+                                        ToolTip.Tip="{Binding ConfigTip}">
+                                    <Button.ContextMenu>
+                                        <ContextMenu Placement="BottomEdgeAlignedRight"/>
+                                    </Button.ContextMenu>
+                                    <StackPanel Orientation="Horizontal" Spacing="5">
+                                        <TextBlock Text="{Binding ActiveConfigName}" FontSize="11.5" MaxWidth="120" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                        <bx:PackIconBoxIcons Kind="RegularChevronDown" Width="12" Height="12" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
 
                         <!-- Minimize -->
                         <Button Classes="win-btn"
@@ -465,74 +523,6 @@
                             ToolTip.Tip="Dismiss">
                         <bx:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
                     </Button>
-                </Grid>
-            </Border>
-
-            <!-- Cache Optimization Notice Toast -->
-            <Border HorizontalAlignment="Right"
-                    MaxWidth="480"
-                    Background="{DynamicResource BgSidebar}"
-                    BorderBrush="{DynamicResource AccentBrush}"
-                    BorderThickness="1"
-                    CornerRadius="10"
-                    Padding="16,14,16,14"
-                    BoxShadow="0 8 24 #66000000"
-                    IsVisible="{Binding IsCacheOptimizationToastVisible}">
-                <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" VerticalAlignment="Center">
-                    <Border Grid.Row="0" Grid.Column="0"
-                            Background="{DynamicResource AccentBadgeBgBrush}"
-                            CornerRadius="8"
-                            Width="36" Height="36"
-                            Margin="0,0,12,0"
-                            VerticalAlignment="Top">
-                        <bx:PackIconBoxIcons Kind="RegularRefreshCw" Width="18" Height="18"
-                                             Foreground="{DynamicResource AccentBrush}"
-                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4" VerticalAlignment="Center" Margin="0,0,8,0">
-                        <TextBlock Text="{loc:Loc app.cache_optimization_title}" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource TextMain}"/>
-                        <TextBlock Text="{loc:Loc app.cache_optimization_message}" FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
-                    </StackPanel>
-                    <Button Grid.Row="0" Grid.Column="2"
-                            Command="{Binding DismissCacheOptimizationToastCommand}"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Padding="6"
-                            CornerRadius="6"
-                            Cursor="Hand"
-                            VerticalAlignment="Top"
-                            ToolTip.Tip="{loc:Loc app.dismiss}">
-                        <bx:PackIconBoxIcons Kind="RegularX" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
-                    </Button>
-                    <!-- Action buttons -->
-                    <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
-                                Orientation="Horizontal"
-                                Spacing="8"
-                                Margin="0,10,0,0">
-                        <Button Command="{Binding ForceRebuildFromToastCommand}"
-                                Background="{DynamicResource AccentBrush}"
-                                Foreground="#FFFFFF"
-                                FontWeight="DemiBold"
-                                FontSize="12"
-                                Padding="12,6,12,6"
-                                CornerRadius="6"
-                                Cursor="Hand">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <bx:PackIconBoxIcons Kind="RegularRefreshCwDot" Width="13" Height="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                <TextBlock Text="{loc:Loc app.repair_and_rebuild}" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding HideCacheOptimizationToastCommand}"
-                                Background="{DynamicResource BgCardAlt}"
-                                Foreground="{DynamicResource TextMain}"
-                                FontWeight="DemiBold"
-                                FontSize="12"
-                                Padding="12,6,12,6"
-                                CornerRadius="6"
-                                Cursor="Hand">
-                            <TextBlock Text="{loc:Loc app.later}" VerticalAlignment="Center"/>
-                        </Button>
-                    </StackPanel>
                 </Grid>
             </Border>
 

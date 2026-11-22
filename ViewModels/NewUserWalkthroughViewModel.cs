@@ -332,7 +332,6 @@ public partial class NewUserWalkthroughViewModel : ObservableObject
     {
         _options.Value.HasSeenWalkthrough = true;
         _options.Value.HasCompletedUpgradeWizard = true;
-        _options.Value.LastOptimizedCacheMilestone = MainViewModel.CurrentCacheOptimizationMilestone;
 
         if (IsStaticMode) await Settings.SetStaticCacheAsync();
         else if (IsDynamicMode) await Settings.SetDynamicCacheAsync();

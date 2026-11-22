@@ -121,15 +121,7 @@ public static class AppSettingsService
             plumbobNode["PinnedTools"] = pinnedToolsArray;
             plumbobNode["HasSeenWalkthrough"] = options.HasSeenWalkthrough;
             plumbobNode["HasCompletedUpgradeWizard"] = options.HasCompletedUpgradeWizard;
-
-            if (options.LastOptimizedCacheMilestone > 0 || !plumbobNode.ContainsKey("LastOptimizedCacheMilestone"))
-            {
-                plumbobNode["LastOptimizedCacheMilestone"] = options.LastOptimizedCacheMilestone;
-            }
-            if (!string.IsNullOrEmpty(options.LastOptimizedCacheVersion) || !plumbobNode.ContainsKey("LastOptimizedCacheVersion"))
-            {
-                plumbobNode["LastOptimizedCacheVersion"] = options.LastOptimizedCacheVersion ?? "";
-            }
+            plumbobNode["HasSeenHelpMoveTip"] = options.HasSeenHelpMoveTip;
 
             var optionsJson = new JsonSerializerOptions
             {

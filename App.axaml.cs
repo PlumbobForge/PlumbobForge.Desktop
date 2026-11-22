@@ -124,7 +124,6 @@ public partial class App : Application
             if (!options.HasCompletedUpgradeWizard)
             {
                 options.HasCompletedUpgradeWizard = true;
-                options.LastOptimizedCacheMilestone = MainViewModel.CurrentCacheOptimizationMilestone;
                 _ = AppSettingsService.SaveOptionsAsync(options);
             }
 
@@ -141,6 +140,7 @@ public partial class App : Application
             {
                 DataContext = mainVm
             };
+            WindowStateService.Attach(mainWindow);
             desktop.MainWindow = mainWindow;
 
             // Existing users are asked once whether to turn on Mods folder support (new users choose in the walkthrough).

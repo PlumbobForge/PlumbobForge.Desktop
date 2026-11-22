@@ -4,6 +4,15 @@
   // Up to 5 bullets are shown, so skipped versions are merged newest first.
   "versions": [
     {
+      "version": "1.1.7",
+      "highlights": [
+        "**Play button:** Start The Sims 3 from the title bar, switch configurations from its menu, and rebuild first when changes are waiting",
+        "**Mods folder support:** See and manage the files in your game's Mods folder",
+        "**Saved Filters:** Keep your favourite Library filters one click away",
+        "**New ? button:** Send Feedback, the Guide and What's New now live here"
+      ]
+    },
+    {
       "version": "1.1.6",
       "highlights": [
         "**CC Optimizer:** Optimized clothes no longer get stretched hands or legs when your Sim moves or poses. Re-optimize any clothes you already did to get the fix"

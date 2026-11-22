@@ -90,7 +90,7 @@
                 BoxShadow="0 20 40 0 #80000000"
                 PointerPressed="OnCardPointerPressed">
 
-            <Grid RowDefinitions="Auto, Auto, *">
+            <Grid RowDefinitions="Auto, Auto, *, Auto">
 
                 <!-- 1. Search Bar Input -->
                 <Border Grid.Row="0" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderMain}" BorderThickness="0,0,0,1" Padding="16,0" Height="52">
@@ -195,6 +195,18 @@
                         </ItemsControl>
                     </ScrollViewer>
                 </Grid>
+
+                <!-- 4. Tip -->
+                <Border x:Name="TipBar" Grid.Row="3" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderMain}" BorderThickness="0,1,0,0" Padding="16,9">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="{loc:Loc 'nav.qj_tip_label'}" FontSize="10.5" FontWeight="Bold" LetterSpacing="0.5" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,2,0"/>
+                        <TextBlock Text="{Binding TipBefore}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                        <Border Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="5,1" VerticalAlignment="Center">
+                            <TextBlock x:Name="TipKeyText" Text="{Binding TipKey}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                        </Border>
+                        <TextBlock Text="{Binding TipAfter}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
             </Grid>
         </Border>
     </Grid>

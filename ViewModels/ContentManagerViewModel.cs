@@ -862,13 +862,10 @@ public partial class ContentManagerViewModel : ObservableObject
     [RelayCommand]
     public async Task RebuildCacheAsync(bool forceRebuild = false)
     {
-        await RunRebuildAsync(forceRebuild, repairLegacyCompression: false);
+        await RunRebuildAsync(forceRebuild);
     }
 
-    public Task<bool> RepairCompressionAndRebuildAsync(Func<Task>? onSucceeded = null)
-        => RunRebuildAsync(forceRebuild: true, repairLegacyCompression: true, onSucceeded);
-
-    private async Task<bool> RunRebuildAsync(bool forceRebuild, bool repairLegacyCompression, Func<Task>? onSucceeded = null)
+    private async Task<bool> RunRebuildAsync(bool forceRebuild)
     {
         var mainVm = App.Services?.GetService<MainViewModel>();
         var modal = new TaskProgressModalViewModel();
@@ -891,17 +888,10 @@ public partial class ContentManagerViewModel : ObservableObject
         try
         {
             // A fresh scope: this view model's own PKGManager keeps rows loaded long ago and would miss dirty flags set since.
-            await Task.Run(() => FreshScope.RunAsync<PKGManager>(async pkgManager =>
-            {
-                if (repairLegacyCompression)
-                {
-                    await pkgManager.RepairLegacyCompressionAsync(onProgress: null, progress: modal);
-                }
-                await pkgManager.RunAsync(isRefresh: true, onProgress: null, progress: modal, forceRebuild: forceRebuild);
-            }));
+            await Task.Run(() => FreshScope.RunAsync<PKGManager>(pkgManager =>
+                pkgManager.RunAsync(isRefresh: true, onProgress: null, progress: modal, forceRebuild: forceRebuild)));
             success = true;
             modal.Finish(success: true);
-            if (onSucceeded != null) await onSucceeded();
 
             if (modal.CloseAppOnFinish && success)
             {
