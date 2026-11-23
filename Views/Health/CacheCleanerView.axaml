@@ -5,6 +5,7 @@
              xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
              xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
              xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             xmlns:ctl="using:PlumbobForge.Desktop.Views.Controls"
              mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="800"
              x:Class="PlumbobForge.Desktop.Views.Health.CacheCleanerView"
              x:DataType="vm:HealthViewModel">
@@ -46,7 +47,13 @@
         </Grid>
 
         <!-- Cache Category Cards List -->
-        <ItemsControl ItemsSource="{Binding CacheCategories}">
+        <ItemsControl x:Name="CacheCards" ItemsSource="{Binding CacheCategories}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <!-- Two columns in the wide layout -->
+                    <ctl:MasonryPanel Columns="{Binding $parent[UserControl].((vm:HealthViewModel)DataContext).CardColumns}" ColumnSpacing="12"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="vm:CacheCategoryItemViewModel">
                     <Border Classes="settings-card" Margin="0,0,0,12" Padding="18,14">
@@ -87,11 +94,12 @@
                             <Grid ColumnDefinitions="*, Auto" Margin="34,2,0,0" VerticalAlignment="Center">
                                 <!-- When to clear quick indicator -->
                                 <Border Grid.Column="0" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="10,6" HorizontalAlignment="Left">
-                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                        <icon:PackIconBoxIcons Kind="RegularClock12" Width="13" Height="13" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
-                                        <TextBlock Text="{loc:Loc 'tools.cache.when_to_clear'}" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
-                                        <TextBlock Text="{Binding WhenToClear}" FontSize="11.5" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
-                                    </StackPanel>
+                                    <!-- Wraps in the narrower two-column cards -->
+                                    <Grid ColumnDefinitions="Auto, Auto, *">
+                                        <icon:PackIconBoxIcons Kind="RegularClock12" Width="13" Height="13" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Top" Margin="0,2,6,0"/>
+                                        <TextBlock Grid.Column="1" Text="{loc:Loc 'tools.cache.when_to_clear'}" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Top" Margin="0,0,6,0"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding WhenToClear}" FontSize="11.5" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap" VerticalAlignment="Top"/>
+                                    </Grid>
                                 </Border>
 
                                 <!-- Guide Details Toggle -->
@@ -101,6 +109,8 @@
                                         BorderThickness="0"
                                         Foreground="{DynamicResource TextSubtle}"
                                         Padding="6,4"
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Top"
                                         Cursor="Hand">
                                     <StackPanel Orientation="Horizontal" Spacing="4">
                                         <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" IsVisible="{Binding !IsInfoExpanded}"/>

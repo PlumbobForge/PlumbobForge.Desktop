@@ -32,6 +32,8 @@ public partial class MeshReportRowViewModel : ObservableObject
     public bool IsBuildBuy => !Model.IsCas;
     public int Triangles => Model.Triangles;
     public string TrianglesText => Model.Triangles.ToString("N0");
+    public string VerticesText => Model.Vertices.ToString("N0");
+    public string LevelsText => Model.LodCount.ToString();
     public string DetailText { get; }
     public string WeightText => MeshFormat.WeightName(Model.Level);
     public bool IsLight => Model.Level == MeshWeightLevel.Light;
@@ -306,7 +308,20 @@ public partial class HealthViewModel
                 || r.Subtitle.Contains(query, StringComparison.OrdinalIgnoreCase);
         }).ToList();
 
-        FilteredMeshRows.ReplaceAll(filtered);
+        var previous = SelectedMeshRow;
+        int oldIndex = previous == null ? -1 : FilteredMeshRows.IndexOf(previous);
+        // Refiltering must not close and reopen the preview of a row that stays.
+        _reselectingMesh = true;
+        try
+        {
+            FilteredMeshRows.ReplaceAll(filtered);
+            SelectMeshAfterFilter(previous, oldIndex);
+        }
+        finally
+        {
+            _reselectingMesh = false;
+        }
+        RefreshMeshPreview();
         OnPropertyChanged(nameof(ShowMeshEmpty));
         OnPropertyChanged(nameof(ShowMeshList));
         OnPropertyChanged(nameof(MeshEmptyTitle));
@@ -385,11 +400,15 @@ public partial class HealthViewModel
             NavigateToPackageItem(row.Model.MetaEntityId, row.Model.SetId, row.Model.IsModsItem ? row.Model.MetaEntityId : null);
         MeshReportRowViewModel.OnLookInsideRequested = async row =>
         {
+            // Look Inside may switch objects off and rewrite the file.
+            ReleaseMeshPreview();
             if (await DialogHelper.ShowLookInsideAsync(row.Model.MetaEntityId, row.FileName)) await RescanMeshItemAsync(row.Model.MetaEntityId);
             await RefreshMeshOffStateAsync(row.Model.MetaEntityId);
+            RefreshMeshPreview();
         };
         MeshReportRowViewModel.OnOptimizeRequested = row =>
         {
+            ReleaseMeshPreview();
             OpenInOptimizer(new[] { row.Model });
             return Task.CompletedTask;
         };

@@ -8,7 +8,8 @@
              x:Class="PlumbobForge.Desktop.Views.HealthView"
              x:DataType="vm:HealthViewModel">
 
-    <Grid RowDefinitions="Auto, *" Margin="28,20,28,20" MaxWidth="1100" HorizontalAlignment="Stretch">
+    <!-- Past HealthViewModel.WideLayoutMinWidth the tools switch to their wide layouts -->
+    <Grid x:Name="ToolsRoot" RowDefinitions="Auto, *" Margin="28,20,28,20" MaxWidth="{Binding ContentMaxWidth}" HorizontalAlignment="Stretch">
         <!-- Top Hero Header & Action Controls Card -->
         <health:HealthHeaderBarView Grid.Row="0" Margin="0,0,0,16"/>
 

@@ -5,6 +5,7 @@
              xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
              xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
              xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             xmlns:mp="using:PlumbobForge.Desktop.Controls.MeshPreview"
              mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="800"
              x:Class="PlumbobForge.Desktop.Views.Health.MeshReportView"
              x:DataType="vm:HealthViewModel">
@@ -112,6 +113,8 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Narrow: the cards, one under another -->
+                <Panel IsVisible="{Binding IsNarrowLayout}">
                 <ListBox Classes="card-list" ItemsSource="{Binding FilteredMeshRows}" IsVisible="{Binding ShowMeshList}">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -181,6 +184,127 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
+                </Panel>
+
+                <!-- Wide: a compact list, and the selected item with a 3D preview beside it -->
+                <Grid x:Name="MeshWideLayout" ColumnDefinitions="420, 16, *" IsVisible="{Binding IsWideLayout}">
+                    <Border Classes="settings-card" Padding="0" IsVisible="{Binding ShowMeshList}">
+                        <ListBox x:Name="MeshPickList" Classes="pick-list" ItemsSource="{Binding FilteredMeshRows}" SelectedItem="{Binding SelectedMeshRow, Mode=TwoWay}">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:MeshReportRowViewModel">
+                                    <Grid ColumnDefinitions="Auto, *, Auto">
+                                        <Border Width="34" Height="34" CornerRadius="7" ClipToBounds="True" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                                                VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <Panel>
+                                                <Panel IsVisible="{Binding ShowKindIcon}">
+                                                    <icon:PackIconBoxIcons Kind="RegularHanger" Width="15" Height="15" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsCas}"/>
+                                                    <icon:PackIconBoxIcons Kind="RegularChair" Width="15" Height="15" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsBuildBuy}"/>
+                                                </Panel>
+                                                <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" IsVisible="{Binding !ShowKindIcon}"/>
+                                            </Panel>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="{Binding Title}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis" MaxWidth="230"/>
+                                                <TextBlock Text="{loc:Loc 'look_inside.off_tag'}" FontSize="10.5" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding IsOff}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding FileName}" FontSize="11" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="2" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding TrianglesText}" FontSize="12.5" FontWeight="Bold" Foreground="{DynamicResource TextMain}" HorizontalAlignment="Right"/>
+                                            <Border Classes="weight-chip" Classes.light="{Binding IsLight}" Classes.medium="{Binding IsMedium}" Classes.heavy="{Binding IsHeavy}" Classes.veryheavy="{Binding IsVeryHeavy}" HorizontalAlignment="Right">
+                                                <TextBlock Text="{Binding WeightText}"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+
+                    <!-- The selected item: a 3D preview, its numbers, and what to do with it -->
+                    <Border x:Name="MeshDetails" Grid.Column="2" Classes="settings-card" Padding="0" ClipToBounds="True" IsVisible="{Binding HasSelectedMeshRow}">
+                        <Grid RowDefinitions="*, Auto">
+                            <Panel MinHeight="280" Background="{DynamicResource BgSurface}">
+                                <mp:MeshPreviewControl Meshes="{Binding MeshPreview.PreviewMeshes, FallbackValue={x:Null}}" Texture="{Binding MeshPreview.PreviewTexture, FallbackValue={x:Null}}"
+                                                       ShowWireframe="{Binding MeshPreview.ShowWireframe, FallbackValue=False}"
+                                                       Background="{DynamicResource BgSurface}" IsVisible="{Binding MeshPreview.ShowViewer, FallbackValue=False}"/>
+                                <TextBlock Text="{loc:Loc 'optimizer.controls_hint'}" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="14,10" VerticalAlignment="Bottom" HorizontalAlignment="Left"
+                                           IsHitTestVisible="False" IsVisible="{Binding MeshPreview.ShowViewer, FallbackValue=False}"/>
+                                <ProgressBar IsIndeterminate="True" Width="160" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                             IsVisible="{Binding MeshPreview.IsLoading, FallbackValue=True}"/>
+                                <StackPanel IsVisible="{Binding MeshPreview.HasError, FallbackValue=False}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" MaxWidth="420" Margin="24">
+                                    <icon:PackIconBoxIcons Kind="RegularCube" Width="28" Height="28" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding MeshPreview.ErrorMessage, FallbackValue={x:Null}}" FontSize="12.5" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap" TextAlignment="Center"/>
+                                </StackPanel>
+                            </Panel>
+
+                            <StackPanel Grid.Row="1" Spacing="12" Margin="18,14,18,16">
+                                <StackPanel Spacing="3">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{Binding SelectedMeshRow.Title, FallbackValue={x:Null}}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                        <Border Classes="weight-chip" Classes.light="{Binding SelectedMeshRow.IsLight, FallbackValue=False}" Classes.medium="{Binding SelectedMeshRow.IsMedium, FallbackValue=False}"
+                                                Classes.heavy="{Binding SelectedMeshRow.IsHeavy, FallbackValue=False}" Classes.veryheavy="{Binding SelectedMeshRow.IsVeryHeavy, FallbackValue=False}" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding SelectedMeshRow.WeightText, FallbackValue={x:Null}}"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{Binding SelectedMeshRow.Subtitle, FallbackValue={x:Null}}" FontSize="11.5" Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <TextBlock Text="•" FontSize="11" Foreground="{DynamicResource BorderSubtle}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding SelectedMeshRow.FileName, FallbackValue={x:Null}}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <Grid ColumnDefinitions="*, 10, *, 10, *">
+                                    <Border Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="12,8">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="{loc:Loc 'tools.meshes.stat_triangles'}" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                            <TextBlock Text="{Binding SelectedMeshRow.TrianglesText, FallbackValue={x:Null}}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Grid.Column="2" Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="12,8">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="{loc:Loc 'tools.meshes.stat_vertices'}" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                            <TextBlock Text="{Binding SelectedMeshRow.VerticesText, FallbackValue={x:Null}}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Grid.Column="4" Background="{DynamicResource BgSurface}" CornerRadius="8" Padding="12,8">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="{loc:Loc 'tools.meshes.stat_levels'}" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                            <TextBlock Text="{Binding SelectedMeshRow.LevelsText, FallbackValue={x:Null}}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button x:Name="MeshDetailsOptimize" Classes="btn-action-primary" Command="{Binding SelectedMeshRow.OptimizeCommand, FallbackValue={x:Null}}" ToolTip.Tip="{loc:Loc 'optimizer.open_tip'}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <icon:PackIconBoxIcons Kind="RegularMagicWand" Width="13" Height="13" Foreground="White" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'optimizer.open'}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Classes="btn-action-sec" Command="{Binding SelectedMeshRow.LookInsideCommand, FallbackValue={x:Null}}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <icon:PackIconBoxIcons Kind="RegularSearch" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'look_inside.title'}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Classes="btn-action-sec" Command="{Binding SelectedMeshRow.ShowInLibraryCommand, FallbackValue={x:Null}}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <icon:PackIconBoxIcons Kind="RegularFolderOpen" Width="13" Height="13" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{loc:Loc 'tools.conflicts.view_in_library'}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
             </Grid>
         </Grid>
     </Grid>

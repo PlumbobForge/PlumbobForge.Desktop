@@ -1,7 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using PlumbobForge.Desktop.Services.Localization;
 using PlumbobForge.Desktop.ViewModels;
+using PlumbobForge.Desktop.Views.Dialogs;
 
 namespace PlumbobForge.Desktop.Views.Health;
 
@@ -26,6 +28,15 @@ public partial class CollectionCreatorView : UserControl
         {
             vm.DeleteCollectionCommand.Execute(item);
         }
+    }
+
+    // Wide layout: delete the collection that is open in the editor.
+    private async void OnDeleteOpenCollectionClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not HealthViewModel vm || vm.EditingCollectionItem is not { } item) return;
+        var confirm = await DialogHelper.ShowDeleteConfirmAsync(
+            string.Format(LocalizationManager.Instance.GetString("tools.collections.delete_confirm"), item.Name));
+        if (confirm.Confirmed) await vm.DeleteCollectionAsync(item);
     }
 
     private void OnSelectIconClick(object? sender, RoutedEventArgs e)

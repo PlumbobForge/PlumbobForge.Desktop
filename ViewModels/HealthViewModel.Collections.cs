@@ -188,6 +188,7 @@ public partial class HealthViewModel
     {
         var services = App.Services;
         if (services == null) return;
+        int version = _collectionLoadVersion;
         var ids = itemIds.Distinct().ToList();
         var (sets, folders, rows) = await Task.Run(async () =>
         {
@@ -206,6 +207,8 @@ public partial class HealthViewModel
                     .ToList();
             return (s, f, r);
         });
+        // A quicker pick of another collection must not land in the editor.
+        if (version != _collectionLoadVersion) return;
         _collectionSets = sets;
         _collectionModsFolders = folders;
         IncludedItems.ReplaceAll(rows
@@ -219,6 +222,7 @@ public partial class HealthViewModel
     {
         OnPropertyChanged(nameof(HasIncludedItems));
         OnPropertyChanged(nameof(SelectedSetsItemCount));
+        NotifyCollectionDirty();
     }
 
     [RelayCommand]
@@ -290,6 +294,7 @@ public partial class HealthViewModel
         {
             icon.IsActiveSelection = (icon == value || (value != null && icon.Key.Instance == value.Key.Instance));
         }
+        NotifyCollectionDirty();
     }
 
     [ObservableProperty]
@@ -538,6 +543,7 @@ public partial class HealthViewModel
         {
             IsLoadingCollections = false;
         }
+        AfterCollectionsLoaded();
     }
 
     [ObservableProperty]
@@ -546,6 +552,10 @@ public partial class HealthViewModel
     [RelayCommand]
     public async Task CreateNewCollectionAsync()
     {
+        int version = ++_collectionLoadVersion;
+        _collectionSnapshot = null;
+        _collectionBeforeNewId = IsCollectionEditorOpen && IsEditingExistingCollection ? EditingCollectionId : SelectedCollection?.Id;
+        IsIconPickerExpanded = false;
         EditingCollectionId = null;
         EditingCollectionName = string.Empty;
         EditingHideFromCatalog = false;
@@ -559,6 +569,7 @@ public partial class HealthViewModel
         OnPropertyChanged(nameof(CollectionEditorTitle));
         OnPropertyChanged(nameof(SelectedSetsItemCount));
         OnPropertyChanged(nameof(SelectedSetsCount));
+        NotifyCollectionDirty();
 
         IncludedItems.Clear();
         OnIncludedItemsChanged();
@@ -566,8 +577,13 @@ public partial class HealthViewModel
         // Open immediately so the user experiences zero lag
         IsCollectionEditorOpen = true;
 
+        SyncCollectionSelection();
+
         await LoadAvailableSetOptionsAsync();
         await LoadIncludedItemsSafeAsync(Array.Empty<long>());
+        if (version != _collectionLoadVersion) return;
+        _collectionSnapshot = CurrentCollectionState();
+        NotifyCollectionDirty();
     }
 
     // "New Collection…" from a library menu: the editor opens with those sets and items already in it.
@@ -595,6 +611,11 @@ public partial class HealthViewModel
     {
         if (item == null) return;
 
+        int version = ++_collectionLoadVersion;
+        _collectionSnapshot = null;
+        _pendingCollectionAction = null;
+        PendingCollectionMessage = null;
+        IsIconPickerExpanded = false;
         EditingCollectionId = item.Id;
         EditingCollectionName = item.Name;
         EditingHideFromCatalog = item.HideFromCatalog;
@@ -608,6 +629,7 @@ public partial class HealthViewModel
         OnPropertyChanged(nameof(CollectionEditorTitle));
         OnPropertyChanged(nameof(SelectedSetsItemCount));
         OnPropertyChanged(nameof(SelectedSetsCount));
+        NotifyCollectionDirty();
 
         IncludedItems.Clear();
         OnIncludedItemsChanged();
@@ -615,12 +637,18 @@ public partial class HealthViewModel
         // Open immediately so the user experiences zero lag
         IsCollectionEditorOpen = true;
 
+        SyncCollectionSelection();
+
         await LoadAvailableSetOptionsAsync(item.Model.LinkedSetIds);
         await LoadIncludedItemsSafeAsync(item.Model.LinkedItemIds);
+        if (version != _collectionLoadVersion) return;
+        _collectionSnapshot = CurrentCollectionState();
+        NotifyCollectionDirty();
     }
 
     private async Task LoadAvailableSetOptionsAsync(List<long>? preSelectedSetIds = null)
     {
+        int version = _collectionLoadVersion;
         IsLoadingSetOptions = true;
         AvailableSetOptions.Clear();
         AssignedSets.Clear();
@@ -630,6 +658,7 @@ public partial class HealthViewModel
         try
         {
             var setOptions = await _collectionService.GetAvailableSetOptionsAsync();
+            if (version != _collectionLoadVersion) return;
             var availableList = new List<CollectionSetOptionViewModel>(setOptions.Count);
             var assignedList = new List<CollectionSetOptionViewModel>();
 
@@ -652,6 +681,8 @@ public partial class HealthViewModel
             OnPropertyChanged(nameof(HasAssignedSets));
             OnPropertyChanged(nameof(SelectedSetsItemCount));
             OnPropertyChanged(nameof(SelectedSetsCount));
+            NotifyCollectionDirty();
+        NotifyCollectionDirty();
         }
         catch (Exception ex)
         {
@@ -676,6 +707,7 @@ public partial class HealthViewModel
         OnPropertyChanged(nameof(HasAssignedSets));
         OnPropertyChanged(nameof(SelectedSetsItemCount));
         OnPropertyChanged(nameof(SelectedSetsCount));
+        NotifyCollectionDirty();
     }
 
     [RelayCommand]
@@ -688,6 +720,7 @@ public partial class HealthViewModel
         OnPropertyChanged(nameof(HasAssignedSets));
         OnPropertyChanged(nameof(SelectedSetsItemCount));
         OnPropertyChanged(nameof(SelectedSetsCount));
+        NotifyCollectionDirty();
     }
 
     [RelayCommand]
@@ -704,6 +737,7 @@ public partial class HealthViewModel
         OnPropertyChanged(nameof(HasAssignedSets));
         OnPropertyChanged(nameof(SelectedSetsItemCount));
         OnPropertyChanged(nameof(SelectedSetsCount));
+        NotifyCollectionDirty();
     }
 
     [RelayCommand]
@@ -718,11 +752,19 @@ public partial class HealthViewModel
         OnPropertyChanged(nameof(HasAssignedSets));
         OnPropertyChanged(nameof(SelectedSetsItemCount));
         OnPropertyChanged(nameof(SelectedSetsCount));
+        NotifyCollectionDirty();
     }
 
     [RelayCommand]
-    public void CancelEditCollection()
+    public async Task CancelEditCollectionAsync()
     {
+        if (IsWideLayout || _pendingCollectionAction != null)
+        {
+            await DiscardCollectionChangesAsync();
+            return;
+        }
+        _pendingCollectionAction = null;
+        PendingCollectionMessage = null;
         IsCollectionEditorOpen = false;
     }
 
@@ -739,6 +781,7 @@ public partial class HealthViewModel
         var iconKey = SelectedIcon?.Key ?? AllIcons.FirstOrDefault()?.Key ?? new TGI_Key(0x2F7D0004, 0, 13431223140568206672uL);
 
         bool savedSuccessfully = false;
+        ulong savedId = 0;
         IsSavingCollection = true;
         try
         {
@@ -753,9 +796,11 @@ public partial class HealthViewModel
             if (result.Success)
             {
                 savedSuccessfully = true;
+                savedId = result.CollectionId;
                 string extraMsg = EditingHideFromCatalog ? " (Catalog Hider active)" : "";
                 ShowCacheToast($"Saved collection '{EditingCollectionName}' ({result.ItemCount} items) to Sims 3{extraMsg}!", isError: false);
-                IsCollectionEditorOpen = false;
+                // Wide: the collection stays open beside the list.
+                if (!IsWideLayout && _pendingCollectionAction == null) IsCollectionEditorOpen = false;
             }
             else
             {
@@ -774,6 +819,8 @@ public partial class HealthViewModel
         if (savedSuccessfully)
         {
             await LoadCollectionsAsync();
+            if (_pendingCollectionAction != null) await RunPendingCollectionActionAsync();
+            else if (IsWideLayout && IsCollectionEditorOpen && AllCollections.FirstOrDefault(c => c.Id == savedId) is { } saved) await EditCollectionAsync(saved);
         }
     }
 
@@ -922,6 +969,7 @@ public partial class HealthViewModel
 
         OnPropertyChanged(nameof(HasCollections));
         OnPropertyChanged(nameof(IsNoCollectionsFound));
+        if (IsWideLayout) SyncCollectionSelection();
     }
 
     private void ApplyIconFilter()

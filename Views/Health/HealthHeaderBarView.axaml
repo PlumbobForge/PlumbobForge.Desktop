@@ -474,7 +474,7 @@
                     </Button>
 
                     <Button Classes="btn-action-primary"
-                            Command="{Binding CreateNewCollectionCommand}">
+                            Command="{Binding RequestNewCollectionCommand}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <icon:PackIconBoxIcons Kind="RegularPlus" Width="14" Height="14" Foreground="White" VerticalAlignment="Center"/>
                             <TextBlock Text="{loc:Loc 'tools.collections.new_collection'}" VerticalAlignment="Center"/>

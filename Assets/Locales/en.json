@@ -495,6 +495,9 @@
                                     "bulk_duplicates_desc":  "Automatically keep the active copy in each duplicate group and disable redundant copies to save memory and load time."
                                 },
                   "meshes":  {
+                                 "stat_triangles":  "Triangles",
+                                 "stat_vertices":  "Vertices",
+                                 "stat_levels":  "Detail levels",
                                  "scope_clear_tip":  "Show the whole library",
                                  "optimize_heavy":  "Very heavy and heavy ({0})",
                                  "optimize_very_heavy":  "Very heavy only ({0})",
@@ -543,6 +546,16 @@
                                    "fix_pattern":  "Fix Pattern"
                                },
                   "collections":  {
+                                      "discard":  "Discard",
+                                      "unsaved":  "Unsaved changes",
+                                      "pending_switch":  "Save your changes to '{0}' before opening '{1}'?",
+                                      "pending_new":  "Save your changes to '{0}' before starting a new collection?",
+                                      "unnamed":  "New collection",
+                                      "keep_editing":  "Keep editing",
+                                      "change_icon":  "Change icon",
+                                      "done":  "Done",
+                                      "pick_one":  "Pick a collection on the left to edit it, or start one with New Collection.",
+                                      "delete_confirm":  "Delete the collection '{0}'? It will be removed from the game.",
                                       "title":  "Collection Creator",
                                       "collections":  "Collections",
                                       "subtitle":  "Create, edit, and organize build-buy catalog collections directly from your PlumbobForge sets.",

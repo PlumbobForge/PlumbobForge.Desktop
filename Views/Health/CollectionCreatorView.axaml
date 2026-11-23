@@ -42,11 +42,119 @@
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
         </Style>
+
+        <!-- Editor body: two columns normally, one column beside the list in a wide window -->
+        <Style Selector="Grid#EditorBody > ScrollViewer">
+            <Setter Property="Padding" Value="0,0,10,0"/>
+        </Style>
+        <Style Selector="Grid#EditorBody > ScrollViewer#EditorRight">
+            <Setter Property="Grid.Column" Value="2"/>
+        </Style>
+        <Style Selector="Grid#EditorBody.compact > ScrollViewer#EditorLeft">
+            <Setter Property="Grid.ColumnSpan" Value="3"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+        <Style Selector="Grid#EditorBody.compact > ScrollViewer#EditorRight">
+            <Setter Property="Grid.Column" Value="0"/>
+            <Setter Property="Grid.Row" Value="1"/>
+            <Setter Property="Grid.ColumnSpan" Value="3"/>
+            <Setter Property="Margin" Value="0,24,0,0"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+        <Style Selector="Grid#EditorBody.compact > Rectangle#EditorDivider">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+        <Style Selector="TextBlock#CollectionStatus">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        </Style>
+        <Style Selector="TextBlock#CollectionStatus.unsaved">
+            <Setter Property="Foreground" Value="#fbbf24"/>
+        </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto, *">
-        <!-- 1. Collections View (When editor is closed) -->
-        <Grid Grid.Row="1" RowDefinitions="Auto, *" IsVisible="{Binding !IsCollectionEditorOpen}">
+    <Grid ColumnDefinitions="Auto, *">
+        <!-- Wide: the collections beside the open one -->
+        <Grid x:Name="CollectionWideList" Grid.Column="0" Width="380" Margin="0,0,16,0" RowDefinitions="Auto, *" IsVisible="{Binding IsWideLayout}">
+            <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
+                <TextBox Classes="capsule-search"
+                         Text="{Binding CollectionSearchQuery, Mode=TwoWay}"
+                         PlaceholderText="{loc:Loc 'tools.collections.search_watermark'}"
+                         VerticalAlignment="Center">
+                    <TextBox.InnerLeftContent>
+                        <Panel VerticalAlignment="Center" Margin="10,0,4,0">
+                            <icon:PackIconBoxIcons Kind="RegularSearch" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                        </Panel>
+                    </TextBox.InnerLeftContent>
+                    <TextBox.InnerRightContent>
+                        <Button Command="{Binding ClearCollectionSearchCommand}"
+                                Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,6,0"
+                                Width="24" Height="24" CornerRadius="12" Cursor="Hand"
+                                IsVisible="{Binding HasCollectionSearchQuery}"
+                                ToolTip.Tip="{loc:Loc 'common.clear_search'}">
+                            <icon:PackIconBoxIcons Kind="RegularX" Width="12" Height="12" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                    </TextBox.InnerRightContent>
+                </TextBox>
+                <Button Grid.Column="1"
+                        Classes="btn-action-sec"
+                        Command="{Binding LoadCollectionsCommand}"
+                        Padding="10,7" Margin="8,0,0,0"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="{loc:Loc 'tools.collections.refresh_tip'}">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <icon:PackIconBoxIcons Kind="RegularRefreshCw" Width="14" Height="14" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{loc:Loc 'tools.collections.refresh'}" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <Panel Grid.Row="1">
+                <ProgressBar IsIndeterminate="True" Height="3" VerticalAlignment="Top" Margin="0,8" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsLoadingCollections}"/>
+                <TextBlock Text="{loc:Loc 'tools.collections.empty_title'}" FontSize="12.5" Foreground="{DynamicResource TextMuted}"
+                           HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,16" IsVisible="{Binding IsNoCollectionsFound}"/>
+                <Border Classes="settings-card" Padding="0" VerticalAlignment="Stretch" IsVisible="{Binding HasCollections}">
+                    <ListBox x:Name="CollectionPickList"
+                             Classes="pick-list"
+                             ItemsSource="{Binding FilteredCollections}"
+                             SelectedItem="{Binding SelectedCollection, Mode=TwoWay}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:CollectionItemViewModel">
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <Border Width="36" Height="36" CornerRadius="8" Background="{DynamicResource BgMain}"
+                                            BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" Margin="0,0,10,0" VerticalAlignment="Center">
+                                        <Panel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Image Source="{Binding IconBitmap}" Width="28" Height="28" IsVisible="{Binding HasBitmap}" Stretch="Uniform"/>
+                                            <icon:PackIconBoxIcons Kind="RegularFolder" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding !HasBitmap}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Panel>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" TextTrimming="CharacterEllipsis"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <Border Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="4" Padding="5,1" VerticalAlignment="Center" IsVisible="{Binding IsPlumbobForge}">
+                                                <TextBlock Text="PlumbobForge" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                                            </Border>
+                                            <Border Background="{DynamicResource BgMain}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="5,1" VerticalAlignment="Center" IsVisible="{Binding !IsPlumbobForge}">
+                                                <TextBlock Text="Sims 3" FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                                            </Border>
+                                            <Border Background="#241b35" BorderBrush="#8b5cf6" BorderThickness="1" CornerRadius="4" Padding="5,1" VerticalAlignment="Center" IsVisible="{Binding HideFromCatalog}" ToolTip.Tip="{loc:Loc 'tools.collections.catalog_hidden_tip'}">
+                                                <StackPanel Orientation="Horizontal" Spacing="3" VerticalAlignment="Center">
+                                                    <icon:PackIconBoxIcons Kind="RegularGhost" Width="9" Height="9" Foreground="#a78bfa" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{loc:Loc 'tools.collections.catalog_hidden'}" FontSize="9.5" FontWeight="Bold" Foreground="#a78bfa"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <TextBlock Text="{Binding ItemCount, StringFormat='{}{0} items'}" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+            </Panel>
+        </Grid>
+
+        <!-- 1. Collections View (narrow, when the editor is closed) -->
+        <Grid Grid.Column="1" RowDefinitions="Auto, *" IsVisible="{Binding ShowCollectionCards}">
             <!-- Top Controls Bar: Search & Refresh -->
             <Grid Grid.Row="0" ColumnDefinitions="*, Auto" VerticalAlignment="Center" Margin="0,0,0,16">
                 <!-- Capsule Search Input -->
@@ -134,7 +242,7 @@
 
                 <!-- Collections List -->
                 <ScrollViewer VerticalScrollBarVisibility="Auto" IsVisible="{Binding HasCollections}">
-                    <ItemsControl ItemsSource="{Binding FilteredCollections}">
+                    <ItemsControl x:Name="CollectionCards" ItemsSource="{Binding FilteredCollections}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:CollectionItemViewModel">
                                 <Border Classes="settings-card" Margin="0,0,0,8" Padding="14">
@@ -213,23 +321,48 @@
             </Grid>
         </Grid>
 
-        <!-- 2. Collection Editor (Create / Edit View) -->
-        <Border Grid.Row="1" Classes="settings-card" Padding="24" IsVisible="{Binding IsCollectionEditorOpen}">
-            <Grid RowDefinitions="Auto, *">
+        <!-- Wide, nothing open yet -->
+        <Border x:Name="CollectionPlaceholder" Grid.Column="1" Classes="settings-card" Padding="32,24" VerticalAlignment="Top" IsVisible="{Binding ShowCollectionPlaceholder}">
+            <StackPanel HorizontalAlignment="Center" Spacing="12">
+                <Border Width="48" Height="48" CornerRadius="24" Background="{DynamicResource BgSurface}" HorizontalAlignment="Center">
+                    <icon:PackIconBoxIcons Kind="RegularFolder" Width="26" Height="26" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="{loc:Loc 'tools.collections.pick_one'}" FontSize="12.5" Foreground="{DynamicResource TextMuted}"
+                           TextWrapping="Wrap" TextAlignment="Center" MaxWidth="420" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- 2. Collection Editor: the whole page when narrow, beside the list when wide -->
+        <Border x:Name="CollectionEditor" Grid.Column="1" Classes="settings-card" Padding="24" IsVisible="{Binding IsCollectionEditorOpen}">
+            <Grid RowDefinitions="Auto, Auto, *">
                 <!-- Editor Header: Title on Left, Cancel & Save Buttons on Right -->
                 <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,24">
                     <StackPanel Grid.Column="0" Spacing="4" VerticalAlignment="Center">
                         <TextBlock Text="{Binding CollectionEditorTitle}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
-                        <TextBlock Text="{loc:Loc 'tools.collections.editor_desc'}" FontSize="12.5" Foreground="{DynamicResource TextMuted}"/>
+                        <TextBlock x:Name="CollectionStatus" Text="{Binding CollectionEditorStatus}" FontSize="12.5" Classes.unsaved="{Binding IsCollectionStatusUnsaved}"/>
                     </StackPanel>
 
                     <!-- Top Action Buttons -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                        <Button Classes="btn-action-sec" Command="{Binding CancelEditCollectionCommand}" Padding="14,8">
-                            <TextBlock Text="{loc:Loc 'common.cancel'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <Button x:Name="CollectionEditorDelete"
+                                Classes="btn-action-sec"
+                                Click="OnDeleteOpenCollectionClick"
+                                Padding="10,8"
+                                IsVisible="{Binding ShowCollectionDelete}"
+                                ToolTip.Tip="{loc:Loc 'tools.collections.delete_tip'}">
+                            <Button.Styles>
+                                <Style Selector="Button:pointerover">
+                                    <Setter Property="Background" Value="#331518"/>
+                                </Style>
+                            </Button.Styles>
+                            <icon:PackIconBoxIcons Kind="RegularTrash" Width="15" Height="15" Foreground="#ef4444" VerticalAlignment="Center"/>
                         </Button>
 
-                        <Button Classes="btn-action-primary" Command="{Binding SaveCollectionCommand}" IsEnabled="{Binding !IsSavingCollection}" Padding="16,8">
+                        <Button x:Name="CollectionCancel" Classes="btn-action-sec" Command="{Binding CancelEditCollectionCommand}" Padding="14,8" IsVisible="{Binding ShowCollectionCancel}">
+                            <TextBlock Text="{Binding CollectionCancelLabel}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </Button>
+
+                        <Button x:Name="CollectionSave" Classes="btn-action-primary" Command="{Binding SaveCollectionCommand}" IsEnabled="{Binding !IsSavingCollection}" Padding="16,8">
                             <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
                                 <icon:PackIconBoxIcons Kind="RegularSave" Width="15" Height="15" Foreground="White" VerticalAlignment="Center" IsVisible="{Binding !IsSavingCollection}"/>
                                 <ProgressBar IsIndeterminate="True" Width="36" Height="3" CornerRadius="1.5" Foreground="White" Background="#40ffffff" VerticalAlignment="Center" IsVisible="{Binding IsSavingCollection}"/>
@@ -239,10 +372,23 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Editor Body: Split 2-Column Panel (Unboxed / Clean Layout) -->
-                <Grid Grid.Row="1" ColumnDefinitions="1.15*, 28, 1.2*">
+                <!-- Opening another collection with unsaved changes: answered by Discard or Save above -->
+                <Border x:Name="CollectionPendingBar" Grid.Row="1" Background="#241b0b" BorderBrush="#d97706" BorderThickness="1" CornerRadius="8"
+                        Padding="14,10" Margin="0,-10,0,20" IsVisible="{Binding HasPendingCollectionAction}">
+                    <Grid ColumnDefinitions="Auto, *, Auto">
+                        <icon:PackIconBoxIcons Kind="RegularInfoCircle" Width="18" Height="18" Foreground="#fbbf24" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="{Binding PendingCollectionMessage}" FontSize="12.5" FontWeight="SemiBold" Foreground="#fef3c7" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                        <Button Grid.Column="2" Classes="btn-action-sec" Command="{Binding KeepEditingCollectionCommand}" Margin="12,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc 'tools.collections.keep_editing'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- Editor Body: two columns, or one scrolling column beside the list when wide -->
+                <ScrollViewer x:Name="CollectionEditorScroll" Grid.Row="2" VerticalScrollBarVisibility="{Binding CollectionEditorScrollBar}" HorizontalScrollBarVisibility="Disabled">
+                <Grid x:Name="EditorBody" ColumnDefinitions="1.15*, 28, 1.2*" RowDefinitions="*, Auto" Classes.compact="{Binding IsWideLayout}">
                     <!-- LEFT COLUMN: Identity & Icon Selection -->
-                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
+                    <ScrollViewer x:Name="EditorLeft" VerticalScrollBarVisibility="Auto">
                         <StackPanel Spacing="22">
                             <!-- Warning banner for non-PlumbobForge collection -->
                             <Border Background="#241b0b" BorderBrush="#d97706" BorderThickness="1" CornerRadius="8" Padding="14,12" IsVisible="{Binding IsEditingNonPlumbobForgeCollection}">
@@ -279,7 +425,7 @@
 
                             <!-- In-Game Icon Picker Section -->
                             <StackPanel Spacing="12">
-                                <Grid ColumnDefinitions="*, Auto, Auto" VerticalAlignment="Center">
+                                <Grid ColumnDefinitions="*, Auto, Auto, Auto" VerticalAlignment="Center">
                                     <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
                                         <TextBlock Text="{loc:Loc 'tools.collections.ingame_icon'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
                                         <TextBlock Text="{Binding SelectedIcon.DisplayName, FallbackValue='None selected', StringFormat='Selected: {0}'}"
@@ -290,6 +436,7 @@
                                     <Button Grid.Column="1"
                                             Classes="btn-action-sec"
                                             Click="OnImportCustomIconClick"
+                                            IsVisible="{Binding ShowIconPicker}"
                                             Height="30"
                                             Padding="10,0"
                                             Margin="0,0,8,0"
@@ -312,6 +459,7 @@
                                              CornerRadius="15"
                                              VerticalAlignment="Center"
                                              Text="{Binding IconSearchQuery, Mode=TwoWay}"
+                                             IsVisible="{Binding ShowIconPicker}"
                                              PlaceholderText="{loc:Loc 'tools.collections.filter_icons'}">
                                         <TextBox.InnerLeftContent>
                                             <Panel VerticalAlignment="Center" Margin="8,0,3,0">
@@ -333,10 +481,20 @@
                                             </Button>
                                         </TextBox.InnerRightContent>
                                     </TextBox>
+
+                                    <Button x:Name="IconPickerToggle"
+                                            Grid.Column="3"
+                                            Classes="btn-action-sec"
+                                            Command="{Binding ToggleIconPickerCommand}"
+                                            Height="30" Padding="12,0" Margin="8,0,0,0" CornerRadius="15"
+                                            VerticalAlignment="Center"
+                                            IsVisible="{Binding IsWideLayout}">
+                                        <TextBlock Text="{Binding IconPickerToggleLabel}" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    </Button>
                                 </Grid>
 
                                 <!-- Category Pills -->
-                                <WrapPanel Orientation="Horizontal">
+                                <WrapPanel Orientation="Horizontal" IsVisible="{Binding ShowIconPicker}">
                                     <Button Classes="filter-pill" Classes.active="{Binding IsIconCategoryAll}"
                                             Command="{Binding SetIconCategoryFilterCommand}" CommandParameter="All" Content="{loc:Loc 'common.all'}"/>
                                     <Button Classes="filter-pill" Classes.active="{Binding IsIconCategoryCustom}"
@@ -365,12 +523,13 @@
 
                                 <!-- Icon Grid Container -->
                                 <Border Background="Transparent" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
-                                        CornerRadius="8" Padding="6" MaxHeight="230" HorizontalAlignment="Stretch" Margin="0,0,2,0">
+                                        CornerRadius="8" Padding="6" MaxHeight="230" HorizontalAlignment="Stretch" Margin="0,0,2,0"
+                                        IsVisible="{Binding ShowIconPicker}">
                                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
                                         <ItemsControl ItemsSource="{Binding FilteredIcons}" HorizontalAlignment="Stretch">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
-                                                    <UniformGrid Columns="6" HorizontalAlignment="Stretch"/>
+                                                    <UniformGrid Columns="{Binding $parent[UserControl].((vm:HealthViewModel)DataContext).IconGridColumns}" HorizontalAlignment="Stretch"/>
                                                 </ItemsPanelTemplate>
                                             </ItemsControl.ItemsPanel>
                                             <ItemsControl.ItemTemplate>
@@ -465,10 +624,10 @@
                     </ScrollViewer>
 
                     <!-- Divider -->
-                    <Rectangle Grid.Column="1" Fill="{DynamicResource BorderSubtle}" Width="1" HorizontalAlignment="Center" VerticalAlignment="Stretch"/>
+                    <Rectangle x:Name="EditorDivider" Grid.Column="1" Fill="{DynamicResource BorderSubtle}" Width="1" HorizontalAlignment="Center" VerticalAlignment="Stretch"/>
 
                     <!-- RIGHT COLUMN: Assigned CC Sets & Set Manager -->
-                    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
+                    <ScrollViewer x:Name="EditorRight" VerticalScrollBarVisibility="Auto">
                         <StackPanel Spacing="20">
                             <!-- Loading sets indicator -->
                             <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
@@ -727,6 +886,7 @@
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
+                </ScrollViewer>
             </Grid>
         </Border>
     </Grid>

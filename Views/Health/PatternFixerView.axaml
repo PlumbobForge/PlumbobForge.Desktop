@@ -5,9 +5,147 @@
              xmlns:vm="using:PlumbobForge.Desktop.ViewModels"
              xmlns:icon="using:PlumbobForge.Desktop.Controls.Icons"
              xmlns:loc="using:PlumbobForge.Desktop.MarkupExtensions"
+             xmlns:ctl="using:PlumbobForge.Desktop.Views.Controls"
              mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="800"
              x:Class="PlumbobForge.Desktop.Views.Health.PatternFixerView"
              x:DataType="vm:HealthViewModel">
+
+    <UserControl.Resources>
+        <!-- One pattern: in the virtualized list when narrow, in two columns when wide -->
+            <DataTemplate x:Key="PatternCard" x:DataType="vm:PatternIssueItemViewModel">
+                <Border Classes="settings-card" Margin="0,0,0,10" Padding="16,14">
+                    <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                        <!-- Left: Selection Checkbox & Pattern Icon -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center" Margin="0,0,16,0">
+                            <CheckBox IsChecked="{Binding IsSelected}"
+                                      IsVisible="{Binding IsBroken}"
+                                      VerticalAlignment="Center"
+                                      Margin="0"/>
+
+                            <Border Width="36" Height="36"
+                                    CornerRadius="8"
+                                    Background="{DynamicResource BgSurface}"
+                                    BorderBrush="{DynamicResource BorderSubtle}"
+                                    BorderThickness="1"
+                                    VerticalAlignment="Center">
+                                <icon:PackIconBoxIcons Kind="RegularPalette"
+                                                       Width="18" Height="18"
+                                                       Foreground="{DynamicResource AccentBrush}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Middle: Pattern Info, Filename, Set, and Issue Details -->
+                        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                            <!-- Pattern Name and Category Badge -->
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding PatternName}"
+                                           FontSize="14"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource TextMain}"
+                                           VerticalAlignment="Center"/>
+
+                                <Border Background="{DynamicResource BgSurface}"
+                                        BorderBrush="{DynamicResource BorderSubtle}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="6,1"
+                                        VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Category}"
+                                               FontSize="10.5"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextMuted}"/>
+                                </Border>
+
+                                <!-- Status Pill -->
+                                <Border Background="#331518"
+                                        BorderBrush="#ef4444"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="6,1"
+                                        VerticalAlignment="Center"
+                                        IsVisible="{Binding IsBroken}">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <icon:PackIconBoxIcons Kind="RegularBadgeExclamation" Width="11" Height="11" Foreground="#ef4444" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding CorruptedKeyCount, StringFormat='{}Causes CaST Freeze ({0} bad keys)'}"
+                                                   FontSize="10.5"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#ef4444"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="{DynamicResource BgSurface}"
+                                        BorderBrush="{DynamicResource AccentBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="6,1"
+                                        VerticalAlignment="Center"
+                                        IsVisible="{Binding IsFixed}">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <icon:PackIconBoxIcons Kind="RegularCheck" Width="11" Height="11" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{loc:Loc 'tools.patterns.fixed_badge'}"
+                                                   FontSize="10.5"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource AccentBrush}"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Filename and Set location -->
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding FileName}"
+                                           FontSize="11.5"
+                                           Foreground="{DynamicResource TextMuted}"
+                                           VerticalAlignment="Center"/>
+
+                                <TextBlock Text="•" FontSize="11" Foreground="{DynamicResource BorderSubtle}" VerticalAlignment="Center"/>
+
+                                <TextBlock Text="{Binding SetName, StringFormat='{}Set: {0}'}"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource TextMuted}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Sample Broken String (when broken) -->
+                            <TextBlock Text="{Binding BrokenKeysSampleText, StringFormat='{}Bug detail: {0}'}"
+                                       FontSize="10.5"
+                                       Foreground="#f87171"
+                                       IsVisible="{Binding IsBroken}"
+                                       FontFamily="Consolas, monospace"
+                                       Margin="0,2,0,0"/>
+                        </StackPanel>
+
+                        <!-- Right: Action Buttons -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <!-- Fix Single Pattern Button -->
+                            <Button Classes="btn-action-primary"
+                                    Padding="10,6"
+                                    Command="{Binding FixCommand}"
+                                    IsVisible="{Binding IsBroken}"
+                                    IsEnabled="{Binding !IsFixing}">
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                    <icon:PackIconBoxIcons Kind="RegularBandAid" Width="13" Height="13" Foreground="White" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'tools.patterns.fix_pattern'}" FontSize="11.5" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Jump to Library Item -->
+                            <Button Background="{DynamicResource BgSurface}"
+                                    BorderBrush="{DynamicResource BorderSubtle}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="8,6"
+                                    Cursor="Hand"
+                                    Command="{Binding NavigateToItemCommand}"
+                                    ToolTip.Tip="{loc:Loc 'tools.conflicts.view_in_library'}">
+                                <icon:PackIconBoxIcons Kind="RegularFolderOpen" Width="13" Height="13" Foreground="{DynamicResource TextMuted}"/>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </DataTemplate>
+    </UserControl.Resources>
 
     <Grid RowDefinitions="Auto, *" HorizontalAlignment="Stretch">
 
@@ -138,151 +276,27 @@
                 </Border>
 
                 <!-- Pattern Cards Virtualized ListBox -->
-                <ListBox Grid.Row="1"
-                         Classes="card-list"
+                <Panel Grid.Row="1" IsVisible="{Binding IsNarrowLayout}">
+                <ListBox Classes="card-list"
                          ItemsSource="{Binding FilteredPatternIssues}"
+                         ItemTemplate="{StaticResource PatternCard}"
                          IsVisible="{Binding !IsNoPatternIssues}">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel />
                         </ItemsPanelTemplate>
                     </ListBox.ItemsPanel>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate DataType="{x:Type vm:PatternIssueItemViewModel}">
-                            <Border Classes="settings-card" Margin="0,0,0,10" Padding="16,14">
-                                <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
-                                    <!-- Left: Selection Checkbox & Pattern Icon -->
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center" Margin="0,0,16,0">
-                                        <CheckBox IsChecked="{Binding IsSelected}"
-                                                  IsVisible="{Binding IsBroken}"
-                                                  VerticalAlignment="Center"
-                                                  Margin="0"/>
-
-                                        <Border Width="36" Height="36"
-                                                CornerRadius="8"
-                                                Background="{DynamicResource BgSurface}"
-                                                BorderBrush="{DynamicResource BorderSubtle}"
-                                                BorderThickness="1"
-                                                VerticalAlignment="Center">
-                                            <icon:PackIconBoxIcons Kind="RegularPalette"
-                                                                   Width="18" Height="18"
-                                                                   Foreground="{DynamicResource AccentBrush}"
-                                                                   HorizontalAlignment="Center"
-                                                                   VerticalAlignment="Center"/>
-                                        </Border>
-                                    </StackPanel>
-
-                                    <!-- Middle: Pattern Info, Filename, Set, and Issue Details -->
-                                    <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
-                                        <!-- Pattern Name and Category Badge -->
-                                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding PatternName}"
-                                                       FontSize="14"
-                                                       FontWeight="Bold"
-                                                       Foreground="{DynamicResource TextMain}"
-                                                       VerticalAlignment="Center"/>
-
-                                            <Border Background="{DynamicResource BgSurface}"
-                                                    BorderBrush="{DynamicResource BorderSubtle}"
-                                                    BorderThickness="1"
-                                                    CornerRadius="4"
-                                                    Padding="6,1"
-                                                    VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Category}"
-                                                           FontSize="10.5"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource TextMuted}"/>
-                                            </Border>
-
-                                            <!-- Status Pill -->
-                                            <Border Background="#331518"
-                                                    BorderBrush="#ef4444"
-                                                    BorderThickness="1"
-                                                    CornerRadius="4"
-                                                    Padding="6,1"
-                                                    VerticalAlignment="Center"
-                                                    IsVisible="{Binding IsBroken}">
-                                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                                    <icon:PackIconBoxIcons Kind="RegularBadgeExclamation" Width="11" Height="11" Foreground="#ef4444" VerticalAlignment="Center"/>
-                                                    <TextBlock Text="{Binding CorruptedKeyCount, StringFormat='{}Causes CaST Freeze ({0} bad keys)'}"
-                                                               FontSize="10.5"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="#ef4444"/>
-                                                </StackPanel>
-                                            </Border>
-
-                                            <Border Background="{DynamicResource BgSurface}"
-                                                    BorderBrush="{DynamicResource AccentBrush}"
-                                                    BorderThickness="1"
-                                                    CornerRadius="4"
-                                                    Padding="6,1"
-                                                    VerticalAlignment="Center"
-                                                    IsVisible="{Binding IsFixed}">
-                                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                                    <icon:PackIconBoxIcons Kind="RegularCheck" Width="11" Height="11" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
-                                                    <TextBlock Text="{loc:Loc 'tools.patterns.fixed_badge'}"
-                                                               FontSize="10.5"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{DynamicResource AccentBrush}"/>
-                                                </StackPanel>
-                                            </Border>
-                                        </StackPanel>
-
-                                        <!-- Filename and Set location -->
-                                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding FileName}"
-                                                       FontSize="11.5"
-                                                       Foreground="{DynamicResource TextMuted}"
-                                                       VerticalAlignment="Center"/>
-
-                                            <TextBlock Text="•" FontSize="11" Foreground="{DynamicResource BorderSubtle}" VerticalAlignment="Center"/>
-
-                                            <TextBlock Text="{Binding SetName, StringFormat='{}Set: {0}'}"
-                                                       FontSize="11"
-                                                       Foreground="{DynamicResource TextMuted}"
-                                                       VerticalAlignment="Center"/>
-                                        </StackPanel>
-
-                                        <!-- Sample Broken String (when broken) -->
-                                        <TextBlock Text="{Binding BrokenKeysSampleText, StringFormat='{}Bug detail: {0}'}"
-                                                   FontSize="10.5"
-                                                   Foreground="#f87171"
-                                                   IsVisible="{Binding IsBroken}"
-                                                   FontFamily="Consolas, monospace"
-                                                   Margin="0,2,0,0"/>
-                                    </StackPanel>
-
-                                    <!-- Right: Action Buttons -->
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                        <!-- Fix Single Pattern Button -->
-                                        <Button Classes="btn-action-primary"
-                                                Padding="10,6"
-                                                Command="{Binding FixCommand}"
-                                                IsVisible="{Binding IsBroken}"
-                                                IsEnabled="{Binding !IsFixing}">
-                                            <StackPanel Orientation="Horizontal" Spacing="5">
-                                                <icon:PackIconBoxIcons Kind="RegularBandAid" Width="13" Height="13" Foreground="White" VerticalAlignment="Center"/>
-                                                <TextBlock Text="{loc:Loc 'tools.patterns.fix_pattern'}" FontSize="11.5" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Button>
-
-                                        <!-- Jump to Library Item -->
-                                        <Button Background="{DynamicResource BgSurface}"
-                                                BorderBrush="{DynamicResource BorderSubtle}"
-                                                BorderThickness="1"
-                                                CornerRadius="6"
-                                                Padding="8,6"
-                                                Cursor="Hand"
-                                                Command="{Binding NavigateToItemCommand}"
-                                                ToolTip.Tip="{loc:Loc 'tools.conflicts.view_in_library'}">
-                                            <icon:PackIconBoxIcons Kind="RegularFolderOpen" Width="13" Height="13" Foreground="{DynamicResource TextMuted}"/>
-                                        </Button>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
                 </ListBox>
+                </Panel>
+                <ScrollViewer Grid.Row="1" IsVisible="{Binding IsWideLayout}" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl x:Name="PatternCards" ItemsSource="{Binding FilteredPatternIssues}" ItemTemplate="{StaticResource PatternCard}" IsVisible="{Binding !IsNoPatternIssues}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <ctl:MasonryPanel Columns="2" ColumnSpacing="12"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </ScrollViewer>
             </Grid>
         </Grid>
     </Grid>

@@ -111,6 +111,9 @@ public partial class SimpleConflictCardViewModel : ObservableObject
 
     public string FileCountBadgeText => Packages.Count == 1 ? "1 file" : $"{Packages.Count} files";
 
+    // The wide layout's list row: which files, at a glance.
+    public string FileNamesText => string.Join(" · ", Packages.Select(p => p.PackageFileName));
+
     [ObservableProperty]
     private bool _isDetailsExpanded = false;
 
@@ -503,7 +506,10 @@ public partial class HealthViewModel
                     p.SetName.Contains(query, StringComparison.OrdinalIgnoreCase)));
         }
 
+        var previous = SelectedConflictCard;
+        int oldIndex = previous == null ? -1 : FilteredConflictCards.IndexOf(previous);
         FilteredConflictCards.ReplaceAll(cards.ToList());
+        SelectConflictAfterFilter(previous, oldIndex);
 
         OnPropertyChanged(nameof(IsNoIssuesFound));
         OnPropertyChanged(nameof(HasIssues));

@@ -495,6 +495,9 @@
                                     "bulk_duplicates_desc":  "Automatycznie zachowaj aktywny pakiet w każdej grupie i wyłącz zbędne kopie, aby przyspieszyć ładowanie gry."
                                 },
                   "meshes":  {
+                                 "stat_triangles":  "Trójkąty",
+                                 "stat_vertices":  "Wierzchołki",
+                                 "stat_levels":  "Poziomy szczegółów",
                                  "scope_clear_tip":  "Pokaż całą bibliotekę",
                                  "optimize_heavy":  "Bardzo ciężkie i ciężkie ({0})",
                                  "optimize_very_heavy":  "Tylko bardzo ciężkie ({0})",
@@ -543,6 +546,16 @@
                                    "fix_pattern":  "Napraw wzorzec"
                                },
                   "collections":  {
+                                      "discard":  "Odrzuć",
+                                      "unsaved":  "Niezapisane zmiany",
+                                      "pending_switch":  "Zapisać zmiany w „{0}” przed otwarciem „{1}”?",
+                                      "pending_new":  "Zapisać zmiany w „{0}” przed utworzeniem nowej kolekcji?",
+                                      "unnamed":  "Nowa kolekcja",
+                                      "keep_editing":  "Edytuj dalej",
+                                      "change_icon":  "Zmień ikonę",
+                                      "done":  "Gotowe",
+                                      "pick_one":  "Wybierz kolekcję po lewej, aby ją edytować, albo utwórz nową przyciskiem Nowa kolekcja.",
+                                      "delete_confirm":  "Usunąć kolekcję „{0}”? Zostanie usunięta z gry.",
                                       "title":  "Kreator kolekcji",
                                       "collections":  "Kolekcje",
                                       "subtitle":  "Twórz, edytuj i organizuj kolekcje katalogu gry bezpośrednio ze swoich zestawów PlumbobForge.",

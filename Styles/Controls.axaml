@@ -285,6 +285,34 @@
         <Setter Property="Background" Value="Transparent"/>
     </Style>
 
+    <!-- The tools' wide layout: a compact list whose selected row shows in a details pane beside it.
+         Rows look like the CC Optimizer's queue rows; arrow keys move the selection. -->
+    <Style Selector="ListBox.pick-list">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="8"/>
+    </Style>
+    <Style Selector="ListBox.pick-list ListBoxItem">
+        <Setter Property="Padding" Value="10,8"/>
+        <Setter Property="Margin" Value="0,0,0,2"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="ListBox.pick-list ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector="ListBox.pick-list ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource BgCardAlt}"/>
+    </Style>
+    <Style Selector="ListBox.pick-list ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentBadgeBgBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+    </Style>
+
     <!-- Typography: body text uses AppFontBody by default (Styles/Fonts.axaml).
          Buttons, toggles, checkboxes, menus, tabs and combo boxes use the UI roundness. -->
     <Style Selector=":is(Button), MenuItem, TabItem, ComboBox, ComboBoxItem">
