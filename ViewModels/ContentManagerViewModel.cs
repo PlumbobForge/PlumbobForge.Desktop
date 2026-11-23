@@ -703,7 +703,11 @@ public partial class ContentManagerViewModel : ObservableObject
                 }
             }
 
+            // Items waiting behind an Undo toast stay out of the list until the delete runs or is undone.
+            bool anyPending = items.Any(IsDeletePending);
+            if (anyPending) items = items.Where(i => !IsDeletePending(i)).ToList();
             Items.ReplaceAll(items);
+            if (anyPending) RecalculateSetCounts();
             PlaceModsNode(items.Any(i => i.Entity.IsModsItem), modsSelectionBefore);
             _ = RefreshConfigurationStateAsync();
             RecalculateModsCounts();
@@ -867,6 +871,8 @@ public partial class ContentManagerViewModel : ObservableObject
 
     private async Task<bool> RunRebuildAsync(bool forceRebuild)
     {
+        // A delete waiting behind Undo has to land before the cache is built from the library.
+        if (App.Services?.GetService<ActionToastService>() is { } toast) await toast.CommitPendingAsync();
         var mainVm = App.Services?.GetService<MainViewModel>();
         var modal = new TaskProgressModalViewModel();
         modal.Start(LocalizationManager.Instance.GetString(forceRebuild ? "progress.force_rebuilding_cache" : "progress.rebuilding_cache"));

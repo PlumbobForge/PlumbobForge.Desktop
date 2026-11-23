@@ -99,6 +99,15 @@ public partial class MainWindow : Window
             return;
         }
 
+        // A delete waiting behind Undo runs before the app goes, so closing never undoes it.
+        if (App.Services?.GetService<Services.ActionToastService>() is { HasPendingCommit: true } toast)
+        {
+            e.Cancel = true;
+            await toast.CommitPendingAsync();
+            Close();
+            return;
+        }
+
         // Read the live flag: HasDirtySets can be stale right after switching to vault mode.
         bool vaultMode = App.Services?.GetService<Microsoft.Extensions.Options.IOptionsMonitor<PlumbobForge.Backend.Configuration.PlumbobForgeOptions>>()?.CurrentValue.EnableSingleSourceVault ?? false;
         if (!_isClosingForced && !vaultMode && DataContext is ViewModels.MainViewModel mainVm && mainVm.HasDirtySets)

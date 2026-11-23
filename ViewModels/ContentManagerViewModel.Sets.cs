@@ -80,7 +80,8 @@ public partial class ContentManagerViewModel
 
     public async Task ReloadSetsTreeAsync(long? selectedSetIdToRestore = null)
     {
-        var setsList = await _db.SetsEntities.AsNoTracking().ToListAsync();
+        // Sets waiting behind an Undo toast are already gone as far as the library shows.
+        var setsList = (await _db.SetsEntities.AsNoTracking().ToListAsync()).Where(s => !IsSetDeletePending(s.Id)).ToList();
 
         FlatSets.Clear();
         foreach (var set in setsList)
@@ -719,7 +720,13 @@ public partial class ContentManagerViewModel
             message: targets.Count > 1 ? string.Format(LocalizationManager.Instance.GetString("library.delete_sets_confirm"), targets.Count) : null);
         if (!result.Confirmed) return;
 
-        foreach (var target in targets) await DeleteSetCoreAsync(target.Id!.Value, result);
+        // Only files deleted permanently can't be brought back; everything else waits behind Undo.
+        if (result.DeleteFiles && result.Permanent)
+        {
+            foreach (var target in targets) await DeleteSetCoreAsync(target.Id!.Value, result);
+            return;
+        }
+        await DeleteSetsWithUndoAsync(targets, result);
     }
 
     // The sets a sidebar menu acts on: every selected set when the clicked one is part of a selection, else just it.
@@ -900,7 +907,7 @@ public partial class ContentManagerViewModel
                 var options = _optionsMonitor?.CurrentValue;
                 bool staticLibraryCache = options != null && !options.EnableSingleSourceVault &&
                     string.Equals(options.CacheMethod, "Static", StringComparison.OrdinalIgnoreCase);
-                await _db.SaveChangesAsync();
+                await SaveDeletionsAsync();
                 if (staticLibraryCache && setItemMetas.Any(m => m.Enabled))
                 {
                     // Written straight to the database: this context's copies of the other sets may be stale, and setting

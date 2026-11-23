@@ -209,7 +209,8 @@ public partial class ConfigurationsViewModel : ObservableObject
             long? currentSelectedId = SelectedConfiguration?.Id;
 
             Configurations.Clear();
-            foreach (var raw in rawConfigs)
+            // A configuration waiting behind an Undo toast is already gone as far as the list shows.
+            foreach (var raw in rawConfigs.Where(c => !_pendingDeleteConfigIds.Contains(c.Id)))
             {
                 Configurations.Add(new ConfigItemViewModel(raw));
             }
@@ -723,14 +724,40 @@ public partial class ConfigurationsViewModel : ObservableObject
     [RelayCommand]
     public Task EditDescriptionAsync(ConfigItemViewModel? config) => CustomizeConfigurationAsync(config);
 
+    private readonly HashSet<long> _pendingDeleteConfigIds = new();
+
+    // Leaves the list at once; the real delete waits behind the Undo toast.
     [RelayCommand]
-    public async Task DeleteConfigurationAsync(ConfigItemViewModel? config)
+    public Task DeleteConfigurationAsync(ConfigItemViewModel? config)
     {
-        if (config == null || config.Default || config.Active) return;
+        if (config == null || config.Default || config.Active) return Task.CompletedTask;
 
-        var confirm = await DialogHelper.ShowDeleteConfirmAsync($"Are you sure you want to delete configuration '{config.Name}'?");
-        if (!confirm.Confirmed) return;
+        long id = config.Id;
+        _pendingDeleteConfigIds.Add(id);
+        bool wasSelected = SelectedConfiguration == config;
+        Configurations.Remove(config);
+        if (wasSelected) SelectedConfiguration = Configurations.FirstOrDefault(c => c.Active) ?? Configurations.FirstOrDefault();
 
+        var toast = App.Services?.GetService<PlumbobForge.Desktop.Services.ActionToastService>();
+        Func<Task> commit = async () =>
+        {
+            try { await DeleteConfigurationNowAsync(config); }
+            finally { _pendingDeleteConfigIds.Remove(id); }
+        };
+        if (toast == null) return commit();
+        toast.Show(string.Format(LocalizationManager.Instance.GetString("configurations.toast_deleted"), config.Name),
+            undo: async () =>
+            {
+                _pendingDeleteConfigIds.Remove(id);
+                await LoadDataAsync();
+                if (wasSelected && Configurations.FirstOrDefault(c => c.Id == id) is { } back) SelectedConfiguration = back;
+            },
+            commit: commit);
+        return Task.CompletedTask;
+    }
+
+    private async Task DeleteConfigurationNowAsync(ConfigItemViewModel config)
+    {
         try
         {
             var entity = await _db.ConfigEntities.FindAsync(config.Id);
@@ -748,7 +775,6 @@ public partial class ConfigurationsViewModel : ObservableObject
                     _ = App.Services?.GetService<MainViewModel>()?.RefreshDirtyStateAsync();
                 }
                 await LoadDataAsync();
-                ShowStatusToast($"Configuration '{config.Name}' deleted.", isError: false);
             }
         }
         catch (Exception ex)
@@ -813,6 +839,9 @@ public partial class ConfigurationsViewModel : ObservableObject
             }
             return;
         }
+
+        // A delete waiting behind Undo has to land before the configuration is built.
+        if (_serviceProvider.GetService<PlumbobForge.Desktop.Services.ActionToastService>() is { } toast) await toast.CommitPendingAsync();
 
         var mainVm = _serviceProvider.GetService<MainViewModel>();
         var modal = new TaskProgressModalViewModel();

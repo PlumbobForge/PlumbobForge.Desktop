@@ -97,6 +97,8 @@ public partial class MainViewModel
     public async Task PlayAsync()
     {
         if (!CanPlay) return;
+        // A delete waiting behind Undo has to land before the game reads the Mods folder.
+        await ActionToast.CommitPendingAsync();
         if (Sims3GameProcess.IsGameRunning())
         {
             IsGameRunning = true;

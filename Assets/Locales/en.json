@@ -71,6 +71,10 @@
                    "custom":  "Custom"
                },
     "library":  {
+                    "toast_deleted":  "Deleted {0}",
+                    "toast_set_deleted":  "Deleted the set '{0}'",
+                    "toast_sets_deleted":  "Deleted {0} sets",
+                    "menu_delete_permanently":  "Delete Permanently…",
                     "optimized_badge_tip":  "Optimized with the CC Optimizer · {0}",
                     "smart_update":  "Save these filters to {0}",
                     "smart_save_short":  "Save filters",
@@ -363,6 +367,7 @@
                     "bb_price_reset":  "Reset"
                 },
     "configurations":  {
+                           "toast_deleted":  "Deleted the configuration '{0}'",
                            "enabled_mods":  "Enabled Mods",
                            "disabled_mods":  "Disabled Mods",
                            "enabled_all":  "Enabled",
@@ -546,6 +551,7 @@
                                    "fix_pattern":  "Fix Pattern"
                                },
                   "collections":  {
+                                      "toast_deleted":  "Deleted the collection '{0}'",
                                       "discard":  "Discard",
                                       "unsaved":  "Unsaved changes",
                                       "pending_switch":  "Save your changes to '{0}' before opening '{1}'?",

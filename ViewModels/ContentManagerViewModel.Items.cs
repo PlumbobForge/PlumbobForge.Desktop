@@ -362,14 +362,16 @@ public partial class ContentManagerViewModel
         item.NotifyEntityChanged();
     }
 
+    // One item (Quick Jump's Delete): to the Recycle Bin, with Undo on the toast.
     [RelayCommand]
-    public async Task DeleteItemAsync(ItemViewModel? item)
+    public void DeleteItem(ItemViewModel? item)
     {
-        if (item == null) return;
+        if (item != null) DeleteItemsWithUndo(new[] { item });
+    }
 
-        var result = await DialogHelper.ShowDeleteConfirmAsync($"Are you sure you want to delete '{item.FileName}'?");
-        if (!result.Confirmed) return;
-
+    // The delete itself, after the user confirmed it.
+    public async Task DeleteItemConfirmedAsync(ItemViewModel item, bool permanent)
+    {
         if (item.Entity.IsModsItem)
         {
             // A Mods file goes to the Recycle Bin.
@@ -411,14 +413,14 @@ public partial class ContentManagerViewModel
         if (item.Entity.IsVaultManaged)
         {
             var vaultService = App.Services?.GetService<VaultService>(); if (vaultService == null) return;
-            if (!result.Permanent)
+            if (!permanent)
             {
                 await RecycleVaultItemsAsync(vaultService, new[] { (item.Entity.Id, item.Entity.FileName) });
             }
             try
             {
                 await vaultService.DeleteModsBatchAsync(new[] { item.Entity.Id },
-                    result.Permanent ? null : path => RecycleBinHelper.SendToRecycleBin(path));
+                    permanent ? null : path => RecycleBinHelper.SendToRecycleBin(path));
             }
             catch (Exception ex)
             {
@@ -431,7 +433,7 @@ public partial class ContentManagerViewModel
         {
             if (File.Exists(item.Entity.CompleteFileName))
             {
-                if (result.Permanent)
+                if (permanent)
                 {
                     try { File.Delete(item.Entity.CompleteFileName); } catch { }
                 }
@@ -458,7 +460,7 @@ public partial class ContentManagerViewModel
         Items.Remove(item);
         FilteredItems.Remove(item);
 
-        await _db.SaveChangesAsync();
+        await SaveDeletionsAsync();
         if (!item.Entity.IsVaultManaged) await DeployLibraryItemsInVaultModeAsync();
         RecalculateSetCounts();
         UpdateSelectionState();
@@ -767,8 +769,58 @@ public partial class ContentManagerViewModel
         ApplyFilter();
     }
 
+    // Lets the headless tests remove rows from another connection just before a delete saves, the way the
+    // Library watcher's rescan does.
+    public static Func<Task>? BeforeDeleteSaveForTests { get; set; }
+
+    // Files sent to the Recycle Bin wake the Library watcher, whose rescan removes every row whose file is gone,
+    // on its own connection. A row this delete removes can therefore be gone already when it saves: that row is
+    // done, so it is dropped from the save. Anything else still fails.
+    private async Task SaveDeletionsAsync()
+    {
+        if (BeforeDeleteSaveForTests is { } hook) await hook();
+        for (int attempt = 0; ; attempt++)
+        {
+            try
+            {
+                await _db.SaveChangesAsync();
+                return;
+            }
+            catch (DbUpdateConcurrencyException ex) when (attempt < 5)
+            {
+                foreach (var entry in ex.Entries)
+                {
+                    if (entry.State != EntityState.Deleted && await entry.GetDatabaseValuesAsync() != null) throw;
+                    entry.State = EntityState.Detached;
+                }
+            }
+        }
+    }
+
+    // A failed delete shows what went wrong and reloads the library instead of closing the app.
+    private async Task DeleteWithoutCrashingAsync(Func<Task> delete)
+    {
+        try
+        {
+            await delete();
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError("Failed to delete library items", ex, "ContentManagerViewModel");
+            // Unsaved removals would otherwise go out with the next unrelated save.
+            _db.ChangeTracker.Clear();
+            await DialogHelper.ShowErrorAsync("Delete Error", $"Some items could not be deleted: {ex.Message}");
+            await LoadDataAsync();
+        }
+    }
+
+    // Delete: to the Recycle Bin, with Undo on the toast instead of a confirmation.
     [RelayCommand]
-    public async Task DeleteSelectedAsync()
+    public void DeleteSelected() => DeleteItemsWithUndo(Items.Where(i => i.IsSelected).ToList());
+
+    // Shift+Delete: the confirmation with the "permanently" choice. A permanent delete has no Undo.
+    [RelayCommand]
+    public async Task DeleteSelectedPermanentlyAsync()
     {
         var allSelected = Items.Where(i => i.IsSelected).ToList();
         if (allSelected.Count == 0) return;
@@ -780,6 +832,17 @@ public partial class ContentManagerViewModel
         var result = await DialogHelper.ShowDeleteConfirmAsync(message);
         if (!result.Confirmed) return;
 
+        if (!result.Permanent)
+        {
+            DeleteItemsWithUndo(allSelected);
+            return;
+        }
+        await DeleteWithoutCrashingAsync(() => DeleteItemsAsync(allSelected, permanent: true));
+    }
+
+    // The delete itself, after the user confirmed it.
+    public async Task DeleteItemsAsync(IReadOnlyList<ItemViewModel> allSelected, bool permanent)
+    {
         // Mods files go to the Recycle Bin; library and vault items are deleted as before.
         var modsSelected = allSelected.Where(i => i.Entity.IsModsItem).ToList();
         var selected = allSelected.Where(i => !i.Entity.IsModsItem).ToList();
@@ -840,14 +903,14 @@ public partial class ContentManagerViewModel
             var vaultService = App.Services?.GetService<VaultService>();
             if (vaultService != null)
             {
-                if (!result.Permanent)
+                if (!permanent)
                 {
                     await RecycleVaultItemsAsync(vaultService, vaultItems.Select(i => (i.Entity.Id, i.Entity.FileName)));
                 }
                 try
                 {
                     await vaultService.DeleteModsBatchAsync(vaultItems.Select(i => i.Entity.Id),
-                        result.Permanent ? null : path => RecycleBinHelper.SendToRecycleBin(path));
+                        permanent ? null : path => RecycleBinHelper.SendToRecycleBin(path));
                 }
                 catch (Exception ex)
                 {
@@ -869,7 +932,7 @@ public partial class ContentManagerViewModel
             {
                 if (File.Exists(item.Entity.CompleteFileName))
                 {
-                    if (result.Permanent)
+                    if (permanent)
                     {
                         try { File.Delete(item.Entity.CompleteFileName); } catch { }
                     }
@@ -890,9 +953,9 @@ public partial class ContentManagerViewModel
             }
         }
 
-        await _db.SaveChangesAsync();
+        await SaveDeletionsAsync();
         await PlumbobForge.Backend.Services.SetDirtyTracker.UpdateDirtyStatesForSetsAsync(_db, setIdsToDirty);
-        await _db.SaveChangesAsync();
+        await SaveDeletionsAsync();
         if (defaultItems.Count > 0) await DeployLibraryItemsInVaultModeAsync();
         RecalculateSetCounts();
         DeselectAll();

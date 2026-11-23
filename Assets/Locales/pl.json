@@ -71,6 +71,10 @@
                    "custom":  "Własny"
                },
     "library":  {
+                    "toast_deleted":  "Usunięto {0}",
+                    "toast_set_deleted":  "Usunięto zestaw „{0}”",
+                    "toast_sets_deleted":  "Usunięto zestawy: {0}",
+                    "menu_delete_permanently":  "Usuń trwale…",
                     "optimized_badge_tip":  "Zoptymalizowano Optymalizatorem CC · {0}",
                     "smart_update":  "Zapisz te filtry w: {0}",
                     "smart_save_short":  "Zapisz filtry",
@@ -363,6 +367,7 @@
                     "bb_price_reset":  "Resetuj"
                 },
     "configurations":  {
+                           "toast_deleted":  "Usunięto konfigurację „{0}”",
                            "enabled_mods":  "Włączone Mods",
                            "disabled_mods":  "Wyłączone Mods",
                            "enabled_all":  "Włączone",
@@ -546,6 +551,7 @@
                                    "fix_pattern":  "Napraw wzorzec"
                                },
                   "collections":  {
+                                      "toast_deleted":  "Usunięto kolekcję „{0}”",
                                       "discard":  "Odrzuć",
                                       "unsaved":  "Niezapisane zmiany",
                                       "pending_switch":  "Zapisać zmiany w „{0}” przed otwarciem „{1}”?",

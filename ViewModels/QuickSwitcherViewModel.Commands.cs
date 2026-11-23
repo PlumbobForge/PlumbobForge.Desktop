@@ -659,7 +659,7 @@ public partial class QuickSwitcherViewModel
                 await cm.RenameItemAsync(item);
                 break;
             case "delete":
-                await cm.DeleteItemAsync(item);
+                cm.DeleteItem(item);
                 break;
             case "enable":
             case "disable":
@@ -765,8 +765,7 @@ public partial class QuickSwitcherViewModel
                 break;
             case "delete":
                 main.NavigateToToolSection("Collections");
-                var confirm = await DialogHelper.ShowDeleteConfirmAsync($"Are you sure you want to delete the collection '{collection.Name}'?");
-                if (confirm.Confirmed) await health.DeleteCollectionAsync(collection);
+                health.DeleteCollectionWithUndo(collection);
                 break;
             case "export":
                 main.NavigateToToolSection("Collections");

@@ -514,7 +514,8 @@ public partial class HealthViewModel
         IsLoadingCollections = true;
         try
         {
-            var list = await _collectionService.LoadUserCollectionsAsync();
+            // A collection waiting behind an Undo toast is already gone as far as the list shows.
+            var list = (await _collectionService.LoadUserCollectionsAsync()).Where(c => !_pendingDeleteCollectionIds.Contains(c.Id)).ToList();
             var collVms = new List<CollectionItemViewModel>(list.Count);
             int totalItems = 0;
 
@@ -902,7 +903,47 @@ public partial class HealthViewModel
         }
     }
 
+    private readonly HashSet<ulong> _pendingDeleteCollectionIds = new();
+
+    // Leaves the list at once; the collection is deleted from the game when the Undo toast goes.
     [RelayCommand]
+    public void DeleteCollectionWithUndo(CollectionItemViewModel? item)
+    {
+        if (item == null) return;
+        ulong id = item.Id;
+        _pendingDeleteCollectionIds.Add(id);
+        AllCollections.Remove(item);
+        TotalCollectionsCount = AllCollections.Count;
+        TotalCollectionItemsCount = AllCollections.Sum(c => c.ItemCount);
+        if (IsCollectionEditorOpen && EditingCollectionId == id)
+        {
+            _pendingCollectionAction = null;
+            PendingCollectionMessage = null;
+            IsCollectionEditorOpen = false;
+        }
+        ApplyCollectionFilter();
+        AfterCollectionsLoaded();
+
+        Func<Task> commit = async () =>
+        {
+            try { await DeleteCollectionAsync(item); }
+            finally { _pendingDeleteCollectionIds.Remove(id); }
+        };
+        var toast = App.Services?.GetService<ActionToastService>();
+        if (toast == null)
+        {
+            _ = commit();
+            return;
+        }
+        toast.Show(string.Format(LocalizationManager.Instance.GetString("tools.collections.toast_deleted"), item.Name),
+            undo: async () =>
+            {
+                _pendingDeleteCollectionIds.Remove(id);
+                await LoadCollectionsAsync();
+            },
+            commit: commit);
+    }
+
     public async Task DeleteCollectionAsync(CollectionItemViewModel? item)
     {
         if (item == null) return;
@@ -911,7 +952,6 @@ public partial class HealthViewModel
             bool ok = _collectionService.DeleteCollection(item.Id);
             if (ok)
             {
-                ShowCacheToast($"Deleted collection '{item.Name}'.", isError: false);
                 await LoadCollectionsAsync();
             }
             else

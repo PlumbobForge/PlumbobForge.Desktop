@@ -525,10 +525,11 @@ public partial class ContentManagerView : UserControl
             {
                 MenuBuilder.Danger(many ? string.Format(L("library.menu_delete_items"), state.Count) : L("library.menu_delete_item"),
                     () => vm.DeleteSelectedCommand.Execute(null), "Delete"),
+                MenuBuilder.Danger(L("library.menu_delete_permanently"), () => vm.DeleteSelectedPermanentlyCommand.Execute(null), "Shift+Delete"),
             });
     }
 
-    // Delete removes the selected items (with the usual confirmation) when the last click was in the item list
+    // Delete removes the selected items (Undo on the toast; Shift+Delete asks, and can delete permanently) when the last click was in the item list
     // and nothing is being typed. Rows and cards swallow presses, so focus alone can't tell.
     private TopLevel? _keyTopLevel;
     private bool _itemsAreaActive;
@@ -575,6 +576,12 @@ public partial class ContentManagerView : UserControl
         {
             e.Handled = true;
             vm.SelectAllCommand.Execute(null);
+            return;
+        }
+        if (e.Key == Key.Delete && e.KeyModifiers == KeyModifiers.Shift && vm.HasSelectedItems)
+        {
+            e.Handled = true;
+            vm.DeleteSelectedPermanentlyCommand.Execute(null);
             return;
         }
         if (e.KeyModifiers != KeyModifiers.None || !vm.HasSelectedItems) return;
