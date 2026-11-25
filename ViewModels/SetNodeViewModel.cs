@@ -32,7 +32,8 @@ public partial class SetNodeViewModel : ObservableObject
     // A folder Resource.cfg names (Packages, Overrides, ...): renaming or deleting it would stop the game loading it.
     public bool IsModsCfgRoot { get; init; }
     public bool CanAddModsFolder => IsModsFolder;
-    public bool CanDeleteModsFolder => IsModsFolder && !IsModsCfgRoot;
+    // Any Mods folder but Packages and Overrides; a root folder takes its Resource.cfg lines with it.
+    public bool CanDeleteModsFolder => IsModsFolder && !PlumbobForge.Backend.Services.ModsFolderService.IsStandardRoot(ModsFolder!.RelativePath);
     public bool CanRenameModsFolder => IsModsFolder && !IsModsCfgRoot;
     public bool ShowDeleteEntry => CanDelete || CanDeleteModsFolder;
 
@@ -182,11 +183,23 @@ public partial class SetNodeViewModel : ObservableObject
         Children.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasChildren));
     }
 
+    // The set's own Resource.cfg priority (null takes the parent's); shown as a badge when it has one.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasOwnPriority), nameof(PriorityBadge), nameof(PriorityToolTip))]
+    private int? _priority;
+
+    public bool HasOwnPriority => Priority.HasValue;
+    public string PriorityBadge => Priority?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+    public string PriorityToolTip => Priority is int p
+        ? string.Format(PlumbobForge.Desktop.Services.Localization.LocalizationManager.Instance.GetString("library.set_priority_tip"), p)
+        : string.Empty;
+
     public SetNodeViewModel(SetsEntity entity)
     {
         _entity = entity;
         _name = entity.Name;
         _isExpanded = entity.IsExpanded;
+        _priority = entity.Priority;
         _icon = string.IsNullOrWhiteSpace(entity.Icon) ? "RegularFolder" : entity.Icon;
         _color = string.IsNullOrWhiteSpace(entity.Color) ? null : entity.Color;
         ThemeService.AccentChanged += OnAccentChanged;

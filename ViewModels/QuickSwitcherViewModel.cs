@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 using PlumbobForge.Desktop.Controls.Icons;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using PlumbobForge.Backend.Configuration;
 using PlumbobForge.Backend.Database;
 using PlumbobForge.Desktop.Services;
 using PlumbobForge.Desktop.Services.Localization;
@@ -34,13 +35,19 @@ public partial class QuickSwitcherViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsSetsSelected))]
     [NotifyPropertyChangedFor(nameof(IsItemsSelected))]
     [NotifyPropertyChangedFor(nameof(IsPlacesSelected))]
-    private string _selectedCategory = "All"; // "All", "Sets", "Configurations", "Items", "Places"
+    [NotifyPropertyChangedFor(nameof(IsModsSelected))]
+    private string _selectedCategory = "All"; // "All", "Sets", "Configurations", "Items", "Places", "Mods"
 
     public bool IsAllSelected => SelectedCategory == "All";
     public bool IsConfigsSelected => SelectedCategory == "Configurations";
     public bool IsSetsSelected => SelectedCategory == "Sets";
     public bool IsItemsSelected => SelectedCategory == "Items";
     public bool IsPlacesSelected => SelectedCategory == "Places";
+    public bool IsModsSelected => SelectedCategory == "Mods";
+
+    // The Mods filter only with Mods folder support on; the Sets filter not in Mods-only storage, which has no sets.
+    public bool ShowModsCategory => ModsFolderSupport.IsEnabled;
+    public bool ShowSetsCategory => !ModsFolderSupport.ModsOnly;
 
     [ObservableProperty]
     private ObservableCollection<QuickSwitcherItemViewModel> _results = new();
@@ -88,6 +95,8 @@ public partial class QuickSwitcherViewModel : ObservableObject
         IsOpen = true;
         SearchQuery = string.Empty;
         SelectedCategory = "All";
+        OnPropertyChanged(nameof(ShowModsCategory));
+        OnPropertyChanged(nameof(ShowSetsCategory));
         await ExecuteSearchAsync(string.Empty);
     }
 
@@ -191,6 +200,10 @@ public partial class QuickSwitcherViewModel : ObservableObject
         bool includeConfigs = SelectedCategory == "All" || SelectedCategory == "Configurations";
         bool includeSets = SelectedCategory == "All" || SelectedCategory == "Sets";
         bool includeItems = SelectedCategory == "All" || SelectedCategory == "Items";
+        bool modsOn = ModsFolderSupport.IsEnabled;
+        bool includeMods = modsOn && (SelectedCategory == "All" || SelectedCategory == "Mods");
+        // The Mods filter lists Mods folder files too; elsewhere they come with the other items.
+        bool includeModsFiles = modsOn && SelectedCategory == "Mods";
 
         // 0. PLACES
         if (includePlaces)
@@ -274,11 +287,18 @@ public partial class QuickSwitcherViewModel : ObservableObject
             }
         }
 
-        // 3. ITEMS
-        if (includeItems && !string.IsNullOrEmpty(trimmed))
+        // 3. MODS FOLDERS
+        if (includeMods)
+        {
+            await AddModsFolderResultsAsync(list, db, trimmed, ct);
+        }
+
+        // 4. ITEMS
+        if ((includeItems || includeModsFiles) && !string.IsNullOrEmpty(trimmed))
         {
             // Mods folder files too; they open in their Mods folder.
-            var items = await db.AllMetaEntities
+            var itemQuery = includeModsFiles ? db.AllMetaEntities.Where(i => i.IsModsItem) : db.AllMetaEntities;
+            var items = await itemQuery
                 .AsNoTracking()
                 .Include(i => i.SetsEntity)
                 .Include(i => i.ModsFolder)
@@ -311,6 +331,55 @@ public partial class QuickSwitcherViewModel : ObservableObject
                     IconBrush = Brush.Parse("#c084fc")
                 });
             }
+        }
+    }
+
+    private async Task AddModsFolderResultsAsync(List<QuickSwitcherItemViewModel> list, AppDbContext db, string trimmed, CancellationToken ct)
+    {
+        string modsName = LocalizationManager.Instance.GetString("library.mods");
+        bool showAll = string.IsNullOrEmpty(trimmed);
+
+        // The Mods folder itself: always under the Mods filter, in All when its name is typed.
+        if (SelectedCategory == "Mods" || (!showAll && (modsName.Contains(trimmed, StringComparison.OrdinalIgnoreCase)
+                                                        || "mods".Contains(trimmed, StringComparison.OrdinalIgnoreCase))))
+        {
+            list.Add(new QuickSwitcherItemViewModel
+            {
+                Type = QuickSwitcherItemType.ModsFolder,
+                TargetId = 0,
+                Title = modsName,
+                Subtitle = "Files in the game's Mods folder",
+                IconKind = PackIconBoxIconsKind.RegularJoystick,
+                IconBrush = ThemeService.GetCurrentAccentBrush()
+            });
+        }
+
+        // With nothing typed, the folders show under the Mods filter only, so All stays short.
+        if (showAll && SelectedCategory != "Mods") return;
+
+        var folders = await db.ModsFolders.AsNoTracking().ToListAsync(ct);
+        var matched = showAll
+            ? folders.OrderBy(f => f.RelativePath, StringComparer.OrdinalIgnoreCase).Take(15)
+            : folders.Where(f => f.Name.Contains(trimmed, StringComparison.OrdinalIgnoreCase)
+                              || f.RelativePath.Contains(trimmed, StringComparison.OrdinalIgnoreCase)
+                              || (f.Description != null && f.Description.Contains(trimmed, StringComparison.OrdinalIgnoreCase)))
+                     .OrderBy(f => f.RelativePath.Length)
+                     .Take(20);
+
+        foreach (var f in matched)
+        {
+            var iconKind = Enum.TryParse<PackIconBoxIconsKind>(f.Icon, out var k) ? k : PackIconBoxIconsKind.RegularFolder;
+            list.Add(new QuickSwitcherItemViewModel
+            {
+                Type = QuickSwitcherItemType.ModsFolder,
+                TargetId = f.Id,
+                Title = f.Name,
+                Subtitle = !string.IsNullOrWhiteSpace(f.Description)
+                    ? $"Mods/{f.RelativePath}  •  {f.Description}"
+                    : $"Mods/{f.RelativePath}",
+                IconKind = iconKind,
+                IconBrush = !string.IsNullOrEmpty(f.Color) ? Brush.Parse(f.Color) : Brush.Parse("#38bdf8")
+            });
         }
     }
 
@@ -371,6 +440,10 @@ public partial class QuickSwitcherViewModel : ObservableObject
 
             case QuickSwitcherItemType.Item:
                 mainVm.NavigateToItem(target.TargetId, target.SecondaryId);
+                break;
+
+            case QuickSwitcherItemType.ModsFolder:
+                mainVm.NavigateToModsFolder(target.TargetId == 0 ? null : target.TargetId);
                 break;
 
             case QuickSwitcherItemType.Place:

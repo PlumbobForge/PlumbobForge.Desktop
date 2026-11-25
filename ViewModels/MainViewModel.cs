@@ -521,6 +521,13 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    // folderId null: the Mods folder itself.
+    public void NavigateToModsFolder(long? folderId)
+    {
+        NavigateToContentManager();
+        ContentManagerVm.SelectModsFolder(folderId);
+    }
+
     public void NavigateToConfiguration(long configId)
     {
         NavigateToConfigurations();

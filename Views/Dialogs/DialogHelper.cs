@@ -117,6 +117,13 @@ public static class DialogHelper
         return parent != null ? await dialog.ShowDialog<DeleteSetDialogResult>(parent) : new DeleteSetDialogResult(false, false, false);
     }
 
+    public static async Task<DeleteSetDialogResult> ShowDeleteModsFolderAsync(string folderName, int fileCount, bool isRootFolder, bool canMoveToPackages, Window? owner = null)
+    {
+        var parent = owner ?? GetMainWindow();
+        var dialog = new DeleteSetDialogWindow(folderName, fileCount, isRootFolder, canMoveToPackages);
+        return parent != null ? await dialog.ShowDialog<DeleteSetDialogResult>(parent) : new DeleteSetDialogResult(false, false, false);
+    }
+
     public static async Task<List<PlumbobForge.Desktop.ViewModels.ContentManagerViewModel.TidyChoice>?> ShowTidyByTypeAsync(
         IReadOnlyList<PlumbobForge.Desktop.ViewModels.ContentManagerViewModel.TidyGroup> groups, Window? owner = null)
     {
@@ -146,10 +153,11 @@ public static class DialogHelper
         return parent != null ? await dialog.ShowDialog<MoveSetCollisionResult>(parent) : new MoveSetCollisionResult(MoveSetCollisionAction.Cancel, null);
     }
 
-    public static async Task<CustomizeSetResult?> ShowCustomizeSetAsync(string currentName, string? currentIcon, string? currentColor, Window? owner = null, bool nameEditable = true, bool isModsFolder = false)
+    public static async Task<CustomizeSetResult?> ShowCustomizeSetAsync(string currentName, string? currentIcon, string? currentColor, Window? owner = null, bool nameEditable = true, bool isModsFolder = false, int? currentPriority = null,
+        bool setPriority = false, int inheritedPriority = 500, bool inheritsFromParent = false)
     {
         var parent = owner ?? GetMainWindow();
-        var dialog = new CustomizeSetDialogWindow(currentName, currentIcon, currentColor, nameEditable, isModsFolder);
+        var dialog = new CustomizeSetDialogWindow(currentName, currentIcon, currentColor, nameEditable, isModsFolder, currentPriority, setPriority, inheritedPriority, inheritsFromParent);
         return parent != null ? await dialog.ShowDialog<CustomizeSetResult?>(parent) : null;
     }
 

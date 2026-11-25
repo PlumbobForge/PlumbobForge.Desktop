@@ -19,6 +19,10 @@
     <SolidColorBrush x:Key="StatusRedBg" Color="#331518" />
     <SolidColorBrush x:Key="StatusAmber" Color="#f59e0b" />
     <SolidColorBrush x:Key="StatusAmberBg" Color="#33240f" />
+    <!-- Translucent tints that work on light and dark surfaces, and amber text readable on them (darker in light themes). -->
+    <SolidColorBrush x:Key="StatusAmberFillBrush" Color="#33f59e0b" />
+    <SolidColorBrush x:Key="StatusRedFillBrush" Color="#33ef4444" />
+    <SolidColorBrush x:Key="StatusAmberTextBrush" Color="#f59e0b" />
     <SolidColorBrush x:Key="StatusBlue" Color="#3b82f6" />
     <SolidColorBrush x:Key="StatusBlueBg" Color="#122544" />
     <SolidColorBrush x:Key="StatusCyan" Color="#38bdf8" />

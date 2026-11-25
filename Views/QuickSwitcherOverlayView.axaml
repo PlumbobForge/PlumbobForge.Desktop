@@ -137,11 +137,15 @@
                             <Button Content="{loc:Loc 'nav.places'}" Classes="category-pill" Classes.selected="{Binding IsPlacesSelected}"
                                     Command="{Binding SetCategoryCommand}" CommandParameter="Places"/>
                             <Button Content="{loc:Loc 'library.sets'}" Classes="category-pill" Classes.selected="{Binding IsSetsSelected}"
+                                    IsVisible="{Binding ShowSetsCategory}"
                                     Command="{Binding SetCategoryCommand}" CommandParameter="Sets"/>
                             <Button Content="{loc:Loc 'nav.configurations'}" Classes="category-pill" Classes.selected="{Binding IsConfigsSelected}"
                                     Command="{Binding SetCategoryCommand}" CommandParameter="Configurations"/>
                             <Button Content="{loc:Loc 'common.items'}" Classes="category-pill" Classes.selected="{Binding IsItemsSelected}"
                                     Command="{Binding SetCategoryCommand}" CommandParameter="Items"/>
+                            <Button Content="{loc:Loc 'library.mods'}" Classes="category-pill" Classes.selected="{Binding IsModsSelected}"
+                                    IsVisible="{Binding ShowModsCategory}"
+                                    Command="{Binding SetCategoryCommand}" CommandParameter="Mods"/>
                         </StackPanel>
                     </Grid>
                 </Border>

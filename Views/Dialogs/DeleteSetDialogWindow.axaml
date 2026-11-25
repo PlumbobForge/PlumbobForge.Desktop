@@ -20,7 +20,7 @@
                 <Grid ColumnDefinitions="*, Auto">
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <icon:PackIconBoxIcons Kind="RegularTrash" Width="17" Height="17" Foreground="#ef4444"/>
-                        <TextBlock Text="{loc:Loc 'dialogs.delete_set.title'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                        <TextBlock x:Name="TitleTextBlock" Text="{loc:Loc 'dialogs.delete_set.title'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
                     </StackPanel>
                     <Button Grid.Column="1" Width="44" Height="44" Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="OnCancelClick" ToolTip.Tip="{loc:Loc 'common.close'}">
                         <Button.Styles>
@@ -46,14 +46,14 @@
                     <Border Background="{DynamicResource BgCardAlt}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="12,10">
                         <Grid ColumnDefinitions="Auto, *" VerticalAlignment="Center">
                             <icon:PackIconBoxIcons Grid.Column="0" Kind="RegularInfoCircle" Width="16" Height="16" Foreground="#38bdf8" Margin="0,1,10,0" VerticalAlignment="Top"/>
-                            <TextBlock Grid.Column="1" Text="{loc:Loc 'dialogs.delete_set.child_info'}" FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="17"/>
+                            <TextBlock x:Name="InfoTextBlock" Grid.Column="1" Text="{loc:Loc 'dialogs.delete_set.child_info'}" FontSize="12" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="17"/>
                         </Grid>
                     </Border>
 
                     <!-- Items Handling Options Box -->
                     <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="8" Padding="14,12">
                         <StackPanel Spacing="10">
-                            <TextBlock Text="{loc:Loc 'dialogs.delete_set.items_action_title'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
+                            <TextBlock x:Name="ItemsTitleTextBlock" Text="{loc:Loc 'dialogs.delete_set.items_action_title'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
 
                             <RadioButton x:Name="MoveFilesRadio" GroupName="SetItemsAction" IsChecked="True" Content="{loc:Loc 'dialogs.delete_set.move_to_default'}" FontSize="12.5" Foreground="{DynamicResource TextMain}"/>
                             
@@ -69,7 +69,7 @@
             <Border Grid.Row="2" Background="{DynamicResource BgSidebar}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,1,0,0" Padding="18,12">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
                     <Button Content="{loc:Loc 'common.cancel'}" Click="OnCancelClick" Background="Transparent" Foreground="{DynamicResource TextMain}" BorderThickness="1" BorderBrush="{DynamicResource BorderSubtle}" CornerRadius="7" Padding="16,7" FontSize="12.5" Cursor="Hand"/>
-                    <Button Content="{loc:Loc 'dialogs.delete_set.title'}" Click="OnDeleteClick" Background="#dc2626" Foreground="White" FontWeight="SemiBold" BorderThickness="0" CornerRadius="7" Padding="20,7" FontSize="12.5" Cursor="Hand"/>
+                    <Button x:Name="DeleteButton" Content="{loc:Loc 'dialogs.delete_set.title'}" Click="OnDeleteClick" Background="#dc2626" Foreground="White" FontWeight="SemiBold" BorderThickness="0" CornerRadius="7" Padding="20,7" FontSize="12.5" Cursor="Hand"/>
                 </StackPanel>
             </Border>
         </Grid>

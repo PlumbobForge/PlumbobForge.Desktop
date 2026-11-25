@@ -33,6 +33,8 @@ public partial class ContentManagerViewModel
 
         otherNodes = SortNodeList(otherNodes);
 
+        // The sidebar's TreeView binds SelectedItem both ways and clears it when its items are cleared.
+        var keepSelected = SelectedSetNode;
         RootSets.Clear();
         if (allItemsNode != null)
         {
@@ -53,6 +55,10 @@ public partial class ContentManagerViewModel
             RootSets.Add(modsNode);
         }
         PlaceSectionHeaders();
+        if (keepSelected != null && !ReferenceEquals(SelectedSetNode, keepSelected) && AllSidebarNodes().Contains(keepSelected))
+        {
+            SelectedSetNode = keepSelected;
+        }
     }
 
     private List<SetNodeViewModel> SortNodeList(List<SetNodeViewModel> nodes)
@@ -97,6 +103,7 @@ public partial class ContentManagerViewModel
             Color = "#f59e0b"
         };
 
+        var treeState = CaptureSetTreeState();
         RootSets.Clear();
         RootSets.Add(allItemsNode);
         RootSets.Add(favoritesNode);
@@ -115,6 +122,7 @@ public partial class ContentManagerViewModel
             }
         }
 
+        RestoreSetExpansion(RootSets, treeState);
         SortSetsTree();
         PlaceModsNode(_modsRootNode != null);
         _ = RefreshConfigurationStateAsync();
@@ -126,32 +134,24 @@ public partial class ContentManagerViewModel
         }
         UpdateSelectedSetsCount();
 
-        bool wasFavoritesSelected = SelectedSetNode?.IsFavorites == true;
-        long? targetId = selectedSetIdToRestore ?? SelectedSetNode?.Id;
-        if (wasFavoritesSelected)
+        if (selectedSetIdToRestore.HasValue)
         {
-            SelectedSetNode = favoritesNode;
+            SelectedSetNode = FindNodeById(RootSets, selectedSetIdToRestore.Value) ?? allItemsNode;
+            // Only the asked-for set: the earlier multi-selection is not brought back.
+            treeState.SelectedSetIds.Clear();
         }
-        else if (selectedSetIdToRestore == null && SelectedSetNode?.IsModsNode == true)
+        else if (SelectedSetNode?.IsModsNode == true)
         {
             // PlaceModsNode already selected the rebuilt Mods node.
         }
-        else if (targetId.HasValue)
-        {
-            var targetNode = FindNodeById(RootSets, targetId.Value);
-            SelectedSetNode = targetNode ?? allItemsNode;
-        }
         else
         {
-            SelectedSetNode = allItemsNode;
+            SelectedSetNode = RestoredSelection(treeState, favoritesNode) ?? allItemsNode;
         }
 
-        // The nodes were just rebuilt, so none is marked selected yet: mark the restored one, otherwise the
-        // sidebar shows no highlight for the set whose items are on screen (e.g. right after startup).
-        if (SelectedSetNode != null && !SelectedSetNode.IsSelected)
-        {
-            SelectedSetNode.IsSelected = true;
-        }
+        // The nodes were just rebuilt, so none is marked selected yet: mark the restored one (and the rest of a
+        // multi-selection), otherwise the sidebar shows no highlight for the set whose items are on screen.
+        ApplyRestoredSelection(treeState);
 
         var configVm = App.Services?.GetService<ConfigurationsViewModel>();
         if (configVm != null)
@@ -634,11 +634,22 @@ public partial class ContentManagerViewModel
         var setEntity = await _db.SetsEntities.FindAsync(setNode.Id.Value);
         if (setEntity == null) return;
 
-        var result = await DialogHelper.ShowCustomizeSetAsync(setEntity.Name, setEntity.Icon, setEntity.Color);
+        var priorities = await SetPriorities.LoadAsync(_db);
+        int inherited = SetPriorities.Of(setEntity.ParentSetsEntityId, priorities);
+        var result = await DialogHelper.ShowCustomizeSetAsync(setEntity.Name, setEntity.Icon, setEntity.Color, currentPriority: setEntity.Priority,
+            setPriority: true, inheritedPriority: inherited, inheritsFromParent: setEntity.ParentSetsEntityId.HasValue);
         if (result == null || !result.Confirmed) return;
 
         bool hasChanged = false;
         bool nameChanged = false;
+        bool priorityChanged = false;
+
+        if (result.Priority != setEntity.Priority)
+        {
+            setEntity.Priority = result.Priority;
+            priorityChanged = true;
+            hasChanged = true;
+        }
 
         if (!string.IsNullOrWhiteSpace(result.Name) && !result.Name.Trim().Equals(setEntity.Name, StringComparison.OrdinalIgnoreCase))
         {
@@ -680,7 +691,11 @@ public partial class ContentManagerViewModel
             await _db.SaveChangesAsync();
             await ReloadSetsTreeAsync(setEntity.Id);
             ApplyFilter();
-            if (nameChanged)
+            if (priorityChanged)
+            {
+                await ApplySetPriorityChangeAsync();
+            }
+            if (nameChanged || priorityChanged)
             {
                 NotifyDirtyStateChanged();
             }

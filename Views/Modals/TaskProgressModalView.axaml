@@ -120,10 +120,10 @@
             <Setter Property="Foreground" Value="{DynamicResource AccentProgressFillCompletedBrush}"/>
         </Style>
         <Style Selector="ProgressBar.bar-warning">
-            <Setter Property="Foreground" Value="{DynamicResource StatusAmberBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource StatusAmberFillBrush}"/>
         </Style>
         <Style Selector="ProgressBar.bar-error">
-            <Setter Property="Foreground" Value="{DynamicResource StatusRedBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource StatusRedFillBrush}"/>
         </Style>
         <Style Selector="ProgressBar.bar-pending">
             <Setter Property="Foreground" Value="Transparent"/>
@@ -293,7 +293,7 @@
                                                         <DataTemplate>
                                                             <TextBlock Text="{Binding}"
                                                                        FontSize="11"
-                                                                       Foreground="{DynamicResource StatusAmber}"
+                                                                       Foreground="{DynamicResource StatusAmberTextBrush}"
                                                                        TextWrapping="Wrap"/>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>

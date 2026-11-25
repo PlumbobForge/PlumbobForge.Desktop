@@ -617,6 +617,7 @@ public partial class ContentManagerViewModel : ObservableObject
             }
 
             var modsSelectionBefore = SelectedSetNode?.IsModsNode == true ? SelectedSetNode : null;
+            var treeState = CaptureSetTreeState();
             RootSets.Clear();
             var allItemsNode = new SetNodeViewModel(LocalizationManager.Instance.GetString("library.all_items"), null);
             RootSets.Add(allItemsNode);
@@ -642,19 +643,19 @@ public partial class ContentManagerViewModel : ObservableObject
                 }
             }
 
+            RestoreSetExpansion(RootSets, treeState);
             SortSetsTree();
 
-            SetNodeViewModel? targetNode = null;
-            if (_savedSetId.HasValue)
+            // A reload keeps whatever was selected; the first load goes back to the set saved with the UI state.
+            SetNodeViewModel? targetNode = RestoredSelection(treeState, favoritesNode);
+            if (targetNode == null && treeState.Selected == null && _savedSetId.HasValue)
             {
                 targetNode = FindNodeById(RootSets, _savedSetId.Value);
             }
             SelectedSetNode = targetNode ?? allItemsNode;
-            // Mark the restored set selected too, or the sidebar shows no highlight until it is clicked.
-            if (SelectedSetNode != null && !SelectedSetNode.IsSelected)
-            {
-                SelectedSetNode.IsSelected = true;
-            }
+            // Mark the restored set (and the rest of a multi-selection) selected too, or the sidebar shows no
+            // highlight until it is clicked.
+            ApplyRestoredSelection(treeState);
 
             // 2. Allow UI frame to render window, header, and loading animation on screen
             await Task.Delay(150);

@@ -72,12 +72,18 @@ public partial class ContentManagerViewModel
             IsModsRoot = true,
             Icon = "RegularJoystick"
         };
+        // The open/closed state is saved in the background, so a reload right after a click can read the old value:
+        // the nodes being replaced know better.
+        var wasExpanded = _modsRootNode.GetAllDescendants().Where(n => n.ModsFolder != null)
+            .GroupBy(n => n.ModsFolder!.Id).ToDictionary(g => g.Key, g => g.First().IsExpanded);
+        foreach (var old in _modsRootNode.GetAllDescendants()) old.ExpandedChanged -= OnModsFolderExpandedChanged;
         _modsRootNode.Children.Clear();
 
         var nodes = _modsFolders.ToDictionary(f => f.Id, f => new SetNodeViewModel(f) { IsModsCfgRoot = _modsRootFolderPaths.Contains(f.RelativePath) });
         foreach (var folder in _modsFolders)
         {
             var node = nodes[folder.Id];
+            if (wasExpanded.TryGetValue(folder.Id, out bool open)) node.IsExpanded = open;
             node.ExpandedChanged += OnModsFolderExpandedChanged;
             if (folder.ParentModsFolderId.HasValue && nodes.TryGetValue(folder.ParentModsFolderId.Value, out var parent))
                 parent.Children.Add(node);
@@ -99,10 +105,15 @@ public partial class ContentManagerViewModel
         }
     }
 
-    // Folders always sort by name: their order on disk is the order the game reads them in.
+    // Folders always sort by name, A to Z whatever the sets' sort is, ignoring case like Explorer does. Names that
+    // only differ in case keep a fixed order.
     private static void SortModsChildren(SetNodeViewModel node)
     {
-        var sorted = node.Children.OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase).ToList();
+        var sorted = node.Children
+            .OrderBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ThenBy(c => c.Name, StringComparer.Ordinal)
+            .ThenBy(c => c.ModsFolder?.Id ?? 0)
+            .ToList();
         node.Children.Clear();
         foreach (var child in sorted)
         {
@@ -138,6 +149,23 @@ public partial class ContentManagerViewModel
         node.IsSelected = true;
         SelectedSetNode = node;
         SelectItemAndScroll(itemId);
+        return true;
+    }
+
+    // Quick Jump: the Mods section (no folder) or one of its folders, with the way down to it opened.
+    public bool SelectModsFolder(long? folderId)
+    {
+        if (_modsRootNode == null) return false;
+
+        var path = new List<SetNodeViewModel>();
+        if (folderId is long id) FindModsPath(_modsRootNode, id, path);
+        var node = path.Count > 0 ? path[^1] : _modsRootNode;
+        _modsRootNode.IsExpanded = true;
+        foreach (var ancestor in path.Take(path.Count - 1)) ancestor.IsExpanded = true;
+
+        DeselectAllSets();
+        node.IsSelected = true;
+        SelectedSetNode = node;
         return true;
     }
 
@@ -206,8 +234,21 @@ public partial class ContentManagerViewModel
     public async Task CustomizeModsFolderAsync(SetNodeViewModel node)
     {
         if (node.ModsFolder == null) return;
-        var result = await DialogHelper.ShowCustomizeSetAsync(node.Name, node.ModsFolder.Icon, node.ModsFolder.Color, nameEditable: node.CanRenameModsFolder, isModsFolder: true);
+        int? priority = null;
+        if (node.IsModsCfgRoot)
+        {
+            using var lookup = App.Services!.CreateScope();
+            priority = lookup.ServiceProvider.GetRequiredService<ModsFolderService>().GetEditableRootPriority(node.ModsFolder.RelativePath);
+        }
+        var result = await DialogHelper.ShowCustomizeSetAsync(node.Name, node.ModsFolder.Icon, node.ModsFolder.Color, nameEditable: node.CanRenameModsFolder, isModsFolder: true, currentPriority: priority);
         if (result == null || !result.Confirmed) return;
+        await SaveModsFolderCustomizationAsync(node, result, priority);
+    }
+
+    // Applies a confirmed Customize dialog to a Mods folder: name, Resource.cfg priority (root folders), icon and colour.
+    public async Task SaveModsFolderCustomizationAsync(SetNodeViewModel node, CustomizeSetResult result, int? previousPriority)
+    {
+        if (node.ModsFolder == null) return;
 
         try
         {
@@ -220,11 +261,17 @@ public partial class ContentManagerViewModel
                 {
                     node.Name = newName;
                     node.ModsFolder.Name = newName;
+                    if (_modsRootNode != null) SortModsChildren(_modsRootNode);
                 }
                 else
                 {
                     await DialogHelper.ShowErrorAsync(L("library.mods"), string.Format(L("library.mods_rename_folder_failed"), newName));
                 }
+            }
+            if (result.Priority is int newPriority && previousPriority.HasValue && newPriority != previousPriority.Value &&
+                !await service.SetRootPriorityAsync(node.ModsFolder.RelativePath, newPriority))
+            {
+                await DialogHelper.ShowErrorAsync(L("library.mods"), L("library.mods_priority_failed"));
             }
             var saved = await service.UpdateFolderAsync(node.ModsFolder.Id, result.Icon, result.Color, node.ModsFolder.Description);
             if (saved == null) return;
@@ -261,21 +308,49 @@ public partial class ContentManagerViewModel
         await LoadDataAsync();
     }
 
+    // Asks like deleting a set: keep the files (moved to Packages, when there is one) or delete them with the folder.
     public async Task DeleteModsFolderAsync(SetNodeViewModel node)
     {
         if (node.ModsFolder == null || !node.CanDeleteModsFolder) return;
         string folderPrefix = Path.Combine(ModsDirForUi(), node.ModsFolder.RelativePath.Replace('/', Path.DirectorySeparatorChar)) + Path.DirectorySeparatorChar;
         int count = Items.Count(i => i.Entity.IsModsItem && i.Entity.CompleteFileName.StartsWith(folderPrefix, StringComparison.OrdinalIgnoreCase));
-        var confirm = await DialogHelper.ShowDeleteConfirmAsync(string.Format(L("library.mods_delete_folder_confirm"), node.Name, count));
-        if (!confirm.Confirmed) return;
-
-        bool ok;
+        long? packagesId;
         using (var scope = App.Services!.CreateScope())
         {
-            ok = await scope.ServiceProvider.GetRequiredService<ModsFolderService>().DeleteFolderAsync(node.ModsFolder.Id);
+            packagesId = await scope.ServiceProvider.GetRequiredService<ModsFolderService>().GetPackagesFolderIdAsync();
         }
-        if (!ok) await DialogHelper.ShowErrorAsync(L("library.mods"), string.Format(L("library.mods_delete_folder_failed"), node.Name));
+        var choice = await DialogHelper.ShowDeleteModsFolderAsync(node.Name, count, node.IsModsCfgRoot, packagesId.HasValue);
+        if (!choice.Confirmed) return;
+        await DeleteModsFolderCoreAsync(node, choice);
+    }
+
+    public async Task<ModsFolderService.FolderDeleteOutcome> DeleteModsFolderCoreAsync(SetNodeViewModel node, DeleteSetDialogResult choice)
+    {
+        if (node.ModsFolder == null || !node.CanDeleteModsFolder) return ModsFolderService.FolderDeleteOutcome.NotAllowed;
+        ModsFolderService.FolderDeleteOutcome outcome;
+        IsLoading = true;
+        try
+        {
+            long folderId = node.ModsFolder.Id;
+            outcome = await Task.Run(async () =>
+            {
+                using var scope = App.Services!.CreateScope();
+                return await scope.ServiceProvider.GetRequiredService<ModsFolderService>()
+                    .DeleteFolderAsync(folderId, moveToPackages: !choice.DeleteFiles, permanent: choice.DeleteFiles && choice.Permanent);
+            });
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+        if (outcome != ModsFolderService.FolderDeleteOutcome.Deleted)
+        {
+            string key = outcome == ModsFolderService.FolderDeleteOutcome.MoveFailed ? "library.mods_delete_folder_move_failed" : "library.mods_delete_folder_failed";
+            await DialogHelper.ShowErrorAsync(L("library.mods"), string.Format(L(key), node.Name));
+        }
         await LoadDataAsync();
+        NotifyDirtyStateChanged();
+        return outcome;
     }
 
     private static string ModsDirForUi()

@@ -129,22 +129,23 @@ public partial class SimpleConflictCardViewModel : ObservableObject
         _ => "Collision"
     };
 
+    // Theme colors, read when the card is shown, so the badge follows light and dark themes.
     public string CategoryBadgeBg => Category switch
     {
-        ConflictCardCategory.Incompatibility => "#331518",
-        ConflictCardCategory.Duplicate => "#33240f",
-        ConflictCardCategory.DefaultOverride => "#122544",
-        ConflictCardCategory.CorruptFile => "#261a3d",
-        _ => "#1e293b"
+        ConflictCardCategory.Incompatibility => ThemeService.ResourceHex("StatusRedBg", "#331518"),
+        ConflictCardCategory.Duplicate => ThemeService.ResourceHex("StatusAmberBg", "#33240f"),
+        ConflictCardCategory.DefaultOverride => ThemeService.ResourceHex("StatusBlueBg", "#122544"),
+        ConflictCardCategory.CorruptFile => ThemeService.ResourceHex("StatusPurpleBg", "#261a3d"),
+        _ => ThemeService.ResourceHex("BgCardAlt", "#1e293b")
     };
 
     public string CategoryBadgeBorder => Category switch
     {
-        ConflictCardCategory.Incompatibility => "#ef4444",
-        ConflictCardCategory.Duplicate => "#f59e0b",
-        ConflictCardCategory.DefaultOverride => "#3b82f6",
-        ConflictCardCategory.CorruptFile => "#8b5cf6",
-        _ => "#64748b"
+        ConflictCardCategory.Incompatibility => ThemeService.ResourceHex("StatusRed", "#ef4444"),
+        ConflictCardCategory.Duplicate => ThemeService.ResourceHex("StatusAmber", "#f59e0b"),
+        ConflictCardCategory.DefaultOverride => ThemeService.ResourceHex("StatusBlue", "#3b82f6"),
+        ConflictCardCategory.CorruptFile => ThemeService.ResourceHex("StatusPurple", "#8b5cf6"),
+        _ => ThemeService.ResourceHex("TextMuted", "#64748b")
     };
 
     public string CategoryBadgeColor => CategoryBadgeBorder;

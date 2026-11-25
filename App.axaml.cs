@@ -359,6 +359,8 @@ public partial class App : Application
             .Build();
 
         services.Configure<PlumbobForgeOptions>(config.GetSection("PlumbobForge"));
+        // Read back at once after a change every service must see right away (the library folder).
+        services.AddSingleton<IConfigurationRoot>(config);
         services.PostConfigure<PlumbobForgeOptions>(opts =>
         {
             if (string.IsNullOrEmpty(opts.DocumentBaseDir))
@@ -534,6 +536,28 @@ public partial class App : Application
         if (userVersion < 13) ApplySchemaV13(db);
         if (userVersion < 14) ApplySchemaV14(db);
         if (userVersion < 15) ApplySchemaV15(db);
+        if (userVersion < 16) ApplySchemaV16(db);
+    }
+
+    // Sets can load at their own Resource.cfg priority (SetsEntities.Priority; null takes the parent's).
+    private static void ApplySchemaV16(AppDbContext db)
+    {
+        try
+        {
+            db.Database.ExecuteSqlRaw("ALTER TABLE SetsEntities ADD COLUMN Priority INTEGER NULL;");
+        }
+        catch
+        {
+            // Already there (fresh database created from the model).
+        }
+
+        try
+        {
+            db.Database.ExecuteSqlRaw("PRAGMA user_version = 16;");
+        }
+        catch
+        {
+        }
     }
 
     // Configurations can turn Mods folders off (ConfigModsFoldersOff); everything not listed stays on.

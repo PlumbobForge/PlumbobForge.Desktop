@@ -249,10 +249,23 @@ public partial class CustomizeSetDialogWindow : Window
 
     // isModsFolder: a folder in the game's Mods folder, so the dialog talks about folders, not sets.
     // nameEditable false: a folder Resource.cfg names, which can't be renamed.
-    public CustomizeSetDialogWindow(string currentName, string? currentIconName, string? currentColorHex, bool nameEditable = true, bool isModsFolder = false)
+    // currentPriority: a root folder of Mods, whose Resource.cfg priority can be changed here (null hides the field).
+    // setPriority: a set, whose own priority may be left empty to take inheritedPriority (its parent's, or the default).
+    public CustomizeSetDialogWindow(string currentName, string? currentIconName, string? currentColorHex, bool nameEditable = true, bool isModsFolder = false, int? currentPriority = null,
+        bool setPriority = false, int inheritedPriority = 500, bool inheritsFromParent = false)
     {
         InitializeComponent();
         NamePanel.IsVisible = nameEditable;
+        _currentPriority = currentPriority;
+        _priorityOptional = setPriority;
+        PriorityPanel.IsVisible = currentPriority.HasValue || setPriority;
+        if (currentPriority.HasValue) PriorityTextBox.Text = currentPriority.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (setPriority)
+        {
+            string inherited = inheritedPriority.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            PriorityTextBox.PlaceholderText = string.Format(L(inheritsFromParent ? "dialogs.customize_set.priority_watermark_parent" : "dialogs.customize_set.priority_watermark_default"), inherited);
+            PriorityHintTextBlock.Text = L("dialogs.customize_set.priority_hint_set");
+        }
         _isModsFolder = isModsFolder;
         if (isModsFolder)
         {
@@ -552,6 +565,27 @@ public partial class CustomizeSetDialogWindow : Window
     }
 
     private readonly bool _isModsFolder;
+    private readonly int? _currentPriority;
+    private readonly bool _priorityOptional;
+    private bool PriorityShown => _currentPriority.HasValue || _priorityOptional;
+
+    // The typed priority, or null when the field is hidden, empty, or doesn't hold a whole number.
+    private int? ParsedPriority =>
+        PriorityShown && int.TryParse(PriorityTextBox.Text?.Trim(), System.Globalization.NumberStyles.AllowLeadingSign,
+            System.Globalization.CultureInfo.InvariantCulture, out int value) ? value : null;
+
+    private bool ValidatePriority()
+    {
+        bool ok = !PriorityShown || ParsedPriority.HasValue || (_priorityOptional && string.IsNullOrWhiteSpace(PriorityTextBox.Text));
+        PriorityErrorTextBlock.IsVisible = !ok;
+        return ok;
+    }
+
+    private void OnPriorityChanged(object? sender, TextChangedEventArgs e)
+    {
+        bool ok = ValidatePriority();
+        SaveButton.IsEnabled = ok && (!NamePanel.IsVisible || !string.IsNullOrWhiteSpace(SetNameTextBox.Text));
+    }
 
     private static string L(string key) => PlumbobForge.Desktop.Services.Localization.LocalizationManager.Instance.GetString(key);
 
@@ -610,8 +644,8 @@ public partial class CustomizeSetDialogWindow : Window
 
     private void OnSaveClick(object? sender, RoutedEventArgs e)
     {
-        if (!ValidateName()) return;
-        Close(new CustomizeSetResult(true, ResultSetName, ResultIconName, ResultColorHex));
+        if (!ValidateName() || !ValidatePriority()) return;
+        Close(new CustomizeSetResult(true, ResultSetName, ResultIconName, ResultColorHex, ParsedPriority));
     }
 
     private void OnCancelClick(object? sender, RoutedEventArgs e)
@@ -628,4 +662,4 @@ public partial class CustomizeSetDialogWindow : Window
     }
 }
 
-public record CustomizeSetResult(bool Confirmed, string Name, string? Icon, string? Color);
+public record CustomizeSetResult(bool Confirmed, string Name, string? Icon, string? Color, int? Priority = null);

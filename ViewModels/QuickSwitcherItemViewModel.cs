@@ -13,7 +13,9 @@ public enum QuickSwitcherItemType
     Item,
     Place,
     Collection,
-    Command
+    Command,
+    // A folder in the game's Mods folder; TargetId 0 is the Mods folder itself.
+    ModsFolder
 }
 
 public partial class QuickSwitcherItemViewModel : ObservableObject
@@ -43,6 +45,7 @@ public partial class QuickSwitcherItemViewModel : ObservableObject
         QuickSwitcherItemType.Place => "PLACE",
         QuickSwitcherItemType.Collection => "COLLECTION",
         QuickSwitcherItemType.Command => "CMD",
+        QuickSwitcherItemType.ModsFolder => "MODS",
         _ => ""
     };
 
@@ -54,6 +57,7 @@ public partial class QuickSwitcherItemViewModel : ObservableObject
         QuickSwitcherItemType.Set => "#14382c",
         QuickSwitcherItemType.Item => "#2d1f4d",
         QuickSwitcherItemType.Collection => "#3b2a10",
+        QuickSwitcherItemType.ModsFolder => "#0c2d48",
         _ => "#1e293b"
     };
 
@@ -63,6 +67,7 @@ public partial class QuickSwitcherItemViewModel : ObservableObject
         QuickSwitcherItemType.Set => "#34d399",
         QuickSwitcherItemType.Item => "#c084fc",
         QuickSwitcherItemType.Collection => "#fbbf24",
+        QuickSwitcherItemType.ModsFolder => "#38bdf8",
         _ => "#94a3b8"
     };
 

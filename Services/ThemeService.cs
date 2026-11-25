@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
 
@@ -115,6 +116,7 @@ public static class ThemeService
             appRes["TextDisabled"] = new SolidColorBrush(textDisabled);
             appRes["CapsuleBgBrush"] = new SolidColorBrush(Color.Parse(isDark ? "#cc182234" : "#f2ffffff"));
             appRes["CapsuleBorderBrush"] = new SolidColorBrush(Color.Parse(isDark ? "#40475569" : "#e2e8f0"));
+            ApplyStatusColors(appRes, isDark);
 
             var topFadeGradient = new LinearGradientBrush
             {
@@ -149,6 +151,39 @@ public static class ThemeService
         // Re-evaluate badge background for the new theme
         ApplyAccent(CurrentAccent);
         ThemeChanged?.Invoke();
+    }
+
+    // Status colors (red, amber, blue, cyan, purple, green): the bright shade and a dark tint behind it in dark themes;
+    // a deeper shade and a pale tint in light themes, so status text, chips and boxes stay readable on light surfaces.
+    private static readonly (string Name, string Dark, string DarkBg, string Light, string LightBg)[] StatusPalette =
+    {
+        ("Red", "#ef4444", "#331518", "#dc2626", "#fee2e2"),
+        ("Amber", "#f59e0b", "#33240f", "#d97706", "#fef3c7"),
+        ("Blue", "#3b82f6", "#122544", "#2563eb", "#dbeafe"),
+        ("Cyan", "#38bdf8", "#0c2d48", "#0284c7", "#e0f2fe"),
+        ("Purple", "#8b5cf6", "#261a3d", "#7c3aed", "#ede9fe"),
+        ("Green", "#10b981", "#093829", "#059669", "#d1fae5"),
+    };
+
+    private static void ApplyStatusColors(IResourceDictionary appRes, bool isDark)
+    {
+        foreach (var (name, dark, darkBg, light, lightBg) in StatusPalette)
+        {
+            appRes["Status" + name] = new SolidColorBrush(Color.Parse(isDark ? dark : light));
+            appRes["Status" + name + "Bg"] = new SolidColorBrush(Color.Parse(isDark ? darkBg : lightBg));
+        }
+        // Amber body text: the bright amber is too light to read on a pale tint.
+        appRes["StatusAmberTextBrush"] = new SolidColorBrush(Color.Parse(isDark ? "#f59e0b" : "#b45309"));
+    }
+
+    // The current hex of a theme color, for view models that hand colors to bindings as strings.
+    public static string ResourceHex(string key, string fallback)
+    {
+        if (Application.Current?.Resources.TryGetResource(key, null, out var value) == true && value is ISolidColorBrush brush)
+        {
+            return brush.Color.ToString();
+        }
+        return fallback;
     }
 
     public static void ApplyCustomTheme(string baseHex, bool isDark, bool useCustomAccent = false, string? customAccentHex = null, double intensity = 45.0)
@@ -196,6 +231,7 @@ public static class ThemeService
             appRes["TextDisabled"] = new SolidColorBrush(palette.TextDisabled);
             appRes["CapsuleBgBrush"] = new SolidColorBrush(palette.CapsuleBg);
             appRes["CapsuleBorderBrush"] = new SolidColorBrush(palette.CapsuleBorder);
+            ApplyStatusColors(appRes, isDark);
 
             var topFadeGradient = new LinearGradientBrush
             {

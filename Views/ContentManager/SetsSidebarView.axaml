@@ -318,7 +318,7 @@
                                 <icon:PackIconBoxIcons Kind="RegularPlus" Width="14" Height="14" VerticalAlignment="Center"/>
                             </Button>
                             <!-- Mods-only: new folder in Packages -->
-                            <Button Grid.Column="2" IsVisible="{Binding IsModsOnly}" Command="{Binding AddPackagesFolderCommand}" Background="{DynamicResource AccentBrush}" Foreground="White" CornerRadius="6" Padding="8,6" Margin="0,0,6,0" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'library.mods_new_folder_in_packages'}">
+                            <Button Grid.Column="2" IsVisible="{Binding IsModsOnly}" Command="{Binding AddModsRootFolderCommand}" Background="{DynamicResource AccentBrush}" Foreground="White" CornerRadius="6" Padding="8,6" Margin="0,0,6,0" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc 'library.mods_new_folder_in_packages'}">
                                 <icon:PackIconBoxIcons Kind="RegularFolderPlus" Width="14" Height="14" VerticalAlignment="Center"/>
                             </Button>
                         </Grid>
@@ -443,10 +443,19 @@
                                                      KeyDown="OnRenameBoxKeyDown"
                                                      LostFocus="OnRenameBoxLostFocus"/>
 
-                                            <!-- Item Count Badge -->
-                                            <Border Grid.Column="2" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" Padding="7,2" Margin="6,0,4,0" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding ItemCount}" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
-                                            </Border>
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <!-- Own load priority (sets loading above or below the default) -->
+                                                <Border IsVisible="{Binding HasOwnPriority}" ToolTip.Tip="{Binding PriorityToolTip}" Background="{DynamicResource AccentBadgeBgBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" CornerRadius="10" Padding="6,2" Margin="6,0,0,0" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                                        <icon:PackIconBoxIcons Kind="RegularLayers" Width="10" Height="10" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding PriorityBadge}" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource AccentBrush}"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <!-- Item Count Badge -->
+                                                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="10" Padding="7,2" Margin="6,0,4,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding ItemCount}" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource TextMuted}"/>
+                                                </Border>
+                                            </StackPanel>
 
                                             <!-- Chevron Expand/Collapse Toggle on Far Right -->
                                             <Button Grid.Column="3" Command="{Binding ToggleExpandCommand}" Classes="accordion-header" Width="20" Height="20" Padding="0" Margin="4,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" IsVisible="{Binding HasChildren}" ToolTip.Tip="{Binding ExpandToolTip}">

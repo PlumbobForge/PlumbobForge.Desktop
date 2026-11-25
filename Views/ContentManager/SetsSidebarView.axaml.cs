@@ -413,7 +413,7 @@ public partial class SetsSidebarView : UserControl
     }
     #endregion
 
-    // The Mods Folder header's own menu: tidy Packages, or a new folder in it. Other headers have none.
+    // The Mods Folder header's own menu: a new root folder, or tidy Packages. Other headers have none.
     private void OnSectionHeaderContextRequested(object? sender, ContextRequestedEventArgs e)
     {
         if (sender is not Control { DataContext: SetNodeViewModel node } control || DataContext is not ContentManagerViewModel vm
@@ -424,7 +424,7 @@ public partial class SetsSidebarView : UserControl
         }
         MenuBuilder.Fill(menu, new Control?[]
         {
-            MenuBuilder.Item(L("library.mods_new_folder_in_packages"), () => _ = vm.AddPackagesFolderAsync()),
+            MenuBuilder.Item(L("library.mods_new_folder_in_packages"), () => _ = vm.AddModsRootFolderAsync()),
             vm.CanTidy(node) ? MenuBuilder.Item(L("library.tidy_menu"), () => _ = vm.TidyByTypeAsync(node)) : null,
         });
     }
@@ -459,7 +459,7 @@ public partial class SetsSidebarView : UserControl
         if (sender is not Control { DataContext: SetNodeViewModel node } || DataContext is not ContentManagerViewModel vm) return;
         if (node.IsSmartHeader) vm.SaveSmartSetCommand.Execute(null);
         else if (node.IsSetsHeader) vm.CreateTopLevelSetCommand.Execute(null);
-        else _ = vm.AddPackagesFolderAsync();
+        else _ = vm.AddModsRootFolderAsync();
     }
 
     private static bool IsInteractiveChild(object? source)

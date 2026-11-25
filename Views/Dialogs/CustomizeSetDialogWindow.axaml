@@ -155,6 +155,14 @@
                         <TextBlock x:Name="ErrorTextBlock" Foreground="#ef4444" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap" IsVisible="False"/>
                     </StackPanel>
 
+                    <!-- Load priority: a root folder of Mods (its Resource.cfg lines) or a set (empty takes the parent's) -->
+                    <StackPanel x:Name="PriorityPanel" Spacing="6" IsVisible="False">
+                        <TextBlock Text="{loc:Loc 'dialogs.customize_set.priority_label'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="0.5"/>
+                        <TextBox x:Name="PriorityTextBox" Classes="settings-input" Width="120" HorizontalAlignment="Left" FontSize="12.5" TextChanged="OnPriorityChanged"/>
+                        <TextBlock x:Name="PriorityHintTextBlock" Text="{loc:Loc 'dialogs.customize_set.priority_hint'}" FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="PriorityErrorTextBlock" Text="{loc:Loc 'dialogs.customize_set.priority_invalid'}" Foreground="#ef4444" FontSize="11" TextWrapping="Wrap" IsVisible="False"/>
+                    </StackPanel>
+
                     <!-- Reset to Default Button -->
                     <Button Click="OnResetDefaultClick" Classes="btn-action-sec" HorizontalAlignment="Left" Padding="10,6" Margin="0,6,0,0">
                         <StackPanel Orientation="Horizontal" Spacing="6">
