@@ -210,4 +210,6 @@ public enum PackIconBoxIconsKind
     SolidToggleLeft,
     SolidToggleRight,
     RegularMessageDetail,
+    RegularEraser,
+    RegularRotateCw,
 }

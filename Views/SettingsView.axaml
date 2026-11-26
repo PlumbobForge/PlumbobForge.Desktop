@@ -743,6 +743,17 @@
                                         </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
+
+                                <!-- Quick Actions button in the title bar (off by default) -->
+                                <Grid ColumnDefinitions="*, Auto" Margin="0,8,0,0">
+                                    <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,16,0">
+                                        <TextBlock Text="{loc:Loc 'settings.appearance.quick_actions'}" Classes="form-label" Margin="0"/>
+                                        <TextBlock Text="{loc:Loc 'settings.appearance.quick_actions_desc'}" Classes="form-helper" Margin="0"/>
+                                    </StackPanel>
+                                    <ToggleSwitch Grid.Column="1"
+                                                  IsChecked="{Binding ShowQuickActionsButton, Mode=TwoWay}"
+                                                  VerticalAlignment="Center"/>
+                                </Grid>
                             </StackPanel>
                         </Border>
 

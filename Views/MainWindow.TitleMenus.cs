@@ -8,7 +8,7 @@ using PlumbobForge.Desktop.Views.Controls;
 
 namespace PlumbobForge.Desktop.Views;
 
-// The title bar's Help and Play menus.
+// The title bar's Help, Quick Actions and Play menus.
 public partial class MainWindow
 {
     private static string Lt(string key) => LocalizationManager.Instance.GetString(key);
@@ -36,6 +36,23 @@ public partial class MainWindow
         var configs = await _vm.PlayMenuConfigsAsync();
         BuildPlayMenu(menu, _vm, configs);
         menu.Open(PlayMenuButton);
+    }
+
+    private void OnQuickActionsClick(object? sender, RoutedEventArgs e)
+    {
+        if (_vm == null || QuickActionsButton.ContextMenu is not { } menu) return;
+        BuildQuickActionsMenu(menu, _vm);
+        menu.Open(QuickActionsButton);
+    }
+
+    public static void BuildQuickActionsMenu(ItemsControl menu, MainViewModel vm)
+    {
+        MenuBuilder.Fill(menu,
+            new Control?[]
+            {
+                MenuBuilder.Item(Lt("nav.clear_caches"), () => vm.ClearStandardCachesCommand.Execute(null), "RegularEraser"),
+                MenuBuilder.Item(Lt("nav.refresh"), () => vm.RefreshApplicationCommand.Execute(null), "RegularRotateCw"),
+            });
     }
 
     public static void BuildHelpMenu(ItemsControl menu, MainViewModel vm)

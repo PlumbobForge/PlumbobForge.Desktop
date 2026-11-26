@@ -304,6 +304,18 @@
                             </Border>
                         </Popup>
 
+                        <!-- Quick Actions (off by default, Settings > Appearance): clear the standard caches, refresh the app -->
+                        <Button x:Name="QuickActionsButton"
+                                Classes="nav-action-btn"
+                                IsVisible="{Binding ShowQuickActions}"
+                                Click="OnQuickActionsClick"
+                                ToolTip.Tip="{loc:Loc nav.quick_actions}">
+                            <Button.ContextMenu>
+                                <ContextMenu Placement="BottomEdgeAlignedRight"/>
+                            </Button.ContextMenu>
+                            <bx:PackIconBoxIcons Kind="RegularBolt" Width="15" Height="15" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+
                         <!-- Play: starts the game (rebuilding first when needed); the right half switches the configuration -->
                         <Border x:Name="PlayGroup"
                                 Classes="play-group"

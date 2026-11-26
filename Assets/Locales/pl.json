@@ -469,7 +469,11 @@
                                 "cat_thumbnails":  "Pamięć miniatur",
                                 "cat_featured":  "Pamięć polecanych obiektów ze Store",
                                 "recommended":  "Zalecane",
-                                "why_guide":  "Dlaczego warto czyścić pamięć podręczną?"
+                                "why_guide":  "Dlaczego warto czyścić pamięć podręczną?",
+                                "game_running":  "Zamknij The Sims 3 przed czyszczeniem pamięci podręcznej: gra trzyma te pliki otwarte.",
+                                "standard_cleared":  "Wyczyszczono standardowe pliki pamięci podręcznej: {0} (zwolniono {1}).",
+                                "standard_none":  "Brak standardowych plików pamięci podręcznej do wyczyszczenia.",
+                                "standard_failed":  "Nie udało się wyczyścić plików pamięci podręcznej ({0}): {1}"
                             },
                   "conflicts":  {
                                     "title":  "Skaner konfliktów",
@@ -644,6 +648,8 @@
                      "title":  "Ustawienia",
                      "appearance":  {
                                         "title":  "Wygląd i personalizacja",
+                                        "quick_actions":  "Przycisk szybkich akcji",
+                                        "quick_actions_desc":  "Dodaje do paska tytułu, obok ?, przycisk z opcjami Wyczyść standardową pamięć podręczną i Odśwież aplikację.",
                                         "theme":  "Motyw",
                                         "dark":  "Ciemny",
                                         "light":  "Jasny",
@@ -1562,6 +1568,9 @@
                 "largest_meshes":  "{0} siatek, najwi\u0119ksze: {1}"
             },
     "nav":  {
+                "quick_actions":  "Szybkie akcje",
+                "clear_caches":  "Wyczyść standardową pamięć podręczną",
+                "refresh":  "Odśwież aplikację",
                 "help_moved_title":  "Szukasz przycisku Wyślij opinię?",
                 "help_moved_body":  "Jest teraz w menu ?, razem z Przewodnikiem i „Co nowego”.",
                 "help_moved_ok":  "Rozumiem",

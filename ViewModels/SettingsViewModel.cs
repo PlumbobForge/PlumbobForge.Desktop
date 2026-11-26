@@ -445,6 +445,18 @@ public partial class SettingsViewModel : ObservableObject
         _ = SaveSettingsInternalAsync(silent: true);
     }
 
+    // Settings > Appearance: show the Quick Actions button in the title bar (off by default).
+    public bool ShowQuickActionsButton
+    {
+        get => PlumbobForge.Desktop.Services.TitleBarPreferences.ShowQuickActions;
+        set
+        {
+            if (PlumbobForge.Desktop.Services.TitleBarPreferences.ShowQuickActions == value) return;
+            PlumbobForge.Desktop.Services.TitleBarPreferences.ShowQuickActions = value;
+            OnPropertyChanged();
+        }
+    }
+
     [ObservableProperty]
     private bool _autoClearGameCaches = false;
 

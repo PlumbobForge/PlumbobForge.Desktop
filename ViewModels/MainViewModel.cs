@@ -214,6 +214,7 @@ public partial class MainViewModel : ObservableObject
         ConfigurationsVm = serviceProvider.GetRequiredService<ConfigurationsViewModel>();
         HealthVm = serviceProvider.GetRequiredService<HealthViewModel>();
         SettingsVm = serviceProvider.GetRequiredService<SettingsViewModel>();
+        HookQuickActionsPreference();
 
         NavTabs = new ObservableCollection<NavTabViewModel>
         {
