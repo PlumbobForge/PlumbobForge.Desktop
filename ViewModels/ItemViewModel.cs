@@ -157,6 +157,10 @@ public partial class ItemViewModel : ObservableObject
 
     public bool HasUserTags => TagsList.Count > 0;
 
+    // Script and core mods get their own pill beside the category, read from the tags ScriptModTags adds.
+    public bool IsScriptMod => TagsList.Contains(ScriptModTags.ScriptTag, StringComparer.OrdinalIgnoreCase);
+    public bool IsCoreMod => TagsList.Contains(ScriptModTags.CoreTag, StringComparer.OrdinalIgnoreCase);
+
     [ObservableProperty]
     private bool _isTagsExpanded = false;
 
@@ -344,6 +348,8 @@ public partial class ItemViewModel : ObservableObject
         OnPropertyChanged(nameof(CategoryTagForeground));
         OnPropertyChanged(nameof(TagsList));
         OnPropertyChanged(nameof(HasUserTags));
+        OnPropertyChanged(nameof(IsScriptMod));
+        OnPropertyChanged(nameof(IsCoreMod));
         OnPropertyChanged(nameof(VisibleTags));
         OnPropertyChanged(nameof(HasRemainingTags));
         OnPropertyChanged(nameof(RemainingTagsText));

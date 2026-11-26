@@ -131,6 +131,11 @@ public class ContentManagerUiState
     public bool FilterModeDisabled { get; set; } = true;
     public bool FilterModeOptimizedOnly { get; set; }
 
+    // Script mods
+    public bool FilterScriptMods { get; set; } = true;
+    public bool FilterCoreMods { get; set; } = true;
+    public bool FilterNoScript { get; set; } = true;
+
     // Accordion Expansion States
     public bool IsTypeExpanded { get; set; } = true;
     public bool IsCasSubFiltersExpanded { get; set; } = true;
@@ -145,6 +150,7 @@ public class ContentManagerUiState
     public bool IsBBPriceExpanded { get; set; } = true;
     public bool IsOtherSubExpanded { get; set; } = true;
     public bool IsModeExpanded { get; set; } = true;
+    public bool IsScriptExpanded { get; set; } = true;
 }
 
 // The Configurations tab's own UI state, kept apart so the library's state file never overwrites it.

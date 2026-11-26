@@ -952,6 +952,52 @@
                                     </StackPanel>
                                 </StackPanel>
 
+                                <!-- SCRIPT MODS SECTION (Collapsible) -->
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnDefinitions="*, Auto, Auto">
+                                        <Button Grid.Column="0" Classes="accordion-header" Command="{Binding ToggleScriptExpandedCommand}">
+                                            <TextBlock Text="{loc:Loc 'filters.script_section'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" LetterSpacing="1" VerticalAlignment="Center"/>
+                                        </Button>
+
+                                        <Button Grid.Column="1"
+                                                Command="{Binding ToggleAllScriptCommand}"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Padding="4,2"
+                                                Margin="0,0,4,0"
+                                                Cursor="Hand"
+                                                VerticalAlignment="Center">
+                                            <Panel>
+                                                <TextBlock Text="{loc:Loc 'filters.clear_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding IsAllScriptSelected}"/>
+                                                <TextBlock Text="{loc:Loc 'library.select_all'}" FontSize="11" FontWeight="SemiBold" Foreground="#94a3b8" IsVisible="{Binding !IsAllScriptSelected}"/>
+                                            </Panel>
+                                        </Button>
+
+                                        <Button Grid.Column="2" Classes="accordion-header" Command="{Binding ToggleScriptExpandedCommand}" Padding="2" VerticalAlignment="Center">
+                                            <Panel>
+                                                <icon:PackIconBoxIcons Kind="RegularChevronDown" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding IsScriptExpanded}"/>
+                                                <icon:PackIconBoxIcons Kind="RegularChevronRight" Width="14" Height="14" Foreground="{DynamicResource TextMuted}" IsVisible="{Binding !IsScriptExpanded}"/>
+                                            </Panel>
+                                        </Button>
+                                    </Grid>
+
+                                    <WrapPanel IsVisible="{Binding IsScriptExpanded}">
+                                        <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterScriptMods, Mode=TwoWay}">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <icon:PackIconBoxIcons Kind="RegularCodeAlt" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Loc 'filters.script_mods'}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </ToggleButton>
+                                        <ToggleButton Classes="filter-pill" IsChecked="{Binding FilterCoreMods, Mode=TwoWay}">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <icon:PackIconBoxIcons Kind="RegularCog" Width="12" Height="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{loc:Loc 'filters.core_mods'}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </ToggleButton>
+                                        <ToggleButton Classes="filter-pill" Content="{loc:Loc 'filters.no_script'}" IsChecked="{Binding FilterNoScript, Mode=TwoWay}"/>
+                                    </WrapPanel>
+                                </StackPanel>
+
                                 <!-- MODE SECTION (Collapsible) -->
                                 <StackPanel Spacing="8">
                                     <Grid ColumnDefinitions="*, Auto, Auto">

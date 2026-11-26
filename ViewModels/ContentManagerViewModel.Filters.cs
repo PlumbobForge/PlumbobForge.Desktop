@@ -17,6 +17,11 @@ public partial class ContentManagerViewModel
     [ObservableProperty] private bool _filterTypeBuildBuy = true;
     [ObservableProperty] private bool _filterTypeOther = true;
 
+    // Script mods: plain script mods, core mods, and packages without a script
+    [ObservableProperty] private bool _filterScriptMods = true;
+    [ObservableProperty] private bool _filterCoreMods = true;
+    [ObservableProperty] private bool _filterNoScript = true;
+
     // CAS Categories
     [ObservableProperty] private bool _filterCasHair = true;
     [ObservableProperty] private bool _filterCasFullBody = true;
@@ -120,6 +125,7 @@ public partial class ContentManagerViewModel
     [ObservableProperty] private bool _isBBPriceExpanded = true;
     [ObservableProperty] private bool _isOtherSubExpanded = true;
     [ObservableProperty] private bool _isModeExpanded = true;
+    [ObservableProperty] private bool _isScriptExpanded = true;
 
     [RelayCommand] public void ToggleTypeExpanded() { IsTypeExpanded = !IsTypeExpanded; SaveCurrentUiState(); }
     [RelayCommand] public void ToggleCasSubFiltersExpanded() { IsCasSubFiltersExpanded = !IsCasSubFiltersExpanded; SaveCurrentUiState(); }
@@ -134,6 +140,7 @@ public partial class ContentManagerViewModel
     [RelayCommand] public void ToggleBBPriceExpanded() { IsBBPriceExpanded = !IsBBPriceExpanded; SaveCurrentUiState(); }
     [RelayCommand] public void ToggleOtherSubExpanded() { IsOtherSubExpanded = !IsOtherSubExpanded; SaveCurrentUiState(); }
     [RelayCommand] public void ToggleModeExpanded() { IsModeExpanded = !IsModeExpanded; SaveCurrentUiState(); }
+    [RelayCommand] public void ToggleScriptExpanded() { IsScriptExpanded = !IsScriptExpanded; SaveCurrentUiState(); }
 
     [RelayCommand]
     public void SelectAllFilters()
@@ -187,6 +194,10 @@ public partial class ContentManagerViewModel
         FilterModeEnabled = true;
         FilterModeDisabled = true;
         FilterModeOptimizedOnly = false;
+
+        FilterScriptMods = true;
+        FilterCoreMods = true;
+        FilterNoScript = true;
 
         RequestFilterUpdate(0);
     }
@@ -244,6 +255,10 @@ public partial class ContentManagerViewModel
         FilterModeDisabled = false;
         FilterModeOptimizedOnly = false;
 
+        FilterScriptMods = false;
+        FilterCoreMods = false;
+        FilterNoScript = false;
+
         RequestFilterUpdate(0);
     }
 
@@ -275,6 +290,7 @@ public partial class ContentManagerViewModel
     public bool IsAllOtherCategorySelected =>
         FilterOtherWorlds && FilterOtherSims && FilterOtherLots && FilterOtherMisc;
     public bool IsAllModeSelected => FilterModeEnabled && FilterModeDisabled;
+    public bool IsAllScriptSelected => FilterScriptMods && FilterCoreMods && FilterNoScript;
 
     [RelayCommand]
     public void ToggleAllTypes()
@@ -445,6 +461,17 @@ public partial class ContentManagerViewModel
         RequestFilterUpdate(0);
     }
 
+    [RelayCommand]
+    public void ToggleAllScript()
+    {
+        bool targetState = !IsAllScriptSelected;
+        FilterScriptMods = targetState;
+        FilterCoreMods = targetState;
+        FilterNoScript = targetState;
+        OnPropertyChanged(nameof(IsAllScriptSelected));
+        RequestFilterUpdate(0);
+    }
+
     public bool ShowCasSubFilters => FilterTypeCAS && IsCasSubFiltersExpanded;
     public bool ShowBuildBuySubFilters => FilterTypeBuildBuy && IsBBSubFiltersExpanded;
     public bool ShowOtherSubFilters => FilterTypeOther && IsOtherSubExpanded;
@@ -600,6 +627,10 @@ public partial class ContentManagerViewModel
     partial void OnFilterModeDisabledChanged(bool value) { OnPropertyChanged(nameof(IsAllModeSelected)); RequestFilterUpdate(); }
     partial void OnFilterModeOptimizedOnlyChanged(bool value) => RequestFilterUpdate();
 
+    partial void OnFilterScriptModsChanged(bool value) { OnPropertyChanged(nameof(IsAllScriptSelected)); RequestFilterUpdate(); }
+    partial void OnFilterCoreModsChanged(bool value) { OnPropertyChanged(nameof(IsAllScriptSelected)); RequestFilterUpdate(); }
+    partial void OnFilterNoScriptChanged(bool value) { OnPropertyChanged(nameof(IsAllScriptSelected)); RequestFilterUpdate(); }
+
     partial void OnSelectedSetNodeChanged(SetNodeViewModel? value)
     {
         _savedSetId = value?.Id;
@@ -726,6 +757,9 @@ public partial class ContentManagerViewModel
         // Mode filter
         query = query.Where(i => (i.Enabled && FilterModeEnabled) || (!i.Enabled && FilterModeDisabled));
         if (FilterModeOptimizedOnly) query = query.Where(i => i.IsOptimized);
+
+        // Script filter
+        query = query.Where(MatchScript);
 
         // Type filter
         query = query.Where(i =>
@@ -956,6 +990,13 @@ public partial class ContentManagerViewModel
             FilterModeDisabled = true;
         }
 
+        if (!MatchScript(targetItem))
+        {
+            FilterScriptMods = true;
+            FilterCoreMods = true;
+            FilterNoScript = true;
+        }
+
         var type = targetItem.PackageType ?? "";
         var isCas = PackageTypeHelper.IsCas(type);
         var isBuildBuy = PackageTypeHelper.IsBuildBuy(type);
@@ -1028,4 +1069,8 @@ public partial class ContentManagerViewModel
             }
         }
     }
+
+    // A core mod is also a script mod, but counts only under "Core mods".
+    private bool MatchScript(ItemViewModel i) =>
+        i.IsCoreMod ? FilterCoreMods : i.IsScriptMod ? FilterScriptMods : FilterNoScript;
 }
