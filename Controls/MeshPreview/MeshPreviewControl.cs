@@ -118,7 +118,9 @@ public class MeshPreviewControl : OpenGlControlBase, Avalonia.Rendering.ICustomH
         float aspect = Bounds.Height > 0 ? (float)(Bounds.Width / Bounds.Height) : 1f;
         _distance = radius / MathF.Sin(MathF.Min(half, MathF.Atan(MathF.Tan(half) * aspect))) * 1.05f;
         _yaw = MathF.Atan2(0.3f, 1f);
-        _pitch = 0.143f;
+        // Something lying flat (a rug, a floor tile) is seen from above; from near eye level it is only a sliver.
+        bool lyingFlat = size.Y < 0.15f * MathF.Max(size.X, size.Z);
+        _pitch = lyingFlat ? 0.9f : 0.143f;
     }
 
     private bool SimilarBounds(Vector3 min, Vector3 max)

@@ -6,6 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using PlumbobForge.Backend.Configuration;
 using PlumbobForge.Backend.Services;
 using PlumbobForge.Desktop.Controls.MeshPreview;
 using PlumbobForge.Desktop.Services.Localization;
@@ -94,6 +97,16 @@ public sealed partial class MeshViewerViewModel : ObservableObject, IDisposable
     public bool ShowTransparencyToggle => TextureHasCutout;
     public string TrianglesText => SelectedLod == null ? string.Empty : L("mesh_viewer.triangles", SelectedLod.CountText);
 
+    // The object uses a model that isn't in its package.
+    public bool UsesGameModel { get; init; }
+
+    // The game's packages from the folder set in Settings (or found on its own); null when there is no game install.
+    public static GameResources? GameModels()
+    {
+        var options = App.Services?.GetService<IOptionsMonitor<PlumbobForgeOptions>>()?.CurrentValue;
+        return GameResources.Shared(options?.GameFilesDir);
+    }
+
     public MeshViewerViewModel(PackageInspection inspection, TGI_Key key, string title, bool canOpenInOptimizer)
     {
         _inspection = inspection;
@@ -106,9 +119,12 @@ public sealed partial class MeshViewerViewModel : ObservableObject, IDisposable
     {
         try
         {
+            // Recolours of the game's paintings, posters and rugs carry no model of their own: it is read from the game.
+            var game = UsesGameModel ? GameModels() : null;
+            if (game != null && !await game.LoadAsync()) game = null;
             var (analysis, presets) = await Task.Run(() =>
             {
-                var a = CcOptimizerService.Analyse(_inspection, _key, _cts.Token);
+                var a = CcOptimizerService.Analyse(_inspection, _key, _cts.Token, game);
                 return (a, a.ReadPresets(_inspection));
             }, _cts.Token);
             if (_cts.IsCancellationRequested) return;
@@ -117,12 +133,12 @@ public sealed partial class MeshViewerViewModel : ObservableObject, IDisposable
 
             foreach (int lod in analysis.Lods)
             {
-                int triangles = analysis.RealTrianglesIn(lod);
+                int triangles = analysis.PreviewTrianglesIn(lod);
                 if (triangles > 0) Lods.Add(new CcLodOption(lod, triangles));
             }
             if (Lods.Count == 0)
             {
-                ErrorMessage = L("mesh_viewer.no_meshes");
+                ErrorMessage = L(UsesGameModel && game == null ? "mesh_viewer.no_game_files" : "mesh_viewer.no_meshes");
                 return;
             }
             OnPropertyChanged(nameof(HasSeveralLods));
@@ -244,7 +260,7 @@ public sealed partial class MeshViewerViewModel : ObservableObject, IDisposable
                 bool transparency = UseTransparency;
                 var decoded = _decoded;
 
-                if (analysis.IsObject)
+                if (analysis.UsesObjectTextures)
                 {
                     if (!textured) _objectTextures = null;
                     else
@@ -261,10 +277,10 @@ public sealed partial class MeshViewerViewModel : ObservableObject, IDisposable
                     await UpdateCasTextureAsync(analysis);
                 }
 
-                var objectTextures = analysis.IsObject ? _objectTextures ?? new() : null;
+                var objectTextures = analysis.UsesObjectTextures ? _objectTextures ?? new() : null;
                 var items = await Task.Run(() =>
                 {
-                    var shown = analysis.MeshesIn(lod.Lod).Where(m => !m.IsPlaceholder).ToList();
+                    var shown = analysis.PreviewMeshesIn(lod.Lod).ToList();
                     bool hasStrands = shown.Any(m => m.Geom.IsHairShader);
                     return shown.Select((m, i) => MeshPreviewItem.FromGeom(m.Geom, i, m.IsDoubleSided,
                         CcPreview.AllowCutout(m, hasStrands, objectTextures), CcPreview.OwnTexture(m, objectTextures))).ToList();

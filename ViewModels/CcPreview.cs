@@ -20,7 +20,7 @@ public static class CcPreview
         var options = new List<CcTextureOption> { new(CcOptimizerViewModel.ClayMode, L("optimizer.texture_clay")) };
         List<string> roles;
         bool ingame;
-        if (analysis is { IsObject: true })
+        if (analysis is { UsesObjectTextures: true })
         {
             roles = inspection == null ? new List<string>()
                 : CompositorPresets(inspection, analysis, null).Values.SelectMany(p => CcMaterial.TextureRoles(inspection, p)).Distinct().ToList();

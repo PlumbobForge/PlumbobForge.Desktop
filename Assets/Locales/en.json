@@ -1299,6 +1299,7 @@
                     "title":  "3D preview",
                     "triangles":  "{0} triangles",
                     "no_meshes":  "No meshes to show.",
+                    "no_game_files":  "This uses a model from the game's own files, and the game folder wasn't found. Set The Sims 3 Directory in Settings > Storage & Paths.",
                     "error":  "Could not show the 3D preview: {0}",
                     "open_optimizer":  "Open in CC Optimizer",
                     "open_optimizer_tip":  "Closes Look Inside and opens this in the CC Optimizer."

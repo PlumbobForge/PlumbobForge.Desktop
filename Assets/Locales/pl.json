@@ -1299,6 +1299,7 @@
                     "title":  "Podgląd 3D",
                     "triangles":  "Trójkąty: {0}",
                     "no_meshes":  "Brak siatek do pokazania.",
+                    "no_game_files":  "Używa modelu z plików gry, a folderu gry nie znaleziono. Ustaw Folder The Sims 3 w Ustawienia > Dane i ścieżki.",
                     "error":  "Nie udało się pokazać podglądu 3D: {0}",
                     "open_optimizer":  "Otwórz w Optymalizatorze CC",
                     "open_optimizer_tip":  "Zamyka okno „Zajrzyj do środka” i otwiera to w Optymalizatorze CC."

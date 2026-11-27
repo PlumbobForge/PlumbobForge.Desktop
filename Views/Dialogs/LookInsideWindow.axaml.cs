@@ -216,7 +216,7 @@ public partial class LookInsideWindow : Window
     private async void OnPreview3dClick(object? sender, RoutedEventArgs e)
     {
         if (sender is not Button { DataContext: LookInsideObjectItem { Source: { } source, Object: { } obj } item }) return;
-        var viewer = new MeshViewerWindow(new MeshViewerViewModel(source.Inspection, obj.Resource.Key, item.Title, item.CanOptimize));
+        var viewer = new MeshViewerWindow(new MeshViewerViewModel(source.Inspection, obj.Resource.Key, item.Title, item.CanOptimize) { UsesGameModel = item.UsesGameModel });
         await viewer.ShowDialog(this);
         if (viewer.OpenInOptimizer) SendToOptimizer(new[] { item });
     }

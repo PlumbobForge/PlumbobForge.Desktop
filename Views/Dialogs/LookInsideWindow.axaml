@@ -506,7 +506,7 @@
                                                 <Image Source="{Binding Preview.Bitmap}" Stretch="Uniform" IsVisible="{Binding HasThumbnails}"/>
                                                 <icon:PackIconBoxIcons Kind="RegularImage" Width="32" Height="32" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding HasNoThumbnails}"/>
                                                 <!-- 3D preview -->
-                                                <Button Classes="btn-action-sec" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="6" Padding="8,4" Click="OnPreview3dClick" IsVisible="{Binding HasMeshData}"
+                                                <Button Classes="btn-action-sec" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="6" Padding="8,4" Click="OnPreview3dClick" IsVisible="{Binding CanPreview3d}"
                                                         ToolTip.Tip="{loc:Loc 'look_inside.preview_3d_tip'}">
                                                     <StackPanel Orientation="Horizontal" Spacing="5">
                                                         <icon:PackIconBoxIcons Kind="RegularCube"/>
@@ -529,7 +529,7 @@
                                                 </Panel>
                                             </Border>
                                             <!-- 3D preview -->
-                                            <Button Classes="btn-action-sec" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="6" Padding="8,4" Click="OnPreview3dClick" IsVisible="{Binding HasMeshData}"
+                                            <Button Classes="btn-action-sec" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="6" Padding="8,4" Click="OnPreview3dClick" IsVisible="{Binding CanPreview3d}"
                                                     ToolTip.Tip="{loc:Loc 'look_inside.preview_3d_tip'}">
                                                 <StackPanel Orientation="Horizontal" Spacing="5">
                                                     <icon:PackIconBoxIcons Kind="RegularCube"/>

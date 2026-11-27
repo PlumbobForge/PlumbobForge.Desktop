@@ -814,13 +814,16 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
                 if (version != _version) return;
                 var plan = SnapshotPlan();
                 var lodIds = Lods.Select(l => l.Lod).ToList();
-                if (analysis.IsObject) await PrepareObjectTexturesAsync(analysis);
-                var objectTextures = analysis.IsObject ? _objectTextures : null;
+                if (analysis.UsesObjectTextures) await PrepareObjectTexturesAsync(analysis);
+                var objectTextures = analysis.UsesObjectTextures ? _objectTextures : null;
                 var result = await Task.Run(() =>
                 {
                     var after = previewOnly ? null : lodIds.ToDictionary(l => l, l => plan.TrianglesAfter(analysis, l) - (analysis.TrianglesIn(l) - analysis.RealTrianglesIn(l)));
                     double ratio = plan.RatioFor(analysis, selected.Lod);
-                    var shown = analysis.MeshesIn(selected.Lod).Where(m => !m.IsPlaceholder).ToList();
+                    // Drawn: what the preview shows (an object's flat parts too, not its shadows). Counted: what the
+                    // optimizer reduces.
+                    var shown = analysis.PreviewMeshesIn(selected.Lod).ToList();
+                    var counted = analysis.MeshesIn(selected.Lod).Where(m => !m.IsPlaceholder).ToList();
                     var reduced = shown.Select(m => m.Reduce(ratio, plan.LockEdges)).ToList();
                     bool hasStrands = shown.Any(m => m.Geom.IsHairShader);
                     var items = shown.Select((m, i) =>
@@ -832,7 +835,7 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
                                 : MeshPreviewItem.FromGeom(m.Geom, i, m.IsDoubleSided, allowCutout, own);
                         })
                         .ToList();
-                    int before = shown.Sum(m => m.Triangles), afterTris = reduced.Sum(r => r.Triangles);
+                    int before = counted.Sum(m => m.Triangles), afterTris = counted.Sum(m => m.Reduce(ratio, plan.LockEdges).Triangles);
                     bool doubleSided = shown.Any(m => m.IsDoubleSided);
                     // Locked edges can stop the simplifier early, on any level.
                     bool limited = after?.Any(p =>
@@ -865,7 +868,7 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
                 WeightText = MeshFormat.WeightName(WeightLevel);
                 if (!previewOnly) ShowLimitNote = result.limited;
                 ShowDoubleSidedNote = result.doubleSided;
-                if (!analysis.IsObject && PreviewTexture == null && SelectedTexture is { IsClay: false }) await UpdateTextureCoreAsync();
+                if (!analysis.UsesObjectTextures && PreviewTexture == null && SelectedTexture is { IsClay: false }) await UpdateTextureCoreAsync();
             }
             finally
             {
@@ -888,7 +891,7 @@ public sealed partial class CcOptimizerViewModel : ObservableObject, IDisposable
 
     private async Task UpdateTextureAsync()
     {
-        if (_analysis is { IsObject: true })
+        if (_analysis is { UsesObjectTextures: true })
         {
             _objectTextures = null;
             await RefreshAsync(previewOnly: true);

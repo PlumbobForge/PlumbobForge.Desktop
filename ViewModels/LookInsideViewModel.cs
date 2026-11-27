@@ -1136,7 +1136,14 @@ public sealed class LookInsideObjectItem : ObservableObject
     public string Title { get; }
     public string Subtitle { get; }
     public bool IsCas => Object?.Kind == InspectedObjectKind.Cas;
-    public bool CanOptimize => HasMeshData;
+    // Wall and floor patterns and terrain paints are previewed on a tile; there is nothing to optimize in them.
+    public bool IsPattern => Object?.Resource.Key.Type is Sims3ResourceTypes.CatalogWallFloorPattern or Sims3ResourceTypes.CatalogTerrainPaintBrush;
+    public bool CanOptimize => HasMeshData && !IsPattern;
+    // A terrain paint has no model; the preview lays it on a flat patch of ground.
+    public bool CanPreview3d => HasMeshData || Object?.Resource.Key.Type == Sims3ResourceTypes.CatalogTerrainPaintBrush
+        || (UsesGameModel && MeshViewerViewModel.GameModels() != null);
+    // An object (often a recolour of the game's painting, poster or rug) whose model is in the game's own files.
+    public bool UsesGameModel => !IsCas && _mesh?.HasExternalMesh == true;
     public bool IsBuildBuy => Object?.Kind == InspectedObjectKind.BuildBuy;
     public bool IsUnlinkedGroup => Object == null && !IsAllItems;
     public bool IsAllItems { get; }
@@ -1289,7 +1296,7 @@ public sealed class LookInsideObjectItem : ObservableObject
 
     private static readonly string[] MeshProperties =
     {
-        nameof(HasMeshData), nameof(CanOptimize), nameof(ShowMeshCard), nameof(ShowExternalMesh), nameof(Triangles), nameof(TrianglesText),
+        nameof(HasMeshData), nameof(CanOptimize), nameof(CanPreview3d), nameof(ShowMeshCard), nameof(ShowExternalMesh), nameof(Triangles), nameof(TrianglesText),
         nameof(VerticesText), nameof(CompactTriangles), nameof(WeightLevel), nameof(IsLight), nameof(IsMedium), nameof(IsHeavy),
         nameof(IsVeryHeavy), nameof(IsHeavyOrWorse), nameof(IsPlainTriangles), nameof(WeightText), nameof(LodsText), nameof(HasLods),
         nameof(IsOptimized), nameof(ShowOriginalTriangles), nameof(OriginalTrianglesText)
