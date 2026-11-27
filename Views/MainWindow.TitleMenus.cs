@@ -34,6 +34,7 @@ public partial class MainWindow
     {
         if (_vm == null || PlayMenuButton.ContextMenu is not { } menu) return;
         var configs = await _vm.PlayMenuConfigsAsync();
+        await _vm.RefreshDirtyStateAsync();
         BuildPlayMenu(menu, _vm, configs);
         menu.Open(PlayMenuButton);
     }
@@ -63,7 +64,9 @@ public partial class MainWindow
             ? new Control?[] { new MenuItem { Header = vm.VaultStatusText, IsEnabled = false } }
             : new Control?[]
             {
-                MenuBuilder.Item(Lt("nav.play_rebuild_only"), () => vm.RebuildCacheCommand.Execute(null), enabled: vm.HasDirtySets && !vm.IsGameRunning),
+                // Always offered: a rebuild also picks up files added to the library outside the app, which no set
+                // is marked changed for until then.
+                MenuBuilder.Item(Lt("nav.play_rebuild_only"), () => vm.RebuildCacheCommand.Execute(null), enabled: !vm.IsGameRunning),
                 MenuBuilder.Item(Lt("common.force_rebuild"), () => vm.ForceRebuildCacheCommand.Execute(null), enabled: !vm.IsGameRunning),
             };
         MenuBuilder.Fill(menu,

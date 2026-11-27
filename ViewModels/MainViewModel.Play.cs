@@ -118,6 +118,9 @@ public partial class MainViewModel
         IsStartingGame = true;
         try
         {
+            // Read again: the flag is only refreshed after some changes, and a stale "nothing to rebuild" would start
+            // the game with outdated CC.
+            await RefreshDirtyStateAsync();
             if (NeedsRebuildToPlay)
             {
                 await RebuildCacheAsync();
