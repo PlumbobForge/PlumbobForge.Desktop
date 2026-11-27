@@ -202,7 +202,7 @@ public partial class ContentManagerViewModel
                 counts[item.Entity.ModsFolderId.Value] = counts.GetValueOrDefault(item.Entity.ModsFolderId.Value, 0) + 1;
         }
         _modsRootNode.ItemCount = total;
-        _modsRootNode.CalculateModsItemCount(counts);
+        _modsRootNode.CalculateModsItemCount(counts, ShowSubfolderItems);
     }
 
     private void OnModsFolderExpandedChanged(SetNodeViewModel node, bool expanded)
@@ -223,12 +223,15 @@ public partial class ContentManagerViewModel
         });
     }
 
-    // Items shown for a selected Mods node: everything in Mods for the section header, else the folder's own items.
-    private static IEnumerable<ItemViewModel> FilterByModsNode(IEnumerable<ItemViewModel> query, SetNodeViewModel node)
+    // Items shown for a selected Mods node: everything in Mods for the section header, else the folder's own items
+    // (and its sub-folders' with the Accessibility setting on).
+    private IEnumerable<ItemViewModel> FilterByModsNode(IEnumerable<ItemViewModel> query, SetNodeViewModel node)
     {
         if (node.IsModsRoot) return query.Where(i => i.Entity.IsModsItem);
         long folderId = node.ModsFolder!.Id;
-        return query.Where(i => i.Entity.IsModsItem && i.Entity.ModsFolderId == folderId);
+        if (!ShowSubfolderItems) return query.Where(i => i.Entity.IsModsItem && i.Entity.ModsFolderId == folderId);
+        var folderIds = node.GetAllDescendants().Where(n => n.ModsFolder != null).Select(n => n.ModsFolder!.Id).Append(folderId).ToHashSet();
+        return query.Where(i => i.Entity.IsModsItem && i.Entity.ModsFolderId is long id && folderIds.Contains(id));
     }
 
     public async Task CustomizeModsFolderAsync(SetNodeViewModel node)

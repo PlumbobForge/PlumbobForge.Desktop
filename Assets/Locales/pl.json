@@ -692,6 +692,11 @@
                                       "auto_scan_help":  "Automatycznie wykrywaj i importuj nowe pakiety z monitorowanych folderów przy starcie PlumbobForge.",
                                       "scan_import":  "Skanuj i importuj teraz"
                                   },
+                     "accessibility":  {
+                         "title":  "Dostępność",
+                         "subfolder_items":  "Pokazuj elementy z podfolderów",
+                         "subfolder_items_desc":  "Kliknięcie zestawu lub folderu Mods pokazuje też wszystko z zestawów i folderów w nim, więc jedno kliknięcie wystarczy."
+                     },
                      "performance":  {
                                          "title":  "Wydajność w grze",
                                          "auto_clear_caches":  "Czyść pamięć podręczną gry po zmianach",

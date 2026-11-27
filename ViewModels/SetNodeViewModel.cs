@@ -219,10 +219,15 @@ public partial class SetNodeViewModel : ObservableObject
     }
 
     // Item counts by Mods folder id; like sets, a folder shows the items directly in it.
-    public void CalculateModsItemCount(IReadOnlyDictionary<long, int> itemCountsByFolderId)
+    // withSubfolders: the count includes the sub-folders' items (the Accessibility setting). Returns that count.
+    public int CalculateModsItemCount(IReadOnlyDictionary<long, int> itemCountsByFolderId, bool withSubfolders = false)
     {
-        foreach (var c in Children) c.CalculateModsItemCount(itemCountsByFolderId);
-        if (ModsFolder != null) ItemCount = itemCountsByFolderId.GetValueOrDefault(ModsFolder.Id, 0);
+        int below = 0;
+        foreach (var c in Children) below += c.CalculateModsItemCount(itemCountsByFolderId, withSubfolders);
+        if (ModsFolder == null) return below;
+        int own = itemCountsByFolderId.GetValueOrDefault(ModsFolder.Id, 0);
+        ItemCount = withSubfolders ? own + below : own;
+        return own + below;
     }
 
     private void OnAccentChanged()
@@ -231,7 +236,8 @@ public partial class SetNodeViewModel : ObservableObject
         OnPropertyChanged(nameof(HasCustomColor));
     }
 
-    public void CalculateItemCount(System.Collections.Generic.IDictionary<long, int> itemCountsBySetId)
+    // withSubfolders: the count includes the sub-sets' items (the Accessibility setting). Returns that count.
+    public int CalculateItemCount(System.Collections.Generic.IDictionary<long, int> itemCountsBySetId, bool withSubfolders = false)
     {
         int directCount = 0;
         if (Id.HasValue && itemCountsBySetId.TryGetValue(Id.Value, out var count))
@@ -239,12 +245,14 @@ public partial class SetNodeViewModel : ObservableObject
             directCount = count;
         }
 
+        int below = 0;
         foreach (var c in Children)
         {
-            c.CalculateItemCount(itemCountsBySetId);
+            below += c.CalculateItemCount(itemCountsBySetId, withSubfolders);
         }
 
-        ItemCount = directCount;
+        ItemCount = withSubfolders ? directCount + below : directCount;
+        return directCount + below;
     }
 
     public IEnumerable<SetNodeViewModel> GetAllDescendants()

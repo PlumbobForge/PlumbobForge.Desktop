@@ -83,6 +83,7 @@ public static class AppSettingsService
             plumbobNode["EnableAutoScan"] = options.EnableAutoScan;
             plumbobNode["AutoClearGameCaches"] = options.AutoClearGameCaches;
             plumbobNode["OptimizeTextures"] = options.OptimizeTextures;
+            plumbobNode["ShowSubfolderItems"] = options.ShowSubfolderItems;
             plumbobNode["TextureMaxDimension"] = options.TextureMaxDimension;
             plumbobNode["Theme"] = options.Theme ?? "Dark";
             plumbobNode["AccentColor"] = options.AccentColor ?? "Emerald";

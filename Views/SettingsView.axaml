@@ -746,6 +746,27 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- CARD: Accessibility -->
+                        <Border x:Name="AccessibilityCard" Classes="settings-card">
+                            <StackPanel Spacing="16">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <icon:PackIconBoxIcons Kind="RegularBody" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc 'settings.accessibility.title'}" Classes="card-title" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- A set or Mods folder lists its sub-sets' and sub-folders' items too -->
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,16,0">
+                                        <TextBlock Text="{loc:Loc 'settings.accessibility.subfolder_items'}" Classes="form-label" Margin="0"/>
+                                        <TextBlock Text="{loc:Loc 'settings.accessibility.subfolder_items_desc'}" Classes="form-helper" Margin="0"/>
+                                    </StackPanel>
+                                    <ToggleSwitch Grid.Column="1"
+                                                  IsChecked="{Binding ShowSubfolderItems, Mode=TwoWay}"
+                                                  VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
                         <!-- CARD 1: Storage & Directories -->
                         <Border x:Name="StorageCard" Classes="settings-card">
                             <StackPanel Spacing="16">

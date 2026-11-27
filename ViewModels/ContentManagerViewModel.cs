@@ -700,7 +700,7 @@ public partial class ContentManagerViewModel : ObservableObject
             {
                 if (rootNode.Id.HasValue)
                 {
-                    rootNode.CalculateItemCount(counts);
+                    rootNode.CalculateItemCount(counts, ShowSubfolderItems);
                 }
             }
 
@@ -779,7 +779,7 @@ public partial class ContentManagerViewModel : ObservableObject
         {
             if (rootNode.Id.HasValue)
             {
-                rootNode.CalculateItemCount(itemCounts);
+                rootNode.CalculateItemCount(itemCounts, ShowSubfolderItems);
             }
         }
 

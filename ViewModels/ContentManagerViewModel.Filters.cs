@@ -648,6 +648,19 @@ public partial class ContentManagerViewModel
 
     private List<ItemViewModel> _allMatchingItems = new();
 
+    // Accessibility (Settings): a set or Mods folder shows its sub-sets' or sub-folders' items too.
+    public bool ShowSubfolderItems => _optionsMonitor?.CurrentValue?.ShowSubfolderItems ?? false;
+
+    private IEnumerable<SetNodeViewModel> WithSubSets(IEnumerable<SetNodeViewModel> nodes) =>
+        ShowSubfolderItems ? nodes.SelectMany(n => n.GetAllDescendants().Prepend(n)).Distinct() : nodes;
+
+    // After the setting changes: the list and the sidebar counts follow at once.
+    public void OnShowSubfolderItemsChanged()
+    {
+        RecalculateSetCounts();
+        ApplyFilter();
+    }
+
     public void ApplyFilter()
     {
         var query = Items.AsEnumerable();
@@ -673,13 +686,13 @@ public partial class ContentManagerViewModel
             var selectedNodes = GetSelectedSetNodes();
             if (selectedNodes.Count > 0)
             {
-                var targetSetIds = selectedNodes.Where(s => s.Id.HasValue).Select(s => s.Id!.Value).ToHashSet();
+                var targetSetIds = WithSubSets(selectedNodes).Where(s => s.Id.HasValue).Select(s => s.Id!.Value).ToHashSet();
                 query = query.Where(i => i.Entity.SetsEntityId.HasValue && targetSetIds.Contains(i.Entity.SetsEntityId.Value));
             }
             else if (SelectedSetNode != null && SelectedSetNode.Id.HasValue)
             {
-                long targetSetId = SelectedSetNode.Id.Value;
-                query = query.Where(i => i.Entity.SetsEntityId.HasValue && i.Entity.SetsEntityId.Value == targetSetId);
+                var targetSetIds = WithSubSets(new[] { SelectedSetNode }).Where(s => s.Id.HasValue).Select(s => s.Id!.Value).ToHashSet();
+                query = query.Where(i => i.Entity.SetsEntityId.HasValue && targetSetIds.Contains(i.Entity.SetsEntityId.Value));
             }
         }
 

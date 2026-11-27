@@ -448,6 +448,19 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _autoClearGameCaches = false;
 
+    [ObservableProperty]
+    private bool _showSubfolderItems = false;
+
+    partial void OnShowSubfolderItemsChanged(bool value)
+    {
+        if (_isInitializing) return;
+        _options.ShowSubfolderItems = value;
+        var monitor = _serviceProvider.GetService<IOptionsMonitor<PlumbobForgeOptions>>();
+        if (monitor?.CurrentValue != null) monitor.CurrentValue.ShowSubfolderItems = value;
+        _serviceProvider.GetService<ContentManagerViewModel>()?.OnShowSubfolderItemsChanged();
+        _ = SaveSettingsInternalAsync(silent: true);
+    }
+
     partial void OnAutoClearGameCachesChanged(bool value)
     {
         if (_isInitializing) return;
@@ -722,6 +735,7 @@ public partial class SettingsViewModel : ObservableObject
             EnableAutoScan = _options.EnableAutoScan;
             LoadModsOptions();
             AutoClearGameCaches = _options.AutoClearGameCaches;
+            ShowSubfolderItems = _options.ShowSubfolderItems;
             OptimizeTextures = _options.OptimizeTextures;
             TextureMaxDimension = _options.TextureMaxDimension;
 
@@ -765,6 +779,7 @@ public partial class SettingsViewModel : ObservableObject
             _options.EnableSingleSourceVault = EnableSingleSourceVault;
             _options.EnableAutoScan = EnableAutoScan;
             _options.AutoClearGameCaches = AutoClearGameCaches;
+            _options.ShowSubfolderItems = ShowSubfolderItems;
             _options.OptimizeTextures = OptimizeTextures;
             _options.TextureMaxDimension = TextureMaxDimension;
             _options.ObservedFolders = ObservedFolders.ToList();

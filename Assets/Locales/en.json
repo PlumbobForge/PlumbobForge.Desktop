@@ -692,6 +692,11 @@
                                       "auto_scan_help":  "Automatically detect and import new packages found in monitored folders when starting PlumbobForge.",
                                       "scan_import":  "Scan \u0026 Import Now"
                                   },
+                     "accessibility":  {
+                         "title":  "Accessibility",
+                         "subfolder_items":  "Show items in sub-folders",
+                         "subfolder_items_desc":  "Clicking a set or Mods folder also lists everything in the sets and folders inside it, so one click shows it all."
+                     },
                      "performance":  {
                                          "title":  "In-Game Performance",
                                          "auto_clear_caches":  "Clear game caches after changes",
