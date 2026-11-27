@@ -548,6 +548,35 @@ public partial class App : Application
         if (userVersion < 14) ApplySchemaV14(db);
         if (userVersion < 15) ApplySchemaV15(db);
         if (userVersion < 16) ApplySchemaV16(db);
+        if (userVersion < 17) ApplySchemaV17(db);
+    }
+
+    // Retagging as Other Content > Worlds, Sims or Lots saved the type "Other", so filters showed them under Misc and
+    // the cache build didn't treat a world as one. The chosen category is still there, so the type is put back.
+    private static void ApplySchemaV17(AppDbContext db)
+    {
+        foreach (var (category, type) in new[] { ("Worlds", PackageTypeHelper.World), ("Sims", PackageTypeHelper.Sim), ("Lots", PackageTypeHelper.Lot) })
+        {
+            foreach (string table in new[] { "MetaEntities", "Tombstones" })
+            {
+                try
+                {
+                    db.Database.ExecuteSqlRaw($"UPDATE {table} SET PackageType = {{0}} WHERE PackageType = 'Other' AND TRIM(CASCategories) = {{1}} COLLATE NOCASE;", type, category);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogWarning($"Could not repair retagged {category} in {table}", ex);
+                }
+            }
+        }
+
+        try
+        {
+            db.Database.ExecuteSqlRaw("PRAGMA user_version = 17;");
+        }
+        catch
+        {
+        }
     }
 
     // Sets can load at their own Resource.cfg priority (SetsEntities.Priority; null takes the parent's).

@@ -7,6 +7,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using PlumbobForge.Backend.Services;
 using PlumbobForge.Desktop.Controls.Icons;
 using PlumbobForge.Desktop.Services.Localization;
 
@@ -137,8 +138,9 @@ public partial class RetagDialogWindow : Window
             SetPackageType("CAS");
         }
 
-        // Set Category
+        // Set Category: a world, Sim or lot found by the scan has no category saved, only its type.
         _selectedCategory = input.CasCategories?.Trim();
+        if (_selectedType == "Other" && string.IsNullOrEmpty(_selectedCategory)) _selectedCategory = PackageTypeHelper.OtherCategoryFor(currentPackageType);
         UpdateCategorySelection();
     }
 
@@ -310,7 +312,9 @@ public partial class RetagDialogWindow : Window
         bool cas = _selectedType == "CAS";
         bool bb = _selectedType == "BuildBuy";
 
-        Close(new RetagDialogResult(_selectedType, userTags, casCategory,
+        // Other Content > Worlds, Sims or Lots is that type, not "Other".
+        string packageType = _selectedType == "Other" ? PackageTypeHelper.OtherTypeFor(casCategory) : _selectedType;
+        Close(new RetagDialogResult(packageType, userTags, casCategory,
             CasAge: cas ? _ages?.Result : null,
             CasGender: cas ? _genders?.Result : null,
             CasOutfit: cas ? _outfits?.Result : null,
