@@ -4,6 +4,16 @@
   // Up to 5 bullets are shown, so skipped versions are merged newest first.
   "versions": [
     {
+      "version": "1.1.8",
+      "highlights": [
+        "**Cleaner sidebar:** Disabled sets and folders are now dimmed instead of crossed out",
+        "**More 3D previews:** Look Inside now shows wallpapers, floors and rugs too",
+        "**Show items in sub-folders:** A new Accessibility setting lists everything inside a set or folder in one click",
+        "**Set in Sidebar:** Right-click an item and pick Open In > Set in Sidebar to jump to the set it's in",
+        "**Bug fixes:** CC no longer shows another item's thumbnail, retagged lots stay under Lots instead of Misc, and Rebuild Without Playing is always available"
+      ]
+    },
+    {
       "version": "1.1.7",
       "highlights": [
         "**Play button:** Start The Sims 3 from the title bar, switch configurations from its menu, and rebuild first when changes are waiting",
