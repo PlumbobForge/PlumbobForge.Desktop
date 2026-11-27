@@ -109,6 +109,7 @@ public static class ThemeService
             appRes["BgPanelDark"] = new SolidColorBrush(bgPanelDark);
             appRes["BorderMain"] = new SolidColorBrush(borderMain);
             appRes["BorderSubtle"] = new SolidColorBrush(borderSubtle);
+            ThemeMenuPopups(appRes);
             appRes["BorderActive"] = new SolidColorBrush(borderActive);
             appRes["TextMain"] = new SolidColorBrush(textMain);
             appRes["TextMuted"] = new SolidColorBrush(textMuted);
@@ -224,6 +225,7 @@ public static class ThemeService
             appRes["BgPanelDark"] = new SolidColorBrush(palette.BgPanelDark);
             appRes["BorderMain"] = new SolidColorBrush(palette.BorderMain);
             appRes["BorderSubtle"] = new SolidColorBrush(palette.BorderSubtle);
+            ThemeMenuPopups(appRes);
             appRes["BorderActive"] = new SolidColorBrush(palette.BorderActive);
             appRes["TextMain"] = new SolidColorBrush(palette.TextMain);
             appRes["TextMuted"] = new SolidColorBrush(palette.TextMuted);
@@ -352,5 +354,13 @@ public static class ThemeService
 
         var isLight = CurrentTheme.Equals("Light", StringComparison.OrdinalIgnoreCase);
         return new SolidColorBrush(Color.Parse(isLight ? "#e2e8f0" : "#40475569"));
+    }
+
+    // Sub-menus (Open In, Move to Set...) open in a popup whose look comes from the Fluent theme's own resources, set
+    // in its template, so app styles can't change it. Pointing those resources at the app's colours themes them too.
+    private static void ThemeMenuPopups(Avalonia.Controls.IResourceDictionary appRes)
+    {
+        appRes["MenuFlyoutPresenterBackground"] = appRes["BgSidebar"];
+        appRes["MenuFlyoutPresenterBorderBrush"] = appRes["BorderSubtle"];
     }
 }
