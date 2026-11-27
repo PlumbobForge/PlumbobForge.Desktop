@@ -597,6 +597,23 @@ public partial class ContentManagerViewModel : ObservableObject
 
     private bool _isDataLoading = false;
 
+    // Sets whose chain of parents ends at the top. A set in a loop of parents (A in B, B in A) would otherwise be
+    // nobody's child and not at the top either, so it and its items would be missing from the sidebar.
+    private static HashSet<long> SetsReachingTop(List<PlumbobForge.Backend.Database.SetsEntity> sets)
+    {
+        var byId = sets.ToDictionary(s => s.Id);
+        var ok = new HashSet<long>();
+        foreach (var set in sets)
+        {
+            var seen = new HashSet<long>();
+            var current = set;
+            while (current.ParentSetsEntityId is long parent && byId.TryGetValue(parent, out var next) && seen.Add(current.Id)) current = next;
+            if (current.ParentSetsEntityId is not long p || !byId.ContainsKey(p)) ok.Add(set.Id);
+        }
+        if (ok.Count < sets.Count) AppLogger.LogWarning($"{sets.Count - ok.Count} sets have parents that loop; shown at the top", null, "ContentManagerViewModel");
+        return ok;
+    }
+
     public async Task LoadDataAsync()
     {
         if (_isDataLoading) return;
@@ -630,10 +647,11 @@ public partial class ContentManagerViewModel : ObservableObject
             RootSets.Add(favoritesNode);
 
             var nodeMap = setsList.ToDictionary(s => s.Id, s => new SetNodeViewModel(s));
+            var reachesTop = SetsReachingTop(setsList);
             foreach (var set in setsList)
             {
                 var node = nodeMap[set.Id];
-                if (set.ParentSetsEntityId.HasValue && nodeMap.TryGetValue(set.ParentSetsEntityId.Value, out var parentNode))
+                if (set.ParentSetsEntityId.HasValue && reachesTop.Contains(set.Id) && nodeMap.TryGetValue(set.ParentSetsEntityId.Value, out var parentNode))
                 {
                     parentNode.Children.Add(node);
                 }

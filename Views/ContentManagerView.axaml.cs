@@ -478,6 +478,8 @@ public partial class ContentManagerView : UserControl
             MenuBuilder.Item(L("library.menu_mesh_report"), () => _ = vm.OpenInMeshReportAsync(ids,
                 many ? string.Format(L("library.menu_scope_items"), state.Count) : state.Selected[0].FileName)),
             state.RevealPath != null ? MenuBuilder.Item(L("library.menu_file_explorer"), () => ContentManagerViewModel.RevealInExplorer(state.RevealPath, true)) : null,
+            !many ? MenuBuilder.Item(L(state.Selected[0].Entity.IsModsItem ? "library.menu_folder_in_sidebar" : "library.menu_set_in_sidebar"),
+                () => _ = vm.ShowInSidebarAsync(state.Selected[0])) : null,
         }, "RegularWindow");
 
         // Moving only offers the kind of place the selection comes from; a mix gets both.
