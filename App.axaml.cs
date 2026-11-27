@@ -65,6 +65,17 @@ public partial class App : Application
             AppLogger.LogError("Database schema upgrade error", ex);
         }
 
+        // Before anything shows a preview: previews made for another database would land on the wrong items.
+        try
+        {
+            using var thumbScope = rootProvider.CreateScope();
+            thumbScope.ServiceProvider.GetRequiredService<ThumbnailService>().EnsureCacheMatchesDatabase();
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError("Preview check failed", ex);
+        }
+
         _ = Task.Run(() =>
         {
             try
