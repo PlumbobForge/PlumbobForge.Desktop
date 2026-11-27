@@ -97,7 +97,7 @@ public partial class SetNodeViewModel : ObservableObject
     public bool CanDrag => !IsSpecialNode;
     public bool CanAddSubSet => !IsSpecialNode;
 
-    // Sets and Mods folders the active configuration doesn't load are crossed out in the sidebar.
+    // Sets and Mods folders the active configuration doesn't load are dimmed in the sidebar.
     public bool CanToggleInConfiguration => IsModsFolder || (Id.HasValue && !IsSpecialNode);
 
     [ObservableProperty]

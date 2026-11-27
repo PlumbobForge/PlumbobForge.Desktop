@@ -10,7 +10,7 @@ using PlumbobForge.Desktop.Views.Dialogs;
 
 namespace PlumbobForge.Desktop.ViewModels;
 
-// The sidebar shows what the active configuration loads: sets and Mods folders it leaves out are crossed out,
+// The sidebar shows what the active configuration loads: sets and Mods folders it leaves out are dimmed,
 // and their context menu turns them on or off in it.
 public partial class ContentManagerViewModel
 {

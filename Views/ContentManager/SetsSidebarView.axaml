@@ -204,9 +204,8 @@
             <Setter Property="BorderBrush" Value="#ef4444"/>
         </Style>
 
-        <!-- Left out by the active configuration: crossed out and slightly dimmed -->
+        <!-- Left out by the active configuration: slightly dimmed. Not crossed out: users found crossed-out names hard to read. -->
         <Style Selector="Border.set-node-row.config-off TextBlock.set-title">
-            <Setter Property="TextDecorations" Value="Strikethrough"/>
             <Setter Property="Opacity" Value="0.7"/>
         </Style>
         <Style Selector="Border.set-node-row.config-off Panel.node-icon">
